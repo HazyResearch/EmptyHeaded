@@ -178,7 +178,7 @@ void recursive_build(
 }
 
 template<class T, class R>
-Trie<T,R>* Trie<T,R>::build(
+Trie<T,R>::Trie(
   std::vector<uint32_t>* max_set_sizes, 
   std::vector<std::vector<uint32_t>> *attr_in,
   std::vector<R>* annotation){
@@ -270,5 +270,9 @@ Trie<T,R>* Trie<T,R>::build(
   //should be a 1-1 between pointers in block and next ranges
   //also a 1-1 between blocks and numbers of next ranges
 
-  return new Trie<T,R>(new_head,num_levels_in,annotation->size()!=0);
+  head=new_head;
+  num_levels=num_levels_in;
+  annotated=(annotation->size()!=0);
 }
+
+template struct Trie<hybrid,void*>;

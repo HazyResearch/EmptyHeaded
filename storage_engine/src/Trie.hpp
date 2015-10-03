@@ -37,7 +37,7 @@ struct Trie{
     annotated = annotated_in;
   };
 
-  static Trie<T,R>* build(
+  Trie<T,R>(
     std::vector<uint32_t>* max_set_sizes, 
     std::vector<std::vector<uint32_t>>* attr_in, 
     std::vector<R>* annotation);

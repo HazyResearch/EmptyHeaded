@@ -23,7 +23,7 @@ void* GHD::run(){
   {
     auto start_time = debug::start_clock();
     tsv_reader f_reader(
-        "/Users/caberger/Documents/Research/data/simple.tsv");
+        "/Users/caberger/Documents/Research/data/higgs/edgelist/duplicate_pruned.tsv");
     char *next = f_reader.tsv_get_first();
     while (next != NULL) {
       node_encodingMap->update(R->append_from_string<0>(next));
@@ -61,10 +61,8 @@ void* GHD::run(){
   {
     auto start_time = debug::start_clock();
     // buildTrie
-    /*
-    Trie_R_0_1 = Trie<hybrid,void *>::build( &Encoded_R->max_set_size,
+    Trie_R_0_1 = new Trie<hybrid,void *>( &Encoded_R->max_set_size,
         &Encoded_R->data, &Encoded_R->annotation);
-    */
     debug::stop_clock("BUILDING TRIE R_0_1", start_time);
   }
 
