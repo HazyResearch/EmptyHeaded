@@ -5,7 +5,7 @@ GHD::GHD(){
 	thread_pool::initializeThreadPool();
 }
 
-void GHD::run(){
+GHDResult* GHD::run(){
   ////////////////////emitAllocators////////////////////
   allocator::memory<uint8_t> *output_buffer =
       new allocator::memory<uint8_t>(10000);
@@ -23,7 +23,7 @@ void GHD::run(){
   {
     auto start_time = debug::start_clock();
     tsv_reader f_reader(
-        "/Users/caberger/Documents/Research/data/higgs/edgelist/duplicate_pruned.tsv");
+        "/Users/caberger/Documents/Research/data/simple.tsv");
     char *next = f_reader.tsv_get_first();
     while (next != NULL) {
       node_encodingMap->update(R->append_from_string<0>(next));
@@ -143,4 +143,6 @@ void GHD::run(){
     debug::stop_clock("QUERY TIME", query_time);
   }
   std::cout << "Query Result: " << Trie_Triangle_->annotation << std::endl;
+
+  return new GHDResult(Trie_Triangle_->annotation,Trie_Triangle_);
 }

@@ -1,1 +1,0 @@
-char * query(char * name);
