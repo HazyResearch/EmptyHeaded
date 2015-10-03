@@ -1,21 +1,24 @@
-#include "../emptyheaded.hpp"
 #include "ghd.hpp"
+#include "Trie.hpp"
+#include "Encoding.hpp"
+#include "thread_pool.hpp"
+#include "../emptyheaded.hpp"
 
 GHD::GHD(){
 	thread_pool::initializeThreadPool();
 }
 
-GHDResult* GHD::run(){
+void* GHD::run(){
   ////////////////////emitAllocators////////////////////
-  allocator::memory<uint8_t> *output_buffer =
-      new allocator::memory<uint8_t>(10000);
-  allocator::memory<uint8_t> *tmp_buffer =
-      new allocator::memory<uint8_t>(10000);
+  allocator<uint8_t> *output_buffer =
+      new allocator<uint8_t>(10000);
+  allocator<uint8_t> *tmp_buffer =
+      new allocator<uint8_t>(10000);
   (void)tmp_buffer;
 
     ////////////////////emitInitCreateDB////////////////////
-  // init relations
-  Relation<long, long> *R = new Relation<long, long>();
+  // init ColumnStores
+  ColumnStore<long, long> *R = new ColumnStore<long, long>();
   std::vector<void *> *annotation_R = new std::vector<void *>();
   // init encodings
   SortableEncodingMap<long> *node_encodingMap = new SortableEncodingMap<long>();
@@ -32,22 +35,22 @@ GHDResult* GHD::run(){
       next = f_reader.tsv_get_next();
       R->num_rows++;
     }
-    debug::stop_clock("READING RELATION R", start_time);
+    debug::stop_clock("READING ColumnStore R", start_time);
   }
 
   {
     auto start_time = debug::start_clock();
-    Encoding_node->build(node_encodingMap);
+    Encoding_node->build(node_encodingMap->get_sorted());
     delete node_encodingMap;
     debug::stop_clock("BUILDING ENCODINGS", start_time);
   }
 
-  ////////////////////emitEncodeRelation////////////////////
-  EncodedRelation<void *> *Encoded_R =
-      new EncodedRelation<void *>(annotation_R);
+  ////////////////////emitEncodeColumnStore////////////////////
+  EncodedColumnStore<void *> *Encoded_R =
+      new EncodedColumnStore<void *>(annotation_R);
   {
     auto start_time = debug::start_clock();
-    // encodeRelation
+    // encodeColumnStore
     Encoded_R->add_column(Encoding_node->encode_column(&R->get<0>()),
                           Encoding_node->num_distinct);
     Encoded_R->add_column(Encoding_node->encode_column(&R->get<1>()),
@@ -56,39 +59,33 @@ GHDResult* GHD::run(){
   }
 
   ////////////////////emitBuildTrie////////////////////
-  const size_t alloc_size_R_0_1 =
-      8 * Encoded_R->data.size() * Encoded_R->data.at(0).size() *
-      sizeof(uint64_t) * sizeof(TrieBlock<hybrid, void *>);
-  allocator::memory<uint8_t> *data_allocator_R_0_1 =
-      new allocator::memory<uint8_t>(alloc_size_R_0_1);
-  Trie<hybrid, void *> *Trie_R_0_1 = NULL;
+
+  Trie<hybrid,void *> *Trie_R_0_1 = NULL;
   {
     auto start_time = debug::start_clock();
     // buildTrie
-    Trie_R_0_1 = Trie<hybrid, void *>::build(
-        data_allocator_R_0_1, &Encoded_R->max_set_size,
-        &Encoded_R->data, &Encoded_R->annotation, [&](size_t index) {
-          (void)index;
-          return true;
-        });
+    /*
+    Trie_R_0_1 = Trie<hybrid,void *>::build( &Encoded_R->max_set_size,
+        &Encoded_R->data, &Encoded_R->annotation);
+    */
     debug::stop_clock("BUILDING TRIE R_0_1", start_time);
   }
 
-  Trie<hybrid, long> *Trie_Triangle_;
+  Trie<hybrid,long> *Trie_Triangle_;
   {
     auto query_time = debug::start_clock();
     ////////////////////NPRR BAG bag_R_abc////////////////////
-    Trie<hybrid, long> *Trie_bag_R_abc =
-        new (output_buffer->get_next(0, sizeof(Trie<hybrid, long>)))
-            Trie<hybrid, long>(0, true);
+    Trie<hybrid,long> *Trie_bag_R_abc =
+        new (output_buffer->get_next(0, sizeof(Trie<hybrid,long>)))
+            Trie<hybrid,long>(0, true);
     {
       auto start_time = debug::start_clock();
-      allocator::memory<uint8_t> *a_buffer =
-          new allocator::memory<uint8_t>(10000);
-      allocator::memory<uint8_t> *b_buffer =
-          new allocator::memory<uint8_t>(10000);
-      allocator::memory<uint8_t> *c_buffer =
-          new allocator::memory<uint8_t>(10000);
+      allocator<uint8_t> *a_buffer =
+          new allocator<uint8_t>(10000);
+      allocator<uint8_t> *b_buffer =
+          new allocator<uint8_t>(10000);
+      allocator<uint8_t> *c_buffer =
+          new allocator<uint8_t>(10000);
       const TrieBlock<hybrid, long> *TrieBlock_R_0_1_0 =
           (TrieBlock<hybrid, long> *)Trie_R_0_1->head;
       Set<hybrid> a = TrieBlock_R_0_1_0->set;
@@ -144,5 +141,5 @@ GHDResult* GHD::run(){
   }
   std::cout << "Query Result: " << Trie_Triangle_->annotation << std::endl;
 
-  return new GHDResult(Trie_Triangle_->annotation,Trie_Triangle_);
+  return (void*)Trie_Triangle_;
 }

@@ -2,13 +2,13 @@
 *
 * Author: Christopher R. Aberger
 *
-* Stores a relation in a column wise fashion. Can take in any number of 
+* Stores a ColumnStore in a column wise fashion. Can take in any number of 
 * different template arguments. Each template arguments corresponds to the
 * type of the column. 
 ******************************************************************************/
 
-#ifndef _RELATION_H_
-#define _RELATION_H_
+#ifndef _COLUMN_STORE_H_
+#define _COLUMN_STORE_H_
 
 // helpers
 template <typename T>
@@ -46,27 +46,27 @@ struct Range <L, L, sizes <N...> > : sizes <N...> { };
 template <size_t L>
 using range = type_of <Range <L> >;
 
-// single Relation element
+// single ColumnStore element
 template <size_t N, typename T>
-class RelationElem
+class ColumnStoreElem
 {
   std::vector<T> elem;
 public:
   std::vector<T>&       get()       { return elem; }
   const std::vector<T>& get() const { return elem; }
-  RelationElem(){}
+  ColumnStoreElem(){}
 
 };
 
-// Relation implementation
+// ColumnStore implementation
 template <typename N, typename... T>
-class RelationImpl;
+class ColumnStoreImpl;
 
 template <size_t... N, typename... T>
-class RelationImpl <sizes <N...>, T...> : RelationElem <N, T>...
+class ColumnStoreImpl <sizes <N...>, T...> : ColumnStoreElem <N, T>...
 {
   template <size_t M> using pick = choose <M, T...>;
-  template <size_t M> using elem = RelationElem <M, pick <M> >;
+  template <size_t M> using elem = ColumnStoreElem <M, pick <M> >;
 
 public:
   template <size_t M>
@@ -86,7 +86,7 @@ public:
 
 
 template <typename... T>
-struct Relation : RelationImpl <range <sizeof...(T)>, T...>
+struct ColumnStore : ColumnStoreImpl <range <sizeof...(T)>, T...>
 {
   //return the number of columns (depends on the input thus a function)
   static constexpr std::size_t num_columns() { return sizeof...(T); }

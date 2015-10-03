@@ -1,7 +1,8 @@
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 
-#include "debug.hpp"
+#include "parallel.hpp"
+#include "../engine/utils/debug.hpp"
 #include <thread>
 #include <atomic>
 #include <cstring>
@@ -9,7 +10,7 @@
 #include <sched.h>
 
 #ifdef __APPLE__
-#include "pthread_barrier.hpp"
+#include "../engine/utils/pthread_barrier.hpp"
 #endif // __APPLE__
 
 namespace thread_pool {
@@ -17,24 +18,22 @@ namespace thread_pool {
   //Main thread should always call (init_threads, submit work
   // with the general body, then join threads.
   ////////////////////////////////////////////////////
-  static pthread_barrier_t barrier; // barrier synchronization object
   // Iterates over a range of numbers in parallel
-
-  //general body is submitted to submit_work. Construct you op in the object
-  //that is passed in as an arg.
+  pthread_barrier_t barrier; // barrier synchronization object
   template<class F>
-  static void* general_body(void *args_in){
+  void* general_body(void *args_in){
     F* arg = (F*)args_in;
     arg->run();
     pthread_barrier_wait(&barrier);
     return NULL;
   }
+
   //init a thread barrier
-  static void init_threads(){
+  void init_threads(){
     pthread_barrier_init (&barrier, NULL, NUM_THREADS+1);
   }
   //join threads on the thread barrier
-  static void join_threads(){
+  void join_threads(){
     pthread_barrier_wait(&barrier);
     pthread_barrier_destroy(&barrier);
   }
@@ -46,15 +45,15 @@ namespace thread_pool {
   //thread pool
   ////////////////////////////////////////////////////
 
-  static pthread_t* threadPool;
-  static pthread_mutex_t* locks;
-  static pthread_cond_t* readyConds;
-  static pthread_cond_t* doneConds;
+  pthread_t* threadPool;
+  pthread_mutex_t* locks;
+  pthread_cond_t* readyConds;
+  pthread_cond_t* doneConds;
 
-  static void** workPool;
-  static void** argPool;
+  void** workPool;
+  void** argPool;
 
-  static void initializeThread(size_t threadId) {
+  void initializeThread(size_t threadId) {
     #ifdef __linux__
     cpu_set_t cpu;
     CPU_ZERO(&cpu);
@@ -78,8 +77,10 @@ namespace thread_pool {
 
   }
 
-  static void submitWork(size_t threadId, void *(*work) (void *), void *arg) {
+  void submitWork(size_t threadId, void *(*work) (void *), void *arg) {
     pthread_mutex_lock(&locks[threadId]);
+    std::cout << "threadID" << threadId << std::endl;
+
     while (argPool[threadId] != NULL) {
       pthread_cond_wait(&doneConds[threadId], &locks[threadId]);
     }
@@ -89,7 +90,7 @@ namespace thread_pool {
     pthread_mutex_unlock(&locks[threadId]);
   }
 
-  static void* processWork(void* threadId) {
+  void* processWork(void* threadId) {
     const size_t id = (size_t)threadId;
 
     /////////////////////////////////////////////////
@@ -112,7 +113,8 @@ namespace thread_pool {
       pthread_mutex_lock(&locks[id]);
       while (argPool[id] == NULL) {
         pthread_cond_wait(&readyConds[id], &locks[id]);
-      }      
+      }
+
       work = (void *(*)(void *))workPool[id];
       workPool[id] = NULL;
       arg = argPool[id];
@@ -123,7 +125,7 @@ namespace thread_pool {
     }
   }
 
-  static void initializeThreadPool() {
+  void initializeThreadPool() {
     threadPool = new pthread_t[NUM_THREADS];
     locks = new pthread_mutex_t[NUM_THREADS];
     readyConds = new pthread_cond_t[NUM_THREADS];
@@ -138,11 +140,11 @@ namespace thread_pool {
     pthread_barrier_wait(&barrier);
     pthread_barrier_destroy(&barrier);
   }
-  static void* killThread(void *args_in){
+  void* killThread(void *args_in){
     (void) args_in;
     pthread_exit(NULL);
   }
-  static void deleteThreadPool() {
+  void deleteThreadPool() {
     for(size_t k = 0; k < NUM_THREADS; k++) { 
       submitWork(k,killThread,(void *)NULL);
     }
@@ -153,5 +155,9 @@ namespace thread_pool {
     delete[] workPool;
     delete[] argPool;
   }
+
+  template void* general_body<par::staticParFor>(void*);
+  template void* general_body<par::parFor>(void*);
 }
+
 #endif

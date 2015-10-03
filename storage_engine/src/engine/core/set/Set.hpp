@@ -178,7 +178,7 @@ class Set{
 
     //constructors
     static Set<T>* from_binary(std::ifstream* infile, 
-      allocator::memory<uint8_t> *allocator_in, 
+      allocator<uint8_t> *allocator_in, 
       const size_t tid);
     static Set<T> from_array(uint8_t *set_data, uint32_t *array_data, size_t data_size);
 };
@@ -214,7 +214,7 @@ inline void Set<T>::to_binary(std::ofstream* outfile){
 ///////////////////////////////////////////////////////////////////////////////
 template<class T>
 inline Set<T>* Set<T>::from_binary(std::ifstream* infile, 
-  allocator::memory<uint8_t> *allocator_in, 
+  allocator<uint8_t> *allocator_in, 
   const size_t tid){
 
   Set<T>* output_set = new (

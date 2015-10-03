@@ -7,7 +7,7 @@
 
 namespace ops{
   template<typename F>
-  Set<hybrid>* set_intersect(Set<hybrid> *C_in,const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f){
+  static Set<hybrid>* set_intersect(Set<hybrid> *C_in,const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f){
     if(A_in->cardinality == 0 || B_in->cardinality == 0){
       C_in->cardinality = 0;
       C_in->number_of_bytes = 0;
@@ -68,7 +68,7 @@ namespace ops{
     std::cout << "SET INTERSECTION ERROR 0" << std::endl;
     return C_in;
   }
-  Set<hybrid>* set_intersect(Set<hybrid> *C_in, const Set<hybrid> *A_in, const Set<hybrid> *B_in){
+  static Set<hybrid>* set_intersect(Set<hybrid> *C_in, const Set<hybrid> *A_in, const Set<hybrid> *B_in){
     if(A_in->cardinality == 0 || B_in->cardinality == 0){
       C_in->cardinality = 0;
       C_in->number_of_bytes = 0;
@@ -129,7 +129,7 @@ namespace ops{
     return C_in;
   }
 template<typename F>
-size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f){
+static size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f){
     if(A_in->cardinality == 0 || B_in->cardinality == 0){
       return 0;
     }
@@ -187,7 +187,7 @@ size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f){
     std::cout << "SET INTERSECTION ERROR 1" << std::endl;
     return 0;
   }
-  size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in){
+  static size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in){
     if(A_in->cardinality == 0 || B_in->cardinality == 0){
       return 0;
     }

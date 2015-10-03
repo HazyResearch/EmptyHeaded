@@ -37,13 +37,10 @@ struct SortableEncodingMap{
   inline void update(const T value){
     values.insert(value);
   }
-  //Have a way to iterate over values (in the way you want)
-  template<typename F>
-  inline void foreach(const F f){
-    for (auto it = values.begin(); it != values.end(); it++) {
-      f(*it);
-    }
+  inline std::set<T>* get_sorted(){
+    return &values;
   }
+
 };
 
 //Encoding map where you sort based upon the frequency of the values
@@ -71,20 +68,14 @@ struct FrequencyEncodingMap{
   bool myFunction(std::pair<T,uint32_t> first, std::pair<T,uint32_t> second){
     return first.second < second.second;
   }
-
   //Have a way to iterate over values (in the way you want)
-  template<typename F>
-  inline void foreach(const F f){
+  inline std::vector<T>* get_sorted(){
     //sort by the frequency
     
     //first create a vector with contents of the map, then sort that vector
     std::vector<std::pair<T,uint32_t> > myVec(values.begin(), values.end());
     tbb::parallel_sort(myVec.begin(),myVec.end(),&myFunction);
-
-    for(auto it = myVec.begin(); it != myVec.end(); it++) {
-      f(*it);
-    }
-    delete myVec;
+    return &myVec;
   }
 };
 

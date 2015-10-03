@@ -16,7 +16,7 @@ namespace tc {
     Trie<T,R>* graph, 
     R init, 
     const size_t num_distinct,
-    allocator::memory<uint8_t> *output_buffer,
+    allocator<uint8_t> *output_buffer,
     J join){
     
     assert(graph->num_levels == 2);
@@ -31,7 +31,7 @@ namespace tc {
     visited->init_data(0,output_buffer,(R)0);
 
     //setup buffers for the frontier
-    allocator::memory<uint32_t>* frontier_allocator = new allocator::memory<uint32_t>(num_distinct);
+    allocator<uint32_t>* frontier_allocator = new allocator<uint32_t>(num_distinct);
     uint32_t** frontier_buffer = new uint32_t*[NUM_THREADS];
     uint32_t* frontier_sizes = new uint32_t[NUM_THREADS*PADDING];
     for(size_t i = 0; i < NUM_THREADS; i++){

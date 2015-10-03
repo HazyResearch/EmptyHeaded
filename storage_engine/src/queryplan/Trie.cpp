@@ -5,17 +5,14 @@
 * The top level datastructure. This class holds the methods to create the 
 * trie from a table. The TrieBlock class holds the more interesting methods.
 ******************************************************************************/
-#ifndef _TRIE_H_
-#define _TRIE_H_
-
-#include "TrieBlock.hpp"
-#include "Encoding.hpp"
+#include "../emptyheaded.hpp"
 #include "tbb/parallel_sort.h"
 #include "tbb/task_scheduler_init.h"
-
+#include "Trie.hpp"
 /*
 * Recursive sort function to get the relation in order for the trie.
 */
+
 struct SortColumns{
   std::vector<std::vector<uint32_t>> *columns; 
   SortColumns(std::vector<std::vector<uint32_t>> *columns_in){
@@ -30,82 +27,6 @@ struct SortColumns{
     return false;
   }
 };
-
-/*
-* Very simple tree structure stores the trie. All that is needed is the 
-* head and number of levels.  Methods are to build a trie from an encoded
-* table.
-*/
-template<class T, class R>
-struct Trie{
-  bool annotated;
-  size_t num_levels;
-  R annotation = (R)0;
-  TrieBlock<T,R>* head;
-
-  Trie<T,R>(size_t num_levels_in, bool annotated_in){
-    num_levels = num_levels_in;
-    annotated = annotated_in;
-  };
-
-  Trie<T,R>(TrieBlock<T,R>* head_in, size_t num_levels_in, bool annotated_in){
-    num_levels = num_levels_in;
-    head = head_in;
-    annotated = annotated_in;
-  };
-
-  template<typename F>
-  static Trie<T,R>* build(
-    allocator::memory<uint8_t>* data_allocator,
-    std::vector<uint32_t>* max_set_sizes, 
-    std::vector<std::vector<uint32_t>>* attr_in, 
-    std::vector<R>* annotation, 
-    F f);
-
-  template<typename F>
-  void foreach(const F body);
-  
-  template<typename F>
-  void recursive_foreach(
-    TrieBlock<T,R> *current, 
-    const size_t level, 
-    const size_t num_levels,
-    std::vector<uint32_t>* tuple, 
-    const F body);
-  
-  void to_binary(const std::string path);
-
-  static Trie<T,R>* from_binary(std::string path, bool annotated_in);
-};
-
-template<class T, class R> template <typename F>
-void Trie<T,R>::recursive_foreach(
-  TrieBlock<T,R> *current, 
-  const size_t level, 
-  const size_t num_levels,
-  std::vector<uint32_t>* tuple,
-  const F body){
-
-  if(level+1 == num_levels){
-    current->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
-      tuple->push_back(a_d);
-      if(annotated)
-        body(tuple,current->get_data(a_i,a_d));
-      else 
-        body(tuple,(R)0);
-      tuple->pop_back();
-    });
-  } else {
-    current->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
-      //if not done recursing and we have data
-      tuple->push_back(a_d);
-      if(current->get_block(a_i,a_d) != NULL){
-        recursive_foreach(current->get_block(a_i,a_d),level+1,num_levels,tuple,body);
-      }
-      tuple->pop_back(); //delete the last element
-    });
-  }
-}
 
 template<class T, class R>
 void recursive_visit(
@@ -135,158 +56,6 @@ void recursive_visit(
   });
 }
 
-template<class T, class R>
-void recursive_build_binary(
-  const size_t tid,
-  TrieBlock<T,R> *prev, 
-  const size_t level, 
-  const size_t num_levels,
-  std::vector<std::vector<std::ifstream*>>* infiles,
-  allocator::memory<uint8_t> *allocator_in,
-  bool annotated_in){
-
-  auto tup = TrieBlock<T,R>::from_binary(infiles->at(level).at(tid),allocator_in,tid,annotated_in && level+1 == num_levels);
-
-  TrieBlock<T,R>* current = std::get<0>(tup);
-  const uint32_t index = std::get<1>(tup);
-  const uint32_t data = std::get<2>(tup);
-  prev->set_block(index,data,current);
-
-  if(level+1 == num_levels)
-    return;
-
-  current->init_pointers(tid,allocator_in);
-  for(size_t i = 0; i < current->set.cardinality; i++){
-    recursive_build_binary<T,R>(tid,current,level+1,num_levels,infiles,allocator_in,annotated_in);
-  }
-}
-
-/*
-* Write the trie to a binary file 
-*/
-template<class T, class R> template<typename F>
-void Trie<T,R>::foreach(const F body){
-  const Set<T> A = head->set;
-  std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
-  A.foreach_index([&](uint32_t a_i, uint32_t a_d){
-    tuple->push_back(a_d);
-    if(num_levels > 1 && head->get_block(a_i,a_d) != NULL){
-      recursive_foreach(head->get_block(a_i,a_d),1,num_levels,tuple,body);
-    } else if(annotated) {
-      body(tuple,head->get_data(a_i,a_d));
-    } else{
-      body(tuple,(R)0); 
-    }
-    tuple->pop_back(); //delete the last element
-  });
-}
-
-/*
-* Write the trie to a binary file 
-*/
-template<class T, class R>
-void Trie<T,R>::to_binary(const std::string path){
-  //write the number of levels out first
-  std::ofstream *writefile = new std::ofstream();
-  std::string file = path+std::string("levels.bin");
-  writefile->open(file, std::ios::binary | std::ios::out);
-  writefile->write((char *)&num_levels, sizeof(num_levels));
-  writefile->close();
-
-  //open files for writing
-  std::vector<std::vector<std::ofstream*>> writefiles;
-  for(size_t l = 0; l < num_levels; l++){
-    std::vector<std::ofstream*> myv;
-    for(size_t i = 0; i < NUM_THREADS; i++){
-      //prepare the data files (one per level per thread)
-      writefile = new std::ofstream();
-      file = path+std::string("data_l")+std::to_string(l)+std::string("_t")+std::to_string(i)+std::string(".bin");
-      writefile->open(file, std::ios::binary | std::ios::out);
-      myv.push_back(writefile);
-    }
-    writefiles.push_back(myv);
-  }
-
-  //write the data
-  head->to_binary(writefiles.at(0).at(0),0,0,annotated && num_levels ==1);
-  //dump the set contents
-  const Set<T> A = head->set;
-  if(num_levels > 1){
-    A.static_par_foreach_index([&](size_t tid, uint32_t a_i, uint32_t a_d){
-      if(head->get_block(a_i,a_d) != NULL){
-        recursive_visit<T,R>(
-          tid,
-          head->get_block(a_i,a_d),
-          1,
-          num_levels,
-          a_i,
-          a_d,
-          &writefiles,
-          annotated);
-      }
-    });
-  }
-
-  //close the files
-  for(size_t l = 0; l < num_levels; l++){
-    for(size_t i = 0; i < NUM_THREADS; i++){
-      writefiles.at(l).at(i)->close();
-    }
-  }
-}
-
-template<class T, class R>
-Trie<T,R>* Trie<T,R>::from_binary(const std::string path, bool annotated_in){
-  size_t num_levels_in;
-  //first read the number of levels
-  std::ifstream *infile = new std::ifstream();
-  std::string file = path+std::string("levels.bin");
-  infile->open(file, std::ios::binary | std::ios::in);
-  infile->read((char *)&num_levels_in, sizeof(num_levels_in));
-  infile->close();
-
-  //open files for reading
-  std::vector<std::vector<std::ifstream*>> infiles;
-  for(size_t l = 0; l < num_levels_in; l++){
-    std::vector<std::ifstream*> myv;
-    for(size_t i = 0; i < NUM_THREADS; i++){
-      infile = new std::ifstream();
-      file = path+std::string("data_l")+std::to_string(l)+std::string("_t")+std::to_string(i)+std::string(".bin");
-      infile->open(file, std::ios::binary | std::ios::in);
-      myv.push_back(infile);
-    }
-    infiles.push_back(myv);
-  }
-
-  allocator::memory<uint8_t> *allocator_in = new allocator::memory<uint8_t>(10000); //TODO Fix this.
-  auto tup = TrieBlock<T,R>::from_binary(infiles.at(0).at(0),allocator_in,0,annotated_in && num_levels_in == 1);
-  TrieBlock<T,R>* head = std::get<0>(tup);  
-  head->init_pointers(0,allocator_in);
-  const Set<T> A = head->set;
-  //use the same parallel call so we read in properly
-  if(num_levels_in > 1){
-    A.static_par_foreach_index([&](size_t tid, uint32_t a_i, uint32_t a_d){
-      (void) a_d; (void) a_i;
-      recursive_build_binary<T,R>(
-        tid,
-        head,
-        1,
-        num_levels_in,
-        &infiles,
-        allocator_in,
-        annotated_in);
-    });
-  }
-
-  //close the files
-  for(size_t l = 0; l < num_levels_in; l++){
-    for(size_t i = 0; i < NUM_THREADS; i++){
-      infiles.at(l).at(i)->close();
-    }
-  }
-
-  return new Trie<T,R>(head,num_levels_in,annotated_in);
-}
 /*
 * Given a range of values figure out the distinct values to go in the set.
 */
@@ -330,24 +99,12 @@ void encode_tail(size_t start, size_t end, uint32_t *data, std::vector<uint32_t>
   }
 }
 
-/*
-* We opitionally provide the ability to materialize selections while building the trie.
-*/
-template<typename F>
-uint32_t* perform_selection(uint32_t *iterator, size_t num_rows, F f){
-  for(size_t i = 0; i < num_rows; i++){
-    if(f(i)){
-      *iterator++ = i; 
-    }
-  }
-  return iterator;
-}
 
 /*
 * Produce a TrieBlock
 */
 template<class B, class T, class R>
-B* build_block(const size_t tid, allocator::memory<uint8_t> *data_allocator, 
+B* build_block(const size_t tid, allocator<uint8_t> *data_allocator, 
   const size_t set_size, uint32_t *set_data_buffer){
 
   B *block = (B*)data_allocator->get_next(tid,sizeof(B),BYTES_PER_CACHELINE);
@@ -374,7 +131,7 @@ void recursive_build(
   const size_t num_levels, 
   const size_t tid, 
   std::vector<std::vector<uint32_t>> *attr_in,
-  allocator::memory<uint8_t> *data_allocator, 
+  allocator<uint8_t> *data_allocator, 
   std::vector<size_t*> *ranges_buffer, 
   std::vector<uint32_t*> *set_data_buffer, 
   uint32_t *indicies,
@@ -420,19 +177,23 @@ void recursive_build(
   }
 }
 
-template<class T, class R> template <typename F>
-inline Trie<T,R>* Trie<T,R>::build(
-  allocator::memory<uint8_t>* data_allocator,
+template<class T, class R>
+Trie<T,R>* Trie<T,R>::build(
   std::vector<uint32_t>* max_set_sizes, 
   std::vector<std::vector<uint32_t>> *attr_in,
-  std::vector<R>* annotation, 
-  F f){
+  std::vector<R>* annotation){
+
+  allocator<uint8_t>* data_allocator = new allocator<uint8_t>(1000);
   const size_t num_levels_in = attr_in->size();
   const size_t num_rows = attr_in->at(0).size();
 
   //Filter rows via selection and sort for the Trie
   uint32_t *indicies = new uint32_t[num_rows];
-  uint32_t *iterator = perform_selection(indicies,num_rows,f);
+  uint32_t *iterator = indicies;
+  for(size_t i = 0; i < num_rows; i++){
+    *iterator++ = i; 
+  }
+
   const size_t num_rows_post_filter = iterator-indicies;
 
   tbb::task_scheduler_init init(NUM_THREADS);
@@ -511,4 +272,3 @@ inline Trie<T,R>* Trie<T,R>::build(
 
   return new Trie<T,R>(new_head,num_levels_in,annotation->size()!=0);
 }
-#endif

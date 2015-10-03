@@ -8,50 +8,50 @@
 * distinct 32 bit integers assigned to each value.
 ******************************************************************************/
 
-#ifndef _ENCODING_H_
-#define _ENCODING_H_
-
-#include <mutex>
-#include <unordered_map>
-#include <unordered_set>
-#include <map>
 #include "tbb/parallel_sort.h"
+#include "Encoding.hpp"
+#include "Parallel.hpp"
+#include <iostream>
+#include <fstream>
+#include "../emptyheaded.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 //Stores the maps for the dictionary encoding.
+
+//Given a column add its values to the encoding.
 template <class T>
-struct Encoding{
-  std::unordered_map<T,uint32_t> value_to_key;
-  std::vector<T> key_to_value;
-  uint32_t num_distinct;
-
-  Encoding(){
-    num_distinct = 0;
+void Encoding<T>::build(std::set<T>* values){
+  for (auto it = values->begin(); it != values->end(); it++) {
+    T value = *it;
+    value_to_key.insert(std::pair<T,uint32_t>(value,num_distinct++));
+    key_to_value.push_back(value);
   }
-  ~Encoding(){}
+}
 
-  //Given a column add its values to the encoding.
-  template <class K>
-  void build(K* encodingMap){
-    encodingMap->foreach([&](T value){
-      value_to_key.insert(std::pair<T,uint32_t>(value,num_distinct++));
-      key_to_value.push_back(value);
-    });
+template <class T>
+void Encoding<T>::build(std::vector<T>* values){
+  for (auto it = values->begin(); it != values->end(); it++) {
+    T value = *it;
+    value_to_key.insert(std::pair<T,uint32_t>(value,num_distinct++));
+    key_to_value.push_back(value);
   }
+}
 
-  std::vector<uint32_t>* encode_column(std::vector<T>* encodingMap){
-    std::vector<uint32_t>* column = new std::vector<uint32_t>();
-    column->resize(encodingMap->size());
-    par::for_range(0,encodingMap->size(),100,[&](size_t tid, size_t i){
-      (void) tid;
-      column->at(i) = value_to_key.at(encodingMap->at(i));
-    });
-    return column;
-  }
-
-  void to_binary(const std::string path);
-  static Encoding<T>* from_binary(const std::string path);
-};
+template<class T>
+std::vector<uint32_t>* Encoding<T>::encode_column(std::vector<T>* encodingMap){
+  std::vector<uint32_t>* column = new std::vector<uint32_t>();
+  std::cout << "size: " << encodingMap->size() << std::endl;
+  column->resize(encodingMap->size());
+  par::for_range(0,encodingMap->size(),100,[&](size_t tid, size_t i){
+    (void) tid;
+    std::cout << "a" << std::endl;
+    std::cout << encodingMap->at(i) << std::endl;
+    std::cout << "b" << std::endl;
+    column->at(i) = value_to_key.at(encodingMap->at(i));
+  });
+  std::cout << "here" << std::endl;
+  return column;
+}
 
 //Writing strings to a binary file is slightly tricky thus we have to use template specialization.
 template<>
@@ -83,6 +83,7 @@ Encoding<std::string>* Encoding<std::string>::from_binary(const std::string path
 
     return new_encoding;
 }
+
 template<class T>
 Encoding<T>* Encoding<T>::from_binary(const std::string path){
     std::ifstream *infile = new std::ifstream();
@@ -137,4 +138,7 @@ void Encoding<T>::to_binary(const std::string path){
     writefile->close();
 }
 
-#endif
+
+template struct Encoding<long>;
+//template void Encoding<SortableEncodingMap<long>>;
+//template void Encoding<FrequencyEncodingMap<long>>;

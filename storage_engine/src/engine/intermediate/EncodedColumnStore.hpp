@@ -7,18 +7,18 @@
 * type of the column. 
 ******************************************************************************/
 
-#ifndef _ENCODED_RELATION_H_
-#define _ENCODED_RELATION_H_
+#ifndef _ENCODED_COLUMN_STORE_H_
+#define _ENCODED_COLUMN_STORE_H_
 
 template<class R>
-struct EncodedRelation {
+struct EncodedColumnStore {
   std::vector<std::vector<uint32_t>> data;
   std::vector<uint32_t> max_set_size;
   std::vector<R> annotation;
-  EncodedRelation(std::vector<R>* annotation_in){
+  EncodedColumnStore(std::vector<R>* annotation_in){
     annotation = *annotation_in;
   }
-  EncodedRelation(
+  EncodedColumnStore(
     std::vector<std::vector<uint32_t>> data_in, 
     std::vector<uint32_t> num_distinct_in,
     std::vector<R> annotation_in){
@@ -60,7 +60,7 @@ struct EncodedRelation {
     writefile->close();
   }
   
-  static EncodedRelation<R>* from_binary(std::string path){
+  static EncodedColumnStore<R>* from_binary(std::string path){
     std::ifstream *infile = new std::ifstream();
     std::string file = path+std::string("encoded.bin");
     infile->open(file, std::ios::binary | std::ios::in);
@@ -98,7 +98,7 @@ struct EncodedRelation {
       infile->read((char *)&value, sizeof(value));
       annotation_in->at(j) = value;
     }
-    return new EncodedRelation<R>(data_in,max_set_size_in,*annotation_in);
+    return new EncodedColumnStore<R>(data_in,max_set_size_in,*annotation_in);
   }
 
 };

@@ -3,8 +3,8 @@
 
 #include "../utils/utils.hpp"
 #include "Column.hpp"
-#include "EncodedRelation.hpp"
+#include "EncodedColumnStore.hpp"
 #include "EncodingMap.hpp"
-#include "Relation.hpp"
+#include "ColumnStore.hpp"
 
 #endif

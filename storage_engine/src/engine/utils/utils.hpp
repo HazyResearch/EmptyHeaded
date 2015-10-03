@@ -9,8 +9,8 @@
 #define UTILS_H
 
 #include "io.hpp"
-#include "parallel.cpp"
-#include "allocator.hpp"
+#include "../../queryplan/parallel.hpp"
+#include "../../queryplan/allocator.hpp"
 //#include "pcm_helper.hpp"
 #include "debug.hpp"
 
