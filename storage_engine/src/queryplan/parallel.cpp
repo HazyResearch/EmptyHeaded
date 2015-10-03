@@ -41,9 +41,6 @@ namespace par{
 
   size_t for_range(const size_t from, const size_t to, const size_t block_size, std::function<void(size_t, size_t)> body) {
     const size_t range_len = to - from;
-    
-        std::cout << "HERE" << std::endl;
-
     const size_t actual_block_size = (block_size > range_len) ? 1:block_size; 
     thread_pool::init_threads();
     parFor::next_work = 0;
@@ -54,12 +51,9 @@ namespace par{
     parFor::body = body;
     parFor **pf = new parFor*[NUM_THREADS];
     for(size_t k = 0; k < NUM_THREADS; k++) { 
-      std::cout << "HERE: " << k << std::endl;
       pf[k] = new parFor(k);
-      std::cout << "par for created" << std::endl;
       thread_pool::submitWork(k,thread_pool::general_body<parFor>,(void *)(pf[k]));
     }
-    std::cout << "joining" << std::endl;
     thread_pool::join_threads();
     for(size_t k = 0; k < NUM_THREADS; k++) { 
       delete pf[k];

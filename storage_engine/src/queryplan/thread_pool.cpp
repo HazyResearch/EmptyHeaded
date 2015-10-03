@@ -79,7 +79,6 @@ namespace thread_pool {
 
   void submitWork(size_t threadId, void *(*work) (void *), void *arg) {
     pthread_mutex_lock(&locks[threadId]);
-    std::cout << "threadID" << threadId << std::endl;
 
     while (argPool[threadId] != NULL) {
       pthread_cond_wait(&doneConds[threadId], &locks[threadId]);

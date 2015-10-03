@@ -40,16 +40,11 @@ void Encoding<T>::build(std::vector<T>* values){
 template<class T>
 std::vector<uint32_t>* Encoding<T>::encode_column(std::vector<T>* encodingMap){
   std::vector<uint32_t>* column = new std::vector<uint32_t>();
-  std::cout << "size: " << encodingMap->size() << std::endl;
   column->resize(encodingMap->size());
   par::for_range(0,encodingMap->size(),100,[&](size_t tid, size_t i){
     (void) tid;
-    std::cout << "a" << std::endl;
-    std::cout << encodingMap->at(i) << std::endl;
-    std::cout << "b" << std::endl;
     column->at(i) = value_to_key.at(encodingMap->at(i));
   });
-  std::cout << "here" << std::endl;
   return column;
 }
 
