@@ -5,7 +5,7 @@ GHD::GHD(){
 	thread_pool::initializeThreadPool();
 }
 
-void* GHD::run(){
+std::pair<size_t,void*> GHD::run(){
   ////////////////////emitAllocators////////////////////
   allocator<uint8_t> *output_buffer =
       new allocator<uint8_t>(10000);
@@ -23,7 +23,7 @@ void* GHD::run(){
   {
     auto start_time = debug::start_clock();
     tsv_reader f_reader(
-        "/Users/caberger/Documents/Research/data/higgs/edgelist/duplicate_pruned.tsv");
+        "/Users/caberger/Documents/Research/data/simple.tsv");
     char *next = f_reader.tsv_get_first();
     while (next != NULL) {
       node_encodingMap->update(R->append_from_string<0>(next));
@@ -57,22 +57,22 @@ void* GHD::run(){
 
   ////////////////////emitBuildTrie////////////////////
 
-  Trie<hybrid,void *> *Trie_R_0_1 = NULL;
+  Trie<void *> *Trie_R_0_1 = NULL;
   {
     auto start_time = debug::start_clock();
     // buildTrie
-    Trie_R_0_1 = new Trie<hybrid,void *>( &Encoded_R->max_set_size,
+    Trie_R_0_1 = new Trie<void *>( &Encoded_R->max_set_size,
         &Encoded_R->data, &Encoded_R->annotation);
     debug::stop_clock("BUILDING TRIE R_0_1", start_time);
   }
 
-  Trie<hybrid,long> *Trie_Triangle_;
+  Trie<long> *Trie_Triangle_;
   {
     auto query_time = debug::start_clock();
     ////////////////////NPRR BAG bag_R_abc////////////////////
-    Trie<hybrid,long> *Trie_bag_R_abc =
-        new (output_buffer->get_next(0, sizeof(Trie<hybrid,long>)))
-            Trie<hybrid,long>(0, true);
+    Trie<long> *Trie_bag_R_abc =
+        new (output_buffer->get_next(0, sizeof(Trie<long>)))
+            Trie<long>(0, true);
     {
       auto start_time = debug::start_clock();
       allocator<uint8_t> *a_buffer =
@@ -134,7 +134,9 @@ void* GHD::run(){
     Trie_Triangle_ = Trie_bag_R_abc;
     debug::stop_clock("QUERY TIME", query_time);
   }
-  std::cout << "Query Result: " << Trie_Triangle_->annotation << std::endl;
 
-  return (void*)Trie_Triangle_;
+  size_t num_rows = Trie_Triangle_->annotation;
+  void* result = Trie_Triangle_;
+
+  return std::make_pair(num_rows,result);
 }

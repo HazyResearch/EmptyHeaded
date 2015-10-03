@@ -48,8 +48,8 @@ $(APPS_EXES): $(EXEDIR)
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(@) -c $(@:build%.o=src%.cpp)
 
-codegen:
-	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/Query.o -c src/codegen/Query.cpp -Isrc
+cgen:
+	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/Query.o -c codegen/Query.cpp -Isrc
 	$(CXX) -shared -o lib$(@).so $(OBJDIR)/Query.o -L$(OBJDIR) -lemptyheaded $(LIBS)
 	mv *.so ../python
 
