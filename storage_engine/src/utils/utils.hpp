@@ -9,10 +9,11 @@
 #define UTILS_H
 
 #include "io.hpp"
-#include "../../queryplan/parallel.hpp"
-#include "../../queryplan/allocator.hpp"
-//#include "pcm_helper.hpp"
+#include "parallel.hpp"
+#include "thread_pool.hpp"
+#include "allocator.hpp"
 #include "debug.hpp"
+#include "common.hpp"
 
 namespace utils {
   //takes strings and casts them to proper type. To ease code generation

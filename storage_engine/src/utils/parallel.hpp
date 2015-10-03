@@ -1,7 +1,7 @@
 #ifndef PARALLEL_H
 #define PARALLEL_H
 
-#include "../engine/utils/common.hpp"
+#include "common.hpp"
 
 namespace par{
   template<class T>

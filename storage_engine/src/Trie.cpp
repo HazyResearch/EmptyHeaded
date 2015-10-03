@@ -5,10 +5,10 @@
 * The top level datastructure. This class holds the methods to create the 
 * trie from a table. The TrieBlock class holds the more interesting methods.
 ******************************************************************************/
-#include "../emptyheaded.hpp"
 #include "tbb/parallel_sort.h"
 #include "tbb/task_scheduler_init.h"
 #include "Trie.hpp"
+#include "trie/TrieBlock.hpp"
 /*
 * Recursive sort function to get the relation in order for the trie.
 */

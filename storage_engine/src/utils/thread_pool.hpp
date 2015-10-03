@@ -2,7 +2,7 @@
 #define THREAD_POOL_H
 
 #ifdef __APPLE__
-#include "../engine/utils/pthread_barrier.hpp"
+#include "pthread_barrier.hpp"
 #endif // __APPLE__
 
 namespace thread_pool {  

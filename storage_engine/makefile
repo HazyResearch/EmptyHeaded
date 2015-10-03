@@ -3,8 +3,9 @@ override CXXFLAGS += -mavx -std=c++0x -pedantic -O3 -Wall -Wno-unused-function -
 OBJDIR=build
 EXEDIR=bin
 HEADERS=$(wildcard include/*hpp)
-SOURCES=$(wildcard src/queryplan/*cpp)
-OBJECTS=$(SOURCES:src/queryplan/%.cpp=$(OBJDIR)/%.o)
+SOURCES=$(shell find src -name "*cpp")
+#STRIPPED=$(notdir $(SOURCES))
+OBJECTS=$(SOURCES:src/%.cpp=$(OBJDIR)/%.o)
 
 ifdef NO_VECTOR
 	override CXXFLAGS += -fno-tree-vectorize -DVECTORIZE=0
@@ -36,18 +37,19 @@ all: $(APPS_EXES) $(TOOLS_EXES) $(SERVER_EXES)
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
+	mkdir -p $(OBJDIR)/utils
 
 $(EXEDIR):
 	mkdir -p $(EXEDIR)
 
 $(APPS_EXES): $(EXEDIR)
-	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc/queryplan
+	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
 
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
-	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $@ -c $(@:build%.o=src/queryplan%.cpp)
+	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(@) -c $(@:build%.o=src%.cpp)
 
 codegen:
-	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/Query.o -c src/codegen/Query.cpp -Isrc/queryplan
+	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/Query.o -c src/codegen/Query.cpp -Isrc
 	$(CXX) -shared -o lib$(@).so $(OBJDIR)/Query.o -L$(OBJDIR) -lemptyheaded $(LIBS)
 	mv *.so ../python
 

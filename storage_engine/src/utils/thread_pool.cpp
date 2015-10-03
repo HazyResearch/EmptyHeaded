@@ -2,7 +2,7 @@
 #define THREAD_POOL_H
 
 #include "parallel.hpp"
-#include "../engine/utils/debug.hpp"
+#include "debug.hpp"
 #include <thread>
 #include <atomic>
 #include <cstring>
@@ -10,7 +10,7 @@
 #include <sched.h>
 
 #ifdef __APPLE__
-#include "../engine/utils/pthread_barrier.hpp"
+#include "pthread_barrier.hpp"
 #endif // __APPLE__
 
 namespace thread_pool {

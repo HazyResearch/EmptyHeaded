@@ -10,10 +10,9 @@
 
 #include "tbb/parallel_sort.h"
 #include "Encoding.hpp"
-#include "Parallel.hpp"
 #include <iostream>
 #include <fstream>
-#include "../emptyheaded.hpp"
+#include "utils/Parallel.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 //Stores the maps for the dictionary encoding.

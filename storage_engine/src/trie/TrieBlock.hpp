@@ -1,6 +1,7 @@
 #ifndef _TRIEBLOCK_H_
 #define _TRIEBLOCK_H_
 
+#include "../utils/utils.hpp"
 #include "set/ops.hpp"
 
 template<class T, class R>

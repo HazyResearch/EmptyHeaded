@@ -168,4 +168,3 @@ void allocator<T>::free(){
 template struct allocator<uint32_t>;
 template struct allocator<uint64_t>;
 template struct allocator<uint8_t>;
-  

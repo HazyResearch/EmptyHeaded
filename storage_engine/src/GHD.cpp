@@ -1,8 +1,5 @@
-#include "ghd.hpp"
-#include "Trie.hpp"
-#include "Encoding.hpp"
-#include "thread_pool.hpp"
-#include "../emptyheaded.hpp"
+#include "GHD.hpp"
+#include "emptyheaded.hpp"
 
 GHD::GHD(){
 	thread_pool::initializeThreadPool();

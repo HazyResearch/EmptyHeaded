@@ -6,7 +6,7 @@
 #ifndef _TRANSITIVE_CLOSURE_H_
 #define _TRANSITIVE_CLOSURE_H_
 
-#include "Trie.hpp"
+#include "emtpyheaded.hpp"
 
 namespace tc {
 
