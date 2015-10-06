@@ -5,6 +5,7 @@ import querytemplate
 def compileAndRun(f,name):
 	#generate C++ code
 	code = f()
+	os.system("mkdir -p ../storage_engine/generated")
 	cppfile = open("../storage_engine/generated/"+name+".cpp","w")
 	cppfile.write(code)
 	cppfile.close()
