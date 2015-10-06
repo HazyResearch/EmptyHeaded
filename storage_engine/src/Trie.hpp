@@ -54,6 +54,9 @@ struct Trie{
     const size_t num_levels,
     std::vector<uint32_t>* tuple, 
     const std::function<void(std::vector<uint32_t>*,R)> body);
+
+  void to_binary(const std::string path);
+  static Trie<R>* from_binary(std::string path, bool annotated_in);
 };
 
 #endif

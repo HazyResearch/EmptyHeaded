@@ -42,7 +42,7 @@ $(OBJDIR):
 $(EXEDIR):
 	mkdir -p $(EXEDIR)
 
-$(APPS_EXES): $(EXEDIR)
+$(APPS_EXES): $(EXEDIR) emptyheaded
 	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
 
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
