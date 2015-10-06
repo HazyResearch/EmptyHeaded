@@ -1,0 +1,24 @@
+import os
+import codegenerator.createDB
+import codegenerator.env
+
+environment = codegenerator.env.Environment()
+
+def createDB(name):
+	db_config="/Users/caberger/Documents/Research/code/databases/higgs/config_pruned.json"
+	codegenerator.createDB.fromJSON(db_config,environment)
+	environment.dump()
+
+def main():
+	db_config="/Users/caberger/Documents/Research/code/databases/higgs/config_pruned.json"
+	createDB(db_config)
+	com="""
+	compileQuery("query1")
+ 	q1 = loadQuery("query1")
+ 	q1_result = q1.run()
+ 	print q1.num_rows(q1_result)
+ 	q1.fetch_data(q1_result)
+ 	"""
+
+
+if __name__ == "__main__": main()
