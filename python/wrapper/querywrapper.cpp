@@ -1,3 +1,4 @@
+
 #include "querywrapper.hpp"
 
 //this is what is code generated
@@ -45,16 +46,11 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
   Query<long,long,long>* v = (Query<long,long,long>*)PyCObject_AsVoidPtr(p);  
   PyObject * key_1_o = PyLong_FromLong(2);
 
-  std::vector<long> c1 = std::get<0>(v->fetch_result());
-  for(size_t i = 0; i < c1.size(); i++){
-    printf("%ld\n",c1.at(i));
-  }
-
   Py_INCREF(key_1_o);
   return key_1_o;
 }
 
-PyMODINIT_FUNC initquery1(void)
+PyMODINIT_FUNC initload_R(void)
 {
-  Py_InitModule("query1", EmptyHeadedQueryMethods);
+  Py_InitModule("load_R", EmptyHeadedQueryMethods);
 }
