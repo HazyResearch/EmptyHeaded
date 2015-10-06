@@ -25,7 +25,7 @@ def compileAndRun(f,name):
 #Code generation methods
 def loadRelationCode():
 	return """
-  std::cout << "in FUCK land" << std::endl;
+  std::cout << "in HEREs land" << std::endl;
   GHD* a = new GHD();
   auto ret_result = a->run();
   num_rows = std::get<0>(ret_result);
@@ -37,7 +37,8 @@ def loadRelation(relation,env):
 	return querytemplate.getCode(runCode)
 
 def buildTrie(ordering,relation,env):
-	print "codegen"
+	i = "codegen"
+	#print "codegen"
 
 def nprr():
 	print "nprr"

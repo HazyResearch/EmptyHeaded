@@ -14,21 +14,18 @@ def generateAllOrderings(num):
 
 def printLoadedRelation(relation):
 	printraw("\t" + relation["name"] + "(")
-	for attr in relation["attributes"]:
-		printraw(attr["encoding"] + ":" + attr["type"] + ",")
+	printRels = map(lambda x: str(x["encoding"]+":"+x["type"]),relation["attributes"])
+	printraw(",".join(printRels))
 	print ")"
 
 def fromJSON(path,env):
 	data = json.load(open(path))
 	relations = data.pop("relations",0)
 	env.setup(data)
-	printraw("Loading Relations..")
 	for relation in relations:
 		libname = "load_"+relation["name"]
 		cppgenerator.compileAndRun(lambda: cppgenerator.loadRelation(relation,env),libname)
-	print "DONE!"
 
-	printraw("Building database..")
 	for relation in relations:
 		attributes = relation["attributes"]
 		#grab the orderings (create them if all is specified)
@@ -37,7 +34,6 @@ def fromJSON(path,env):
 			orderings = generateAllOrderings(len(attributes))
 		for ordering in orderings:
 			cppgenerator.buildTrie(ordering,relation,env)
-	print "DONE!"
 
 	print "Created database with the following relations: "
 	for relation in relations:
