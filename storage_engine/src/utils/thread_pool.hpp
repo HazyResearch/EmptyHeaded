@@ -5,21 +5,30 @@
 #include "pthread_barrier.hpp"
 #endif // __APPLE__
 
-namespace thread_pool {  
+struct thread_pool { 
+  static pthread_barrier_t barrier; // barrier synchronization object 
+  static pthread_t* threadPool;
+  static pthread_mutex_t* locks;
+  static pthread_cond_t* readyConds;
+  static pthread_cond_t* doneConds;
+
+  static void** workPool;
+  static void** argPool;
+
   template<class F>
-  void* general_body(void *args_in);
+  static void* general_body(void *args_in);
 
   //init a thread barrier
-  void init_threads();
+  static void init_threads();
   //join threads on the thread barrier
-  void join_threads();
+  static void join_threads();
 
-  void initializeThread(size_t threadId);
+  static void initializeThread(size_t threadId);
 
-  void submitWork(size_t threadId, void *(*work) (void *), void *arg);
+  static void submitWork(size_t threadId, void *(*work) (void *), void *arg);
 
-  void* processWork(void* threadId);
-  void initializeThreadPool();
-  void deleteThreadPool();
-}
+  static void* processWork(void* threadId);
+  static void initializeThreadPool();
+  static void deleteThreadPool();
+};
 #endif

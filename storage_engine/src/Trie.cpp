@@ -196,10 +196,8 @@ Trie<R>::Trie(
 
   const size_t num_rows_post_filter = iterator-indicies;
 
-  std::cout << "tbb" << std::endl;
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
-  std::cout << "end tbb" << std::endl;
 
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();
@@ -233,13 +231,11 @@ Trie<R>::Trie(
   if(num_levels_in > 1){
     new_head->init_pointers(0,data_allocator);
     
-    std::cout << "par for1" << std::endl;
     par::for_range(0,head_range,100,[&](size_t tid, size_t i){
       (void) tid;
       new_head->next_level[i] = NULL;
     });
 
-    std::cout << "par for" << std::endl;
     par::for_range(0,head_size,100,[&](size_t tid, size_t i){
       //some sort of recursion here
       const size_t start = ranges_buffer->at(0)[i];

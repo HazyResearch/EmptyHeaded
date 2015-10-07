@@ -44,6 +44,9 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 	mkdir -p $(OBJDIR)/utils
 
+$(LIBDIR):
+	mkdir -p ../libs
+
 $(EXEDIR):
 	mkdir -p $(EXEDIR)
 
@@ -62,10 +65,11 @@ $(CODEGEN):
 	rm -rf $(OBJDIR)/$(@).o
 	mv lib$(@).so ../libs/.
 
-emptyheaded: $(OBJDIR) $(OBJECTS)
-	ar rvs $(OBJDIR)/lib$(@).a $(OBJECTS)
+emptyheaded: $(OBJDIR) $(OBJECTS) $(LIBDIR)
+	#ar rvs $(OBJDIR)/lib$(@).a $(OBJECTS)
 	$(CXX) -shared -o lib$(@).so $(OBJECTS) $(LIBS)
-	mv lib$(@).so ../libs/.
+	cp -f lib$(@).so ../libs/.
+	mv lib$(@).so $(OBJDIR)/.
 
 tests: $(TESTS_EXES)
 

@@ -12,5 +12,6 @@ Query::Query(){
 
 void Query::run(){
   %(run)s
+  thread_pool::deleteThreadPool();
 }
 """% locals()
