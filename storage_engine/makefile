@@ -31,6 +31,11 @@ APPS_SOURCES=$(shell ls apps)
 APPS=$(APPS_SOURCES:.cpp=)
 APPS_EXES=$(APPS:%=$(EXEDIR)/%)
 
+CODEGEN_SOURCES=$(shell ls generated)
+CODEGEN=$(CODEGEN_SOURCES:.cpp=)
+$(info $(CODEGEN))
+CODEGEN_EXES=$(CODEGEN:%=$(EXEDIR)/%)
+
 LIBS=-ltbb -lpthread
 
 all: $(APPS_EXES) $(TOOLS_EXES) $(SERVER_EXES)
@@ -45,17 +50,22 @@ $(EXEDIR):
 $(APPS_EXES): $(EXEDIR) emptyheaded
 	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
 
+$(CODEGEN_EXES): $(EXEDIR) emptyheaded
+	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
+
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(@) -c $(@:build%.o=src%.cpp)
 
-cgen:
-	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/Query.o -c codegen/Query.cpp -Isrc
-	$(CXX) -shared -o lib$(@).so $(OBJDIR)/Query.o -L$(OBJDIR) -lemptyheaded $(LIBS)
-	mv *.so ../python
+$(CODEGEN):
+	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/$(@).o -c generated/$(@).cpp -Isrc
+	$(CXX) -shared -o lib$(@).so $(OBJDIR)/$(@).o -L$(OBJDIR) -lemptyheaded $(LIBS)
+	rm -rf $(OBJDIR)/$(@).o
+	mv lib$(@).so ../libs/.
 
 emptyheaded: $(OBJDIR) $(OBJECTS)
 	ar rvs $(OBJDIR)/lib$(@).a $(OBJECTS)
 	$(CXX) -shared -o lib$(@).so $(OBJECTS) $(LIBS)
+	mv lib$(@).so ../libs/.
 
 tests: $(TESTS_EXES)
 

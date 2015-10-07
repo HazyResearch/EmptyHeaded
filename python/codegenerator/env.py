@@ -3,7 +3,6 @@ from pprint import pprint
 
 class Environment:
 	config = {}
-	dbPath = ""
 	relations = {} 
 	# {R:[
 		#orderings:[{

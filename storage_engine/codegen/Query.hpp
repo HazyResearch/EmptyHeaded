@@ -7,19 +7,28 @@
 #include "Trie.hpp"
 #include "Encoding.hpp"
 
+#ifdef EXECUTABLE
+#include "main.hpp"
+#else
+struct application{};
+#endif
+
 //template types are the types of the attributes, followed by the type of the annotation
-template<class T,class R,class A>
-struct Query {
+struct Query : public application {
   uint64_t num_rows; // = 0;
-  Trie<long>* result;
-  std::tuple<Encoding<T>,Encoding<R>> encodings;
+  void* result;
+  void* encodings;
 
 	Query();
 	void run();
 
-  std::tuple<std::vector<T>,std::vector<R>,std::vector<A>> 
-  fetch_result(); //TO DO implement something that iterates over the trie an returns the tuples
+  void fetch_result(); //TO DO implement something that iterates over the trie an returns the tuples
 };
 
+#ifdef EXECUTABLE
+application* init_app(){
+  return new Query(); 
+}
+#endif
 
 #endif

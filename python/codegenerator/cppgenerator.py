@@ -1,44 +1,90 @@
 import cppexecutor
 import os
 import querytemplate
+from sets import Set
+import codeCreateDB
 
-def compileAndRun(f,name):
+def generate(f,name):
 	#generate C++ code
 	code = f()
 	os.system("mkdir -p ../storage_engine/generated")
 	cppfile = open("../storage_engine/generated/"+name+".cpp","w")
 	cppfile.write(code)
 	cppfile.close()
+	os.system("clang-format -style=llvm -i ../storage_engine/generated/"+name+".cpp")
 
+def compileC(name):
 	#compile C++ code
-	os.chdir("../storage_engine/codegen")
-	os.system("ln -sfn ../generated/"+name+".cpp Query.cpp")
-	os.chdir("..")
-	os.system("make cgen >/dev/null 2>&1")
+	os.chdir("../storage_engine")
+	try:
+		os.system("make "+name+" >/dev/null")
+	except:
+		print "C++ compilation failed"
+		sys.exit(1)
+
 	os.chdir("../python")
 
+def compileAndRun(f,name):
+	generate(f,name)
+	compileC(name)
 	#generates python wrapper and excutes C++ code
 	cppexecutor.execute(name)
 
-
 ##########
 #Code generation methods
-def loadRelationCode():
-	return """
-  std::cout << "in HEREs land" << std::endl;
-  GHD* a = new GHD();
-  auto ret_result = a->run();
-  num_rows = std::get<0>(ret_result);
-  result = (Trie<A>*)std::get<1>(ret_result);
- """
+def loadRelationCode(relations,env):
+	encodings = Set()
+	code = ""
+	os.system("mkdir -p " + env.config["database"])
+	os.system("mkdir -p " + env.config["database"] + "/encodings")
+	os.system("mkdir -p " + env.config["database"] + "/relations")
 
-def loadRelation(relation,env):
-	runCode = loadRelationCode()
-	return querytemplate.getCode(runCode)
+	for relation in relations:
+		os.system("mkdir -p " + env.config["database"] + "/relations/"+relation["name"])
 
-def buildTrie(ordering,relation,env):
-	i = "codegen"
-	#print "codegen"
+		types = ",".join(list(map(lambda x: str(x["type"]),relation["attributes"])))
+		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["type"])),relation["attributes"]))
+
+		code += codeCreateDB.declareColumnStore(relation["name"],types)
+		code += codeCreateDB.declareAnnotationStore(relation["annotation"])
+		for e in set(relencodings):
+			encodings.add(e)
+			code += codeCreateDB.declareEncoding(e)
+		code += codeCreateDB.readRelationFromTSV(relation["name"],relencodings,relation["source"])
+
+	for encoding in encodings:
+		name,types = encoding
+		os.system("mkdir -p " + env.config["database"] + "/encodings/"+name)
+		code += codeCreateDB.buildAndDumpEncoding(env.config["database"],encoding)
+	
+	for relation in relations:
+		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["type"])),relation["attributes"]))
+		code += codeCreateDB.encodeRelation(
+			env.config["database"],
+			relation["name"],
+			relencodings,
+			relation["annotation"])
+	return code
+
+
+
+def loadRelations(relations,env):
+	include = """#include "emptyheaded.hpp" """
+	runCode = loadRelationCode(relations,env)
+	return querytemplate.getCode(include,runCode)
+
+def buildTrie(orderings,relation,env):
+	include = """#include "emptyheaded.hpp" """
+	code = codeCreateDB.loadEncodedRelation(env.config["database"],relation["name"])
+	for ordering in orderings:
+		roname = relation["name"] + "_" + "_".join(map(str,ordering))
+		os.system("mkdir -p " + env.config["database"] + "/relations/"+relation["name"]+"/"+roname)
+		code += codeCreateDB.buildOrder(
+			env.config["database"],
+			relation["name"],
+			ordering,
+			relation["annotation"])
+	return querytemplate.getCode(include,code)
 
 def nprr():
 	print "nprr"

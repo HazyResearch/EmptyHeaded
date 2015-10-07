@@ -6,7 +6,7 @@ def getCode(name):
 
 static void free_my_struct(void * p)
 {
-  free((Query<long,long,long>*)p);
+  free((Query*)p);
 }
 
 static PyObject * run(PyObject * self, PyObject * args)
@@ -15,9 +15,7 @@ static PyObject * run(PyObject * self, PyObject * args)
     return NULL;
   }
 
-  printf("running");
-
-  Query<long,long,long>* q = new Query<long,long,long>();
+  Query* q = new Query();
   q->run();
 
   return PyCObject_FromVoidPtr(q, free_my_struct);
@@ -30,7 +28,7 @@ static PyObject * num_rows(PyObject * self, PyObject * args){
     return NULL;
   }
 
-  Query<long,long,long>* v = (Query<long,long,long>*)PyCObject_AsVoidPtr(p);  
+  Query* v = (Query*)PyCObject_AsVoidPtr(p); 
   PyObject * key_1_o = PyLong_FromLong(v->num_rows);
 
   Py_INCREF(key_1_o);
@@ -44,7 +42,9 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
     return NULL;
   }
 
-  Query<long,long,long>* v = (Query<long,long,long>*)PyCObject_AsVoidPtr(p);  
+  Query* v = (Query*)PyCObject_AsVoidPtr(p);
+  (void) v; 
+
   PyObject * key_1_o = PyLong_FromLong(2);
 
   Py_INCREF(key_1_o);

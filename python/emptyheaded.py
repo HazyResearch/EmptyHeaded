@@ -7,7 +7,7 @@ environment = codegenerator.env.Environment()
 def createDB(name):
 	db_config="/Users/caberger/Documents/Research/code/databases/higgs/config_pruned.json"
 	codegenerator.createDB.fromJSON(db_config,environment)
-	environment.dump()
+	#environment.dump()
 
 def main():
 	db_config="/Users/caberger/Documents/Research/code/databases/higgs/config_pruned.json"

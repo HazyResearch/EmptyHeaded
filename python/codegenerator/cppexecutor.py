@@ -8,7 +8,8 @@ def loadQuery(name):
 
 def compileQuery(name):
 	os.chdir("wrapper")
-	os.system("./build.sh " + name + ">/dev/null 2>&1")
+	print name
+	os.system("./build.sh " + name + ">/dev/null")
 	os.chdir("..")
 
 def execute(name):

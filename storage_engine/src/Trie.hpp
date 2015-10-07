@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <vector>
 #include <functional>
+#include "utils/allocator.hpp"
 
 template<class T, class R> struct TrieBlock;
 class hybrid;
@@ -29,16 +30,18 @@ struct Trie{
   size_t num_levels;
   R annotation = (R)0;
   TrieBlock<layout,R>* head;
+  allocator<uint8_t>* memory;
 
   Trie<R>(size_t num_levels_in, bool annotated_in){
     num_levels = num_levels_in;
     annotated = annotated_in;
   };
 
-  Trie<R>(TrieBlock<layout,R>* head_in, size_t num_levels_in, bool annotated_in){
+  Trie<R>(allocator<uint8_t>* memory_in,TrieBlock<layout,R>* head_in, size_t num_levels_in, bool annotated_in){
     num_levels = num_levels_in;
     head = head_in;
     annotated = annotated_in;
+    memory = memory_in;
   };
 
   Trie<R>(

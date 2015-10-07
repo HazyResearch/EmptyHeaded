@@ -1,10 +1,10 @@
+#define EXECUTABLE
 #include "main.hpp"
 
-template<class T>
-struct createGraphDB1: public application<T> {
+struct createGraphDB1: public application {
   ////////////////////emitInitCreateDB////////////////////
   // init ColumnStores
-  void run(std::string path){
+  void run(){
     ColumnStore<long> *Vector = new ColumnStore<long>();
     std::vector<float> *annotation_Vector = new std::vector<float>();
     ColumnStore<long, long> *R = new ColumnStore<long, long>();
@@ -121,7 +121,6 @@ struct createGraphDB1: public application<T> {
   }
 };
 
-template<class T>
-application<T>* init_app(){
-  return new createGraphDB1<T>(); 
+application* init_app(){
+  return new createGraphDB1(); 
 }
