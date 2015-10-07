@@ -31,6 +31,7 @@ APPS_SOURCES=$(shell ls apps)
 APPS=$(APPS_SOURCES:.cpp=)
 APPS_EXES=$(APPS:%=$(EXEDIR)/%)
 
+$(shell mkdir -p generated)
 CODEGEN_SOURCES=$(shell ls generated)
 CODEGEN=$(CODEGEN_SOURCES:.cpp=)
 $(info $(CODEGEN))
@@ -44,7 +45,7 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 	mkdir -p $(OBJDIR)/utils
 
-$(LIBDIR):
+libdir:
 	mkdir -p ../libs
 
 $(EXEDIR):
@@ -65,7 +66,7 @@ $(CODEGEN):
 	rm -rf $(OBJDIR)/$(@).o
 	mv lib$(@).so ../libs/.
 
-emptyheaded: $(OBJDIR) $(OBJECTS) $(LIBDIR)
+emptyheaded: $(OBJDIR) $(OBJECTS) libdir
 	#ar rvs $(OBJDIR)/lib$(@).a $(OBJECTS)
 	$(CXX) -shared -o lib$(@).so $(OBJECTS) $(LIBS)
 	cp -f lib$(@).so ../libs/.
