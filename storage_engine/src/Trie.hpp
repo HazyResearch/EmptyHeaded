@@ -22,15 +22,25 @@ struct Trie{
   bool annotated;
   size_t num_rows;
   size_t num_columns;
-  A annotation = (A)0;
   M *memoryBuffers;
-  uint8_t **data;
+  //A annotation = (A)0;
+
+  Trie<A,M>(){};
 
   Trie<A,M>(
     std::string path,
     std::vector<uint32_t>* max_set_sizes, 
     std::vector<std::vector<uint32_t> >* attr_in, 
     std::vector<A>* annotation);
+
+  ~Trie<A,M>(){
+    delete memoryBuffers;
+  };
+
+  void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
+  void save();
+
+  static Trie<A,M>* load(std::string path);
 };
 
 #endif

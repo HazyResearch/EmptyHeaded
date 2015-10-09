@@ -1,16 +1,16 @@
+#define EXECUTABLE
 #include "main.hpp"
 
-template<class T>
-struct createGraphDBEdgelist: public application<T> {
+struct createGraphDBEdgelist: public application {
   ////////////////////emitInitCreateDB////////////////////
   // init ColumnStores
-  void run(std::string path){
+  void run(){
     ////////////////////emitLoadEncodedColumnStore////////////////////
     EncodedColumnStore<void *> *Encoded_R = NULL;
     {
       auto start_time = debug::start_clock();
       Encoded_R = EncodedColumnStore<void *>::from_binary(
-          "/Users/caberger/Documents/Research/code/databases/higgs/db/relations/R/");
+          "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/");
       debug::stop_clock("LOADING ENCODED RELATION R", start_time);
     }
 
@@ -27,22 +27,35 @@ struct createGraphDBEdgelist: public application<T> {
       debug::stop_clock("REORDERING ENCODING R_0_1", start_time);
     }
 
-    ////////////////////emitBuildTrie////////////////////
-    const size_t alloc_size_R_0_1 =
-        8 * Encoded_R_0_1->data.size() * Encoded_R_0_1->data.at(0).size() *
-        sizeof(uint64_t) * sizeof(TrieBlock<hybrid, void *>);
-    allocator<uint8_t> *data_allocator_R_0_1 =
-        new allocator<uint8_t>(alloc_size_R_0_1);
-    Trie<void *> *Trie_R_0_1 = NULL;
+    Trie<void *,ParMMapBuffer> *Trie_R_0_1 = NULL;
     {
       auto start_time = debug::start_clock();
       // buildTrie
-      Trie_R_0_1 = new Trie<void *>( 
+      Trie_R_0_1 = new Trie<void *,ParMMapBuffer>( 
+          "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1",
           &Encoded_R_0_1->max_set_size,
           &Encoded_R_0_1->data, 
           &Encoded_R_0_1->annotation);
       debug::stop_clock("BUILDING TRIE R_0_1", start_time);
     }
+
+    Trie_R_0_1->foreach([&](std::vector<uint32_t>* tuple,void* value){
+      for(size_t i =0; i < tuple->size(); i++){
+        std::cout << tuple->at(i) << " ";
+      }
+      std::cout << std::endl;
+    });
+
+    ////////////////////emitWriteBinaryTrie////////////////////
+    {
+      auto start_time = debug::start_clock();
+      Trie_R_0_1->save();
+      debug::stop_clock("WRITING BINARY TRIE R_0_1", start_time);
+    }
+    delete Trie_R_0_1;
+
+    /*
+    ////////////////////emitBuildTrie////////////////////
 
     ////////////////////emitWriteBinaryTrie////////////////////
     {
@@ -55,6 +68,9 @@ struct createGraphDBEdgelist: public application<T> {
     data_allocator_R_0_1->free();
     delete data_allocator_R_0_1;
     delete Trie_R_0_1;
+    */
+
+    /*
     ////////////////////emitReorderEncodedColumnStore////////////////////
     EncodedColumnStore<void *> *Encoded_R_1_0 =
         new EncodedColumnStore<void *>(&Encoded_R->annotation);
@@ -96,10 +112,10 @@ struct createGraphDBEdgelist: public application<T> {
     data_allocator_R_1_0->free();
     delete data_allocator_R_1_0;
     delete Trie_R_1_0;
+    */
   }
 };
 
-template<class T>
-application<T>* init_app(){
-  return new createGraphDBEdgelist<T>(); 
+application* init_app(){
+  return new createGraphDBEdgelist(); 
 }

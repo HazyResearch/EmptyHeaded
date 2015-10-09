@@ -19,7 +19,7 @@ struct createGraphDB1: public application {
     {
       auto start_time = debug::start_clock();
       tsv_reader f_reader(
-          "/Users/caberger/Documents/Research/code/databases/higgs/duplicate_pruned.tsv");
+          "/Users/caberger/Documents/Research/data/databases/simple/simple.tsv");
       char *next = f_reader.tsv_get_first();
       while (next != NULL) {
         node_encodingMap->update(R->append_from_string<0>(next));
@@ -31,6 +31,7 @@ struct createGraphDB1: public application {
       debug::stop_clock("READING ColumnStore R", start_time);
     }
 
+    /*
     ////////////////////emitLoadColumnStore////////////////////
     {
       auto start_time = debug::start_clock();
@@ -60,6 +61,7 @@ struct createGraphDB1: public application {
       }
       debug::stop_clock("READING ColumnStore InverseDegree", start_time);
     }
+    */
 
     ////////////////////emitBuildEncodings////////////////////
     {
@@ -73,7 +75,7 @@ struct createGraphDB1: public application {
     {
       auto start_time = debug::start_clock();
       Encoding_node->to_binary(
-          "/Users/caberger/Documents/Research/code/databases/higgs/db/encodings/node/");
+          "/Users/caberger/Documents/Research/data/databases/simple/db/encodings/node/");
       debug::stop_clock("WRITING ENCODING node", start_time);
     }
 
@@ -88,10 +90,11 @@ struct createGraphDB1: public application {
       Encoded_R->add_column(Encoding_node->encode_column(&R->get<1>()),
                             Encoding_node->num_distinct);
       Encoded_R->to_binary(
-          "/Users/caberger/Documents/Research/code/databases/higgs/db/relations/R/");
+          "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/");
       debug::stop_clock("ENCODING R", start_time);
     }
 
+    /*
     ////////////////////emitEncodeColumnStore////////////////////
     EncodedColumnStore<float> *Encoded_Vector =
         new EncodedColumnStore<float>(annotation_Vector);
@@ -117,7 +120,7 @@ struct createGraphDB1: public application {
       Encoded_InverseDegree->to_binary("/Users/caberger/Documents/Research/code/databases/higgs/db/relations/InverseDegree/");
       debug::stop_clock("ENCODING InverseDegree", start_time);
     }
-    
+    */
   }
 };
 
