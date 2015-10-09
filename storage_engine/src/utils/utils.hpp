@@ -14,7 +14,7 @@
 #include "debug.hpp"
 #include "common.hpp"
 #include "ParMMapBuffer.hpp"
-#include "MemoryBuffer.hpp"
+#include "ParMemoryBuffer.hpp"
 
 namespace utils {
   //takes strings and casts them to proper type. To ease code generation

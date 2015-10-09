@@ -17,15 +17,16 @@
 * head and number of levels.  Methods are to build a trie from an encoded
 * table.
 */
-template<class A>
+template<class A, class M>
 struct Trie{
   bool annotated;
   size_t num_rows;
   size_t num_columns;
   A annotation = (A)0;
+  M *memoryBuffers;
   uint8_t **data;
 
-  Trie<A>(
+  Trie<A,M>(
     std::string path,
     std::vector<uint32_t>* max_set_sizes, 
     std::vector<std::vector<uint32_t> >* attr_in, 

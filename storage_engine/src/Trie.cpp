@@ -9,7 +9,9 @@
 #include "tbb/task_scheduler_init.h"
 #include "Trie.hpp"
 #include "trie/TrieBlock.hpp"
-
+#include "utils/ParMMapBuffer.hpp"
+#include "utils/ParMemoryBuffer.hpp"
+#include "Annotation.hpp"
 /*
 * Recursive sort function to get the relation in order for the trie.
 */
@@ -109,12 +111,13 @@ void recursive_build(
 }
 */
 
-template<class R>
-Trie<R>::Trie(
+template<class A, class M>
+Trie<A,M>::Trie(
   std::string path,
   std::vector<uint32_t>* max_set_sizes, 
   std::vector<std::vector<uint32_t>> *attr_in,
-  std::vector<R>* annotation){
+  std::vector<A>* annotation){
+
 
   /*
   allocator<uint8_t>* data_allocator = new allocator<uint8_t>(1000);
@@ -213,10 +216,14 @@ Trie<R>::Trie(
 }
 
 
-template struct Trie<void*>;
-template struct Trie<long>;
-template struct Trie<int>;
-template struct Trie<float>;
-template struct Trie<double>;
+template struct Trie<void*,ParMemoryBuffer>;
+template struct Trie<long,ParMemoryBuffer>;
+template struct Trie<int,ParMemoryBuffer>;
+template struct Trie<float,ParMemoryBuffer>;
+template struct Trie<double,ParMemoryBuffer>;
 
-
+template struct Trie<void*,ParMMapBuffer>;
+template struct Trie<long,ParMMapBuffer>;
+template struct Trie<int,ParMMapBuffer>;
+template struct Trie<float,ParMMapBuffer>;
+template struct Trie<double,ParMMapBuffer>;
