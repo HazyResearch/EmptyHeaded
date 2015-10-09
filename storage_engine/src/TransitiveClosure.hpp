@@ -76,11 +76,11 @@ namespace tc {
     }
 
     range_bitset::set_indices(visited->set.data,visited->set.cardinality,visited->set.number_of_bytes,visited->set.type);
-    /*
+    
     visited->set.foreach_index([&](uint32_t i, uint32_t d){
       std::cout << "i: " << i << " d: " << d << " data: " << visited->get_data(i,d) << std::endl;
     });
-    */
+    
     //reconstruct the visited set indicies, package into a trie and return
     return (TrieBlock<T,R>*)visited;
   }

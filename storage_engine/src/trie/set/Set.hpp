@@ -174,12 +174,8 @@ class Set{
 
     Set<uinteger> decode(uint32_t *buffer);
     void copy_from(Set<T> src);
-    void to_binary(std::ofstream* outfile); 
 
     //constructors
-    static Set<T>* from_binary(std::ifstream* infile, 
-      allocator<uint8_t> *allocator_in, 
-      const size_t tid);
     static Set<T> from_array(uint8_t *set_data, uint32_t *array_data, size_t data_size);
 };
 
@@ -195,44 +191,6 @@ inline void Set<T>::copy_from(Set<T> src){
   type = src.type;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//Write a set in a binary format to disk
-///////////////////////////////////////////////////////////////////////////////
-template <class T>
-inline void Set<T>::to_binary(std::ofstream* outfile){ 
-  outfile->write((char *)&cardinality, sizeof(cardinality));
-  outfile->write((char *)&range, sizeof(range));
-  outfile->write((char *)&number_of_bytes, sizeof(number_of_bytes));
-  outfile->write((char *)&type, sizeof(type));
-
-  for(size_t i = 0; i < number_of_bytes; i++){
-    outfile->write((char *)&data[i], sizeof(uint8_t));
-  }
-}
-///////////////////////////////////////////////////////////////////////////////
-//Read a from binary format
-///////////////////////////////////////////////////////////////////////////////
-template<class T>
-inline Set<T>* Set<T>::from_binary(std::ifstream* infile, 
-  allocator<uint8_t> *allocator_in, 
-  const size_t tid){
-
-  Set<T>* output_set = new (
-            allocator_in->get_next(tid, sizeof(Set<T>)))
-            Set<T>();
-  
-  infile->read((char *)&output_set->cardinality, sizeof(output_set->cardinality));
-  infile->read((char *)&output_set->range, sizeof(output_set->range));
-  infile->read((char *)&output_set->number_of_bytes, sizeof(output_set->number_of_bytes));
-  infile->read((char *)&output_set->type, sizeof(output_set->type));
-  
-  output_set->data = allocator_in->get_next(tid,output_set->number_of_bytes);
-  for(size_t i = 0; i < output_set->number_of_bytes; i++){
-    infile->read((char *)&output_set->data[i], sizeof(uint8_t));
-  }
-
-  return output_set;
-}
 ///////////////////////////////////////////////////////////////////////////////
 //DECODE ARRAY
 ///////////////////////////////////////////////////////////////////////////////

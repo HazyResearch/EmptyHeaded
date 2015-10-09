@@ -11,9 +11,10 @@
 #include "io.hpp"
 #include "parallel.hpp"
 #include "thread_pool.hpp"
-#include "allocator.hpp"
 #include "debug.hpp"
 #include "common.hpp"
+#include "ParMMapBuffer.hpp"
+#include "MemoryBuffer.hpp"
 
 namespace utils {
   //takes strings and casts them to proper type. To ease code generation

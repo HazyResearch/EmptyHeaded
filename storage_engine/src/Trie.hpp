@@ -11,55 +11,25 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <vector>
-#include <functional>
-#include "utils/allocator.hpp"
-
-template<class T, class R> struct TrieBlock;
-class hybrid;
-
-typedef hybrid layout;
 
 /*
 * Very simple tree structure stores the trie. All that is needed is the 
 * head and number of levels.  Methods are to build a trie from an encoded
 * table.
 */
-template<class R>
+template<class A>
 struct Trie{
   bool annotated;
-  size_t num_levels;
-  R annotation = (R)0;
-  TrieBlock<layout,R>* head;
-  allocator<uint8_t>* memory;
+  size_t num_rows;
+  size_t num_columns;
+  A annotation = (A)0;
+  uint8_t **data;
 
-  Trie<R>(size_t num_levels_in, bool annotated_in){
-    num_levels = num_levels_in;
-    annotated = annotated_in;
-  };
-
-  Trie<R>(allocator<uint8_t>* memory_in,TrieBlock<layout,R>* head_in, size_t num_levels_in, bool annotated_in){
-    num_levels = num_levels_in;
-    head = head_in;
-    annotated = annotated_in;
-    memory = memory_in;
-  };
-
-  Trie<R>(
+  Trie<A>(
+    std::string path,
     std::vector<uint32_t>* max_set_sizes, 
     std::vector<std::vector<uint32_t> >* attr_in, 
-    std::vector<R>* annotation);
-
-  void foreach(const std::function<void(std::vector<uint32_t>*,R)> body);
-  
-  void recursive_foreach(
-    TrieBlock<layout,R> *current, 
-    const size_t level, 
-    const size_t num_levels,
-    std::vector<uint32_t>* tuple, 
-    const std::function<void(std::vector<uint32_t>*,R)> body);
-
-  void to_binary(const std::string path);
-  static Trie<R>* from_binary(std::string path, bool annotated_in);
+    std::vector<A>* annotation);
 };
 
 #endif
