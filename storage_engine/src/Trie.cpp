@@ -17,6 +17,22 @@ typedef hybrid layout;
 
 template<class A,class M>
 void Trie<A,M>::save(){
+  std::cout << "PATH TRIE: " << memoryBuffers->path << std::endl;
+
+  std::ofstream *writefile = new std::ofstream();
+  std::string file = memoryBuffers->path+M::folder+std::string("trieinfo.bin");
+  writefile->open(file, std::ios::binary | std::ios::out);
+  writefile->write((char *)&annotated, sizeof(annotated));
+  writefile->write((char *)&num_rows, sizeof(num_rows));
+  writefile->write((char *)&num_columns, sizeof(num_columns));
+  writefile->write((char *)&NUM_THREADS, sizeof(NUM_THREADS));
+  for(size_t i = 0; i < NUM_THREADS; i++){
+    const size_t t_size = memoryBuffers->get_size(i);
+    writefile->write((char *)&t_size, sizeof(t_size));
+  }
+
+  writefile->close();
+
   memoryBuffers->save();
 }
 
@@ -24,13 +40,27 @@ template<class A,class M>
 Trie<A,M>* Trie<A,M>::load(std::string path){
   Trie<A,M>* ret = new Trie<A,M>();
 
-  //fixme load from binary
-  ret->annotated = false;
-  ret->num_columns = 2;
-  ret->num_rows = 2;
+  std::ifstream *infile = new std::ifstream();
+  std::string file = path+M::folder+std::string("trieinfo.bin");
+  infile->open(file, std::ios::binary | std::ios::in);
+  infile->read((char *)&ret->annotated, sizeof(ret->annotated));
+  infile->read((char *)&ret->num_rows, sizeof(ret->num_rows));
+  infile->read((char *)&ret->num_columns, sizeof(ret->num_columns));
+  
+  size_t w_n_threads;
+  infile->read((char *)&w_n_threads, sizeof(w_n_threads));
+  std::vector<size_t>* buf_sizes = new std::vector<size_t>();
+  for(size_t i = 0 ; i < w_n_threads; i++){
+    size_t b_size;
+    infile->read((char *)&b_size, sizeof(b_size));
+    buf_sizes->push_back(b_size);
+  }
+  infile->close();
 
-  ret->memoryBuffers = new M(path,1000*2*sizeof(size_t));
-  ret->memoryBuffers->load();
+  std::cout << "NUM ROWS: " << ret->num_rows << " NUM COLS: " << ret->num_columns << std::endl;
+
+  //init memory buffers
+  ret->memoryBuffers = M::load(path,buf_sizes);
 
   return ret;
 }
