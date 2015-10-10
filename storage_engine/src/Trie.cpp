@@ -13,12 +13,8 @@
 #include "utils/ParMemoryBuffer.hpp"
 #include "Annotation.hpp"
 
-typedef hybrid layout;
-
 template<class A,class M>
 void Trie<A,M>::save(){
-  std::cout << "PATH TRIE: " << memoryBuffers->path << std::endl;
-
   std::ofstream *writefile = new std::ofstream();
   std::string file = memoryBuffers->path+M::folder+std::string("trieinfo.bin");
   writefile->open(file, std::ios::binary | std::ios::out);
@@ -56,8 +52,6 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
     buf_sizes->push_back(b_size);
   }
   infile->close();
-
-  std::cout << "NUM ROWS: " << ret->num_rows << " NUM COLS: " << ret->num_columns << std::endl;
 
   //init memory buffers
   ret->memoryBuffers = M::load(path,buf_sizes);
@@ -105,6 +99,13 @@ void recursive_foreach(
   }
 }
 
+template<class A,class M>
+TrieBlock<layout,M>* Trie<A,M>::getHead(){
+  TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,0);
+  head->set.data = (uint8_t*)((uint8_t*)head + sizeof(TrieBlock<layout,M>));
+  return head; 
+}
+
 /*
 * Write the trie to a binary file 
 */
@@ -113,7 +114,6 @@ void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
   TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,0);
   head->set.data = (uint8_t*)((uint8_t*)head + sizeof(TrieBlock<layout,M>));
-  head->next = (NextLevel*)((uint8_t*)head + sizeof(TrieBlock<layout,M>) + head->set.number_of_bytes);
 
   head->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
     tuple->push_back(a_d);
@@ -205,25 +205,25 @@ std::tuple<size_t,size_t> produce_ranges(
 * Produce a TrieBlock
 */
 template<class B, class A>
-std::pair<size_t,B*> build_block(
+size_t build_block(
   const size_t tid,  
   A *data_allocator, 
   const size_t set_size, 
   uint32_t *set_data_buffer){
 
-  B *block = (B*)data_allocator->get_next(tid,sizeof(B));
-  const size_t offset = (size_t)block-(size_t)data_allocator->get_address(tid);
+  const uint8_t * const start_block = data_allocator->get_next(tid,sizeof(B));
+  const size_t offset = start_block-data_allocator->get_address(tid);
 
   const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
   const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range);
   uint8_t* set_data_in = data_allocator->get_next(tid,set_alloc_size);
+  
+  B* block = (B*)data_allocator->get_address(tid,offset);
   block->set = Set<layout>::from_array(set_data_in,set_data_buffer,set_size);
 
   assert(set_alloc_size >= block->set.number_of_bytes);
   data_allocator->roll_back(tid,set_alloc_size-block->set.number_of_bytes);
-
-  //return tuple<offset,block>
-  return std::make_pair(offset,block);
+  return offset;
 }
 
 void encode_tail(size_t start, size_t end, uint32_t *data, std::vector<uint32_t> *current, uint32_t *indicies){
@@ -240,7 +240,7 @@ void recursive_build(
   const size_t start, 
   const size_t end, 
   const uint32_t data, 
-  B* prev_block, 
+  const size_t offset, 
   const size_t level, 
   const size_t num_levels, 
   const size_t tid, 
@@ -254,13 +254,15 @@ void recursive_build(
   uint32_t *sb = set_data_buffer->at(level*NUM_THREADS+tid);
   encode_tail(start,end,sb,&attr_in->at(level),indicies);
 
-  auto retTup = build_block<B,M>(tid,data_allocator,(end-start),sb);
-  const size_t offset = std::get<0>(retTup);
-  B *tail = std::get<1>(retTup);
-  prev_block->set_block(index,data,tid,offset);
+  const size_t next_offset = build_block<B,M>(tid,data_allocator,(end-start),sb);
+  
+  const size_t tid_prev = level == 1 ? 0:tid;
+  B* prev_block = (B*)data_allocator->get_address(tid_prev,offset);
+  prev_block->set_block(index,data,tid,next_offset);
 
   if(level < (num_levels-1)){
-    tail->init_pointers(tid,data_allocator);
+    B* tail = (B*)data_allocator->get_address(tid,next_offset);
+    tail->init_next(tid,data_allocator);
     auto tup = produce_ranges(start,end,ranges_buffer->at(level*NUM_THREADS+tid),set_data_buffer->at(level*NUM_THREADS+tid),indicies,&attr_in->at(level));
     const size_t set_size = std::get<0>(tup);
     for(size_t i = 0; i < set_size; i++){
@@ -272,7 +274,7 @@ void recursive_build(
         next_start,
         next_end,
         next_data,
-        tail,
+        next_offset,
         level+1,
         num_levels,
         tid,
@@ -307,9 +309,7 @@ Trie<A,M>::Trie(
   num_rows = attr_in->at(0).size();
   num_columns = attr_in->size();
   //fixme: add estimate
-  memoryBuffers = new M(path,1*1073741824);
-  std::cout << path << std::endl;
-  
+  memoryBuffers = new M(path,2);  
   assert(num_columns != 0  && num_rows != 0);
 
   //Setup indices buffer
@@ -349,21 +349,24 @@ Trie<A,M>::Trie(
   const size_t head_range = std::get<1>(tup);
   
   //Build the head set.
-  auto retTup = 
+  const size_t head_offset = 
     build_block<TrieBlock<layout,M>,M>(
       0,
       memoryBuffers,
       head_size,
       set_data_buffer->at(0));
-  TrieBlock<layout,M>* new_head = std::get<1>(retTup);
 
   size_t cur_level = 1;
   if(num_columns > 1){
-    new_head->init_pointers(0,memoryBuffers);
-    
-    par::for_range(0,head_range,100,[&](size_t tid, size_t i){
+    TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,head_offset);
+    new_head->init_next(0,memoryBuffers);
+
+    //reset new_head because a realloc could of occured
+    new_head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,head_offset);
+    const size_t loop_size = new_head->nextSize();
+    par::for_range(0,loop_size,100,[&](size_t tid, size_t i){
       (void) tid;
-      new_head->next[i].index = -1;
+      new_head->next(i)->index = -1;
     });
 
     par::for_range(0,head_size,100,[&](size_t tid, size_t i){
@@ -377,7 +380,7 @@ Trie<A,M>::Trie(
         start,
         end,
         data,
-        new_head,
+        head_offset,
         cur_level,
         num_columns,
         tid,

@@ -92,13 +92,9 @@ char* MemoryBuffer::getBuffer(int pos)
 
 void MemoryBuffer::save(std::ofstream& ofile)
 {
-  std::cout << "HERE" << std::endl;
-
   ofile<<size<<" ";
   int offset = currentHead - buffer;
   ofile<<offset<<" ";
-
-  std::cout << "HERE" << std::endl;
 
   unsigned i;
   for(i = 0; i < size; i++) {

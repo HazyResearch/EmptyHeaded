@@ -5,12 +5,11 @@ import codegenerator.env
 environment = codegenerator.env.Environment()
 
 def createDB(name):
-	db_config="/Users/caberger/Documents/Research/code/databases/higgs/config_pruned.json"
-	codegenerator.createDB.fromJSON(db_config,environment)
+	codegenerator.createDB.fromJSON(name,environment)
 	#environment.dump()
 
 def main():
-	db_config="/Users/caberger/Documents/Research/code/databases/higgs/config_pruned.json"
+	db_config="/Users/caberger/Documents/Research/data/databases/higgs/config_pruned.json"
 	createDB(db_config)
 	com="""
 	compileQuery("query1")

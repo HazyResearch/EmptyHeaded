@@ -13,20 +13,29 @@ template<class T, class M>
 struct TrieBlock{
   bool is_sparse;  
   Set<T> set;
-  NextLevel* next;
 
   TrieBlock(Set<T> setIn){
     set = setIn;
   }
   TrieBlock(){}
 
-  inline void init_pointers(const size_t tid, M* allocator_in){
+
+  inline size_t nextSize(){
+    return is_sparse ? set.cardinality:(set.range+1);
+  }
+
+  inline NextLevel* next(size_t index){
+    return (NextLevel*)(
+      (uint8_t*)this + 
+      sizeof(TrieBlock<T,M>) + 
+      set.number_of_bytes +
+      sizeof(NextLevel)*index);
+  }
+
+  inline void init_next(const size_t tid, M* allocator_in){
     is_sparse = common::is_sparse(set.cardinality,set.range);
-    if(!is_sparse){
-      next = (NextLevel*)allocator_in->get_next(tid, sizeof(NextLevel)*(set.range+1));
-    } else{
-      next = (NextLevel*)allocator_in->get_next(tid, sizeof(NextLevel)*set.cardinality);
-    }
+    const size_t next_size = this->nextSize(); 
+    allocator_in->get_next(tid, sizeof(NextLevel)*(next_size));
   }
 
   inline void set_block(
@@ -38,12 +47,14 @@ struct TrieBlock{
     setIndex = (set.cardinality != 0) ? setIndex : -1;
     if(!is_sparse){
       (void) index;
-      next[data].index = setIndex;
-      next[data].offset = setOffset;
+      NextLevel* next = this->next(data);
+      next->index = setIndex;
+      next->offset = setOffset;
     } else{
       (void) data;
-      next[index].index = setIndex;
-      next[index].offset = setOffset;    }
+      NextLevel* next = this->next(index);
+      next->index = setIndex;
+      next->offset = setOffset;    }
   }
 
   /*
@@ -68,18 +79,17 @@ struct TrieBlock{
 
     TrieBlock<T,M>* result = NULL;
     if(!this->is_sparse){
-      const int bufferIndex = next[data].index;
-      const size_t bufferOffset = next[data].offset;
+      NextLevel* next = this->next(data);
+      const int bufferIndex = next->index;
+      const size_t bufferOffset = next->offset;
       result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
       result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
-      result->next = (NextLevel*)((uint8_t*)result + sizeof(TrieBlock<T,M>) + result->set.number_of_bytes);
-
     } else{
-      const int bufferIndex = next[index].index;
-      const size_t bufferOffset = next[index].offset;
+      NextLevel* next = this->next(index);
+      const int bufferIndex = next->index;
+      const size_t bufferOffset = next->offset;
       result = (TrieBlock<T,M>*)buffer->get_address(bufferIndex,bufferOffset);   
       result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
-      result->next = (NextLevel*)((uint8_t*)result + sizeof(TrieBlock<T,M>) + result->set.number_of_bytes);
     }
     return result;
   }

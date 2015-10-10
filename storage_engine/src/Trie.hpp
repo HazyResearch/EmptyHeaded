@@ -11,6 +11,11 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <vector>
+#include <functional>
+
+class hybrid;
+typedef hybrid layout;
+template<class T, class R> struct TrieBlock;
 
 /*
 * Very simple tree structure stores the trie. All that is needed is the 
@@ -39,6 +44,7 @@ struct Trie{
 
   void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
   void save();
+  TrieBlock<layout,M>* getHead();
 
   static Trie<A,M>* load(std::string path);
 };

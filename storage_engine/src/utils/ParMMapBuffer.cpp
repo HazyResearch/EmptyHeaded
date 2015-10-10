@@ -10,7 +10,6 @@ ParMMapBuffer::ParMMapBuffer(
   for(size_t i = 0; i < NUM_THREADS; i++){
     std::string dataF = path + folder + "data_" + std::to_string(i) + ".bin";
     //std::string dataF = path_in + "_" + std::to_string(i) + ".bin";
-    std::cout << "string: " << dataF << std::endl;
     MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in);
     elements.push_back(*mbuffer);
   }
@@ -24,7 +23,6 @@ ParMMapBuffer::ParMMapBuffer(
   for(size_t i = 0; i < NUM_THREADS; i++){
     std::string dataF = path + folder + "data_" + std::to_string(i) + ".bin";
     //std::string dataF = path_in + "_" + std::to_string(i) + ".bin";
-    std::cout << "string: " << dataF << std::endl;
     MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in->at(i));
     elements.push_back(*mbuffer);
   }

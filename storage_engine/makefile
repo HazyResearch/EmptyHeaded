@@ -7,6 +7,10 @@ SOURCES=$(shell find src -name "*cpp")
 #STRIPPED=$(notdir $(SOURCES))
 OBJECTS=$(SOURCES:src/%.cpp=$(OBJDIR)/%.o)
 
+ifdef DEBUG
+	override CXXFLAGS += -DDEBUG -g
+endif
+
 ifdef NO_VECTOR
 	override CXXFLAGS += -fno-tree-vectorize -DVECTORIZE=0
 else

@@ -21,3 +21,7 @@ class Environment:
 
 	def setup(self,config_in):
 		self.config = config_in
+		if self.config["memory"] == "RAM":
+			self.config["memory"] = "ParMemoryBuffer"
+		else:
+			self.config["memory"] = "ParMMapBuffer"

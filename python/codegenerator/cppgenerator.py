@@ -78,12 +78,17 @@ def buildTrie(orderings,relation,env):
 	code = codeCreateDB.loadEncodedRelation(env.config["database"],relation["name"])
 	for ordering in orderings:
 		roname = relation["name"] + "_" + "_".join(map(str,ordering))
-		os.system("mkdir -p " + env.config["database"] + "/relations/"+relation["name"]+"/"+roname)
+		trieFolder = env.config["database"] + "/relations/"+relation["name"]+"/"+roname
+		os.system("mkdir -p " + trieFolder)
+		os.system("mkdir -p " + trieFolder +"/mmap")
+		os.system("mkdir -p " + trieFolder+"/ram")
+
 		code += codeCreateDB.buildOrder(
-			env.config["database"],
+			trieFolder,
 			relation["name"],
 			ordering,
-			relation["annotation"])
+			relation["annotation"],
+			env.config["memory"])
 	return querytemplate.getCode(include,code)
 
 def nprr():

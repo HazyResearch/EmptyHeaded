@@ -87,7 +87,7 @@ def loadEncodedRelation(path,name):
     }
 """% locals()
 
-def buildOrder(path,name,ordering,annotationType):
+def buildOrder(path,name,ordering,annotationType,memType):
 	rname = name
 	name += "_"+"_".join(map(str,ordering))
 	code = """ EncodedColumnStore<void *> *Encoded_%(name)s =
@@ -101,11 +101,12 @@ def buildOrder(path,name,ordering,annotationType):
 	code+=\
   """debug::stop_clock("REORDERING ENCODING %(name)s", start_time);
     } 
-    Trie<%(annotationType)s> *Trie_%(name)s = NULL;
+    Trie<%(annotationType)s,%(memType)s> *Trie_%(name)s = NULL;
     {
       auto start_time = debug::start_clock();
       // buildTrie
-      Trie_%(name)s = new Trie<%(annotationType)s>( 
+      Trie_%(name)s = new Trie<%(annotationType)s,%(memType)s>( 
+      	  "%(path)s",
           &Encoded_%(name)s->max_set_size,
           &Encoded_%(name)s->data, 
           &Encoded_%(name)s->annotation);
@@ -113,9 +114,8 @@ def buildOrder(path,name,ordering,annotationType):
     }
     {
       auto start_time = debug::start_clock();
-      Trie_%(name)s->to_binary(
-          "%(path)s/relations/%(rname)s/%(name)s/");
+      Trie_%(name)s->save();
       debug::stop_clock("WRITING BINARY TRIE %(name)s", start_time);
     }
-    Trie_%(name)s->memory->free();"""% locals()
+    delete Trie_%(name)s;"""% locals()
  	return code
