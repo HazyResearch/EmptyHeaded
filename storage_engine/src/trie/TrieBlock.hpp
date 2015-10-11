@@ -57,38 +57,56 @@ struct TrieBlock{
       next->offset = setOffset;    }
   }
 
-  /*
-  inline TrieBlock<T,R>* get_block(uint32_t data) const{
-    TrieBlock<T,R>* result = NULL;
-    if(!is_sparse){
-      result = next_level[data];
-    } else{
-      //something like get the index from the set then move forward.
-      const long index = set.find(data);
-      if(index != -1)
-        result = next_level[index];
-    }
-    return result;
+  inline static TrieBlock<T,M>* get_block(
+    const int bufferIndex,
+    const int bufferOffset,
+    M* buffer) {
+      TrieBlock<T,M>* result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
+      result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
+      return result;
   }
-  */
 
-  TrieBlock<T,M>* get_block(
-    uint32_t index, 
-    uint32_t data,
+  inline TrieBlock<T,M>* get_next_block(
+    const uint32_t data,
     M* buffer) {
 
     TrieBlock<T,M>* result = NULL;
-    if(!this->is_sparse){
+    if(!is_sparse){
       NextLevel* next = this->next(data);
       const int bufferIndex = next->index;
       const size_t bufferOffset = next->offset;
-      result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-      result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
+      if(bufferIndex != -1){
+        result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
+        result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
+      }
     } else{
-      NextLevel* next = this->next(index);
-      const int bufferIndex = next->index;
-      const size_t bufferOffset = next->offset;
-      result = (TrieBlock<T,M>*)buffer->get_address(bufferIndex,bufferOffset);   
+      //first need to see if the data is in the set
+      const long index = set.find(data);
+      if(index != -1){
+        NextLevel* next = this->next(data);
+        const int bufferIndex = next->index;
+        const size_t bufferOffset = next->offset;
+        if(bufferIndex != -1){
+          result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
+          result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
+        }
+      }
+    }
+    return result;
+  }
+
+  inline TrieBlock<T,M>* get_next_block(
+    const uint32_t index, 
+    const uint32_t data,
+    M* buffer) {
+
+    TrieBlock<T,M>* result = NULL;
+    const uint32_t nextIndex = this->is_sparse ? index:data;
+    NextLevel* next = this->next(nextIndex);
+    const int bufferIndex = next->index;
+    const size_t bufferOffset = next->offset;
+    if(bufferIndex != -1){
+      result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
       result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
     }
     return result;

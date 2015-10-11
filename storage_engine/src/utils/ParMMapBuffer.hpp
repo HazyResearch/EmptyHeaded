@@ -19,6 +19,7 @@ struct ParMMapBuffer{
 
   //debug
   size_t get_size(const size_t tid);
+  uint8_t* get_head(const size_t tid);
   uint8_t* get_address(const size_t tid);
   uint8_t* get_address(const size_t tid,const size_t offset);
   uint8_t* get_next(const size_t tid, const size_t num);

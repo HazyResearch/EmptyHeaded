@@ -84,11 +84,11 @@ void recursive_foreach(
     current->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
       //if not done recursing and we have data
       tuple->push_back(a_d);
-      if(current->get_block(a_i,a_d,memoryBuffers) != NULL){
+      if(current->get_next_block(a_i,a_d,memoryBuffers) != NULL){
         recursive_foreach<A,M>(
           annotated,
           memoryBuffers,
-          current->get_block(a_i,a_d,memoryBuffers),
+          current->get_next_block(a_i,a_d,memoryBuffers),
           level+1,
           num_levels,
           tuple,
@@ -112,16 +112,16 @@ TrieBlock<layout,M>* Trie<A,M>::getHead(){
 template<class A,class M>
 void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body){
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
-  TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,0);
-  head->set.data = (uint8_t*)((uint8_t*)head + sizeof(TrieBlock<layout,M>));
+  TrieBlock<layout,M>* head = this->getHead();
 
   head->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
     tuple->push_back(a_d);
-    if(num_columns > 1 && head->get_block(a_i,a_d,memoryBuffers) != NULL){
+    TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
+    if(num_columns > 1 && next != NULL){
       recursive_foreach<A,M>(
         annotated,
         memoryBuffers,
-        head->get_block(a_i,a_d,memoryBuffers),
+        next,
         1,
         num_columns,
         tuple,
@@ -217,12 +217,13 @@ size_t build_block(
   const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
   const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range);
   uint8_t* set_data_in = data_allocator->get_next(tid,set_alloc_size);
-  
-  B* block = (B*)data_allocator->get_address(tid,offset);
+
+  B* block = TrieBlock<layout,A>::get_block(tid,offset,data_allocator);
   block->set = Set<layout>::from_array(set_data_in,set_data_buffer,set_size);
 
   assert(set_alloc_size >= block->set.number_of_bytes);
   data_allocator->roll_back(tid,set_alloc_size-block->set.number_of_bytes);
+
   return offset;
 }
 
@@ -255,9 +256,8 @@ void recursive_build(
   encode_tail(start,end,sb,&attr_in->at(level),indicies);
 
   const size_t next_offset = build_block<B,M>(tid,data_allocator,(end-start),sb);
-  
   const size_t tid_prev = level == 1 ? 0:tid;
-  B* prev_block = (B*)data_allocator->get_address(tid_prev,offset);
+  B* prev_block = B::get_block(tid_prev,offset,data_allocator);
   prev_block->set_block(index,data,tid,next_offset);
 
   if(level < (num_levels-1)){
@@ -346,7 +346,6 @@ Trie<A,M>::Trie(
     indicies,
     &attr_in->at(0));
   const size_t head_size = std::get<0>(tup);
-  const size_t head_range = std::get<1>(tup);
   
   //Build the head set.
   const size_t head_offset = 
@@ -362,13 +361,14 @@ Trie<A,M>::Trie(
     new_head->init_next(0,memoryBuffers);
 
     //reset new_head because a realloc could of occured
-    new_head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,head_offset);
+    new_head = TrieBlock<layout,M>::get_block(0,head_offset,memoryBuffers);
     const size_t loop_size = new_head->nextSize();
     par::for_range(0,loop_size,100,[&](size_t tid, size_t i){
       (void) tid;
       new_head->next(i)->index = -1;
     });
 
+    //reset new_head because a realloc could of occured
     par::for_range(0,head_size,100,[&](size_t tid, size_t i){
       //some sort of recursion here
       const size_t start = ranges_buffer->at(0)[i];
@@ -391,6 +391,7 @@ Trie<A,M>::Trie(
         indicies,
         annotation);
     });
+
   } else if(annotation->size() > 0){
     /*
     new_head->alloc_data(0,data_allocator);

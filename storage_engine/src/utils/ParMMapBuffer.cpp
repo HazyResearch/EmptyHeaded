@@ -28,6 +28,10 @@ ParMMapBuffer::ParMMapBuffer(
   }
 }
 
+uint8_t* ParMMapBuffer::get_head(const size_t tid){
+  return (uint8_t*)elements.at(tid).get_head();
+}
+
 uint8_t* ParMMapBuffer::get_address(const size_t tid){
   return (uint8_t*)elements.at(tid).get_address();
 }

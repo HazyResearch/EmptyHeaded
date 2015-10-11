@@ -62,17 +62,18 @@ void MemoryBuffer::roll_back(const size_t size_requested){
 
 char* MemoryBuffer::resize(unsigned increaseSize)
 {
+  const size_t old_head_offset = currentHead-buffer;
   size_t newsize = size + increaseSize;
   buffer = (char*)realloc(buffer, newsize * sizeof(char));
   if(buffer == NULL) {
     std::cout << "MemoryBuffer::addBuffer, realloc error!" << std::endl;
     assert(false);
   }
-  currentHead = buffer + size;
+  currentHead = buffer + old_head_offset;
   ::memset(currentHead, 0, increaseSize);
   size = size + increaseSize;
 
-  return currentHead;
+  return buffer;
 }
 
 char* MemoryBuffer::getBuffer()

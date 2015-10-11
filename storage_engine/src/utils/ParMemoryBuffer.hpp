@@ -19,6 +19,7 @@ struct ParMemoryBuffer{
   uint8_t* get_next(const size_t tid, const size_t num);
   void roll_back(const size_t tid, const size_t num);
   void save();
+  uint8_t* get_head(const size_t tid);
 
   static ParMemoryBuffer* load(
     std::string path,

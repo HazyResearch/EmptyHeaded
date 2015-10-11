@@ -35,6 +35,7 @@ public:
   size_t getSize() { return size; }
   size_t get_length() {return size; }
   char* get_next(const size_t size_requested);
+  char* get_head(){return currentHead;};
   void roll_back(const size_t size_requested);
   char* get_address() { return buffer; }
   void memset(char value);

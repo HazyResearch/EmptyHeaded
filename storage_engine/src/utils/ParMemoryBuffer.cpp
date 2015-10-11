@@ -35,6 +35,10 @@ size_t ParMemoryBuffer::get_size(const size_t tid){
   return elements.at(tid).getSize();
 }
 
+uint8_t* ParMemoryBuffer::get_head(const size_t tid){
+  return (uint8_t*)elements.at(tid).get_head();
+}
+
 uint8_t* ParMemoryBuffer::get_address(const size_t tid){
   return (uint8_t*)elements.at(tid).getBuffer();
 }

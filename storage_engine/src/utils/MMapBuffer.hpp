@@ -27,6 +27,7 @@ public:
   char* getBuffer(int pos);
   void discard();
   int flush();
+  char* get_head(){return head;}
   size_t getSize() { return size;}
   char* get_next(const size_t mem_size);
   void roll_back(const size_t mem_size);

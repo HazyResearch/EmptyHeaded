@@ -27,11 +27,11 @@ struct createGraphDBEdgelist: public application {
       debug::stop_clock("REORDERING ENCODING R_0_1", start_time);
     }
 
-    Trie<void *,ParMMapBuffer> *Trie_R_0_1 = NULL;
+    Trie<void *,ParMemoryBuffer> *Trie_R_0_1 = NULL;
     {
       auto start_time = debug::start_clock();
       // buildTrie
-      Trie_R_0_1 = new Trie<void *,ParMMapBuffer>( 
+      Trie_R_0_1 = new Trie<void *,ParMemoryBuffer>( 
           "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1",
           &Encoded_R_0_1->max_set_size,
           &Encoded_R_0_1->data, 
