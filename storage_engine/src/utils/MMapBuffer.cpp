@@ -129,6 +129,12 @@ void MMapBuffer::roll_back(const size_t num){
   head -= num;
 }
 
+void MMapBuffer::free()
+{
+  munmap((char*)mmap_addr, size);
+  close(fd);
+}
+
 void MMapBuffer::discard()
 {
   munmap((char*)mmap_addr, size);

@@ -29,7 +29,7 @@ struct ParMMapBuffer{
 
   ~ParMMapBuffer(){
     for(size_t i = 0; i < NUM_THREADS; i++){
-      elements.at(i).discard();
+      elements.at(i).free();
     }
   };
 

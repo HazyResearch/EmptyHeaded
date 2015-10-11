@@ -26,6 +26,7 @@ public:
   char* getBuffer();
   char* getBuffer(int pos);
   void discard();
+  void free();
   int flush();
   char* get_head(){return head;}
   size_t getSize() { return size;}
