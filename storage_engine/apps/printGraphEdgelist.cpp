@@ -7,11 +7,11 @@ struct createGraphDBEdgelist: public application {
   void run(){
     Trie<void *,ParMemoryBuffer> *Trie_R_0_1 = NULL;
     {
-      auto start_time = debug::start_clock();
+      auto start_time = timer::start_clock();
       // buildTrie
       Trie_R_0_1 = Trie<void *,ParMemoryBuffer>::load( 
-          "/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/R/R_0_1");
-      debug::stop_clock("BUILDING TRIE R_0_1", start_time);
+          "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1");
+      timer::stop_clock("BUILDING TRIE R_0_1", start_time);
     }
 
     std::cout << Trie_R_0_1->num_rows << " " << Trie_R_0_1->num_columns << " " << Trie_R_0_1->getHead()->set.cardinality << std::endl;

@@ -323,18 +323,25 @@ Trie<A,M>::Trie(
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
 
+  //set up temporary buffers needed for the build
+  //fixme: add estimate
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();
   
-  //set up temporary buffers needed for the build
-  //fixme: add estimate
-  ParMemoryBuffer *tmp_data = new ParMemoryBuffer(2*sizeof(size_t));
+  size_t malloc_size = 0;
   for(size_t i = 0; i < num_columns; i++){
+    const size_t index = max_set_sizes->at(i)+1;
+    malloc_size += index;
+  }
+  malloc_size = malloc_size*(sizeof(size_t)+sizeof(uint32_t));
+  uint8_t *tmp_buffer = (uint8_t*)malloc(malloc_size);
+
+  for(size_t i = 0; i < num_columns; i++){
+    const size_t index = max_set_sizes->at(i)+1;
+    uint8_t* start_tmp = tmp_buffer+index*(sizeof(size_t)+sizeof(uint32_t));
     for(size_t t = 0; t < NUM_THREADS; t++){
-      size_t* ranges = (size_t*)tmp_data->get_next(t,sizeof(size_t)*(max_set_sizes->at(i)+1));
-      uint32_t* sd = (uint32_t*)tmp_data->get_next(t,sizeof(uint32_t)*(max_set_sizes->at(i)+1));
-      ranges_buffer->push_back(ranges);
-      set_data_buffer->push_back(sd); 
+      ranges_buffer->push_back((size_t*)start_tmp);
+      set_data_buffer->push_back((uint32_t*)(start_tmp+index*sizeof(size_t))); 
     }
   }
 
@@ -359,6 +366,10 @@ Trie<A,M>::Trie(
   if(num_columns > 1){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,head_offset);
     new_head->init_next(0,memoryBuffers);
+
+    //encode the set, create a block with NULL pointers to next level
+    //should be a 1-1 between pointers in block and next ranges
+    //also a 1-1 between blocks and numbers of next ranges
 
     //reset new_head because a realloc could of occured
     new_head = TrieBlock<layout,M>::get_block(0,head_offset,memoryBuffers);
@@ -402,11 +413,13 @@ Trie<A,M>::Trie(
     }
     */
   }
-  
-  delete tmp_data;
-  //encode the set, create a block with NULL pointers to next level
-  //should be a 1-1 between pointers in block and next ranges
-  //also a 1-1 between blocks and numbers of next ranges
+
+  for(size_t i = 0; i < num_columns; i++){
+    //delete ranges_buffer->at(i);
+    //delete set_data_buffer->at(i);
+  }
+  delete ranges_buffer;
+  delete set_data_buffer;
 }
 
 

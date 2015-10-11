@@ -3,21 +3,38 @@ from pprint import pprint
 
 class Environment:
 	config = {}
-	relations = {} 
-	# {R:[
-		#orderings:[{
-			#"01":<disk path>,
-			#"10":memory,
-			#"attributes":[{same as what is loaded}]
-		#]}
-	#]}
+	schemas = {} 
+	relations = {}
 	encodings = {}
-	#{"node":[{"refcount":0,
-		#"type":"long"
-	#}]}
+
+	def setSchemas(self,scheme):
+		self.schemas = scheme
+
+	def setRelations(self,relations):
+		self.relations = relations
+
+	def setEncodings(self,encodings):
+		self.encodings = encodings
+
+	def toJSON(self,outF):
+		data = self.config
+		data["schemas"] = self.schemas
+		data["relations"] = self.relations
+		data["encodings"] = self.encodings
+		json.dump(data,open(outF,'w'))
+
+	def fromJSON(self,inF):
+		data = json.load(open(inF))
+		self.schemas = data.pop("schemas",0)
+		self.relations = data.pop("relations",0)
+		self.encodings = data.pop("encodings",0)
+		self.config = data
 
 	def dump(self):
 		pprint(self.config)
+		pprint(self.schemas)
+		pprint(self.relations)
+		pprint(self.encodings)
 
 	def setup(self,config_in):
 		self.config = config_in

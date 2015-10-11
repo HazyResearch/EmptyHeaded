@@ -8,6 +8,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "timer.hpp"
 #include "io.hpp"
 #include "parallel.hpp"
 #include "thread_pool.hpp"

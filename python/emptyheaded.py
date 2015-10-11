@@ -1,4 +1,4 @@
-import os
+import json
 import codegenerator.createDB
 import codegenerator.env
 import codegenerator.fetchRelation
@@ -12,12 +12,18 @@ def createDB(name):
 def fetchData(relation):
 	codegenerator.fetchRelation.fetch(relation,environment)
 
+def saveDB():
+	environment.toJSON(environment.config["database"]+"/config.json")
+
+def loadDB(path):
+	environment.fromJSON(path)
+
 def main():
 	#db_config="/Users/caberger/Documents/Research/data/databases/higgs/config_pruned.json"
 	#db_config="/Users/caberger/Documents/Research/data/databases/simple/config.json"
-
-	fetchData("R")
 	#createDB(db_config)
+	loadDB("/Users/caberger/Documents/Research/data/databases/simple/db/config.json")
+	fetchData("R")
 	com="""
 	compileQuery("query1")
  	q1 = loadQuery("query1")
