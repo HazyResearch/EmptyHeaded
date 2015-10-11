@@ -1,5 +1,3 @@
-from sets import Set
-
 def declareColumnStore(name,types):
 	return """ColumnStore<%(types)s> *ColumnStore_%(name)s = new ColumnStore<%(types)s>();"""% locals()
 
