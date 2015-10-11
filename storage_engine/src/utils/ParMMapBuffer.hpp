@@ -27,6 +27,12 @@ struct ParMMapBuffer{
   void free();
   void save();
 
+  ~ParMMapBuffer(){
+    for(size_t i = 0; i < NUM_THREADS; i++){
+      elements.at(i).discard();
+    }
+  };
+
   /*
   Needed so that we have a common interface with parmemorybuffer
   */

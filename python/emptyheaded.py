@@ -10,6 +10,8 @@ def createDB(name):
 
 def main():
 	db_config="/Users/caberger/Documents/Research/data/databases/higgs/config_pruned.json"
+	#db_config="/Users/caberger/Documents/Research/data/databases/simple/config.json"
+
 	createDB(db_config)
 	com="""
 	compileQuery("query1")

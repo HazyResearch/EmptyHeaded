@@ -31,6 +31,8 @@ public:
   virtual ~MemoryBuffer();
   char* resize(unsigned increasedSize);
   char* getBuffer();
+  void free();
+
   char* getBuffer(int pos);
   size_t getSize() { return size; }
   size_t get_length() {return size; }

@@ -30,11 +30,20 @@ MemoryBuffer::MemoryBuffer(unsigned _size) :size(_size) {
   currentHead = buffer;
 }
 
+void MemoryBuffer::free(){
+  // TODO Auto-generated destructor stub
+  //free the buffer
+  if(buffer != NULL)
+    ::free(buffer);
+  buffer = NULL;
+  size = 0;
+}
+
 MemoryBuffer::~MemoryBuffer() {
   // TODO Auto-generated destructor stub
   //free the buffer
   if(buffer != NULL)
-    free(buffer);
+    ::free(buffer);
   buffer = NULL;
   size = 0;
 }
@@ -112,7 +121,7 @@ void MemoryBuffer::load(std::ifstream& ifile)
   ifile.get();
 
   if( buffer != NULL) {
-    free(buffer);
+    ::free(buffer);
     buffer = NULL;
   }
 

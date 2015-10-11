@@ -318,7 +318,7 @@ Trie<A,M>::Trie(
   for(size_t i = 0; i < num_rows; i++){
     *iterator++ = i; 
   }
-  
+
   //sort the relation
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
@@ -328,7 +328,7 @@ Trie<A,M>::Trie(
   
   //set up temporary buffers needed for the build
   //fixme: add estimate
-  ParMemoryBuffer *tmp_data = new ParMemoryBuffer(1000*2*sizeof(size_t));
+  ParMemoryBuffer *tmp_data = new ParMemoryBuffer(2*sizeof(size_t));
   for(size_t i = 0; i < num_columns; i++){
     for(size_t t = 0; t < NUM_THREADS; t++){
       size_t* ranges = (size_t*)tmp_data->get_next(t,sizeof(size_t)*(max_set_sizes->at(i)+1));
@@ -403,6 +403,7 @@ Trie<A,M>::Trie(
     */
   }
   
+  delete tmp_data;
   //encode the set, create a block with NULL pointers to next level
   //should be a 1-1 between pointers in block and next ranges
   //also a 1-1 between blocks and numbers of next ranges

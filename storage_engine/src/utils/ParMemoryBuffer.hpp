@@ -21,6 +21,12 @@ struct ParMemoryBuffer{
   void save();
   uint8_t* get_head(const size_t tid);
 
+  ~ParMemoryBuffer(){
+    for(size_t i = 0; i < NUM_THREADS; i++){
+      elements.at(i).free();
+    }
+  };
+
   static ParMemoryBuffer* load(
     std::string path,
     std::vector<size_t>* num_elems);
