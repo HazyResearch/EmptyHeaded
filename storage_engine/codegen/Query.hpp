@@ -13,6 +13,9 @@
 struct application{};
 #endif
 
+struct ParMMapBuffer;
+struct ParMemoryBuffer;
+
 //template types are the types of the attributes, followed by the type of the annotation
 struct Query : public application {
   uint64_t num_rows; // = 0;

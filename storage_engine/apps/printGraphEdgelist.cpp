@@ -5,17 +5,15 @@ struct createGraphDBEdgelist: public application {
   ////////////////////emitInitCreateDB////////////////////
   // init ColumnStores
   void run(){
-    Trie<void *,ParMemoryBuffer> *Trie_R_0_1 = NULL;
+    Trie<void *,ParMMapBuffer> *Trie_R_0_1 = NULL;
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_R_0_1 = Trie<void *,ParMemoryBuffer>::load( 
+      Trie_R_0_1 = Trie<void *,ParMMapBuffer>::load( 
           "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1");
       timer::stop_clock("BUILDING TRIE R_0_1", start_time);
     }
 
-    std::cout << Trie_R_0_1->num_rows << " " << Trie_R_0_1->num_columns << " " << Trie_R_0_1->getHead()->set.cardinality << std::endl;
-    long sum = 0;
     Trie_R_0_1->foreach([&](std::vector<uint32_t>* tuple,void* value){
       for(size_t i =0; i < tuple->size(); i++){
         std::cout << tuple->at(i) << " ";

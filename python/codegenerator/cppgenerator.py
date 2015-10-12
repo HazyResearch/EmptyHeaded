@@ -24,5 +24,5 @@ def compileC(name):
 def compileAndRun(f,name):
 	generate(f,name) #generates C++ code
 	compileC(name) #compiles C++ library
-	cppexecutor.execute(name) 	#generates python wrapper and excutes C++ code
+	return cppexecutor.execute(name) 	#generates python wrapper and excutes C++ code
 

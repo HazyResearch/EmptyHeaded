@@ -127,7 +127,6 @@ void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body
         tuple,
         body);
     } else if(annotated) {
-      std::cout << "annotated not implemented yet" << std::endl;
       assert(false);
       //body(tuple,head->get_data(a_i,a_d));
     } else{
@@ -258,6 +257,7 @@ void recursive_build(
   const size_t next_offset = build_block<B,M>(tid,data_allocator,(end-start),sb);
   const size_t tid_prev = level == 1 ? 0:tid;
   B* prev_block = B::get_block(tid_prev,offset,data_allocator);
+
   prev_block->set_block(index,data,tid,next_offset);
 
   if(level < (num_levels-1)){
@@ -327,23 +327,23 @@ Trie<A,M>::Trie(
   //fixme: add estimate
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();
-  
-  size_t malloc_size = 0;
-  for(size_t i = 0; i < num_columns; i++){
-    const size_t index = max_set_sizes->at(i)+1;
-    malloc_size += index;
-  }
-  malloc_size = malloc_size*(sizeof(size_t)+sizeof(uint32_t));
-  uint8_t *tmp_buffer = (uint8_t*)malloc(malloc_size);
 
+  size_t alloc_size = 0;
   for(size_t i = 0; i < num_columns; i++){
-    const size_t index = max_set_sizes->at(i)+1;
-    uint8_t* start_tmp = tmp_buffer+index*(sizeof(size_t)+sizeof(uint32_t));
-    for(size_t t = 0; t < NUM_THREADS; t++){
-      ranges_buffer->push_back((size_t*)start_tmp);
-      set_data_buffer->push_back((uint32_t*)(start_tmp+index*sizeof(size_t))); 
+    alloc_size += max_set_sizes->at(i)+1;
+  }
+  size_t* tmp_st = new size_t[alloc_size*NUM_THREADS];
+  uint32_t* tmp_i = new uint32_t[alloc_size*NUM_THREADS];
+
+  size_t index = 0;
+  for(size_t t = 0; t < NUM_THREADS; t++){
+    for(size_t i = 0; i < num_columns; i++){
+      ranges_buffer->push_back(&tmp_st[index]);
+      set_data_buffer->push_back(&tmp_i[index]); 
+      index += max_set_sizes->at(i)+1;
     }
   }
+
 
   //Find the ranges for distinct values in the head
   auto tup = produce_ranges(0,
@@ -402,7 +402,6 @@ Trie<A,M>::Trie(
         indicies,
         annotation);
     });
-
   } else if(annotation->size() > 0){
     /*
     new_head->alloc_data(0,data_allocator);

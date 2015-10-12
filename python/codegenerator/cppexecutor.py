@@ -20,4 +20,4 @@ def execute(name):
 	compileQuery(name)
 	q = loadQuery(name)
 	q_result = q.run()
-	#print q.num_rows(q_result)
+	return (q,q_result)
