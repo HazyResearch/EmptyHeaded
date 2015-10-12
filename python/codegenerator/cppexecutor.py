@@ -12,9 +12,9 @@ def compileQuery(name):
 	os.system("./build.sh " + name + ">/dev/null")
 	os.chdir("..")
 
-def execute(name,mem,annotationType):
+def execute(name,mem,types,annotationType):
 	wrapperfile = open("wrapper/querywrapper.cpp","w")
-	wrapperfile.write(wrappertemplate.getCode(name,mem,annotationType))
+	wrapperfile.write(wrappertemplate.getCode(name,mem,types,annotationType))
 	wrapperfile.close()
 
 	compileQuery(name)

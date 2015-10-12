@@ -18,13 +18,11 @@ struct ParMemoryBuffer;
 
 //template types are the types of the attributes, followed by the type of the annotation
 struct Query : public application {
-  uint64_t num_rows; // = 0;
   void* result;
-  void* encodings;
+  std::vector<void*>* encodings;
 
 	Query();
 	void run();
-
   void fetch_result(); //TO DO implement something that iterates over the trie an returns the tuples
 };
 

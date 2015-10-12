@@ -1,5 +1,6 @@
-def getCode(name,mem,annotationType):
-	return """
+def getCode(name,mem,types,annotationType):
+	t_len = len(types)
+	code = """
 #include "querywrapper.hpp"
 #include <iostream>
 
@@ -29,8 +30,9 @@ static PyObject * num_rows(PyObject * self, PyObject * args){
     return NULL;
   }
 
-  Query* v = (Query*)PyCObject_AsVoidPtr(p); 
-  PyObject * key_1_o = PyLong_FromLong(v->num_rows);
+  Query* q = (Query*)PyCObject_AsVoidPtr(p); 
+  Trie<%(annotationType)s,%(mem)s>* result = (Trie<%(annotationType)s,%(mem)s>*) q->result;
+  PyObject * key_1_o = PyLong_FromLong(result->num_rows);
 
   Py_INCREF(key_1_o);
   return key_1_o;
@@ -44,12 +46,18 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
   }
 
   Query* q = (Query*)PyCObject_AsVoidPtr(p);
-  Trie<void*,%(mem)s>* result = (Trie<void*,%(mem)s>*) q->result;
+  Trie<%(annotationType)s,%(mem)s>* result = (Trie<%(annotationType)s,%(mem)s>*) q->result;
+  std::vector<void*>* encodings = (std::vector<void*>*) q->encodings;
+  (void) encodings;
 	result->foreach([&](std::vector<uint32_t>* tuple,%(annotationType)s value){
-	  for(size_t i =0; i < tuple->size(); i++){
-	    std::cout << tuple->at(i) << " ";
-	  }
-	  std::cout << std::endl;
+	  assert(tuple->size() == %(t_len)s);"""% locals()
+	i = 0
+	for t in types:
+		code += """
+		Encoding<%(t)s>* Encoding_%(i)s = (Encoding<%(t)s>*)encodings->at(%(i)s);
+		std::cout << Encoding_%(i)s->key_to_value.at(tuple->at(%(i)s)) << " ";"""% locals()
+		i += 1 
+	code+="""std::cout << std::endl;
 	});
 
   PyObject * key_1_o = PyLong_FromLong(2);
@@ -61,5 +69,5 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
 PyMODINIT_FUNC init%(name)s(void)
 {
   Py_InitModule("%(name)s", EmptyHeadedQueryMethods);
-}
-"""% locals()
+}"""% locals()
+	return code

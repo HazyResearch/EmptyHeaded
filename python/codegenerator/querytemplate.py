@@ -6,7 +6,6 @@ def getCode(includes,run):
 %(includes)s
 
 Query::Query(){
-  num_rows = 0;
   thread_pool::initializeThreadPool();
 }
 
