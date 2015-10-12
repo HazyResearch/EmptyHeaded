@@ -12,6 +12,9 @@ def createDB(name):
 def fetchData(relation):
 	return codegenerator.fetchRelation.fetch(relation,environment)
 
+def numRows(relation):
+	return codegenerator.fetchRelation.numRows(relation,environment)
+
 def saveDB():
 	environment.toJSON(environment.config["database"]+"/config.json")
 

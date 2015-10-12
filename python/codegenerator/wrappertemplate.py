@@ -68,8 +68,6 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
 	code += """if(PyList_Append(retTable,retRow) == -1){
    	std::cout << "ERROR INSERTING ROW";}"""% locals()
 	code += """});
-  std::cout << PyList_Size(retTable) << std::endl;
-
   return retTable;
 }
 

@@ -7,6 +7,28 @@ import code.fetch
 
 from pprint import pprint
 
+def numRows(relation,env):
+	notFound = "Relation " + relation + " does not exist in database."
+	if relation in env.schemas:
+		schema = env.schemas[relation]
+		ordering = schema["orderings"][0]
+		trieName = relation + "_" + "_".join(map(str,ordering))
+		types = map(lambda x : str(x["type"]),schema["attributes"])
+		if trieName in env.relations:
+			if env.relations[trieName] == "disk":
+				#get encodings
+				result = cppgenerator.compileAndRun(lambda: 
+					fetchData(relation,trieName,schema["annotation"],schema["attributes"],env),
+					"fetchData_"+relation,env.config["memory"],types,schema["annotation"])
+				return result[0].num_rows(result[1])
+			else:
+				print "Not yet supported. Must be on disk."
+		else:
+			print notFound
+	else:
+		print notFound
+	return -1
+
 def fetch(relation,env):
 	notFound = "Relation " + relation + " does not exist in database."
 	if relation in env.schemas:
