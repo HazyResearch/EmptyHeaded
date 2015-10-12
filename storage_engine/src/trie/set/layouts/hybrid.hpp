@@ -137,7 +137,6 @@ inline void hybrid::foreach(
     const size_t cardinality,
     const size_t number_of_bytes,
     const type::layout t) {
-  std::cout << "HYBRID" << std::endl;
   switch(t){
     case type::UINTEGER :
       uinteger::foreach(f,data_in,cardinality,number_of_bytes,type::UINTEGER);

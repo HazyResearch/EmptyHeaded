@@ -125,7 +125,7 @@ char* MMapBuffer::get_next(const size_t size_requested){
 }
 
 void MMapBuffer::roll_back(const size_t num){
-  assert((size_t)(head-mmap_addr) > num);
+  assert((size_t)(head-mmap_addr) >= num);
   head -= num;
 }
 

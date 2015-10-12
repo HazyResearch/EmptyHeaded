@@ -65,7 +65,7 @@ char* MemoryBuffer::get_next(const size_t size_requested){
 }
 
 void MemoryBuffer::roll_back(const size_t size_requested){
-  assert((size_t)(currentHead-buffer) > size_requested);
+  assert((size_t)(currentHead-buffer) >= size_requested);
   currentHead -= size_requested;
 }
 

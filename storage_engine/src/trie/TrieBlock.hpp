@@ -24,7 +24,7 @@ struct TrieBlock{
     return is_sparse ? set.cardinality:(set.range+1);
   }
 
-  inline NextLevel* next(size_t index){
+  inline NextLevel* next(size_t index) const {
     return (NextLevel*)(
       (uint8_t*)this + 
       sizeof(TrieBlock<T,M>) + 
@@ -68,7 +68,7 @@ struct TrieBlock{
 
   inline TrieBlock<T,M>* get_next_block(
     const uint32_t data,
-    M* buffer) {
+    M* buffer) const {
 
     TrieBlock<T,M>* result = NULL;
     if(!is_sparse){

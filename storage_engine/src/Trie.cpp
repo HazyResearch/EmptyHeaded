@@ -73,6 +73,7 @@ void recursive_foreach(
   if(level+1 == num_levels){
     current->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
       tuple->push_back(a_d);
+      (void) a_i;
       if(annotated)
         assert(false);
         //body(tuple,current->get_data(a_i,a_d));

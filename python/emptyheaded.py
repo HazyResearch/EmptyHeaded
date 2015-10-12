@@ -19,11 +19,11 @@ def loadDB(path):
 	environment.fromJSON(path)
 
 def main():
-	#db_config="/Users/caberger/Documents/Research/data/databases/higgs/config_pruned.json"
+	db_config="/Users/caberger/Documents/Research/data/databases/higgs/config_pruned.json"
 	#db_config="/Users/caberger/Documents/Research/data/databases/simple/config.json"
-	#createDB(db_config)
-	loadDB("/Users/caberger/Documents/Research/data/databases/simple/db/config.json")
-	fetchData("R")
+	createDB(db_config)
+	#loadDB("/Users/caberger/Documents/Research/data/databases/simple/db/config.json")
+	#fetchData("R")
 	com="""
 	compileQuery("query1")
  	q1 = loadQuery("query1")
