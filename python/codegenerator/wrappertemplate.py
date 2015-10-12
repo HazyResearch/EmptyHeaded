@@ -48,22 +48,29 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
   Query* q = (Query*)PyCObject_AsVoidPtr(p);
   Trie<%(annotationType)s,%(mem)s>* result = (Trie<%(annotationType)s,%(mem)s>*) q->result;
   std::vector<void*>* encodings = (std::vector<void*>*) q->encodings;
+  PyObject *retTable = PyList_New(0);
   (void) encodings;
 	result->foreach([&](std::vector<uint32_t>* tuple,%(annotationType)s value){
-	  assert(tuple->size() == %(t_len)s);"""% locals()
-	i = 0
+	  assert(tuple->size() == %(t_len)s);
+  	  PyObject *retRow = PyTuple_New(tuple->size());"""% locals()
+  	i = 0
 	for t in types:
-		code += """
-		Encoding<%(t)s>* Encoding_%(i)s = (Encoding<%(t)s>*)encodings->at(%(i)s);
-		std::cout << Encoding_%(i)s->key_to_value.at(tuple->at(%(i)s)) << " ";"""% locals()
-		i += 1 
-	code+="""std::cout << std::endl;
-	});
+		if t == "long":
+			code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(((Encoding<%(t)s>*)encodings->at(%(i)s))->key_to_value.at(tuple->at(%(i)s)));
+			PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
+		elif t == "int":
+			print "NOT IMPLEMENTED"
+		elif t == "string":
+			print "NOT IMPLEMENTED"
+		elif t == "float":
+			print "NOT IMPLEMENTED"
+		i += 1
+	code += """if(PyList_Append(retTable,retRow) == -1){
+   	std::cout << "ERROR INSERTING ROW";}"""% locals()
+	code += """});
+  std::cout << PyList_Size(retTable) << std::endl;
 
-  PyObject * key_1_o = PyLong_FromLong(2);
-
-  Py_INCREF(key_1_o);
-  return key_1_o;
+  return retTable;
 }
 
 PyMODINIT_FUNC init%(name)s(void)

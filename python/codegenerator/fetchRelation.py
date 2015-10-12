@@ -20,14 +20,14 @@ def fetch(relation,env):
 				result = cppgenerator.compileAndRun(lambda: 
 					fetchData(relation,trieName,schema["annotation"],schema["attributes"],env),
 					"fetchData_"+relation,env.config["memory"],types,schema["annotation"])
-				print "NUM ROWS: " + str(result[0].num_rows(result[1]))
-				result[0].fetch_data(result[1])
+				return result[0].fetch_data(result[1])
 			else:
 				print "Not yet supported. Must be on disk."
 		else:
 			print notFound
 	else:
 		print notFound
+	return -1
 
 def fetchData(relation,trieName,annotationType,attributes,env):
 	memType = env.config["memory"]
@@ -39,7 +39,6 @@ def fetchData(relation,trieName,annotationType,attributes,env):
 	path = env.config["database"] + "/relations/" + relation + "/" + trieName
 	runCode = code.fetch.loadRelation(path,trieName,annotationType,memType)
 	
-	print attributes
 	s = set()
 	for a in attributes:
 		if a["encoding"] not in s:

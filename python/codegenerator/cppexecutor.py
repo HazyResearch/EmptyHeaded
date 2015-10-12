@@ -8,7 +8,7 @@ def loadQuery(name):
 
 def compileQuery(name):
 	os.chdir("wrapper")
-	print name
+	#print name
 	os.system("./build.sh " + name + ">/dev/null")
 	os.chdir("..")
 

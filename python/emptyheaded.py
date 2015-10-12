@@ -10,7 +10,7 @@ def createDB(name):
 	#environment.dump()
 
 def fetchData(relation):
-	codegenerator.fetchRelation.fetch(relation,environment)
+	return codegenerator.fetchRelation.fetch(relation,environment)
 
 def saveDB():
 	environment.toJSON(environment.config["database"]+"/config.json")
