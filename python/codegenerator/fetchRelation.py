@@ -16,8 +16,9 @@ def fetch(relation,env):
 		if trieName in env.relations:
 			if env.relations[trieName] == "disk":
 				#get encodings
-				result = cppgenerator.compileAndRun(lambda: fetchData(relation,trieName,schema["annotation"],env),
-					"fetchData_"+relation)
+				result = cppgenerator.compileAndRun(lambda: 
+					fetchData(relation,trieName,schema["annotation"],env),
+					"fetchData_"+relation,env.config["memory"],schema["annotation"])
 				print result
 				result[0].fetch_data(result[1])
 			else:

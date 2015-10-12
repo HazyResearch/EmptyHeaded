@@ -1,4 +1,4 @@
-def getCode(name):
+def getCode(name,mem,annotationType):
 	return """
 #include "querywrapper.hpp"
 #include <iostream>
@@ -44,13 +44,14 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
   }
 
   Query* q = (Query*)PyCObject_AsVoidPtr(p);
-  Trie<void*,ParMMapBuffer>* result = (Trie<void*,ParMMapBuffer>*) q->result;
-	result->foreach([&](std::vector<uint32_t>* tuple,void* value){
+  Trie<void*,%(mem)s>* result = (Trie<void*,%(mem)s>*) q->result;
+	result->foreach([&](std::vector<uint32_t>* tuple,%(annotationType)s value){
 	  for(size_t i =0; i < tuple->size(); i++){
 	    std::cout << tuple->at(i) << " ";
 	  }
 	  std::cout << std::endl;
 	});
+
   PyObject * key_1_o = PyLong_FromLong(2);
 
   Py_INCREF(key_1_o);

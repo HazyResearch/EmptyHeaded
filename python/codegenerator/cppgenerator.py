@@ -21,8 +21,8 @@ def compileC(name):
 
 	os.chdir("../python")
 
-def compileAndRun(f,name):
+def compileAndRun(f,name,mem,annotationType):
 	generate(f,name) #generates C++ code
 	compileC(name) #compiles C++ library
-	return cppexecutor.execute(name) 	#generates python wrapper and excutes C++ code
+	return cppexecutor.execute(name,mem,annotationType) 	#generates python wrapper and excutes C++ code
 
