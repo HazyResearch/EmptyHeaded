@@ -47,3 +47,9 @@ https://www.threadingbuildingblocks.org/
 **Need AVX?**
 
 Buy a new machine.
+
+# Configuration
+
+*Set EMPTYHEADED_HOME to the root of this repository.
+
+*Add EMPTYHEADED_HOME/libs to your LD_LIBRARY_PATH.
