@@ -8,14 +8,11 @@
 #ifndef _TRIE_H_
 #define _TRIE_H_
 
-#include <stdint.h>
-#include <stddef.h>
+#include <iostream>
+#include <string>
 #include <vector>
 #include <functional>
-
-class hybrid;
-typedef hybrid layout;
-template<class T, class R> struct TrieBlock;
+#include "layout.hpp"
 
 /*
 * Very simple tree structure stores the trie. All that is needed is the 
@@ -31,6 +28,11 @@ struct Trie{
   //A annotation = (A)0;
 
   Trie<A,M>(){};
+
+  Trie<A,M>(std::string path, size_t num_columns_in){
+    memoryBuffers = new M(path,2);
+    num_columns = num_columns_in;
+  };
 
   Trie<A,M>(
     std::string path,

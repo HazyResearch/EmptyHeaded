@@ -7,7 +7,7 @@
 struct ParMMapBuffer{
   static std::string folder;
   std::string path;
-  std::vector<MMapBuffer> elements;
+  std::vector<MMapBuffer*> elements;
 
   ParMMapBuffer(
     std::string path,
@@ -29,7 +29,7 @@ struct ParMMapBuffer{
 
   ~ParMMapBuffer(){
     for(size_t i = 0; i < NUM_THREADS; i++){
-      elements.at(i).free();
+      elements.at(i)->free();
     }
   };
 

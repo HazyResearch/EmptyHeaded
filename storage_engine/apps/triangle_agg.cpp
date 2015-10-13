@@ -31,7 +31,7 @@ struct triangleAgg: public application {
     }
 
     auto query_time = timer::start_clock();
-    Trie<long,mem> *Trie_Triangle_;
+    Trie<long,mem> *Trie_Triangle_ = new Trie<long,mem>("here",3);
     {
       ////////////////////NPRR BAG bag_R_abc////////////////////
       /*
@@ -41,60 +41,48 @@ struct triangleAgg: public application {
       */
       {
         auto start_time = timer::start_clock();
-      
-        ParMemoryBuffer *a_buffer =
-            new ParMemoryBuffer(10000);
-        ParMemoryBuffer *b_buffer =
-            new ParMemoryBuffer(10000);
-        ParMemoryBuffer *c_buffer =
-            new ParMemoryBuffer(10000);
-          
-        const TrieBlock<hybrid, mem> *TrieBlock_R_0_1_0 =
-            (TrieBlock<hybrid, mem> *)Trie_R_0_1->getHead();
-        Set<hybrid> a = TrieBlock_R_0_1_0->set;
+       
+        TrieBuilder<long,mem> Builder_Triangle(Trie_Triangle_);
+        ParTrieIterator<void*,mem> Iterators_R_a_b(Trie_R_0_1);
+        ParTrieIterator<void*,mem> Iterators_R_b_c(Trie_R_0_1);
+        ParTrieIterator<void*,mem> Iterators_R_a_c(Trie_R_0_1);
+
+        Set<hybrid> a = Trie_R_0_1->getHead()->set;
+
         // emitAnnotationInitialization
         // emitAggregateReducer
         par::reducer<long> annotation(0,
                                       [](size_t a, size_t b) { return a + b; });
         a.par_foreach([&](size_t tid, uint32_t a_d) {
-          (void)tid;
-          const TrieBlock<hybrid, mem> *TrieBlock_R_0_1_1_a_b =
-              (TrieBlock<hybrid, mem> *)TrieBlock_R_0_1_0->get_next_block(a_d,Trie_R_0_1->memoryBuffers);
-          const size_t alloc_size_b =
-              std::max(TrieBlock_R_0_1_1_a_b->set.number_of_bytes,
-                       TrieBlock_R_0_1_0->set.number_of_bytes);
-          Set<hybrid> b(b_buffer->get_next(tid, alloc_size_b));
-          b = *ops::set_intersect(
-                  &b, (const Set<hybrid> *)&TrieBlock_R_0_1_0->set,
-                  (const Set<hybrid> *)&TrieBlock_R_0_1_1_a_b->set);
-          // emitAnnotationInitialization
+          TrieIterator<void*,mem>* Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
+          TrieIterator<void*,mem>* Iterator_R_b_c = Iterators_R_b_c.iterators.at(tid);
+          TrieIterator<void*,mem>* Iterator_R_a_c = Iterators_R_a_c.iterators.at(tid);
+
+          Iterator_R_a_b->get_next_block(0,a_d);
+          Iterator_R_a_c->get_next_block(0,a_d);
+
+          Set<hybrid> b = Builder_Triangle.build_aggregated_set(
+            tid,
+            1,
+            Iterator_R_b_c->get_block(0),
+            Iterator_R_a_b->get_block(1)
+            );
+          
           long annotation_b = (long)0;
           b.foreach ([&](uint32_t b_d) {
-            const TrieBlock<hybrid, mem> *TrieBlock_R_0_1_1_b_c =
-                (TrieBlock<hybrid, mem> *)TrieBlock_R_0_1_0->get_next_block(b_d,Trie_R_0_1->memoryBuffers);
-            const TrieBlock<hybrid, mem> *TrieBlock_R_0_1_1_a_c =
-                (TrieBlock<hybrid, mem> *)TrieBlock_R_0_1_0->get_next_block(a_d,Trie_R_0_1->memoryBuffers);
-            const size_t alloc_size_c =
-                std::max(TrieBlock_R_0_1_1_a_c->set.number_of_bytes,
-                         TrieBlock_R_0_1_1_b_c->set.number_of_bytes);
-            Set<hybrid> c(c_buffer->get_next(tid, alloc_size_c));
-            c = *ops::set_intersect(
-                    &c, (const Set<hybrid> *)&TrieBlock_R_0_1_1_b_c->set,
-                    (const Set<hybrid> *)&TrieBlock_R_0_1_1_a_c->set);
+            Iterator_R_b_c->get_next_block(0,b_d);
+
+            size_t count = Builder_Triangle.count_set(
+              Iterator_R_b_c->get_block(1),
+              Iterator_R_a_c->get_block(1)
+            );
             // emitAnnotationInitialization
-            long annotation_c = (long)0;
-            // emitAnnotationComputation
-            annotation_c += (c.cardinality * 1 * 1);
-            c_buffer->roll_back(tid, alloc_size_c);
+            long annotation_c = count;
             annotation_b += (annotation_c * 1 * 1);
           });
-          b_buffer->roll_back(tid, alloc_size_b);
           annotation.update(tid, (annotation_b * 1));
         });
         std::cout << annotation.evaluate(0) << std::endl;
-        //a_buffer->free();
-        //b_buffer->free();
-        //c_buffer->free();
         timer::stop_clock("Bag bag_R_abc", start_time);
       }
     }

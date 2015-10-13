@@ -6,7 +6,7 @@
 struct ParMemoryBuffer{
   static std::string folder;
   std::string path;
-  std::vector<MemoryBuffer> elements;
+  std::vector<MemoryBuffer*> elements;
   
   ParMemoryBuffer(std::string path,size_t num_elems);
   ParMemoryBuffer(std::string path);
@@ -23,7 +23,7 @@ struct ParMemoryBuffer{
 
   ~ParMemoryBuffer(){
     for(size_t i = 0; i < NUM_THREADS; i++){
-      elements.at(i).free();
+      elements.at(i)->free();
     }
   };
 

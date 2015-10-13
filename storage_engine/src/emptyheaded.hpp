@@ -1,5 +1,7 @@
 #include "utils/utils.hpp"
 #include "intermediate/intermediate.hpp"
 #include "Encoding.hpp"
+#include "TrieIterator.hpp"
+#include "TrieBuilder.hpp"
 #include "Trie.hpp"
 #include "trie/TrieBlock.hpp"

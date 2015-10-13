@@ -49,7 +49,7 @@
 #define BYTES_PER_WORD 8
 
 #ifndef NUM_THREADS_IN
-static size_t NUM_THREADS = 1;
+static size_t NUM_THREADS = 2;
 #else
 static size_t NUM_THREADS = NUM_THREADS_IN; 
 #endif

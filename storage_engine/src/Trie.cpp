@@ -310,6 +310,7 @@ Trie<A,M>::Trie(
   num_rows = attr_in->at(0).size();
   num_columns = attr_in->size();
   //fixme: add estimate
+
   memoryBuffers = new M(path,2);  
   assert(num_columns != 0  && num_rows != 0);
 
@@ -344,7 +345,6 @@ Trie<A,M>::Trie(
       index += max_set_sizes->at(i)+1;
     }
   }
-
 
   //Find the ranges for distinct values in the head
   auto tup = produce_ranges(0,
