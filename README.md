@@ -50,6 +50,4 @@ Buy a new machine.
 
 # Configuration
 
-*Set EMPTYHEADED_HOME to the root of this repository.
-
-*Add EMPTYHEADED_HOME/libs to your LD_LIBRARY_PATH.
+Run `source setupEnv.sh`
