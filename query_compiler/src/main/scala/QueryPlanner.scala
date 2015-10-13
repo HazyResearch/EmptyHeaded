@@ -1,12 +1,11 @@
 package DunceCap
 
 /*
-  The whole stack runs in this file. Parse datalog
-  through producing a GHD which passes a JSON object
-  to the codegen.
+  Susans file. Standalone executable runs from parsing through GHD gen.
+  Should spill JSON GHD to disk.
 */
 
-object QueryCompiler {
+object QueryPlanner {
   def readFile(file:String): String = {
     val source = scala.io.Source.fromFile(file)
     val line = try source.mkString finally source.close()
