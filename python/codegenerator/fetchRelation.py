@@ -2,7 +2,7 @@ import sys
 import env
 import itertools
 import cppgenerator
-import querytemplate
+import code.querytemplate
 import code.fetch
 
 from pprint import pprint
@@ -68,7 +68,7 @@ def fetchData(relation,trieName,annotationType,attributes,env):
 			s.add(a["encoding"])
 	encodings = map(lambda i:i["encoding"],attributes)
 	runCode += code.fetch.setResult(trieName,encodings)
-	return querytemplate.getCode(include,runCode)
+	return code.querytemplate.getCode(include,runCode)
 	#cppgenerator.compileAndRun(
 	#lambda: cppgenerator.loadRelations(relations,env),
 	#libname)

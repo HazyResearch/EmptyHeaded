@@ -1,5 +1,5 @@
 import os
-import wrappertemplate
+import code.wrappertemplate
 
 def loadQuery(name):
     name = "queries." + name
@@ -14,7 +14,7 @@ def compileQuery(name):
 
 def execute(name,mem,types,annotationType):
 	wrapperfile = open("wrapper/querywrapper.cpp","w")
-	wrapperfile.write(wrappertemplate.getCode(name,mem,types,annotationType))
+	wrapperfile.write(code.wrappertemplate.getCode(name,mem,types,annotationType))
 	wrapperfile.close()
 
 	compileQuery(name)

@@ -3,7 +3,7 @@ import json
 import env
 import itertools
 import cppgenerator
-import querytemplate
+import code.querytemplate
 import os
 from sets import Set
 import code.build
@@ -94,7 +94,7 @@ def loadRelationCode(relations,env):
 def loadRelations(relations,env):
 	include = """#include "emptyheaded.hpp" """
 	runCode = loadRelationCode(relations,env)
-	return querytemplate.getCode(include,runCode)
+	return code.querytemplate.getCode(include,runCode)
 
 def buildTrie(orderings,relation,env):
 	include = """#include "emptyheaded.hpp" """
@@ -116,4 +116,4 @@ def buildTrie(orderings,relation,env):
 			relation["annotation"],
 			env.config["memory"])
 	env.setRelations(envRelations)
-	return querytemplate.getCode(include,codeString)
+	return code.querytemplate.getCode(include,codeString)

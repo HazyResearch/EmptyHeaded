@@ -23,13 +23,14 @@ object QueryPlanner {
   }
   def main(args:Array[String]) = {
     if( (args.length == 1) || (args.length == 2)){
+      Environment.fromJSON(args(0))
       if(args.length == 2){
         DCParser.run(readFile(args(1)))
       } else {
         getInput()
       }
     } else{
-      println("""Usage: "./target/start/QueryCompiler" or "./target/start/QueryCompiler <datalog file>" """)
+      println("""Usage: "./target/start/QueryCompiler <JSON config>" or "./target/start/QueryCompiler <JSON config> <datalog file>" """)
     }
   }
 }
