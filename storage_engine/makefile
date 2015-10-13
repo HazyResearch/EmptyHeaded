@@ -30,7 +30,7 @@ endif
 ifdef CLANG
 	CXX = clang++
 else 
-	CXX = g++-4.9 
+	CXX = g++ 
 endif
 
 APPS_SOURCES=$(shell ls apps)
