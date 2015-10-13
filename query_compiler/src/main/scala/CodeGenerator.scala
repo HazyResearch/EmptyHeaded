@@ -7,6 +7,11 @@ generates code.
 
 object CodeGenerator {
   def main(args:Array[String]) = {
-    println("CHRIS IS IMPLEMENTING")
+    if(args.length == 1){
+      val ghd = Generator.GHDFromJSON(args(0))
+      Generator.run(ghd)
+    } else{
+      println("""Usage: "./target/start/ DunceCap.CodeGenerator <JSON GHD>" """)
+    }
   }
 }
