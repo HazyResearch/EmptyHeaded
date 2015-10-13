@@ -12,7 +12,7 @@
 #include "Encoding.hpp"
 #include <iostream>
 #include <fstream>
-#include "utils/Parallel.hpp"
+#include "utils/parallel.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 //Stores the maps for the dictionary encoding.
