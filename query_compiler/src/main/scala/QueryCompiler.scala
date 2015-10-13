@@ -17,14 +17,14 @@ object QueryCompiler {
     } 
   }
   def main(args:Array[String]) = {
-    if( (args.length == 0) || (args.length == 1)){
-      if(args.length == 1){
-        DCParser.run(readFile(args(0)))
+    if( (args.length == 1) || (args.length == 2)){
+      if(args.length == 2){
+        DCParser.run(readFile(args(1)))
       } else {
         getInput()
       }
     } else{
-      println("""Usage: "./QueryCompiler" or "./QueryCompiler <datalog file>" """)
+      println("""Usage: "./target/start/QueryCompiler" or "./target/start/QueryCompiler <datalog file>" """)
     }
   }
 }

@@ -1,6 +1,9 @@
+import com.typesafe.sbt.SbtStartScript
+seq(SbtStartScript.startScriptForClassesSettings: _*)
+
 resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 
-name := "query_planner"
+name := "query_compiler"
 
 //resolvers += "Sonatype (releases)" at "https://oss.sonatype.org/content/repositories/releases/"
 scalaVersion := "2.11.2"
