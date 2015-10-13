@@ -6,8 +6,9 @@ ParMMapBuffer::ParMMapBuffer(
   std::string path_in,
   size_t num_elems_in){
   
+  num_buffers = NUM_THREADS;
   path = path_in;
-  for(size_t i = 0; i < NUM_THREADS; i++){
+  for(size_t i = 0; i < num_buffers; i++){
     std::string dataF = path + folder + "data_" + std::to_string(i) + ".bin";
     //std::string dataF = path_in + "_" + std::to_string(i) + ".bin";
     MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in);
@@ -17,10 +18,12 @@ ParMMapBuffer::ParMMapBuffer(
 
 ParMMapBuffer::ParMMapBuffer(
   std::string path_in,
-  std::vector<size_t>* num_elems_in){
+  std::vector<size_t>* num_elems_in,
+  size_t num_buffers_in){
   
+  num_buffers = num_buffers_in;
   path = path_in;
-  for(size_t i = 0; i < NUM_THREADS; i++){
+  for(size_t i = 0; i < num_buffers; i++){
     std::string dataF = path + folder + "data_" + std::to_string(i) + ".bin";
     //std::string dataF = path_in + "_" + std::to_string(i) + ".bin";
     MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in->at(i));
@@ -53,13 +56,13 @@ void ParMMapBuffer::roll_back(const size_t tid, const size_t num){
 }
 
 void ParMMapBuffer::save(){
-  for(size_t i = 0; i < NUM_THREADS; i++){
+  for(size_t i = 0; i < num_buffers; i++){
     elements.at(i)->flush();
   }
 }
 
 void ParMMapBuffer::free(){
-  for(size_t i = 0; i < NUM_THREADS; i++){
+  for(size_t i = 0; i < num_buffers; i++){
     elements.at(i)->discard();
   }
 }

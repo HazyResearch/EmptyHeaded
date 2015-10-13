@@ -21,7 +21,7 @@ void Trie<A,M>::save(){
   writefile->write((char *)&annotated, sizeof(annotated));
   writefile->write((char *)&num_rows, sizeof(num_rows));
   writefile->write((char *)&num_columns, sizeof(num_columns));
-  writefile->write((char *)&NUM_THREADS, sizeof(NUM_THREADS));
+  writefile->write((char *)&memoryBuffers->num_buffers, sizeof(memoryBuffers->num_buffers));
   for(size_t i = 0; i < NUM_THREADS; i++){
     const size_t t_size = memoryBuffers->get_size(i);
     writefile->write((char *)&t_size, sizeof(t_size));
@@ -54,7 +54,7 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
   infile->close();
 
   //init memory buffers
-  ret->memoryBuffers = M::load(path,buf_sizes);
+  ret->memoryBuffers = M::load(path,buf_sizes,w_n_threads);
 
   return ret;
 }

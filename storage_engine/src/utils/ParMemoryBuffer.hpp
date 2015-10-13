@@ -4,12 +4,13 @@
 #include "MemoryBuffer.hpp"
 
 struct ParMemoryBuffer{
+  size_t num_buffers;
   static std::string folder;
   std::string path;
   std::vector<MemoryBuffer*> elements;
   
   ParMemoryBuffer(std::string path,size_t num_elems);
-  ParMemoryBuffer(std::string path);
+  ParMemoryBuffer( size_t num_buffers_in,std::string path);
   ParMemoryBuffer(size_t num_elems);
   
   //debug
@@ -22,14 +23,15 @@ struct ParMemoryBuffer{
   uint8_t* get_head(const size_t tid);
 
   ~ParMemoryBuffer(){
-    for(size_t i = 0; i < NUM_THREADS; i++){
+    for(size_t i = 0; i < num_buffers; i++){
       elements.at(i)->free();
     }
   };
 
   static ParMemoryBuffer* load(
     std::string path,
-    std::vector<size_t>* num_elems);
+    std::vector<size_t>* num_elems,
+    size_t num_buffers_in);
 };
 
 #endif

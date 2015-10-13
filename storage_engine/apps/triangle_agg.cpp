@@ -1,7 +1,7 @@
 #define EXECUTABLE
 #include "main.hpp"
 
-typedef ParMemoryBuffer mem;
+typedef ParMMapBuffer mem;
 
 struct triangleAgg: public application {
   ////////////////////emitInitCreateDB////////////////////

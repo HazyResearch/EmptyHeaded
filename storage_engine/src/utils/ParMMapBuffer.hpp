@@ -5,17 +5,19 @@
 #include "MMapBuffer.hpp"
 
 struct ParMMapBuffer{
-  static std::string folder;
+  size_t num_buffers;
   std::string path;
   std::vector<MMapBuffer*> elements;
 
+  static std::string folder;
   ParMMapBuffer(
     std::string path,
     size_t num_elems);
 
   ParMMapBuffer(
     std::string path_in,
-    std::vector<size_t>* num_elems_in);
+    std::vector<size_t>* num_elems_in,
+    size_t num_buffers_in);
 
   //debug
   size_t get_size(const size_t tid);
@@ -28,7 +30,7 @@ struct ParMMapBuffer{
   void save();
 
   ~ParMMapBuffer(){
-    for(size_t i = 0; i < NUM_THREADS; i++){
+    for(size_t i = 0; i < num_buffers; i++){
       elements.at(i)->free();
     }
   };
@@ -38,8 +40,9 @@ struct ParMMapBuffer{
   */
   inline static ParMMapBuffer* load(    
     std::string path,
-    std::vector<size_t>* num_elems){
-    return new ParMMapBuffer(path,num_elems);
+    std::vector<size_t>* num_elems,
+    size_t num_buffers_in){
+    return new ParMMapBuffer(path,num_elems,num_buffers_in);
   };
 };
 
