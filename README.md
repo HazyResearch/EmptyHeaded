@@ -40,10 +40,10 @@ http://www.scala-sbt.org/download.html
 Linux: `sudo apt-get install libtbb-dev`
 Mac: `brew install tbb`
 
-**Need AVX?**
-
-Buy a new machine.
-
 For more information....
 
 https://www.threadingbuildingblocks.org/
+
+**Need AVX?**
+
+Buy a new machine.
