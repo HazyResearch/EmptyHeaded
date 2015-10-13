@@ -1,3 +1,9 @@
-target
-.idea
-gen
+*querywrapper.cpp
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.sublime*
+*.pyc
+*.so
