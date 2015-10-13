@@ -17,7 +17,7 @@ TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in){
   for(size_t i = 0; i < t_in->num_columns; i++){
     tmp_buffers.at(i) = new ParMemoryBuffer(100);
   }
-};
+}
 
 template<class A,class M>
 Set<hybrid>* TrieBuilder<A,M>::build_aggregated_set(

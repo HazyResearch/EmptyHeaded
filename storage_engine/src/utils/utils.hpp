@@ -24,7 +24,7 @@ namespace utils {
   template<>
   inline uint64_t from_string(const char *string_element){
     uint64_t element;
-    sscanf(string_element,"%llu",&element);
+    sscanf(string_element,"%lu",&element);
     return element;
   }
   template<>

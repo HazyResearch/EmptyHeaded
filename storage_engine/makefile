@@ -7,6 +7,8 @@ SOURCES=$(shell find src -name "*cpp")
 #STRIPPED=$(notdir $(SOURCES))
 OBJECTS=$(SOURCES:src/%.cpp=$(OBJDIR)/%.o)
 
+
+
 ifdef DEBUG
 	override CXXFLAGS += -DDEBUG -g
 endif
@@ -28,7 +30,7 @@ endif
 ifdef CLANG
 	CXX = clang++
 else 
-	CXX = g++
+	CXX = g++-4.9 
 endif
 
 APPS_SOURCES=$(shell ls apps)

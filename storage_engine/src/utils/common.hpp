@@ -48,11 +48,7 @@
 #define ADDRESS_BITS_PER_WORD 6
 #define BYTES_PER_WORD 8
 
-#ifndef NUM_THREADS_IN
-static size_t NUM_THREADS = 2;
-#else
-static size_t NUM_THREADS = NUM_THREADS_IN; 
-#endif
+static size_t NUM_THREADS = 4;
 
 namespace common{
   static size_t bitset_length = 2;

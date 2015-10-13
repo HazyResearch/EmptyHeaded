@@ -2,6 +2,7 @@
 #define PARALLEL_H
 
 #include "common.hpp"
+#include <atomic>
 
 namespace par{
   template<class T>
