@@ -9,6 +9,7 @@ ParMemoryBuffer::ParMemoryBuffer(
   
   num_buffers = num_buffers_in;
   path = path_in;
+  head = new MemoryBuffer();
   for(size_t i = 0; i < num_buffers; i++){
     MemoryBuffer* mbuffer = new MemoryBuffer();
     elements.push_back(mbuffer);
@@ -21,6 +22,7 @@ ParMemoryBuffer::ParMemoryBuffer(
   
   num_buffers = NUM_THREADS;
   path = path_in;
+  head = new MemoryBuffer(num_elems_in);
   for(size_t i = 0; i < num_buffers; i++){
     MemoryBuffer* mbuffer = new MemoryBuffer(num_elems_in);
     elements.push_back(mbuffer);
@@ -29,6 +31,7 @@ ParMemoryBuffer::ParMemoryBuffer(
 
 ParMemoryBuffer::ParMemoryBuffer(size_t num_elems_in){
   num_buffers = NUM_THREADS;
+  head = new MemoryBuffer(num_elems_in);
   for(size_t i = 0; i < num_buffers; i++){
     MemoryBuffer* mbuffer = new MemoryBuffer(num_elems_in);
     elements.push_back(mbuffer);
@@ -48,7 +51,7 @@ uint8_t* ParMemoryBuffer::get_address(const size_t tid){
 }
 
 uint8_t* ParMemoryBuffer::get_address(const size_t tid, const size_t offset){
-  return (uint8_t*)elements.at(tid)->getBuffer(offset);
+  return (uint8_t*)elements.at(tid)->get_address(offset);
 }
 
 uint8_t* ParMemoryBuffer::get_next(const size_t tid, const size_t num){
@@ -62,22 +65,33 @@ ParMemoryBuffer* ParMemoryBuffer::load(
 
   (void) num_elems_in; //actually this is stored in the file :) needed for mmap
   ParMemoryBuffer* ret = new ParMemoryBuffer(num_buffers_in,path_in);
+  
+  std::ifstream myfile;
+  std::string dataF = ret->path + folder + "data_head.bin";
+  myfile.open(dataF);
+  ret->head->load(myfile);
+  myfile.close();
   for(size_t i = 0; i < num_buffers_in; i++){
-    std::ifstream myfile;
-    std::string dataF = ret->path + folder + "data_" + std::to_string(i) + ".bin";
+    dataF = ret->path + folder + "data_" + std::to_string(i) + ".bin";
     myfile.open(dataF);
     ret->elements.at(i)->load(myfile);
+    myfile.close();
   }
   return ret;
 }
 
 void ParMemoryBuffer::save(){
   assert(!path.empty());
+  std::ofstream myfile;
+  std::string dataF = path + folder + "data_head.bin";
+  myfile.open(dataF,std::ios::trunc);
+  head->save(myfile);
+  myfile.close();
   for(size_t i = 0; i < num_buffers; i++){
-    std::ofstream myfile;
-    std::string dataF = path + folder + "data_" + std::to_string(i) + ".bin";
+    dataF = path + folder + "data_" + std::to_string(i) + ".bin";
     myfile.open(dataF,std::ios::trunc);
     elements.at(i)->save(myfile);
+    myfile.close();
   }
 }
 

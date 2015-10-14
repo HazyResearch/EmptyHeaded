@@ -8,6 +8,7 @@ struct ParMMapBuffer{
   size_t num_buffers;
   std::string path;
   std::vector<MMapBuffer*> elements;
+  MMapBuffer* head;
 
   static std::string folder;
   ParMMapBuffer(
@@ -30,6 +31,7 @@ struct ParMMapBuffer{
   void save();
 
   ~ParMMapBuffer(){
+    head->free();
     for(size_t i = 0; i < num_buffers; i++){
       elements.at(i)->free();
     }

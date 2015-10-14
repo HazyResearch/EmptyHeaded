@@ -43,7 +43,6 @@ template<class A,class M>
 size_t TrieBuilder<A,M>::count_set(
   TrieBlock<hybrid,M> *s1, 
   TrieBlock<hybrid,M> *s2){
-
     return ops::set_intersect(
             (const Set<hybrid> *)&s1->set,
             (const Set<hybrid> *)&s2->set);

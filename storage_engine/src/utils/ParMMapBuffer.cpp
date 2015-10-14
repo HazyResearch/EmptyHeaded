@@ -8,10 +8,12 @@ ParMMapBuffer::ParMMapBuffer(
   
   num_buffers = NUM_THREADS;
   path = path_in;
+
+  std::string dataF = path + folder + "data_head.bin";
+  MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in);
   for(size_t i = 0; i < num_buffers; i++){
-    std::string dataF = path + folder + "data_" + std::to_string(i) + ".bin";
-    //std::string dataF = path_in + "_" + std::to_string(i) + ".bin";
-    MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in);
+    dataF = path + folder + "data_" + std::to_string(i) + ".bin";
+    mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in);
     elements.push_back(mbuffer);
   }
 }
@@ -23,10 +25,11 @@ ParMMapBuffer::ParMMapBuffer(
   
   num_buffers = num_buffers_in;
   path = path_in;
+  std::string dataF = path + folder + "data_head.bin";
+  MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in->at(0));
   for(size_t i = 0; i < num_buffers; i++){
-    std::string dataF = path + folder + "data_" + std::to_string(i) + ".bin";
-    //std::string dataF = path_in + "_" + std::to_string(i) + ".bin";
-    MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in->at(i));
+    dataF = path + folder + "data_" + std::to_string(i) + ".bin";
+    mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in->at(i+1));
     elements.push_back(mbuffer);
   }
 }
@@ -44,7 +47,7 @@ size_t ParMMapBuffer::get_size(const size_t tid){
 }
 
 uint8_t* ParMMapBuffer::get_address(const size_t tid, const size_t offset){
-  return (uint8_t*)elements.at(tid)->getBuffer(offset);
+  return (uint8_t*)elements.at(tid)->get_address(offset);
 }
 
 uint8_t* ParMMapBuffer::get_next(const size_t tid, const size_t num){
@@ -56,12 +59,14 @@ void ParMMapBuffer::roll_back(const size_t tid, const size_t num){
 }
 
 void ParMMapBuffer::save(){
+  head->flush();
   for(size_t i = 0; i < num_buffers; i++){
     elements.at(i)->flush();
   }
 }
 
 void ParMMapBuffer::free(){
+  head->discard();
   for(size_t i = 0; i < num_buffers; i++){
     elements.at(i)->discard();
   }

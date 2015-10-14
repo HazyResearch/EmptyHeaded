@@ -8,7 +8,8 @@ struct ParMemoryBuffer{
   static std::string folder;
   std::string path;
   std::vector<MemoryBuffer*> elements;
-  
+  MemoryBuffer *head;
+
   ParMemoryBuffer(std::string path,size_t num_elems);
   ParMemoryBuffer( size_t num_buffers_in,std::string path);
   ParMemoryBuffer(size_t num_elems);
@@ -23,6 +24,7 @@ struct ParMemoryBuffer{
   uint8_t* get_head(const size_t tid);
 
   ~ParMemoryBuffer(){
+    head->free();
     for(size_t i = 0; i < num_buffers; i++){
       elements.at(i)->free();
     }

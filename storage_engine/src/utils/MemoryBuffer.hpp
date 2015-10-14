@@ -33,7 +33,7 @@ public:
   char* getBuffer();
   void free();
 
-  char* getBuffer(int pos);
+  char* get_address(int pos);
   size_t getSize() { return size; }
   size_t get_length() {return size; }
   char* get_next(const size_t size_requested);

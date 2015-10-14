@@ -95,7 +95,7 @@ void MemoryBuffer::memset(char value)
   ::memset(buffer, value, size);
 }
 
-char* MemoryBuffer::getBuffer(int pos)
+char* MemoryBuffer::get_address(int pos)
 {
   return buffer + pos;
 }

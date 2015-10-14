@@ -144,7 +144,7 @@ char* MMapBuffer::getBuffer()
   return (char*)mmap_addr;
 }
 
-char* MMapBuffer::getBuffer(int pos)
+char* MMapBuffer::get_address(int pos)
 {
   return (char*)mmap_addr + pos;
 }

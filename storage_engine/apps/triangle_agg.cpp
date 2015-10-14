@@ -1,7 +1,7 @@
 #define EXECUTABLE
 #include "main.hpp"
 
-typedef ParMMapBuffer mem;
+typedef ParMemoryBuffer mem;
 
 struct triangleAgg: public application {
   ////////////////////emitInitCreateDB////////////////////
@@ -26,7 +26,7 @@ struct triangleAgg: public application {
       auto start_time = timer::start_clock();
       Encoding_node =
           Encoding<long>::from_binary("/Users/caberger/Documents/Research/data/"
-                                      "databases/simple/db/encodings/node/");
+                                      "databases/higgs/db_pruned/encodings/node/");
       timer::stop_clock("LOADING ENCODINGS node", start_time);
     }
 
@@ -40,6 +40,15 @@ struct triangleAgg: public application {
               Trie<long>(0, true);
       */
       {
+        /*
+        Trie_R_0_1->foreach([&](std::vector<uint32_t>* tuple,void* value){
+          for(size_t i =0; i < tuple->size(); i++){
+            std::cout << tuple->at(i) << " ";
+          }
+          std::cout << std::endl;
+        });
+        */
+
         auto start_time = timer::start_clock();
        
         TrieBuilder<long,mem> Builder_Triangle(Trie_Triangle_);
@@ -48,7 +57,6 @@ struct triangleAgg: public application {
         ParTrieIterator<void*,mem> Iterators_R_a_c(Trie_R_0_1);
 
         Set<hybrid> a = Trie_R_0_1->getHead()->set;
-
         // emitAnnotationInitialization
         // emitAggregateReducer
         par::reducer<long> annotation(0,
@@ -57,9 +65,9 @@ struct triangleAgg: public application {
           TrieIterator<void*,mem>* Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
           TrieIterator<void*,mem>* Iterator_R_b_c = Iterators_R_b_c.iterators.at(tid);
           TrieIterator<void*,mem>* Iterator_R_a_c = Iterators_R_a_c.iterators.at(tid);
-
-          Iterator_R_a_b->get_next_block(0,a_d);
-          Iterator_R_a_c->get_next_block(0,a_d);
+        
+          Iterator_R_a_b->get_next_block(a_d);
+          Iterator_R_a_c->get_next_block(a_d);
 
           Set<hybrid> b = Builder_Triangle.build_aggregated_set(
             tid,
@@ -70,8 +78,7 @@ struct triangleAgg: public application {
           
           long annotation_b = (long)0;
           b.foreach ([&](uint32_t b_d) {
-            Iterator_R_b_c->get_next_block(0,b_d);
-
+            Iterator_R_b_c->get_next_block(b_d);
             size_t count = Builder_Triangle.count_set(
               Iterator_R_b_c->get_block(1),
               Iterator_R_a_c->get_block(1)
@@ -82,7 +89,7 @@ struct triangleAgg: public application {
           });
           annotation.update(tid, (annotation_b * 1));
         });
-        std::cout << annotation.evaluate(0) << std::endl;
+        std::cout << "RESULT: " << annotation.evaluate(0) << std::endl;
         timer::stop_clock("Bag bag_R_abc", start_time);
       }
     }

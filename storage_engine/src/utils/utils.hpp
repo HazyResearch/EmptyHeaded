@@ -24,7 +24,11 @@ namespace utils {
   template<>
   inline uint64_t from_string(const char *string_element){
     uint64_t element;
+#ifdef __APPLE__
+    sscanf(string_element,"%llu",&element);
+#else
     sscanf(string_element,"%lu",&element);
+#endif
     return element;
   }
   template<>

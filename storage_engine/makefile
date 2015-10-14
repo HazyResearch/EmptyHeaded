@@ -82,5 +82,6 @@ tests: $(TESTS_EXES)
 
 clean:
 	rm -rf $(OBJDIR) $(EXEDIR)
+	rm -rf ../libs/emptyheaded.so
 
 .PHONY: all libs tests clean

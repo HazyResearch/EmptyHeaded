@@ -27,6 +27,8 @@ struct TrieIterator{
   std::vector<TrieBlock<layout,M>*> levels;
   TrieIterator<A,M>(Trie<A,M>* t_in);
 
+  void get_next_block(const uint32_t data);
+
   void get_next_block(
     const size_t level, 
     const uint32_t data);
