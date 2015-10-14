@@ -32,8 +32,8 @@ struct ParMemoryBuffer{
 
   static ParMemoryBuffer* load(
     std::string path,
-    std::vector<size_t>* num_elems,
-    size_t num_buffers_in);
+    const size_t num_buffers_in,
+    std::vector<size_t>* buf_sizes);
 };
 
 #endif

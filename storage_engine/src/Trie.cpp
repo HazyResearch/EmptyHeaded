@@ -29,7 +29,6 @@ void Trie<A,M>::save(){
     const size_t t_size = memoryBuffers->get_size(i);
     writefile->write((char *)&t_size, sizeof(t_size));
   }
-
   writefile->close();
 
   memoryBuffers->save();
@@ -48,16 +47,19 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
   
   size_t w_n_threads;
   infile->read((char *)&w_n_threads, sizeof(w_n_threads));
-  std::vector<size_t>* buf_sizes = new std::vector<size_t>();
-  for(size_t i = 0 ; i < (w_n_threads+1); i++){
+  std::vector<size_t> buf_sizes;
+  size_t h_size;
+  infile->read((char *)&h_size, sizeof(h_size));
+  buf_sizes.push_back(h_size);
+  for(size_t i = 0 ; i < w_n_threads; i++){
     size_t b_size;
     infile->read((char *)&b_size, sizeof(b_size));
-    buf_sizes->push_back(b_size);
+    buf_sizes.push_back(b_size);
   }
   infile->close();
 
   //init memory buffers
-  ret->memoryBuffers = M::load(path,buf_sizes,w_n_threads);
+  ret->memoryBuffers = M::load(path,w_n_threads,&buf_sizes);
 
   return ret;
 }

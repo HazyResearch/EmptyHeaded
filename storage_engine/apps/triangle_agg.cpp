@@ -1,7 +1,7 @@
 #define EXECUTABLE
 #include "main.hpp"
 
-typedef ParMMapBuffer mem;
+typedef ParMemoryBuffer mem;
 
 struct triangleAgg: public application {
   ////////////////////emitInitCreateDB////////////////////
@@ -16,8 +16,6 @@ struct triangleAgg: public application {
           "R/R_0_1");
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
     }
-        mem *yu = new mem("output",100);
-    std::cout << "HERE" << std::endl;
     Encoding<long> *Encoding_node = NULL;
     {
       auto start_time = timer::start_clock();
@@ -28,8 +26,7 @@ struct triangleAgg: public application {
     }
 
     auto query_time = timer::start_clock();
-    Trie<long,mem> *Trie_Triangle_ = new Trie<long,mem>("/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/",3);
-    std::cout << "TRIE TRIANGLE" << std::endl;
+    Trie<long,mem> *Trie_Triangle_ = new Trie<long,mem>("here",3);
     {
       ////////////////////NPRR BAG bag_R_abc////////////////////
       /*

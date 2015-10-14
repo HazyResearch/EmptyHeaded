@@ -42,9 +42,9 @@ struct ParMMapBuffer{
   */
   inline static ParMMapBuffer* load(    
     std::string path,
-    std::vector<size_t>* num_elems,
-    size_t num_buffers_in){
-    return new ParMMapBuffer(path,num_elems,num_buffers_in);
+    const size_t num_buffers_in,
+    std::vector<size_t>* num_elems_in){
+    return new ParMMapBuffer(path,num_elems_in,num_buffers_in);
   };
 };
 

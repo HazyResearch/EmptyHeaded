@@ -9,9 +9,9 @@ ParMemoryBuffer::ParMemoryBuffer(
   
   num_buffers = num_buffers_in;
   path = path_in;
-  head = new MemoryBuffer();
+  head = new MemoryBuffer(1);
   for(size_t i = 0; i < num_buffers; i++){
-    MemoryBuffer* mbuffer = new MemoryBuffer();
+    MemoryBuffer* mbuffer = new MemoryBuffer(1);
     elements.push_back(mbuffer);
   }
 }
@@ -60,12 +60,12 @@ uint8_t* ParMemoryBuffer::get_next(const size_t tid, const size_t num){
 
 ParMemoryBuffer* ParMemoryBuffer::load(
   std::string path_in,
-  std::vector<size_t>* num_elems_in,
-  size_t num_buffers_in){
+  const size_t num_buffers_in,
+  std::vector<size_t>* buf_sizes){
 
-  (void) num_elems_in; //actually this is stored in the file :) needed for mmap
+  (void) buf_sizes;
   ParMemoryBuffer* ret = new ParMemoryBuffer(num_buffers_in,path_in);
-  
+
   std::ifstream myfile;
   std::string dataF = ret->path + folder + "data_head.bin";
   myfile.open(dataF);

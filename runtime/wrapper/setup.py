@@ -4,7 +4,7 @@ import platform
 import sys
 
 lib = sys.argv.pop(len(sys.argv)-1)
-if platform.uname()[0]:
+if platform.uname()[0] == "Darwin":
 	clibs = ["-arch","x86_64","-std=c++11"]
 	largs = ["-arch","x86_64"]
 else:
