@@ -83,8 +83,9 @@ ParMemoryBuffer* ParMemoryBuffer::load(
 void ParMemoryBuffer::save(){
   assert(!path.empty());
   std::ofstream myfile;
+  std::cout << path << " " << folder << std::endl;
   std::string dataF = path + folder + "data_head.bin";
-  myfile.open(dataF,std::ios::trunc);
+  myfile.open(dataF,std::ios::trunc | std::ios::out | std::ios::binary);
   head->save(myfile);
   myfile.close();
   for(size_t i = 0; i < num_buffers; i++){

@@ -20,7 +20,7 @@ TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in){
 }
 
 template<class A,class M>
-Set<hybrid>* TrieBuilder<A,M>::build_aggregated_set(
+Set<hybrid> TrieBuilder<A,M>::build_aggregated_set(
   const size_t tid,
   const size_t level,
   TrieBlock<hybrid,M> *s1, 
@@ -34,18 +34,18 @@ Set<hybrid>* TrieBuilder<A,M>::build_aggregated_set(
     //we can roll back because we won't try another buffer at this level and tid until
     //after this memory is consumed.
     return ops::set_intersect(
-            &r, (const Set<hybrid> *)&s1->set,
+            (Set<hybrid> *)&r, (const Set<hybrid> *)&s1->set,
             (const Set<hybrid> *)&s2->set);
-
 }
 
 template<class A,class M>
 size_t TrieBuilder<A,M>::count_set(
   TrieBlock<hybrid,M> *s1, 
   TrieBlock<hybrid,M> *s2){
-    return ops::set_intersect(
+  size_t result = ops::set_intersect(
             (const Set<hybrid> *)&s1->set,
             (const Set<hybrid> *)&s2->set);
+  return result;
 }
 
 template struct TrieBuilder<void*,ParMemoryBuffer>;

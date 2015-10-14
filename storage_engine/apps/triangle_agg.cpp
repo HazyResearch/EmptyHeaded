@@ -10,30 +10,25 @@ struct triangleAgg: public application {
     Trie<void *, mem> *Trie_R_0_1 = NULL;
     {
       auto start_time = timer::start_clock();
-      // loadTrie
-      Trie_R_0_1 = Trie<void *, mem>::load(
-          "/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/"
-          "R/R_0_1");
-      timer::stop_clock("LOADING TRIE R_0_1", start_time);
+      // buildTrie
+      Trie_R_0_1 = Trie<void *,mem>::load( 
+          "/dfs/scratch0/caberger/datasets/higgs/db_python/relations/R/R_0_1");
+      timer::stop_clock("BUILDING TRIE R_0_1", start_time);
     }
+    /*
     Encoding<long> *Encoding_node = NULL;
     {
       auto start_time = timer::start_clock();
       Encoding_node =
-          Encoding<long>::from_binary("/Users/caberger/Documents/Research/data/"
-                                      "databases/higgs/db_pruned/encodings/node/");
+          Encoding<long>::from_binary("/dfs/scratch0/caberger/datasets/higgs/db_python/encodings/node/");
       timer::stop_clock("LOADING ENCODINGS node", start_time);
     }
+    */
 
     auto query_time = timer::start_clock();
     Trie<long,mem> *Trie_Triangle_ = new Trie<long,mem>("here",3);
     {
       ////////////////////NPRR BAG bag_R_abc////////////////////
-      /*
-      Trie<long,mem> *Trie_bag_R_abc =
-          new (output_buffer->get_next(0, sizeof(Trie<long>)))
-              Trie<long>(0, true);
-      */
       {
         /*
         Trie_R_0_1->foreach([&](std::vector<uint32_t>* tuple,void* value){
@@ -52,10 +47,10 @@ struct triangleAgg: public application {
         ParTrieIterator<void*,mem> Iterators_R_a_c(Trie_R_0_1);
 
         Set<hybrid> a = Trie_R_0_1->getHead()->set;
-        // emitAnnotationInitialization
-        // emitAggregateReducer
+
         par::reducer<long> annotation(0,
                                       [](size_t a, size_t b) { return a + b; });
+
         a.par_foreach([&](size_t tid, uint32_t a_d) {
           TrieIterator<void*,mem>* Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
           TrieIterator<void*,mem>* Iterator_R_b_c = Iterators_R_b_c.iterators.at(tid);

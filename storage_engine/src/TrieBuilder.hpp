@@ -26,7 +26,7 @@ struct TrieBuilder{
   std::vector<ParMemoryBuffer*> tmp_buffers;
   TrieBuilder<A,M>(Trie<A,M>* t_in);
 
-  Set<hybrid>* build_aggregated_set(
+  Set<hybrid> build_aggregated_set(
     const size_t tid,
     const size_t level,
     TrieBlock<hybrid,M> *s1, 
