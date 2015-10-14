@@ -53,7 +53,7 @@ struct triangleAgg: public application {
           [](size_t a, size_t b) { return a + b; });
 
         a.par_foreach([&](size_t tid, uint32_t a_d) {
-          TrieBuilder<long,mem> Builder_Triangle = *(Builders_Triangle.builders.at(tid));
+          TrieBuilder<long,mem>* const Builder_Triangle = Builders_Triangle.builders.at(tid);
 
           TrieIterator<void*,mem>* const Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
           TrieIterator<void*,mem>* const Iterator_R_b_c = Iterators_R_b_c.iterators.at(tid);
@@ -62,7 +62,7 @@ struct triangleAgg: public application {
           Iterator_R_a_b->get_next_block(a_d);
           Iterator_R_a_c->get_next_block(a_d);
 
-          Set<hybrid> b = Builder_Triangle.build_aggregated_set(
+          Set<hybrid> b = Builder_Triangle->build_aggregated_set(
             1,
             Iterator_R_b_c->get_block(0),
             Iterator_R_a_b->get_block(1)
@@ -71,7 +71,7 @@ struct triangleAgg: public application {
           long annotation_b = (long)0;
           b.foreach ([&](uint32_t b_d) {
             Iterator_R_b_c->get_next_block(b_d);
-            size_t count = Builder_Triangle.count_set(
+            size_t count = Builder_Triangle->count_set(
               Iterator_R_b_c->get_block(1),
               Iterator_R_a_b->get_block(1)
             );
