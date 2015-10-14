@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <vector>
 #include "layout.hpp"
+#include "utils/MemoryBuffer.hpp"
 
 template<class A, class M> struct Trie;
 
@@ -29,12 +30,12 @@ struct TrieBuilder{
   Set<hybrid> build_aggregated_set(
     const size_t tid,
     const size_t level,
-    TrieBlock<hybrid,M> *s1, 
-    TrieBlock<hybrid,M> *s2);
+    const TrieBlock<hybrid,M> *s1, 
+    const TrieBlock<hybrid,M> *s2);
 
   size_t count_set(
-    TrieBlock<hybrid,M> *s1, 
-    TrieBlock<hybrid,M> *s2);
+    const TrieBlock<hybrid,M> *s1, 
+    const TrieBlock<hybrid,M> *s2);
 
 };
 

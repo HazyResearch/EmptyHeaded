@@ -23,8 +23,8 @@ template<class A,class M>
 Set<hybrid> TrieBuilder<A,M>::build_aggregated_set(
   const size_t tid,
   const size_t level,
-  TrieBlock<hybrid,M> *s1, 
-  TrieBlock<hybrid,M> *s2){
+  const TrieBlock<hybrid,M> *s1, 
+  const TrieBlock<hybrid,M> *s2){
 
     const size_t alloc_size =
       std::max(s1->set.number_of_bytes,
@@ -40,8 +40,8 @@ Set<hybrid> TrieBuilder<A,M>::build_aggregated_set(
 
 template<class A,class M>
 size_t TrieBuilder<A,M>::count_set(
-  TrieBlock<hybrid,M> *s1, 
-  TrieBlock<hybrid,M> *s2){
+  const TrieBlock<hybrid,M> *s1, 
+  const TrieBlock<hybrid,M> *s2){
   size_t result = ops::set_intersect(
             (const Set<hybrid> *)&s1->set,
             (const Set<hybrid> *)&s2->set);

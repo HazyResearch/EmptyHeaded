@@ -12,7 +12,7 @@ struct triangleAgg: public application {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_R_0_1 = Trie<void *,mem>::load( 
-          "/dfs/scratch0/caberger/datasets/socLivejournal/db_python/relations/R/R_0_1");
+          "/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1");
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
     }
     /*
@@ -30,49 +30,38 @@ struct triangleAgg: public application {
     {
       ////////////////////NPRR BAG bag_R_abc////////////////////
       {
-        /*
-        Trie_R_0_1->foreach([&](std::vector<uint32_t>* tuple,void* value){
-          for(size_t i =0; i < tuple->size(); i++){
-            std::cout << tuple->at(i) << " ";
-          }
-          std::cout << std::endl;
-        });
-        */
-
         auto start_time = timer::start_clock();
        
-        TrieBuilder<long,mem> Builder_Triangle(Trie_Triangle_);
-        const ParTrieIterator<void*,mem> Iterators_R_a_b(Trie_R_0_1);
-        const ParTrieIterator<void*,mem> Iterators_R_b_c(Trie_R_0_1);
-        const ParTrieIterator<void*,mem> Iterators_R_a_c(Trie_R_0_1);
-
-        Set<hybrid> a = Trie_R_0_1->getHead()->set;
-
+        const TrieBlock<hybrid,mem>* head = Trie_R_0_1->getHead();  
+        const Set<hybrid> a = head->set;
         par::reducer<long> annotation(0,
-          [](size_t a, size_t b) { return a + b; });
+                                      [](size_t a, size_t b) { return a + b; });
+
+        ParMemoryBuffer* tmp_buffers = new ParMemoryBuffer(100);
 
         a.par_foreach([&](size_t tid, uint32_t a_d) {
-          TrieIterator<void*,mem>* Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
-          TrieIterator<void*,mem>* Iterator_R_b_c = Iterators_R_b_c.iterators.at(tid);
-          TrieIterator<void*,mem>* Iterator_R_a_c = Iterators_R_a_c.iterators.at(tid);
-        
-          Iterator_R_a_b->get_next_block(a_d);
-          Iterator_R_a_c->get_next_block(a_d);
+          MemoryBuffer* const b_buffer = tmp_buffers->elements.at(tid);
 
-          Set<hybrid> b = Builder_Triangle.build_aggregated_set(
-            tid,
-            1,
-            Iterator_R_b_c->get_block(0),
-            Iterator_R_a_b->get_block(1)
-            );
+          const TrieBlock<hybrid,mem>* s1 =  head->get_next_block(a_d,Trie_R_0_1->memoryBuffers);
+          const Set<hybrid> s1_s =  s1->set;
+
+          const size_t alloc_size =
+            std::max(a.number_of_bytes,
+                     s1_s.number_of_bytes);
+          Set<hybrid> b((uint8_t*)b_buffer->get_next(alloc_size));
+          b_buffer->roll_back(alloc_size); 
+          b = *ops::set_intersect(
+                  (Set<hybrid> *)&b, (const Set<hybrid> *)&s1_s,
+                  (const Set<hybrid> *)&a);
           
           long annotation_b = (long)0;
           b.foreach ([&](uint32_t b_d) {
-            Iterator_R_b_c->get_next_block(b_d);
-            size_t count = Builder_Triangle.count_set(
-              Iterator_R_b_c->get_block(1),
-              Iterator_R_a_c->get_block(1)
-            );
+            const TrieBlock<hybrid,mem>* s2 =  head->get_next_block(b_d,Trie_R_0_1->memoryBuffers);
+
+            size_t count = ops::set_intersect(
+            (const Set<hybrid> *)&s1_s,
+            (const Set<hybrid> *)&s2->set);
+
             // emitAnnotationInitialization
             long annotation_c = count;
             annotation_b += (annotation_c * 1 * 1);

@@ -13,7 +13,7 @@
 
 #include "MemoryBuffer.hpp"
 
-#define INIT_PAGE_COUNT 100
+#define INIT_PAGE_COUNT 1000000
 unsigned MemoryBuffer::pagesize = 4096; //4KB
 
 MemoryBuffer::MemoryBuffer(){}
@@ -151,6 +151,7 @@ void MemoryBuffer::load(std::ifstream& ifile)
 
     remainSize = remainSize - writeSize;
     if(remainSize >= INIT_PAGE_COUNT * pagesize) {
+      std::cout << "REALLOC IN LOADING" << std::endl;
       buffer = (char*)realloc(buffer, allocSize + INIT_PAGE_COUNT * pagesize);
       writeSize = INIT_PAGE_COUNT * pagesize;
     } else {

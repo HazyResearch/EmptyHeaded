@@ -16,8 +16,9 @@
 template<class A,class M>
 void Trie<A,M>::save(){
   std::ofstream *writefile = new std::ofstream();
+  std::cout << memoryBuffers->path <<  " " << M::folder << std::endl;
   std::string file = memoryBuffers->path+M::folder+std::string("trieinfo.bin");
-  writefile->open(file, std::ios::binary | std::ios::out);
+  writefile->open(file, std::ios::binary | std::ios::trunc);
   writefile->write((char *)&annotated, sizeof(annotated));
   writefile->write((char *)&num_rows, sizeof(num_rows));
   writefile->write((char *)&num_columns, sizeof(num_columns));
@@ -44,13 +45,14 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
   infile->read((char *)&ret->annotated, sizeof(ret->annotated));
   infile->read((char *)&ret->num_rows, sizeof(ret->num_rows));
   infile->read((char *)&ret->num_columns, sizeof(ret->num_columns));
-  
+
   size_t w_n_threads;
   infile->read((char *)&w_n_threads, sizeof(w_n_threads));
   std::vector<size_t> buf_sizes;
   size_t h_size;
   infile->read((char *)&h_size, sizeof(h_size));
   buf_sizes.push_back(h_size);
+  
   for(size_t i = 0 ; i < w_n_threads; i++){
     size_t b_size;
     infile->read((char *)&b_size, sizeof(b_size));
