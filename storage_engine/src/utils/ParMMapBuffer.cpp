@@ -10,10 +10,10 @@ ParMMapBuffer::ParMMapBuffer(
   path = path_in;
 
   std::string dataF = path + folder + "data_head.bin";
-  MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in);
+  head = MMapBuffer::create(dataF.c_str(),num_elems_in);
   for(size_t i = 0; i < num_buffers; i++){
     dataF = path + folder + "data_" + std::to_string(i) + ".bin";
-    mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in);
+    MMapBuffer *mbuffer  = MMapBuffer::create(dataF.c_str(),num_elems_in);
     elements.push_back(mbuffer);
   }
 }
@@ -26,10 +26,10 @@ ParMMapBuffer::ParMMapBuffer(
   num_buffers = num_buffers_in;
   path = path_in;
   std::string dataF = path + folder + "data_head.bin";
-  MMapBuffer *mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in->at(0));
+  head = MMapBuffer::create(dataF.c_str(),num_elems_in->at(0));
   for(size_t i = 0; i < num_buffers; i++){
     dataF = path + folder + "data_" + std::to_string(i) + ".bin";
-    mbuffer = MMapBuffer::create(dataF.c_str(),num_elems_in->at(i+1));
+    MMapBuffer *mbuffer  = MMapBuffer::create(dataF.c_str(),num_elems_in->at(i+1));
     elements.push_back(mbuffer);
   }
 }

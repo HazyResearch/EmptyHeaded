@@ -49,7 +49,7 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
   size_t w_n_threads;
   infile->read((char *)&w_n_threads, sizeof(w_n_threads));
   std::vector<size_t>* buf_sizes = new std::vector<size_t>();
-  for(size_t i = 0 ; i < w_n_threads; i++){
+  for(size_t i = 0 ; i < (w_n_threads+1); i++){
     size_t b_size;
     infile->read((char *)&b_size, sizeof(b_size));
     buf_sizes->push_back(b_size);
