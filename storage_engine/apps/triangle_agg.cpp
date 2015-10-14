@@ -41,10 +41,11 @@ struct triangleAgg: public application {
 
         auto start_time = timer::start_clock();
        
-        TrieBuilder<long,mem> Builder_Triangle(Trie_Triangle_);
         const ParTrieIterator<void*,mem> Iterators_R_a_b(Trie_R_0_1);
         const ParTrieIterator<void*,mem> Iterators_R_b_c(Trie_R_0_1);
         const ParTrieIterator<void*,mem> Iterators_R_a_c(Trie_R_0_1);
+
+        const ParTrieBuilder<long,mem> Builders_Triangle(Trie_Triangle_);
 
         Set<hybrid> a = Trie_R_0_1->getHead()->set;
 
@@ -52,26 +53,27 @@ struct triangleAgg: public application {
           [](size_t a, size_t b) { return a + b; });
 
         a.par_foreach([&](size_t tid, uint32_t a_d) {
-          TrieIterator<void*,mem>* Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
-          TrieIterator<void*,mem>* Iterator_R_b_c = Iterators_R_b_c.iterators.at(tid);
-          TrieIterator<void*,mem>* Iterator_R_a_c = Iterators_R_a_c.iterators.at(tid);
+          TrieBuilder<long,mem> Builder_Triangle = *(Builders_Triangle.builders.at(tid));
+
+          TrieIterator<void*,mem>* const Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
+          TrieIterator<void*,mem>* const Iterator_R_b_c = Iterators_R_b_c.iterators.at(tid);
+          TrieIterator<void*,mem>* const Iterator_R_a_c = Iterators_R_a_c.iterators.at(tid);
         
           Iterator_R_a_b->get_next_block(a_d);
           Iterator_R_a_c->get_next_block(a_d);
 
           Set<hybrid> b = Builder_Triangle.build_aggregated_set(
-            tid,
             1,
             Iterator_R_b_c->get_block(0),
             Iterator_R_a_b->get_block(1)
-            );
+          );
           
           long annotation_b = (long)0;
           b.foreach ([&](uint32_t b_d) {
             Iterator_R_b_c->get_next_block(b_d);
             size_t count = Builder_Triangle.count_set(
               Iterator_R_b_c->get_block(1),
-              Iterator_R_a_c->get_block(1)
+              Iterator_R_a_b->get_block(1)
             );
             // emitAnnotationInitialization
             long annotation_c = count;
