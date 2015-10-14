@@ -23,7 +23,7 @@ template<class A, class M> struct Trie;
 */
 template<class A, class M>
 struct TrieIterator{
-  Trie<A,M>* trie;
+  Trie<A,M> trie;
   std::vector<const TrieBlock<layout,M>*> levels;
   TrieIterator<A,M>(Trie<A,M>* t_in);
 
@@ -34,7 +34,7 @@ struct TrieIterator{
     const uint32_t data);
 
   const TrieBlock<hybrid,M>* get_block(
-    const size_t level);
+    const size_t level) const;
 };
 
 template<class A, class M>

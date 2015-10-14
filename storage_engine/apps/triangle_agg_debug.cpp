@@ -12,7 +12,7 @@ struct triangleAgg: public application {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_R_0_1 = Trie<void *,mem>::load( 
-          "/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1");
+          "/dfs/scratch0/caberger/datasets/socLivejournal/db_python/relations/R/R_0_1");
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
     }
     /*
