@@ -13,6 +13,7 @@
 #include <vector>
 #include "layout.hpp"
 #include "utils/MemoryBuffer.hpp"
+#include "trie/NextLevel.hpp"
 
 template<class A, class M> struct Trie;
 
@@ -25,6 +26,7 @@ template<class A, class M>
 struct TrieBuilder{
   Trie<A,M>* trie;
   std::vector<MemoryBuffer*> tmp_buffers;
+  std::vector<NextLevel> next;
   TrieBuilder<A,M>(Trie<A,M>* t_in);
 
   Set<hybrid> build_aggregated_set(
@@ -36,12 +38,25 @@ struct TrieBuilder{
     const TrieBlock<hybrid,M> *s1, 
     const TrieBlock<hybrid,M> *s2);
 
+  Set<hybrid> build_set(
+    const TrieBlock<hybrid,M> *s1,
+    const TrieBlock<hybrid,M> *s2);
+
+  Set<hybrid> set_next_level(
+    const size_t cur_level,
+    const TrieBlock<hybrid,M> *s1);
 };
 
 template<class A, class M>
 struct ParTrieBuilder{
   std::vector<TrieBuilder<A,M>*> builders;
   ParTrieBuilder<A,M>(Trie<A,M>* t_in);
+
+  Set<hybrid> build_aggregated_set(
+    const TrieBlock<hybrid,M> *s1) const;
+
+  Set<hybrid> build_set(
+    const TrieBlock<hybrid,M> *s1);
 };
 
 #endif

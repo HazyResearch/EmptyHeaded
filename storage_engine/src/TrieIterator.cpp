@@ -36,6 +36,7 @@ const TrieBlock<hybrid,M>* TrieIterator<A,M>::get_block(const size_t level) cons
 
 template<class A, class M>
 ParTrieIterator<A,M>::ParTrieIterator(Trie<A,M> *t_in){
+  head = t_in->getHead();
   iterators.resize(NUM_THREADS);
   for(size_t i = 0; i < NUM_THREADS; i++){
     iterators.at(i) = new TrieIterator<A,M>(t_in);

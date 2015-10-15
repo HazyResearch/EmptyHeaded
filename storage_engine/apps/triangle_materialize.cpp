@@ -12,8 +12,7 @@ struct triangleAgg: public application {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_R_0_1 = Trie<void *,mem>::load( 
-        "/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/R/R_0_1");
-        //"/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1");
+          "/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1");
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
     }
     /*
@@ -48,8 +47,7 @@ struct triangleAgg: public application {
 
         const ParTrieBuilder<long,mem> Builders_Triangle(Trie_Triangle_);
 
-        Set<hybrid> a = Builders_Triangle.build_aggregated_set(
-          Iterators_R_a_b.head);
+        Set<hybrid> a = Trie_R_0_1->getHead()->set;
 
         par::reducer<long> annotation(0,
           [](size_t a, size_t b) { return a + b; });

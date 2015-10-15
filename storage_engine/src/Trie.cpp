@@ -292,10 +292,10 @@ void recursive_build(
   if(level == 1){
     //get the head
     B* prev_block = B::get_block(prev_offset,data_allocator);
-    prev_block->set_block(index,data,tid,next_offset);
+    prev_block->set_next_block(index,data,tid,next_offset);
   } else {
     B* prev_block = B::get_block(tid,prev_offset,data_allocator);
-    prev_block->set_block(index,data,tid,next_offset);
+    prev_block->set_next_block(index,data,tid,next_offset);
   }
 
   if(level < (num_levels-1)){

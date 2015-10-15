@@ -3,11 +3,7 @@
 
 #include "../utils/utils.hpp"
 #include "set/ops.hpp"
-
-struct NextLevel{
-  int index; //# of threads
-  size_t offset;
-};
+#include "NextLevel.hpp"
 
 template<class T, class M>
 struct TrieBlock{
@@ -44,7 +40,7 @@ struct TrieBlock{
     allocator_in->head->get_next(sizeof(NextLevel)*(next_size));
   }
 
-  inline void set_block(
+  inline void set_next_block(
     const uint32_t index, 
     const uint32_t data, 
     int setIndex,
