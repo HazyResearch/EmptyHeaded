@@ -406,7 +406,6 @@ Trie<A,M>::Trie(
   size_t cur_level = 1;
   if(num_columns > 1){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
-    std::cout << "CARD: " << new_head->get_set()->cardinality << std::endl;
     new_head->init_next(NUM_THREADS,memoryBuffers);
 
     //encode the set, create a block with NULL pointers to next level

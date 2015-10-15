@@ -29,6 +29,9 @@
 #include <vector>
 #include "tbb/parallel_sort.h"
 
+const static size_t NUM_THREADS = 48;
+
+
 //Needed for parallelization, prevents false sharing of cache lines
 #define PADDING 300
 #define MAX_THREADS 512
@@ -48,7 +51,6 @@
 #define ADDRESS_BITS_PER_WORD 6
 #define BYTES_PER_WORD 8
 
-const static size_t NUM_THREADS = 1;
 
 namespace common{
   static size_t bitset_length = 2;

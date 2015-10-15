@@ -26,3 +26,6 @@ def compileAndRun(f,name,mem,types,annotationType):
 	compileC(name) #compiles C++ library
 	return cppexecutor.execute(name,mem,types,annotationType) 	#generates python wrapper and excutes C++ code
 
+def compile(f,name,mem,types,annotationType):
+	generate(f,name) #generates C++ code
+	compileC(name) #compiles C++ library

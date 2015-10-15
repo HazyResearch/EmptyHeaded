@@ -1,10 +1,11 @@
 import os
 import code.wrappertemplate
+import imp
 
 def loadQuery(name):
-    name = "queries." + name
-    mod = __import__(name, fromlist=[''])
-    return mod
+	fname = "queries/" + name +".so"
+	mod = imp.load_dynamic(name,fname)
+	return mod
 
 def compileQuery(name):
 	os.chdir("wrapper")

@@ -23,11 +23,15 @@ def loadDB(path):
 
 def main():
 	#db_config="/Users/caberger/Documents/Research/data/databases/higgs/config_pruned.json"
-	#db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
 	db_config="/Users/caberger/Documents/Research/data/databases/simple/config.json"
+
+	#db_config="/afs/cs.stanford.edu/u/caberger/config_simple.json"
 	createDB(db_config)
-	#loadDB("/Users/caberger/Documents/Research/data/databases/simple/db/config.json")
+	#loadDB("/afs/cs.stanford.edu/u/caberger/db/config.json")
 	print fetchData("R")
+	print numRows("R")
+
+	#loadDB("/Users/caberger/Documents/Research/data/databases/simple/db/config.json")
 	com="""
 	compileQuery("query1")
  	q1 = loadQuery("query1")
