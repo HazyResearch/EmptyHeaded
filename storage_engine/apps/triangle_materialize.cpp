@@ -12,7 +12,9 @@ struct triangleAgg: public application {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_R_0_1 = Trie<void *,mem>::load( 
-          "/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1");
+          //"/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/R/R_0_1"
+          "/dfs/scratch0/caberger/datasets/higgs/db_python/relations/R/R_0_1"
+          );
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
     }
     /*
@@ -41,18 +43,27 @@ struct triangleAgg: public application {
 
         auto start_time = timer::start_clock();
        
+        std::cout << "ITERATORS A" << std::endl;
+
         const ParTrieIterator<void*,mem> Iterators_R_a_b(Trie_R_0_1);
         const ParTrieIterator<void*,mem> Iterators_R_b_c(Trie_R_0_1);
         const ParTrieIterator<void*,mem> Iterators_R_a_c(Trie_R_0_1);
 
-        const ParTrieBuilder<long,mem> Builders_Triangle(Trie_Triangle_);
+        std::cout << "ITERATORS" << std::endl;
 
-        Set<hybrid> a = Trie_R_0_1->getHead()->set;
+        ParTrieBuilder<long,mem> Builders_Triangle(Trie_Triangle_);
 
-        par::reducer<long> annotation(0,
+        std::cout << "BUILDER" << std::endl;
+
+        Set<hybrid> a = Builders_Triangle.build_set(Iterators_R_a_b.head);
+        Builders_Triangle.allocate_next();
+
+        std::cout << "ALLOCATE NEXT" << std::endl;
+
+        par::reducer<long> num_rows(0,
           [](size_t a, size_t b) { return a + b; });
 
-        a.par_foreach([&](size_t tid, uint32_t a_d) {
+        a.par_foreach_index([&](size_t tid, uint32_t a_i, uint32_t a_d) {
           TrieBuilder<long,mem>* const Builder_Triangle = Builders_Triangle.builders.at(tid);
 
           TrieIterator<void*,mem>* const Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
@@ -62,26 +73,31 @@ struct triangleAgg: public application {
           Iterator_R_a_b->get_next_block(a_d);
           Iterator_R_a_c->get_next_block(a_d);
 
-          Set<hybrid> b = Builder_Triangle->build_aggregated_set(
+          Set<hybrid> b = Builder_Triangle->build_set(
+            tid,
             1,
             Iterator_R_b_c->get_block(0),
             Iterator_R_a_b->get_block(1)
           );
-          
-          long annotation_b = (long)0;
-          b.foreach ([&](uint32_t b_d) {
+          Builder_Triangle->allocate_next(tid,1);
+          b.foreach_index([&](uint32_t b_i, uint32_t b_d) {
             Iterator_R_b_c->get_next_block(b_d);
-            size_t count = Builder_Triangle->count_set(
+            std::cout << a_d <<  " " << b_d << std::endl;
+            Builder_Triangle->build_set(
+              tid,
+              2,
               Iterator_R_b_c->get_block(1),
               Iterator_R_a_b->get_block(1)
             );
+            std::cout << "end" << std::endl;
+            
+            //num_rows.update(tid, count);
+            //Builder_Triangle->set_level(b_i,b_d,2);
             // emitAnnotationInitialization
-            long annotation_c = count;
-            annotation_b += (annotation_c * 1 * 1);
           });
-          annotation.update(tid, (annotation_b * 1));
+          Builder_Triangle->set_level(a_i,a_d,1); //for head we don't give an index
         });
-        std::cout << "RESULT: " << annotation.evaluate(0) << std::endl;
+        std::cout << "RESULT: " << num_rows.evaluate(0) << std::endl;
         timer::stop_clock("Bag bag_R_abc", start_time);
       }
     }

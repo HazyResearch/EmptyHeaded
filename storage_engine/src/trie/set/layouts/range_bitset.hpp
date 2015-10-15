@@ -172,7 +172,7 @@ inline void range_bitset::foreach_index(
     const type::layout type) {
   (void) cardinality; (void) type;
 
-  if(number_of_bytes > 0){
+  if(number_of_bytes > 0 && cardinality > 0){
     const size_t num_data_words = get_number_of_words(number_of_bytes);
     const uint64_t offset = ((uint64_t*)A)[0];
     const uint64_t* A64_data = (uint64_t*)(A+sizeof(uint64_t));
@@ -204,7 +204,7 @@ inline void range_bitset::foreach(
     const type::layout type) {
   (void) cardinality; (void) type;
 
-  if(number_of_bytes > 0){
+  if(number_of_bytes > 0 && cardinality > 0){
     const size_t num_data_words = get_number_of_words(number_of_bytes);
     const uint64_t offset = ((uint64_t*)A)[0];
     const uint64_t* A64_data = (uint64_t*)(A+sizeof(uint64_t));

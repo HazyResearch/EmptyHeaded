@@ -29,7 +29,7 @@ struct TrieBuilder{
   std::vector<NextLevel> next;
   TrieBuilder<A,M>(Trie<A,M>* t_in);
 
-  Set<hybrid> build_aggregated_set(
+  Set<hybrid>* build_aggregated_set(
     const size_t level,
     const TrieBlock<hybrid,M> *s1, 
     const TrieBlock<hybrid,M> *s2);
@@ -38,17 +38,41 @@ struct TrieBuilder{
     const TrieBlock<hybrid,M> *s1, 
     const TrieBlock<hybrid,M> *s2);
 
-  Set<hybrid> build_set(
+  Set<hybrid>* build_set(
+    const size_t tid,
+    const size_t level,
     const TrieBlock<hybrid,M> *s1,
     const TrieBlock<hybrid,M> *s2);
 
-  Set<hybrid> set_next_level(
-    const size_t cur_level,
-    const TrieBlock<hybrid,M> *s1);
+  void set_level(
+    const uint32_t index,
+    const uint32_t data,
+    const size_t cur_level);
+
+  void allocate_next(
+    const size_t tid,
+    const size_t cur_level);
+
+  void allocate_annotation(
+    const size_t tid,
+    const size_t cur_level);
+
+  void set_annotation(
+    const A value,
+    const uint32_t index,
+    const uint32_t data,
+    const size_t cur_level);
+
+  A get_annotation(
+    const uint32_t index,
+    const uint32_t data,
+    const size_t cur_level);
+
 };
 
 template<class A, class M>
 struct ParTrieBuilder{
+  Trie<A,M>* trie;
   std::vector<TrieBuilder<A,M>*> builders;
   ParTrieBuilder<A,M>(Trie<A,M>* t_in);
 
@@ -57,6 +81,11 @@ struct ParTrieBuilder{
 
   Set<hybrid> build_set(
     const TrieBlock<hybrid,M> *s1);
+
+  void allocate_next();
+
+  void allocate_annotation();
+
 };
 
 #endif

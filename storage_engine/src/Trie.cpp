@@ -250,7 +250,7 @@ size_t build_head(
   const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range);
   uint8_t* set_data_in = (uint8_t*)data_allocator->head->get_next(set_alloc_size);
 
-  B* block = TrieBlock<layout,A>::get_block(offset,data_allocator);
+  B* block = TrieBlock<layout,A>::get_block(NUM_THREADS,offset,data_allocator);
   block->set = Set<layout>::from_array(set_data_in,set_data_buffer,set_size);
 
   assert(set_alloc_size >= block->set.number_of_bytes);
@@ -291,7 +291,7 @@ void recursive_build(
 
   if(level == 1){
     //get the head
-    B* prev_block = B::get_block(prev_offset,data_allocator);
+    B* prev_block = B::get_block(NUM_THREADS,prev_offset,data_allocator);
     prev_block->set_next_block(index,data,tid,next_offset);
   } else {
     B* prev_block = B::get_block(tid,prev_offset,data_allocator);
@@ -402,7 +402,7 @@ Trie<A,M>::Trie(
   size_t cur_level = 1;
   if(num_columns > 1){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
-    new_head->init_next(memoryBuffers);
+    new_head->init_next(NUM_THREADS,memoryBuffers);
 
     //encode the set, create a block with NULL pointers to next level
     //should be a 1-1 between pointers in block and next ranges

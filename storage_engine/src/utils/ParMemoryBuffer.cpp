@@ -14,6 +14,7 @@ ParMemoryBuffer::ParMemoryBuffer(
     MemoryBuffer* mbuffer = new MemoryBuffer(1);
     elements.push_back(mbuffer);
   }
+  elements.push_back(head);
 }
 
 ParMemoryBuffer::ParMemoryBuffer(
@@ -27,6 +28,7 @@ ParMemoryBuffer::ParMemoryBuffer(
     MemoryBuffer* mbuffer = new MemoryBuffer(num_elems_in);
     elements.push_back(mbuffer);
   }
+  elements.push_back(head);
 }
 
 ParMemoryBuffer::ParMemoryBuffer(size_t num_elems_in){
@@ -36,6 +38,7 @@ ParMemoryBuffer::ParMemoryBuffer(size_t num_elems_in){
     MemoryBuffer* mbuffer = new MemoryBuffer(num_elems_in);
     elements.push_back(mbuffer);
   }
+  elements.push_back(head);
 }
 
 size_t ParMemoryBuffer::get_size(const size_t tid){
@@ -77,6 +80,7 @@ ParMemoryBuffer* ParMemoryBuffer::load(
     ret->elements.at(i)->load(myfile);
     myfile.close();
   }
+  ret->elements.at(num_buffers_in) = ret->head;
   return ret;
 }
 

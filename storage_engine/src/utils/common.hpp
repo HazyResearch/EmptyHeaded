@@ -48,7 +48,7 @@
 #define ADDRESS_BITS_PER_WORD 6
 #define BYTES_PER_WORD 8
 
-const static size_t NUM_THREADS = 4;
+const static size_t NUM_THREADS = 1;
 
 namespace common{
   static size_t bitset_length = 2;

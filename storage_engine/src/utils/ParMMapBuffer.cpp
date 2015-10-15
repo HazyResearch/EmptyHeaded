@@ -16,6 +16,7 @@ ParMMapBuffer::ParMMapBuffer(
     MMapBuffer *mbuffer  = MMapBuffer::create(dataF.c_str(),num_elems_in);
     elements.push_back(mbuffer);
   }
+  elements.push_back(head);
 }
 
 ParMMapBuffer::ParMMapBuffer(
@@ -32,6 +33,7 @@ ParMMapBuffer::ParMMapBuffer(
     MMapBuffer *mbuffer  = MMapBuffer::create(dataF.c_str(),num_elems_in->at(i+1));
     elements.push_back(mbuffer);
   }
+  elements.push_back(head);
 }
 
 uint8_t* ParMMapBuffer::get_head(const size_t tid){

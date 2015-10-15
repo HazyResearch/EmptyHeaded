@@ -14,6 +14,7 @@ template<class A,class M>
 TrieIterator<A,M>::TrieIterator(Trie<A,M>* t_in){
   trie = *t_in;
   levels.resize(trie.num_columns);
+  assert(trie.num_columns > 0);
   levels.at(0) = trie.getHead();
 }
 

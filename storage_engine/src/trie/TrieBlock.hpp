@@ -16,8 +16,13 @@ struct TrieBlock{
   TrieBlock(){}
 
 
-  inline size_t nextSize() const {
+  inline size_t nextSize() {
+    is_sparse = common::is_sparse(set.cardinality,set.range);
     return is_sparse ? set.cardinality:(set.range+1);
+  }
+  
+  inline size_t get_index(const size_t index, const size_t data) const {
+    return is_sparse ? index:data;
   }
 
   inline NextLevel* next(size_t index) const {
@@ -29,15 +34,8 @@ struct TrieBlock{
   }
 
   inline void init_next(const size_t tid, M* allocator_in){
-    is_sparse = common::is_sparse(set.cardinality,set.range);
     const size_t next_size = this->nextSize(); 
     allocator_in->get_next(tid, sizeof(NextLevel)*(next_size));
-  }
-
-  inline void init_next(M* allocator_in){
-    is_sparse = common::is_sparse(set.cardinality,set.range);
-    const size_t next_size = this->nextSize(); 
-    allocator_in->head->get_next(sizeof(NextLevel)*(next_size));
   }
 
   inline void set_next_block(
@@ -61,17 +59,9 @@ struct TrieBlock{
 
   inline static TrieBlock<T,M>* get_block(
     const int bufferIndex,
-    const int bufferOffset,
+    const size_t bufferOffset,
     M* buffer) {
       TrieBlock<T,M>* result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-      result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
-      return result;
-  }
-
-  inline static TrieBlock<T,M>* get_block(
-    const int bufferOffset,
-    M* buffer) {
-      TrieBlock<T,M>* result = (TrieBlock<T,M>*) buffer->head->get_address(bufferOffset);
       result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
       return result;
   }
