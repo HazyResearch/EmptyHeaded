@@ -8,17 +8,19 @@
 template<class T, class M>
 struct TrieBlock{
   bool is_sparse;  
-  Set<T> set;
 
-  TrieBlock(Set<T> setIn){
-    set = setIn;
-  }
   TrieBlock(){}
 
+  inline Set<hybrid>* get_set() const {
+      Set<hybrid> *result = (Set<hybrid>*)((uint8_t*)this + sizeof(TrieBlock<T,M>));
+      result->data = ((uint8_t*)result + sizeof(Set<hybrid>));
+      return result;
+  }
 
   inline size_t nextSize() {
-    is_sparse = common::is_sparse(set.cardinality,set.range);
-    return is_sparse ? set.cardinality:(set.range+1);
+    Set<hybrid> *set = this->get_set();
+    is_sparse = common::is_sparse(set->cardinality,set->range);
+    return is_sparse ? set->cardinality:(set->range+1);
   }
   
   inline size_t get_index(const size_t index, const size_t data) const {
@@ -26,11 +28,13 @@ struct TrieBlock{
   }
 
   inline NextLevel* next(size_t index) const {
+    Set<hybrid> *set = this->get_set();
     return (NextLevel*)(
       (uint8_t*)this + 
       sizeof(TrieBlock<T,M>) + 
-      set.number_of_bytes +
-      sizeof(NextLevel)*index);
+      sizeof(Set<hybrid>) +
+      set->number_of_bytes +
+      (sizeof(NextLevel)*index) );
   }
 
   inline void init_next(const size_t tid, M* allocator_in){
@@ -44,7 +48,8 @@ struct TrieBlock{
     int setIndex,
     const size_t setOffset){
 
-    setIndex = (set.cardinality != 0) ? setIndex : -1;
+    Set<hybrid> *set = this->get_set();
+    setIndex = (set->cardinality != 0) ? setIndex : -1;
     if(!is_sparse){
       (void) index;
       NextLevel* next = this->next(data);
@@ -62,7 +67,6 @@ struct TrieBlock{
     const size_t bufferOffset,
     M* buffer) {
       TrieBlock<T,M>* result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-      result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
       return result;
   }
 
@@ -70,6 +74,7 @@ struct TrieBlock{
     const uint32_t data,
     M* buffer) const {
 
+    Set<hybrid> *set = this->get_set();
     TrieBlock<T,M>* result = NULL;
     if(!is_sparse){
       NextLevel* next = this->next(data);
@@ -77,18 +82,16 @@ struct TrieBlock{
       const size_t bufferOffset = next->offset;
       if(bufferIndex != -1){
         result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-        result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
       }
     } else{
       //first need to see if the data is in the set
-      const long index = set.find(data);
+      const long index = set->find(data);
       if(index != -1){
         NextLevel* next = this->next(data);
         const int bufferIndex = next->index;
         const size_t bufferOffset = next->offset;
         if(bufferIndex != -1){
           result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-          result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
         }
       }
     }
@@ -107,7 +110,6 @@ struct TrieBlock{
     const size_t bufferOffset = next->offset;
     if(bufferIndex != -1){
       result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-      result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
     }
     return result;
   }

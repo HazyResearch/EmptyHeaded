@@ -11,9 +11,10 @@ struct triangleAgg: public application {
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_R_0_1 = Trie<void *,mem>::load( 
-          //"/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/R/R_0_1"
-          "/dfs/scratch0/caberger/datasets/higgs/db_python/relations/R/R_0_1"
+      Trie_R_0_1 = Trie<void *,mem>::load(
+        "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
+          //"/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
+          //"/dfs/scratch0/caberger/datasets/higgs/db_python/relations/R/R_0_1"
           );
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
     }
@@ -62,8 +63,9 @@ struct triangleAgg: public application {
 
         par::reducer<long> num_rows(0,
           [](size_t a, size_t b) { return a + b; });
-
+        std::cout << a.cardinality << std::endl;
         a.par_foreach_index([&](size_t tid, uint32_t a_i, uint32_t a_d) {
+          std::cout << a_i << " " << a_d << std::endl;
           TrieBuilder<long,mem>* const Builder_Triangle = Builders_Triangle.builders.at(tid);
 
           TrieIterator<void*,mem>* const Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
@@ -83,16 +85,16 @@ struct triangleAgg: public application {
           b.foreach_index([&](uint32_t b_i, uint32_t b_d) {
             Iterator_R_b_c->get_next_block(b_d);
             std::cout << a_d <<  " " << b_d << std::endl;
-            Builder_Triangle->build_set(
+            size_t count = Builder_Triangle->build_set(
               tid,
               2,
               Iterator_R_b_c->get_block(1),
               Iterator_R_a_b->get_block(1)
-            );
+            )->cardinality;
             std::cout << "end" << std::endl;
             
-            //num_rows.update(tid, count);
-            //Builder_Triangle->set_level(b_i,b_d,2);
+            num_rows.update(tid, count);
+            Builder_Triangle->set_level(b_i,b_d,2);
             // emitAnnotationInitialization
           });
           Builder_Triangle->set_level(a_i,a_d,1); //for head we don't give an index

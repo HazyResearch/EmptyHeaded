@@ -76,10 +76,10 @@ struct ParTrieBuilder{
   std::vector<TrieBuilder<A,M>*> builders;
   ParTrieBuilder<A,M>(Trie<A,M>* t_in);
 
-  Set<hybrid> build_aggregated_set(
+  Set<hybrid>* build_aggregated_set(
     const TrieBlock<hybrid,M> *s1) const;
 
-  Set<hybrid> build_set(
+  Set<hybrid>* build_set(
     const TrieBlock<hybrid,M> *s1);
 
   void allocate_next();

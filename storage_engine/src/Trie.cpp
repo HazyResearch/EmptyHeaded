@@ -78,7 +78,7 @@ void recursive_foreach(
   const std::function<void(std::vector<uint32_t>*,A)> body){
 
   if(level+1 == num_levels){
-    current->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
+    current->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
       tuple->push_back(a_d);
       (void) a_i;
       if(annotated)
@@ -89,7 +89,7 @@ void recursive_foreach(
       tuple->pop_back();
     });
   } else {
-    current->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
+    current->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
       //if not done recursing and we have data
       tuple->push_back(a_d);
       if(current->get_next_block(a_i,a_d,memoryBuffers) != NULL){
@@ -110,7 +110,7 @@ void recursive_foreach(
 template<class A,class M>
 TrieBlock<layout,M>* Trie<A,M>::getHead(){
   TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)memoryBuffers->head->getBuffer();
-  head->set.data = (uint8_t*)((uint8_t*)head + sizeof(TrieBlock<layout,M>));
+  head->get_set()->data = (uint8_t*)((uint8_t*)head + sizeof(TrieBlock<layout,M>));
   return head; 
 }
 
@@ -122,7 +122,7 @@ void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
   TrieBlock<layout,M>* head = this->getHead();
 
-  head->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
+  head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
     tuple->push_back(a_d);
     TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
     if(num_columns > 1 && next != NULL){
@@ -221,15 +221,17 @@ size_t build_block(
   const uint8_t * const start_block = data_allocator->get_next(tid,sizeof(B));
   const size_t offset = start_block-data_allocator->get_address(tid);
 
+  Set<hybrid>* myset = (Set<hybrid>*)(data_allocator->get_next(tid,sizeof(Set<layout>)));
   const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
   const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range);
   uint8_t* set_data_in = data_allocator->get_next(tid,set_alloc_size);
+  
+  TrieBlock<layout,A>* tmp = TrieBlock<layout,A>::get_block(tid,offset,data_allocator);
+  myset = tmp->get_set();
+  myset->from_array(set_data_in,set_data_buffer,set_size);
 
-  B* block = TrieBlock<layout,A>::get_block(tid,offset,data_allocator);
-  block->set = Set<layout>::from_array(set_data_in,set_data_buffer,set_size);
-
-  assert(set_alloc_size >= block->set.number_of_bytes);
-  data_allocator->roll_back(tid,set_alloc_size-block->set.number_of_bytes);
+  assert(set_alloc_size >= myset->number_of_bytes);
+  data_allocator->roll_back(tid,set_alloc_size-myset->number_of_bytes);
 
   return offset;
 }
@@ -243,18 +245,20 @@ size_t build_head(
   const size_t set_size, 
   uint32_t *set_data_buffer){
 
-  const uint8_t * const start_block = (uint8_t*) (data_allocator->head->get_next(sizeof(B)));
-  const size_t offset = start_block-((uint8_t*)data_allocator->head->get_address());
+  const uint8_t * const start_block = (uint8_t*) (data_allocator->get_next(NUM_THREADS,sizeof(B)));
+  const size_t offset = start_block-((uint8_t*)data_allocator->get_address(NUM_THREADS));
 
+  Set<layout>* myset = (Set<layout>*)(data_allocator->get_next(NUM_THREADS,sizeof(Set<layout>)));
   const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
   const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range);
-  uint8_t* set_data_in = (uint8_t*)data_allocator->head->get_next(set_alloc_size);
+  uint8_t* set_data_in = (uint8_t*)data_allocator->get_next(NUM_THREADS,set_alloc_size);
+  
+  TrieBlock<layout,A>* tmp = TrieBlock<layout,A>::get_block(NUM_THREADS,offset,data_allocator);
+  myset = tmp->get_set();
+  myset->from_array(set_data_in,set_data_buffer,set_size);
 
-  B* block = TrieBlock<layout,A>::get_block(NUM_THREADS,offset,data_allocator);
-  block->set = Set<layout>::from_array(set_data_in,set_data_buffer,set_size);
-
-  assert(set_alloc_size >= block->set.number_of_bytes);
-  data_allocator->head->roll_back(set_alloc_size-block->set.number_of_bytes);
+  assert(set_alloc_size >= myset->number_of_bytes);
+  data_allocator->head->roll_back(set_alloc_size - myset->number_of_bytes);
 
   return offset;
 }
@@ -402,6 +406,7 @@ Trie<A,M>::Trie(
   size_t cur_level = 1;
   if(num_columns > 1){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
+    std::cout << "CARD: " << new_head->get_set()->cardinality << std::endl;
     new_head->init_next(NUM_THREADS,memoryBuffers);
 
     //encode the set, create a block with NULL pointers to next level

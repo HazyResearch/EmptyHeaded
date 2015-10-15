@@ -24,32 +24,32 @@ TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in){
   }
 }
 
+/*
 template<class A,class M>
 Set<hybrid>* TrieBuilder<A,M>::build_set(
   const size_t tid,
   const size_t level,
-  const TrieBlock<hybrid,M>* s1,
-  const TrieBlock<hybrid,M>* s2){
+  const TrieBlock<hybrid,M>* tb1,
+  const TrieBlock<hybrid,M>* tb2){
 
   M* data_allocator = trie->memoryBuffers;
   const uint8_t * const start_block = data_allocator->get_next(tid,sizeof(TrieBlock<hybrid,M>*));
   const size_t offset = start_block-data_allocator->get_address(tid);
 
   const size_t alloc_size =
-    std::max(s1->set.number_of_bytes,
-             s2->set.number_of_bytes);
+    std::max(s1->number_of_bytes,
+             s2->number_of_bytes);
 
   uint8_t* set_data_in = (uint8_t*)data_allocator->get_next(tid,alloc_size);
   TrieBlock<hybrid,M>* block = TrieBlock<hybrid,M>::get_block(tid,offset,data_allocator);
-  Set<hybrid> cur_set = block->set;
-  cur_set.data = set_data_in;
-  (void) cur_set; //FIX ME (layout should just be a pointer or all relative to buffer)
+  block->set.data = set_data_in;
+  //(void) cur_set; //FIX ME (layout should just be a pointer or all relative to buffer)
   
   std::cout << "start intersect" << std::endl;
   block->set = ops::set_intersect(
             (Set<hybrid> *)(&(block->set)), 
-            (const Set<hybrid> *)&s1->set,
-            (const Set<hybrid> *)&s2->set);
+            (const Set<hybrid> *)&s1,
+            (const Set<hybrid> *)&s2);
   std::cout << "end intersect" << std::endl;
 
 
@@ -65,35 +65,41 @@ Set<hybrid>* TrieBuilder<A,M>::build_set(
   //(4) allocated space for the next blocks
   //return the set
 }
-
+*/
 //Build a aggregated set for two sets
 template<class A,class M>
 Set<hybrid>* TrieBuilder<A,M>::build_aggregated_set(
   const size_t level,
-  const TrieBlock<hybrid,M> *s1, 
-  const TrieBlock<hybrid,M> *s2){
+  const TrieBlock<hybrid,M> *tb1, 
+  const TrieBlock<hybrid,M> *tb2){
 
-    const size_t alloc_size =
-      std::max(s1->set.number_of_bytes,
-               s2->set.number_of_bytes);
+  const Set<hybrid>* s1 = tb1->get_set();   
+  const Set<hybrid>* s2 = tb2->get_set();   
 
-    Set<hybrid> r((uint8_t*) (tmp_buffers.at(level)->get_next(alloc_size)) );
-    tmp_buffers.at(level)->roll_back(alloc_size); 
-    //we can roll back because we won't try another buffer at this level and tid until
-    //after this memory is consumed.
-    return ops::set_intersect(
-            (Set<hybrid> *)&r, (const Set<hybrid> *)&s1->set,
-            (const Set<hybrid> *)&s2->set);
+  const size_t alloc_size =
+    std::max(s1->number_of_bytes,
+             s2->number_of_bytes);
+
+  Set<hybrid> r((uint8_t*) (tmp_buffers.at(level)->get_next(alloc_size)) );
+  tmp_buffers.at(level)->roll_back(alloc_size); 
+  //we can roll back because we won't try another buffer at this level and tid until
+  //after this memory is consumed.
+  return ops::set_intersect(
+          (Set<hybrid> *)&r, 
+          s1,
+          s2);
 }
 
 //perform a count on two sets
 template<class A,class M>
 size_t TrieBuilder<A,M>::count_set(
-  const TrieBlock<hybrid,M> *s1, 
-  const TrieBlock<hybrid,M> *s2){
+  const TrieBlock<hybrid,M> *tb1, 
+  const TrieBlock<hybrid,M> *tb2){
+  const Set<hybrid>* s1 = tb1->get_set();   
+  const Set<hybrid>* s2 = tb2->get_set();
   size_t result = ops::set_intersect(
-            (const Set<hybrid> *)&s1->set,
-            (const Set<hybrid> *)&s2->set);
+            s1,
+            s2);
   return result;
 }
 
@@ -158,8 +164,9 @@ void TrieBuilder<A,M>::set_annotation(
     trie->memoryBuffers);
   //(2) call set block
   A* annotation = (A*)(((uint8_t*)block)+(
-    sizeof(TrieBlock<hybrid,M>*)+
-    block->set.number_of_bytes) );
+    sizeof(TrieBlock<hybrid,M>)+
+    sizeof(Set<hybrid>)+
+    block->get_set()->number_of_bytes) );
   annotation[block->get_index(index,data)] = value;
   //return the set
 }
@@ -176,10 +183,12 @@ A TrieBuilder<A,M>::get_annotation(
     next.at(cur_level).index,
     next.at(cur_level).offset,
     trie->memoryBuffers);
+  const Set<hybrid>* s1 = block->get_set();
   //(2) call set block
-  A* annotation = (A*)(((uint8_t*)block)+(
-    sizeof(TrieBlock<hybrid,M>*)+
-    block->set.number_of_bytes) );
+  A* annotation = (A*)( ((uint8_t*)block)+
+    (sizeof(TrieBlock<hybrid,M>)+
+    sizeof(Set<hybrid>) +
+    s1->number_of_bytes) );
   return annotation[block->get_index(index,data)];
   //return the set
 }
@@ -199,24 +208,28 @@ ParTrieBuilder<A,M>::ParTrieBuilder(Trie<A,M> *t_in){
 //When we have just a single trie accessor 
 //and it is aggregated just return it
 template<class A,class M>
-Set<hybrid> ParTrieBuilder<A,M>::build_aggregated_set(
+Set<hybrid>* ParTrieBuilder<A,M>::build_aggregated_set(
   const TrieBlock<hybrid,M> *s1) const {
-    return s1->set;
+    return s1->get_set();
 }
 
 //When we have just a single trie accessor 
 //and it is aggregated just return it
 template<class A,class M>
-Set<hybrid> ParTrieBuilder<A,M>::build_set(
-  const TrieBlock<hybrid,M> *s1){
-    auto data_allocator = trie->memoryBuffers->head;
-    const size_t block_size = s1->set.number_of_bytes+sizeof(TrieBlock<hybrid,M>*);
-    uint8_t * const start_block = (uint8_t*)data_allocator->get_next(block_size);
+Set<hybrid>* ParTrieBuilder<A,M>::build_set(
+  const TrieBlock<hybrid,M> *tb1){
+    Set<hybrid>* s1 = tb1->get_set();   
 
-    memcpy(start_block,s1,block_size);
+    auto data_allocator = trie->memoryBuffers->head;
+    const size_t block_size = s1->number_of_bytes+
+      sizeof(TrieBlock<hybrid,M>)+
+      sizeof(Set<hybrid>);
+
+    uint8_t * const start_block = (uint8_t*)data_allocator->get_next(block_size);
+    memcpy(start_block,tb1,block_size);
 
     TrieBlock<hybrid,M>* r = (TrieBlock<hybrid,M>*) start_block;
-    return r->set;
+    return r->get_set();
 
   //(1) copy the trie block to head buffer (do not copy pointers)
   //(3) set the offset and index of the trie block in a vector

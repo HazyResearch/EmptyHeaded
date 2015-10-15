@@ -176,7 +176,7 @@ class Set{
     void copy_from(Set<T> src);
 
     //constructors
-    static Set<T> from_array(uint8_t *set_data, uint32_t *array_data, size_t data_size);
+    void from_array(uint8_t *set_data, uint32_t *array_data, size_t data_size);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -207,10 +207,14 @@ inline Set<uinteger> Set<T>::decode(uint32_t *buffer){
 //CREATE A SET FROM AN ARRAY OF UNSIGNED INTEGERS
 ///////////////////////////////////////////////////////////////////////////////
 template <class T>
-inline Set<T> Set<T>::from_array(uint8_t *set_data, uint32_t *array_data, size_t data_size){
-  const uint32_t range = (data_size > 0) ? array_data[data_size-1] : 0;
+inline void Set<T>::from_array(uint8_t *set_data, uint32_t *array_data, size_t data_size){
+  range = (data_size > 0) ? array_data[data_size-1] : 0;
   const std::tuple<size_t,type::layout> bl = T::build(set_data,array_data,data_size);
-  return Set<T>(set_data,data_size,range,std::get<0>(bl),std::get<1>(bl));
+
+  number_of_bytes = std::get<0>(bl);
+  cardinality = data_size;
+  data = set_data;
+  type = std::get<1>(bl);
 }
 
 #endif
