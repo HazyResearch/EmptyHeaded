@@ -20,7 +20,7 @@ TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in){
     next.at(0).offset = 0;
   }
   for(size_t i = 0; i < t_in->num_columns; i++){
-    tmp_buffers.at(i) = new MemoryBuffer(100);
+    tmp_buffers.at(i) = new MemoryBuffer(2);
   }
 }
 
@@ -73,19 +73,20 @@ Set<hybrid>* TrieBuilder<A,M>::build_aggregated_set(
   const TrieBlock<hybrid,M> *tb1, 
   const TrieBlock<hybrid,M> *tb2){
 
-  const Set<hybrid>* s1 = tb1->get_set();   
-  const Set<hybrid>* s2 = tb2->get_set();   
+  const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));//tb1->get_set();   
+  const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));//tb2->get_set();   
 
   const size_t alloc_size =
     std::max(s1->number_of_bytes,
              s2->number_of_bytes);
 
-  Set<hybrid> r((uint8_t*) (tmp_buffers.at(level)->get_next(alloc_size)) );
-  tmp_buffers.at(level)->roll_back(alloc_size); 
+  uint8_t* place = (uint8_t*)tmp_buffers.at(level)->get_next(alloc_size+sizeof(Set<hybrid>));
+  Set<hybrid> *r = (Set<hybrid>*)place;
+  tmp_buffers.at(level)->roll_back(alloc_size+sizeof(Set<hybrid>)); 
   //we can roll back because we won't try another buffer at this level and tid until
   //after this memory is consumed.
   return ops::set_intersect(
-          (Set<hybrid> *)&r, 
+          r, 
           s1,
           s2);
 }
@@ -97,7 +98,7 @@ size_t TrieBuilder<A,M>::count_set(
   const TrieBlock<hybrid,M> *tb2){
   const Set<hybrid>* s1 = tb1->get_set();   
   const Set<hybrid>* s2 = tb2->get_set();
-  size_t result = ops::set_intersect(
+  const size_t result = ops::set_intersect(
             s1,
             s2);
   return result;

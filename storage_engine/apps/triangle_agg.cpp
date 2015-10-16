@@ -12,9 +12,10 @@ struct triangleAgg: public application {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_R_0_1 = Trie<void *,mem>::load( 
-        "/afs/cs.stanford.edu/u/caberger/db"
-        //"/dfs/scratch0/caberger/datasets/higgs/db_python/relations/R/R_0_1"
-        //"/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/R/R_0_1"
+        //"/afs/cs.stanford.edu/u/caberger/db/relations/R/R_0_1"
+        //"/dfs/scratch0/caberger/datasets/socLivejournal/db_python/relations/R/R_0_1"
+        //"/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
+        "/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/R/R_0_1"
         );
         //"/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1");
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
@@ -51,13 +52,14 @@ struct triangleAgg: public application {
 
         const ParTrieBuilder<long,mem> Builders_Triangle(Trie_Triangle_);
 
-        Set<hybrid> a = Builders_Triangle.build_aggregated_set(
+        const Set<hybrid>* a = Builders_Triangle.build_aggregated_set(
           Iterators_R_a_b.head);
 
         par::reducer<long> annotation(0,
           [](size_t a, size_t b) { return a + b; });
 
-        a.par_foreach([&](size_t tid, uint32_t a_d) {
+        a->par_foreach([&](size_t tid, uint32_t a_d) {
+          //std::cout << a_d << std::endl;
           TrieBuilder<long,mem>* const Builder_Triangle = Builders_Triangle.builders.at(tid);
 
           TrieIterator<void*,mem>* const Iterator_R_a_b = Iterators_R_a_b.iterators.at(tid);
@@ -67,14 +69,17 @@ struct triangleAgg: public application {
           Iterator_R_a_b->get_next_block(a_d);
           Iterator_R_a_c->get_next_block(a_d);
 
-          Set<hybrid> b = Builder_Triangle->build_aggregated_set(
+          Set<hybrid>* b = Builder_Triangle->build_aggregated_set(
             1,
             Iterator_R_b_c->get_block(0),
             Iterator_R_a_b->get_block(1)
           );
-          
+          //std::cout << b.cardinality << std::endl;
+                  
           long annotation_b = (long)0;
-          b.foreach ([&](uint32_t b_d) {
+          
+          b->foreach ([&](uint32_t b_d) {
+            //std::cout << a_d << " " << b_d <<  std::endl;
             Iterator_R_b_c->get_next_block(b_d);
             size_t count = Builder_Triangle->count_set(
               Iterator_R_b_c->get_block(1),

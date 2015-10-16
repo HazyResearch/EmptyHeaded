@@ -14,6 +14,7 @@ def compileQuery(name):
 	os.chdir("..")
 
 def execute(name,mem,types,annotationType):
+	#os.system("rm -rf queries/" + name + ".so")
 	wrapperfile = open("wrapper/querywrapper.cpp","w")
 	wrapperfile.write(code.wrappertemplate.getCode(name,mem,types,annotationType))
 	wrapperfile.close()

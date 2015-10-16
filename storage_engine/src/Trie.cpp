@@ -110,7 +110,6 @@ void recursive_foreach(
 template<class A,class M>
 TrieBlock<layout,M>* Trie<A,M>::getHead(){
   TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)memoryBuffers->head->getBuffer();
-  head->get_set()->data = (uint8_t*)((uint8_t*)head + sizeof(TrieBlock<layout,M>));
   return head; 
 }
 
