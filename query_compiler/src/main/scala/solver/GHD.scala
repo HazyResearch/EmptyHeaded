@@ -2,7 +2,6 @@ package DunceCap
 
 import java.util
 
-import DunceCap.GHDSolver
 import DunceCap.attr.Attr
 import argonaut.Argonaut._
 import argonaut.Json

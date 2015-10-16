@@ -9,6 +9,7 @@ name := "query_compiler"
 scalaVersion := "2.11.2"
 
 mainClass := Some("DunceCap.QueryCompiler")
+
 publishTo := Some(Resolver.file("file",  new File( "exec" )) )
 
 libraryDependencies ++= Seq(

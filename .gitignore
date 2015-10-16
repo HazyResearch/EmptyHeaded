@@ -7,3 +7,5 @@
 *.sublime*
 *.pyc
 *.so
+.idea
+target
