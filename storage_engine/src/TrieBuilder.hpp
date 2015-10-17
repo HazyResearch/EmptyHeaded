@@ -99,6 +99,11 @@ struct ParTrieBuilder{
       const uint32_t a_d)> f
   );
 
+  void par_foreach_builder(
+    std::function<void(
+      const size_t tid,
+      const size_t a_i,
+      const uint32_t a_d)> f);
 };
 
 #endif

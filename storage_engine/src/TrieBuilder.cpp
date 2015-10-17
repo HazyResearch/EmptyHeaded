@@ -283,6 +283,7 @@ const Set<hybrid>* ParTrieBuilder<A,M>::build_set(
   //return the set
 }
 
+/*
 template<class A,class M>
 const Set<hybrid>* ParTrieBuilder<A,M>::allocate_next(){
   //(1) get the trie block at the previous level
@@ -295,7 +296,7 @@ const Set<hybrid>* ParTrieBuilder<A,M>::allocate_next(){
   block = trie->getHead();
   return (const Set<hybrid>*)(block+sizeof(TrieBlock<hybrid,M>));
 }
-
+*/
 template<class A,class M>
 void ParTrieBuilder<A,M>::par_foreach_aggregate(
   std::function<void(
@@ -309,12 +310,25 @@ void ParTrieBuilder<A,M>::par_foreach_aggregate(
 }
 
 template<class A,class M>
+void ParTrieBuilder<A,M>::par_foreach_builder(
+  std::function<void(
+    const size_t tid,
+    const size_t a_i,
+    const uint32_t a_d)> f) {
+
+    const TrieBlock<hybrid,M>* block = trie->getHead();
+    Set<hybrid>* s = (Set<hybrid>*)((uint8_t*)block+sizeof(TrieBlock<hybrid,M>));
+    s->par_foreach_index(f);
+}
+
+/*
+template<class A,class M>
 void ParTrieBuilder<A,M>::allocate_annotation(){
   //(1) get the trie block at the previous level
   TrieBlock<hybrid,M>* block = trie->getHead();
   //annotation is always placed right after the trie block right now
   trie->memoryBuffers->head->get_next(sizeof(A)*(block->nextSize()));
-}
+}*/
 
 template struct TrieBuilder<void*,ParMemoryBuffer>;
 template struct TrieBuilder<long,ParMemoryBuffer>;
