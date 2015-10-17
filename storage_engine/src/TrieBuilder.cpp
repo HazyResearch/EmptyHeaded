@@ -216,7 +216,27 @@ void TrieBuilder<A,M>::foreach_aggregate(
     auto buf = tmp_buffers.at(tmp_level);
     tmp_level++;
     s->foreach(sizeof(Set<hybrid>),buf,f);
+    //s->foreach(f);
     tmp_level--;
+}
+
+template<class A,class M>
+void TrieBuilder<A,M>::foreach_builder(
+  std::function<void(
+    const uint32_t a_i,
+    const uint32_t a_d)> f) {
+
+    const uint32_t cur_index = next.at(cur_level).index;
+    const size_t cur_offset = next.at(cur_level).offset;
+
+    auto buf = trie->memoryBuffers->elements.at(cur_index);
+    uint8_t* place = (uint8_t*)(buf->get_address(cur_offset)+sizeof(TrieBlock<hybrid,M>));
+
+    Set<hybrid> *s = (Set<hybrid>*)place;
+
+    cur_level++;
+    s->foreach_index(sizeof(Set<hybrid>),buf,f);
+    cur_level--;
 }
 
 //////////////////////////////////////////////////////////////////////

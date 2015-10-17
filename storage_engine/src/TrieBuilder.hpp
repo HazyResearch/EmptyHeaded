@@ -69,6 +69,11 @@ struct TrieBuilder{
       const uint32_t a_d)> f
   );
 
+  void foreach_builder(
+    std::function<void(
+      const uint32_t a_i,
+      const uint32_t a_d)> f);
+
 };
 
 template<class A, class M>

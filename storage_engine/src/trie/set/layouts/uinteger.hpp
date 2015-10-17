@@ -41,6 +41,15 @@ class uinteger{
         const size_t number_of_bytes,
         const type::layout t);
 
+    template<class M, typename F>
+    static void foreach_index(
+        const size_t index,
+        M* memoryBuffer,
+        F f,
+        const size_t cardinality,
+        const size_t number_of_bytes,
+        const type::layout t);
+
     template<typename F>
     static void foreach_until(
         F f,
@@ -136,6 +145,23 @@ inline void uinteger::foreach_index(
  (void) number_of_bytes; (void) t; (void) data_in;
   const uint32_t * const data = (uint32_t*) data_in;
   for(size_t i=0; i<cardinality;i++){
+    f(i,data[i]);
+  }
+}
+
+//Iterates over set applying a lambda.
+template<class M, typename F>
+inline void uinteger::foreach_index(
+    const size_t index,
+    M* memoryBuffer,
+    F f,
+    const size_t cardinality,
+    const size_t number_of_bytes,
+    const type::layout t) {
+ (void) number_of_bytes; (void) t;
+  uint32_t *data = (uint32_t*) memoryBuffer->get_address(index);
+  for(size_t i=0; i<cardinality;i++){
+    data = (uint32_t*) memoryBuffer->get_address(index+sizeof(uint32_t)*i);
     f(i,data[i]);
   }
 }

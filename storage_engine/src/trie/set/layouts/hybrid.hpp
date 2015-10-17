@@ -46,6 +46,15 @@ class hybrid{
         const size_t number_of_bytes,
         const type::layout t);
 
+    template<class M, typename F>
+    static void foreach_index(
+        const size_t index,
+        M* memoryBuffer,
+        F f,
+        const size_t cardinality,
+        const size_t number_of_bytes,
+        const type::layout t);
+
     template<typename F>
     static void foreach_until(
         F f,
@@ -198,6 +207,28 @@ inline void hybrid::foreach_index(
       break;
   }
 }
+
+//Iterates over set applying a lambda.
+template<class M, typename F>
+inline void hybrid::foreach_index(
+    const size_t index,
+    M* memoryBuffer,
+    F f,
+    const size_t cardinality,
+    const size_t number_of_bytes,
+    const type::layout t) {
+  switch(t){
+    case type::UINTEGER :
+      uinteger::foreach_index(index,memoryBuffer,f,cardinality,number_of_bytes,type::UINTEGER);
+      break;
+    case type::RANGE_BITSET :
+      range_bitset::foreach_index(index,memoryBuffer,f,cardinality,number_of_bytes,type::RANGE_BITSET);
+      break;
+    default:
+      break;
+  }
+}
+
 
 //Iterates over set applying a lambda.
 template<typename F>

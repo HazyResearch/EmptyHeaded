@@ -110,6 +110,20 @@ class Set{
       T::foreach_index(f,this->get_data(),cardinality,number_of_bytes,type);
     }
 
+    template<class M, typename F>
+    void foreach_index(const size_t index, M* memoryBuffer, F f) const {
+      /*std::cout << number_of_bytes << std::endl;
+      std::cout << number_of_bytes << std::endl;*/
+      //std::cout << "---" << std::endl;
+      T::foreach_index(
+        index,
+        memoryBuffer,
+        f,
+        cardinality,
+        number_of_bytes,
+        type);
+    }
+
     // Applies a function to each element in the set until the function returns
     // true.
     //
