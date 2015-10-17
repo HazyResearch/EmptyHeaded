@@ -33,6 +33,15 @@ class range_bitset{
         const size_t number_of_bytes,
         const type::layout t);
 
+    template<class M, typename F>
+    static void foreach(
+        const size_t index,
+        M* memoryBuffer,
+        F f,
+        const size_t cardinality,
+        const size_t number_of_bytes,
+        const type::layout t);
+
     template<typename F>
     static void foreach_index(
         F f,
@@ -219,6 +228,39 @@ inline void range_bitset::foreach(
         }
       }
       A64_data++;
+    }
+  }
+}
+
+//Iterates over set applying a lambda.
+template<class M, typename F>
+inline void range_bitset::foreach(
+    const size_t index,
+    M* memoryBuffer,
+    F f,
+    const size_t cardinality,
+    const size_t number_of_bytes,
+    const type::layout type) {
+  (void) cardinality; (void) type;
+
+  size_t word_index = 0;
+  uint8_t *A = (uint8_t*) memoryBuffer->get_address(index);
+  if(number_of_bytes > 0 && cardinality > 0){
+    const size_t num_data_words = get_number_of_words(number_of_bytes);
+    const uint64_t offset = ((uint64_t*)A)[0];
+    uint64_t* A64_data = (uint64_t*)(A+sizeof(uint64_t));
+
+    for(size_t i = 0; i < num_data_words; i++){
+      const uint64_t cur_word = *A64_data;
+      if(cur_word != 0) {
+        for(size_t j = 0; j < BITS_PER_WORD; j++){
+          if((cur_word >> j) % 2) {
+            f(BITS_PER_WORD *(i+offset) + j);
+          }
+        }
+      }
+      A64_data = (uint64_t*)(memoryBuffer->get_address(word_index+index+sizeof(uint64_t)));
+      word_index++;
     }
   }
 }

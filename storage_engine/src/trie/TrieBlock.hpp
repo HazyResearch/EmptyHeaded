@@ -65,7 +65,8 @@ struct TrieBlock{
       (void) data;
       NextLevel* next = this->next(index);
       next->index = setIndex;
-      next->offset = setOffset;    }
+      next->offset = setOffset;    
+    }
   }
 
   inline static TrieBlock<T,M>* get_block(
@@ -79,7 +80,6 @@ struct TrieBlock{
   inline TrieBlock<T,M>* get_next_block(
     const uint32_t data,
     M* buffer) const {
-
     TrieBlock<T,M>* result = NULL;
     const Set<hybrid> * const set = this->get_const_set();
     if(!is_sparse){

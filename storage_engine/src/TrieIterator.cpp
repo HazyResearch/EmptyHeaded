@@ -13,6 +13,7 @@
 template<class A,class M>
 TrieIterator<A,M>::TrieIterator(Trie<A,M>* t_in){
   trie = *t_in;
+  std::cout << "NUM COLUMSN: " << trie.num_columns << std::endl;
   levels.resize(trie.num_columns);
   assert(trie.num_columns > 0);
   levels.at(0) = trie.getHead();
@@ -20,14 +21,8 @@ TrieIterator<A,M>::TrieIterator(Trie<A,M>* t_in){
 
 template<class A,class M>
 void TrieIterator<A,M>::get_next_block(const size_t level, const uint32_t data){
-  levels.at(level+1) =
+  levels.at(level+1) = (const TrieBlock<hybrid,M>*)
     levels.at(level)->get_next_block(data,trie.memoryBuffers);
-}
-
-template<class A,class M>
-void TrieIterator<A,M>::get_next_block(const uint32_t data){
-  levels.at(1) = (const TrieBlock<hybrid,M>*)
-    levels.at(0)->get_next_block(data,trie.memoryBuffers);
 }
 
 template<class A,class M>

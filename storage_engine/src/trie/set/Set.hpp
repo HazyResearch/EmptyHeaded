@@ -88,6 +88,20 @@ class Set{
       T::foreach(f,this->get_data(),cardinality,number_of_bytes,type);
     }
 
+    template<class M, typename F>
+    void foreach(const size_t index, M* memoryBuffer, F f) const {
+      /*std::cout << number_of_bytes << std::endl;
+      std::cout << number_of_bytes << std::endl;*/
+      //std::cout << "---" << std::endl;
+      T::foreach(
+        index,
+        memoryBuffer,
+        f,
+        cardinality,
+        number_of_bytes,
+        type);
+    }
+
     template<typename F>
     void foreach_index(F f) const {
       /*std::cout << number_of_bytes << std::endl;
@@ -129,32 +143,6 @@ class Set{
     //constructors
     void from_array(uint8_t *set_data, uint32_t *array_data, size_t data_size);
 };
-
-/*
-///////////////////////////////////////////////////////////////////////////////
-//Copy Data from one set into another
-///////////////////////////////////////////////////////////////////////////////
-template <class T>
-inline void Set<T>::copy_from(Set<T> src){ 
-  memcpy(data,src.data,src.number_of_bytes);
-  cardinality = src.cardinality;
-  range = src.range;
-  number_of_bytes = src.number_of_bytes;
-  type = src.type;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//DECODE ARRAY
-///////////////////////////////////////////////////////////////////////////////
-template <class T>
-inline Set<uinteger> Set<T>::decode(uint32_t *buffer){ 
-  size_t i = 0;
-  T::foreach( ([&i,&buffer] (uint32_t data){
-    buffer[i++] = data;
-  }),data,cardinality,number_of_bytes,type);
-  return Set<uinteger>((uint8_t*)buffer,cardinality,range,cardinality*sizeof(int),type::UINTEGER);
-}
-*/
 
 ///////////////////////////////////////////////////////////////////////////////
 //CREATE A SET FROM AN ARRAY OF UNSIGNED INTEGERS
