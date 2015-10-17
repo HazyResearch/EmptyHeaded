@@ -55,12 +55,12 @@ struct triangleAgg: public application {
             Iterator_R_b_c->get_block(0),
             Iterator_R_a_b->get_block(1)
           );
-          //std::cout << b.cardinality << std::endl;
                   
           long annotation_b = (long)0;
-
           Builder_Triangle->foreach_aggregate([&](const uint32_t b_d) {
+            //std::cout << b_d << std::endl;
             Iterator_R_b_c->get_next_block(0,b_d);
+
             size_t count = Builder_Triangle->count_set(
               Iterator_R_b_c->get_block(1),
               Iterator_R_a_b->get_block(1)
@@ -68,6 +68,7 @@ struct triangleAgg: public application {
             // emitAnnotationInitialization
             long annotation_c = count;
             annotation_b += (annotation_c * 1 * 1);
+          
           });
           annotation.update(tid, (annotation_b * 1));
         });

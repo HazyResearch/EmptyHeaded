@@ -251,6 +251,11 @@ inline void range_bitset::foreach(
     uint64_t* A64_data = (uint64_t*)(A+sizeof(uint64_t));
 
     for(size_t i = 0; i < num_data_words; i++){
+      A64_data = (uint64_t*)(
+        memoryBuffer->get_address(
+          word_index*sizeof(uint64_t) +
+          index +
+          sizeof(uint64_t)));
       const uint64_t cur_word = *A64_data;
       if(cur_word != 0) {
         for(size_t j = 0; j < BITS_PER_WORD; j++){
@@ -259,7 +264,6 @@ inline void range_bitset::foreach(
           }
         }
       }
-      A64_data = (uint64_t*)(memoryBuffer->get_address(word_index+index+sizeof(uint64_t)));
       word_index++;
     }
   }

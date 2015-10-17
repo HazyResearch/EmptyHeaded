@@ -222,7 +222,7 @@ size_t build_block(
 
   Set<hybrid>* myset = (Set<hybrid>*)(data_allocator->get_next(tid,sizeof(Set<layout>)));
   const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
-  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range);
+  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range)+100;
   uint8_t* set_data_in = data_allocator->get_next(tid,set_alloc_size);
   
   TrieBlock<layout,A>* tmp = TrieBlock<layout,A>::get_block(tid,offset,data_allocator);
@@ -249,7 +249,7 @@ size_t build_head(
 
   Set<layout>* myset = (Set<layout>*)(data_allocator->get_next(NUM_THREADS,sizeof(Set<layout>)));
   const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
-  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range);
+  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range)+100;
   uint8_t* set_data_in = (uint8_t*)data_allocator->get_next(NUM_THREADS,set_alloc_size);
   
   TrieBlock<layout,A>* tmp = TrieBlock<layout,A>::get_block(NUM_THREADS,offset,data_allocator);

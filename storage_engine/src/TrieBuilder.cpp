@@ -83,14 +83,14 @@ void TrieBuilder<A,M>::build_aggregated_set(
     return;
   }
 
-  const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));//tb1->get_set();   
-  const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));//tb2->get_set();   
+  const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));  
+  const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));  
 
   const size_t alloc_size =
     std::max(s1->number_of_bytes,
              s2->number_of_bytes);
 
-  uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_next(alloc_size+sizeof(Set<hybrid>));
+  uint8_t* place = (uint8_t*) (tmp_buffers.at(tmp_level)->get_next(alloc_size+sizeof(Set<hybrid>)));
   Set<hybrid> *r = (Set<hybrid>*)place;
   tmp_buffers.at(tmp_level)->roll_back(alloc_size+sizeof(Set<hybrid>)); 
   //we can roll back because we won't try another buffer at this level and tid until
@@ -210,14 +210,12 @@ void TrieBuilder<A,M>::foreach_aggregate(
   std::function<void(
     const uint32_t a_d)> f) {
 
-    //const size_t index = next.at(cur_level).index;
-    //const size_t offset = next.at(cur_level).offset;
     uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_address(0);
     Set<hybrid> *s = (Set<hybrid>*)place;
 
     auto buf = tmp_buffers.at(tmp_level);
     tmp_level++;
-    s->foreach(0,buf,f);
+    s->foreach(sizeof(Set<hybrid>),buf,f);
     tmp_level--;
 }
 

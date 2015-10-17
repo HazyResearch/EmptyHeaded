@@ -21,6 +21,14 @@ class hybrid{
     static long find(uint32_t key, const uint8_t *data_in, const size_t number_of_bytes, const type::layout t);
     static std::tuple<size_t,bool> find(uint32_t start_index, uint32_t key, const uint8_t *data_in, const size_t number_of_bytes, const type::layout t);
 
+    template<typename F>
+    static void foreach(
+        F f,
+        const uint8_t *data_in,
+        const size_t cardinality,
+        const size_t number_of_bytes,
+        const type::layout t);
+
     template<class M, typename F>
     static void foreach(
         const size_t index,
@@ -124,6 +132,26 @@ inline void hybrid::foreach_until(
       break;
     case type::RANGE_BITSET:
       range_bitset::foreach_until(f,data_in,cardinality,number_of_bytes,type::RANGE_BITSET);
+      break;
+    default:
+      break;
+  }
+}
+
+//Iterates over set applying a lambda.
+template<typename F>
+inline void hybrid::foreach(
+    F f,
+    const uint8_t *data_in,
+    const size_t cardinality,
+    const size_t number_of_bytes,
+    const type::layout t) {
+  switch(t){
+    case type::UINTEGER :
+      uinteger::foreach(f,data_in,cardinality,number_of_bytes,type::UINTEGER);
+      break;
+    case type::RANGE_BITSET :
+      range_bitset::foreach(f,data_in,cardinality,number_of_bytes,type::RANGE_BITSET);
       break;
     default:
       break;

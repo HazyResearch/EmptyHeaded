@@ -120,8 +120,8 @@ inline void uinteger::foreach(
 
  uint32_t *data = (uint32_t*) memoryBuffer->get_address(index);
  for(size_t i=0; i<cardinality;i++){
-  f(data[i]);
-  data = (uint32_t*) memoryBuffer->get_address(index);
+  data = (uint32_t*) memoryBuffer->get_address(index+sizeof(uint32_t)*i);
+  f(*data);
  }
 }
 

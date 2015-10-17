@@ -29,7 +29,7 @@
 #include <vector>
 #include "tbb/parallel_sort.h"
 
-const static size_t NUM_THREADS = 1;
+const static size_t NUM_THREADS = 4;
 
 //Needed for parallelization, prevents false sharing of cache lines
 #define PADDING 300
