@@ -1,4 +1,4 @@
-package scala.parser
+package scala.solver
 
 import org.scalatest.FunSuite
 
@@ -6,5 +6,4 @@ import org.scalatest.FunSuite
  * Created by sctu on 10/16/15.
  */
 class QueryPlanTest extends FunSuite {
-
 }

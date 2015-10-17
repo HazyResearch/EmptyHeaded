@@ -2,6 +2,8 @@ package DunceCap
 
 import argonaut.Json
 
+import scala.solver.QueryPlan
+
 abstract trait ASTStatement {
 }
 
@@ -25,20 +27,20 @@ case class ASTQueryStatement(
                               joinAggregates:Map[String,ParsedAggregate]) extends ASTStatement {
   // TODO (sctu) : ignoring everything except for join, joinAggregates for now
 
-  var queryPlan: Json = getGHD()
+  var queryPlan: QueryPlan = getBestPlan()
 
-  private def getGHD(): Json = {
+  private def getBestPlan(): QueryPlan = {
     // We get the candidate GHDs, i.e., the ones of min width
     val rootNodes = GHDSolver.getMinFHWDecompositions(join);
     val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs));
     candidates.map(c => c.doPostProcessingPass())
     HeuristicUtils.getGHDsWithMaxCoveringRoot(
       HeuristicUtils.getGHDsWithMinBags(candidates))
-    val queryPlan = candidates.head.toJson
+    val queryPlan = candidates.head.getQueryPlan
     return queryPlan
   }
 
   override def toString(): String = {
-    queryPlan.toString
+    queryPlan.toJson.spaces2
   }
 }

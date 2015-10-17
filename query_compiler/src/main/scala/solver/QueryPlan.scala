@@ -1,4 +1,4 @@
-package DunceCap
+package scala.solver
 
 import DunceCap.attr.Attr
 import argonaut.Json
@@ -26,6 +26,20 @@ class QueryPlanRelationInfo(val name:String,
                             val ordering:List[Int],
                             val attributes:Option[List[List[Attr]]],
                             val annotation:String) extends JsonSerializable {
+  override def equals(o: Any) = o match {
+    case that: QueryPlanRelationInfo => {
+      that.name.equals(name) &&
+        that.ordering.equals(ordering) &&
+        that.attributes.equals(attributes) &&
+        that.annotation.equals(annotation)
+    }
+    case _ => false
+  }
+
+  override def hashCode = {
+    41 * (41 * (41 * (name.hashCode + 41) + ordering.hashCode) +  attributes.hashCode) + annotation.hashCode
+  }
+
   override def toJson: Json = {
     if (attributes.isEmpty) {
       Json(
