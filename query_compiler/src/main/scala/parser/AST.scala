@@ -17,7 +17,6 @@ class ASTLambdaFunction(val inputArgument:QueryRelation,
                         val join:List[QueryRelation],
                         val aggregates:Map[String,ParsedAggregate])
 
-//change this to lhs; aggregates[attr,(op,expression,init)], join, recursion
 case class ASTQueryStatement(
                               lhs:QueryRelation,
                               joinType:String,
@@ -31,6 +30,11 @@ case class ASTQueryStatement(
 
   private def getBestPlan(): QueryPlan = {
     // We get the candidate GHDs, i.e., the ones of min width
+    val missingRelations = join.filter(rel => !Environment.isLoaded(rel))
+    if (!missingRelations.isEmpty) {
+      throw new RelationNotFoundException("TODO: fill in with a better explanation")
+    }
+    val joinQueryWithAnnotations = join.map(rel => Environment.setAnnotationAccordingToConfig(rel))
     val rootNodes = GHDSolver.getMinFHWDecompositions(join);
     val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs));
     candidates.map(c => c.doPostProcessingPass())

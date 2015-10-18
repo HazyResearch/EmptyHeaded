@@ -11,7 +11,7 @@ package object attr {
   type SelectionVal = String
 }
 
-class QueryRelation(val name:String, val attrs:List[(Attr, SelectionOp, SelectionVal)],val annotationType:String="void*") {
+class QueryRelation(val name:String, val attrs:List[(Attr, SelectionOp, SelectionVal)],  var annotationType:String = "void*") {
   val attrNames = attrs.map(x => x._1)
   override def equals(that: Any): Boolean =
     that match {
