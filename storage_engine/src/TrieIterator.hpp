@@ -25,7 +25,8 @@ template<class A, class M>
 struct TrieIterator{
   Trie<A,M> trie;
   std::vector<const TrieBlock<layout,M>*> levels;
-  int a[1000]; //padding
+  size_t num_rows;
+  int a[3000]; //padding
 
   TrieIterator<A,M>(Trie<A,M>* t_in);
 

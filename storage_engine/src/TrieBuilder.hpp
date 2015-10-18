@@ -32,7 +32,7 @@ struct TrieBuilder{
   uint32_t cur_level;
   uint32_t tmp_level;
 
-  void build_aggregated_set(
+  size_t build_aggregated_set(
     const TrieBlock<hybrid,M> *s1, 
     const TrieBlock<hybrid,M> *s2);
 
@@ -40,7 +40,7 @@ struct TrieBuilder{
     const TrieBlock<hybrid,M> *s1, 
     const TrieBlock<hybrid,M> *s2);
 
-  const Set<hybrid>* build_set(
+  size_t build_set(
     const size_t tid,
     const TrieBlock<hybrid,M> *s1,
     const TrieBlock<hybrid,M> *s2);
@@ -83,10 +83,10 @@ struct ParTrieBuilder{
   ParTrieBuilder<A,M>(Trie<A,M>* t_in);
   const TrieBlock<hybrid,M>* tmp_head;
 
-  void build_aggregated_set(
+  size_t build_aggregated_set(
     const TrieBlock<hybrid,M> *s1);
 
-  const Set<hybrid>* build_set(
+  size_t build_set(
     const TrieBlock<hybrid,M> *s1);
 
   const Set<hybrid>* allocate_next();

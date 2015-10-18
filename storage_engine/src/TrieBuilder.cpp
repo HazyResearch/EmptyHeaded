@@ -26,12 +26,24 @@ TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in){
   }
 }
 
-/*
 template<class A,class M>
-const Set<hybrid>* TrieBuilder<A,M>::build_set(
+size_t TrieBuilder<A,M>::build_set(
   const size_t tid,
   const TrieBlock<hybrid,M>* tb1,
   const TrieBlock<hybrid,M>* tb2){
+
+  M* data_allocator = trie->memoryBuffers;
+  if(tb1 == NULL || tb2 == NULL){
+    next.at(cur_level).index = -1;
+
+    //clear the memory and move on (will set num bytes and cardinality to 0)
+    const size_t alloc_size = sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>);
+    uint8_t* place = (uint8_t*)data_allocator->get_next(tid,alloc_size);
+    const size_t offset = place-data_allocator->get_address(tid);
+    next.at(cur_level).offset = offset;
+    memset(place,(uint8_t)0,sizeof(alloc_size));
+    return 0;
+  }
 
   const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>)); 
   const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));  
@@ -40,7 +52,6 @@ const Set<hybrid>* TrieBuilder<A,M>::build_set(
     std::max(s1->number_of_bytes,
              s2->number_of_bytes);
 
-  M* data_allocator = trie->memoryBuffers;
   uint8_t* start_block = (uint8_t*)data_allocator->get_next(tid,
     sizeof(TrieBlock<hybrid,M>)+
     sizeof(Set<hybrid>)+
@@ -48,7 +59,7 @@ const Set<hybrid>* TrieBuilder<A,M>::build_set(
   const size_t offset = start_block-data_allocator->get_address(tid);
 
   Set<hybrid>* myset =  (Set<hybrid>*)(start_block+sizeof(TrieBlock<hybrid,M>));
-  
+
   myset = ops::set_intersect(
             myset, 
             s1,
@@ -61,16 +72,16 @@ const Set<hybrid>* TrieBuilder<A,M>::build_set(
   next.at(cur_level).index = tid;
   next.at(cur_level).offset = offset;
 
-  return myset;
+  return myset->cardinality;
   //aside: when you call set block it will just pull the values and set with (data,index) value
   //(4) allocated space for the next blocks
   //return the set
 }
-*/
+
 
 //Build a aggregated set for two sets
 template<class A,class M>
-void TrieBuilder<A,M>::build_aggregated_set(
+size_t TrieBuilder<A,M>::build_aggregated_set(
   const TrieBlock<hybrid,M> *tb1, 
   const TrieBlock<hybrid,M> *tb2){
 
@@ -80,7 +91,7 @@ void TrieBuilder<A,M>::build_aggregated_set(
     //clear the memory and move on (will set num bytes and cardinality to 0)
     uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_next(sizeof(Set<hybrid>));
     memset(place,(uint8_t)0,sizeof(Set<hybrid>));
-    return;
+    return 0;
   }
 
   const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));  
@@ -95,10 +106,11 @@ void TrieBuilder<A,M>::build_aggregated_set(
   tmp_buffers.at(tmp_level)->roll_back(alloc_size+sizeof(Set<hybrid>)); 
   //we can roll back because we won't try another buffer at this level and tid until
   //after this memory is consumed.
-  ops::set_intersect(
+  r = ops::set_intersect(
           r, 
           s1,
           s2);
+  return r->cardinality;
 }
 
 //perform a count on two sets
@@ -116,7 +128,6 @@ size_t TrieBuilder<A,M>::count_set(
   return result;
 }
 
-/*
 template<class A,class M>
 void TrieBuilder<A,M>::allocate_next(
   const size_t tid){
@@ -150,6 +161,7 @@ void TrieBuilder<A,M>::set_level(
   //return the set
 }
 
+/*
 template<class A,class M>
 void TrieBuilder<A,M>::allocate_annotation(
   const size_t tid){
@@ -235,7 +247,13 @@ void TrieBuilder<A,M>::foreach_builder(
     Set<hybrid> *s = (Set<hybrid>*)place;
 
     cur_level++;
-    s->foreach_index(sizeof(Set<hybrid>),buf,f);
+    s->foreach_index(f);
+    /*
+    s->foreach_index(
+      (cur_offset+sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>)),
+      buf,
+      f);
+      */
     cur_level--;
 }
 
@@ -254,15 +272,16 @@ ParTrieBuilder<A,M>::ParTrieBuilder(Trie<A,M> *t_in){
 //When we have just a single trie accessor 
 //and it is aggregated just return it
 template<class A,class M>
-void ParTrieBuilder<A,M>::build_aggregated_set(
+size_t ParTrieBuilder<A,M>::build_aggregated_set(
   const TrieBlock<hybrid,M> *s1) {
   tmp_head = s1;
+  return s1->get_set()->cardinality;
 }
 
 //When we have just a single trie accessor 
 //and it is aggregated just return it
 template<class A,class M>
-const Set<hybrid>* ParTrieBuilder<A,M>::build_set(
+size_t ParTrieBuilder<A,M>::build_set(
   const TrieBlock<hybrid,M> *tb1){
     const Set<hybrid>* s1 = tb1->get_set();
     auto data_allocator = trie->memoryBuffers->head;
@@ -272,10 +291,7 @@ const Set<hybrid>* ParTrieBuilder<A,M>::build_set(
 
     uint8_t * const start_block = (uint8_t*)data_allocator->get_next(block_size);
     memcpy((uint8_t*)start_block,(uint8_t*)tb1,block_size);
-
-    const Set<hybrid>* result = (const Set<hybrid>*)(start_block+sizeof(TrieBlock<hybrid,M>));
-    return result;
-
+    return s1->cardinality;
   //(1) copy the trie block to head buffer (do not copy pointers)
   //(3) set the offset and index of the trie block in a vector
   //aside: when you call set block it will just pull the values and set with (data,index) value
@@ -283,7 +299,6 @@ const Set<hybrid>* ParTrieBuilder<A,M>::build_set(
   //return the set
 }
 
-/*
 template<class A,class M>
 const Set<hybrid>* ParTrieBuilder<A,M>::allocate_next(){
   //(1) get the trie block at the previous level
@@ -296,7 +311,7 @@ const Set<hybrid>* ParTrieBuilder<A,M>::allocate_next(){
   block = trie->getHead();
   return (const Set<hybrid>*)(block+sizeof(TrieBlock<hybrid,M>));
 }
-*/
+
 template<class A,class M>
 void ParTrieBuilder<A,M>::par_foreach_aggregate(
   std::function<void(

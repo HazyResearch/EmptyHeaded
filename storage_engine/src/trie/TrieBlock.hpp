@@ -114,6 +114,8 @@ struct TrieBlock{
     NextLevel* next = this->next(nextIndex);
     const int bufferIndex = next->index;
     const size_t bufferOffset = next->offset;
+    assert(bufferIndex != 1414791168);
+    //std::cout << "BUFFER INDEX: " << bufferIndex << std::endl;
     if(bufferIndex != -1){
       result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
     }
