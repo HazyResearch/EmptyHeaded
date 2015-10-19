@@ -7,7 +7,6 @@ import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
 import scala.collection.immutable.TreeSet
-import scala.solver._
 
 
 object GHD {

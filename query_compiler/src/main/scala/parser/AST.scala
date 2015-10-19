@@ -1,8 +1,7 @@
 package DunceCap
 
-import argonaut.Json
-
-import scala.solver.QueryPlan
+import net.liftweb.json.DefaultFormats
+import net.liftweb.json.Serialization.writePretty
 
 abstract trait ASTStatement {
 }
@@ -45,6 +44,7 @@ case class ASTQueryStatement(
   }
 
   override def toString(): String = {
-    queryPlan.toJson.spaces2
+    implicit val formats = DefaultFormats
+    writePretty(queryPlan)
   }
 }
