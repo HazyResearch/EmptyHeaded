@@ -23,9 +23,9 @@ def loadDB(path):
 
 def main():
 	#db_config="/Users/caberger/Documents/Research/data/databases/simple/config.json"
-	db_config="/Users/caberger/Documents/Research/data/databases/facebook/config_pruned.json"
+	#db_config="/Users/caberger/Documents/Research/data/databases/facebook/config_pruned.json"
 
-	#db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
+	db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
 	createDB(db_config)
 	#loadDB("/afs/cs.stanford.edu/u/caberger/db/config.json")
 	#print fetchData("R")

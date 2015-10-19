@@ -161,6 +161,7 @@ inline void uinteger::foreach_index(
  (void) number_of_bytes; (void) t;
   uint32_t *data = (uint32_t*) memoryBuffer->get_address(index);
   for(size_t i=0; i<cardinality;i++){
+    //std::cout << "FOREACH: " << (void*) memoryBuffer->get_address(0) << std::endl;
     data = (uint32_t*) (memoryBuffer->get_address(index)+(sizeof(uint32_t)*i));
     f(i,*data);
   }

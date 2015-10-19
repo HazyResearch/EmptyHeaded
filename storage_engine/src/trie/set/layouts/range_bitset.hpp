@@ -203,6 +203,7 @@ inline void range_bitset::foreach_index(
       if(cur_word != 0) {
         for(size_t j = 0; j < BITS_PER_WORD; j++){
           if((cur_word >> j) % 2) {
+            //std::cout << "FOREACH: " << (void*) A64_data << std::endl;
             f(index++,BITS_PER_WORD *(i+offset) + j);
           }
         }
@@ -216,7 +217,7 @@ inline void range_bitset::foreach_index(
 //Iterates over set applying a lambda.
 template<class M, typename F>
 inline void range_bitset::foreach_index(
-    const size_t index,
+    const size_t buffer_offset,
     M* memoryBuffer,
     F f,
     const size_t cardinality,
@@ -225,25 +226,23 @@ inline void range_bitset::foreach_index(
   (void) cardinality; (void) type;
 
   size_t word_index = 0;
-  uint8_t *A = (uint8_t*) memoryBuffer->get_address(index);
+  uint8_t *A = (uint8_t*) memoryBuffer->get_address(buffer_offset);
   if(number_of_bytes > 0 && cardinality > 0){
     const size_t num_data_words = get_number_of_words(number_of_bytes);
     const uint64_t offset = ((uint64_t*)A)[0];
-    uint64_t* A64_data = (uint64_t*)(A+sizeof(uint64_t));
-    uint32_t* A32_index = (uint32_t*)(A64_data+num_data_words);
 
-    const size_t offset_adder = index + sizeof(uint64_t);
+    const size_t offset_adder = buffer_offset + sizeof(uint64_t);
     for(size_t i = 0; i < num_data_words; i++){
-      A64_data = (uint64_t*)(
-              memoryBuffer->get_address(
-                word_index*sizeof(uint64_t) + offset_adder) );
-      A32_index = ((uint32_t*)(A64_data+num_data_words))+word_index;
+      uint64_t* A64_data = (uint64_t*)(
+              memoryBuffer->get_address(offset_adder) );
+      uint32_t A32_index = ((uint32_t*)(A64_data+num_data_words))[word_index];
+      A64_data += word_index;
       const uint64_t cur_word = *A64_data;
-      uint32_t index = *A32_index;
       if(cur_word != 0) {
         for(size_t j = 0; j < BITS_PER_WORD; j++){
           if((cur_word >> j) % 2) {
-            f(index++,BITS_PER_WORD *(i+offset) + j);
+            //std::cout << "FOREACH INDEX: " << (void*) A64_data << std::endl;
+            f(A32_index++,BITS_PER_WORD *(i+offset) + j);
           }
         }
       }

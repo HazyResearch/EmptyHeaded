@@ -13,9 +13,9 @@ struct triangleAgg: public application {
       // buildTrie
       Trie_R_0_1 = Trie<void *,mem>::load( 
         //"/afs/cs.stanford.edu/u/caberger/db/relations/R/R_0_1"
-        //"/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1"
+        "/dfs/scratch0/caberger/datasets/higgs/db_python/relations/R/R_0_1"
         //"/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
-        "/Users/caberger/Documents/Research/data/databases/facebook/db_pruned/relations/R/R_0_1"
+        //"/Users/caberger/Documents/Research/data/databases/facebook/db_pruned/relations/R/R_0_1"
         );
         //"/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1");
       timer::stop_clock("LOADING TRIE R_0_1", start_time);

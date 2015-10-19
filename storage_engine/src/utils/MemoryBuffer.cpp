@@ -18,7 +18,7 @@ unsigned MemoryBuffer::pagesize = 4096; //4KB
 
 MemoryBuffer::MemoryBuffer(){}
 
-MemoryBuffer::MemoryBuffer(unsigned _size) :size(_size) {
+MemoryBuffer::MemoryBuffer(size_t _size) :size(_size) {
   // TODO Auto-generated constructor stub
   buffer = NULL;
   buffer = (char*)malloc(size * sizeof(char));
@@ -69,11 +69,12 @@ void MemoryBuffer::roll_back(const size_t size_requested){
   currentHead -= size_requested;
 }
 
-char* MemoryBuffer::resize(unsigned increaseSize)
+char* MemoryBuffer::resize(size_t increaseSize)
 {
   const size_t old_head_offset = currentHead-buffer;
   size_t newsize = size + increaseSize;
   buffer = (char*)realloc(buffer, newsize * sizeof(char));
+  //std::cout << "REALLOC: " << (void*)buffer << std::endl;
   if(buffer == NULL) {
     std::cout << "MemoryBuffer::addBuffer, realloc error!" << std::endl;
     assert(false);

@@ -18,7 +18,7 @@
 #include "common.hpp"
 
 class MemoryBuffer {
-  unsigned size;
+  size_t size;
   char* buffer;
   char* currentHead;
 public:
@@ -27,9 +27,9 @@ public:
   friend class EntityIDBuffer;
   friend class ColumnBuffer;
   MemoryBuffer();
-  MemoryBuffer(unsigned size);
+  MemoryBuffer(size_t size);
   virtual ~MemoryBuffer();
-  char* resize(unsigned increasedSize);
+  char* resize(size_t increasedSize);
   char* getBuffer();
   void free();
 

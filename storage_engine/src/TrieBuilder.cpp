@@ -53,9 +53,9 @@ size_t TrieBuilder<A,M>::build_set(
              s2->number_of_bytes);
 
   uint8_t* start_block = (uint8_t*)data_allocator->get_next(tid,
-    sizeof(TrieBlock<hybrid,M>)+
+    (sizeof(TrieBlock<hybrid,M>)+
     sizeof(Set<hybrid>)+
-    alloc_size);
+    alloc_size));
   const size_t offset = start_block-data_allocator->get_address(tid);
 
   Set<hybrid>* myset =  (Set<hybrid>*)(start_block+sizeof(TrieBlock<hybrid,M>));
@@ -154,8 +154,8 @@ void TrieBuilder<A,M>::set_level(
 
   //(2) call set block
   prev_block->set_next_block(
-    data,
     index,
+    data,
     next.at(cur_level).index,
     next.at(cur_level).offset);
   //return the set
@@ -228,7 +228,6 @@ void TrieBuilder<A,M>::foreach_aggregate(
     auto buf = tmp_buffers.at(tmp_level);
     tmp_level++;
     s->foreach(sizeof(Set<hybrid>),buf,f);
-    //s->foreach(f);
     tmp_level--;
 }
 
@@ -247,13 +246,14 @@ void TrieBuilder<A,M>::foreach_builder(
     Set<hybrid> *s = (Set<hybrid>*)place;
 
     cur_level++;
-    s->foreach_index(f);
     /*
+    s->foreach_index(f);
+    std::cout << std::endl << std::endl;
+    */
     s->foreach_index(
       (cur_offset+sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>)),
       buf,
       f);
-      */
     cur_level--;
 }
 

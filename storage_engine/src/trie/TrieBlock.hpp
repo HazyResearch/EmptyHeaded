@@ -44,7 +44,7 @@ struct TrieBlock{
   }
 
   inline void init_next(const size_t tid, M* allocator_in){
-    const size_t next_size = this->nextSize(); 
+    const size_t next_size = this->nextSize();
     allocator_in->get_next(tid, sizeof(NextLevel)*(next_size));
   }
 
