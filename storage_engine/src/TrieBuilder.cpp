@@ -56,20 +56,19 @@ size_t TrieBuilder<A,M>::build_set(
     (sizeof(TrieBlock<hybrid,M>)+
     sizeof(Set<hybrid>)+
     alloc_size));
+
   const size_t offset = start_block-data_allocator->get_address(tid);
-
   Set<hybrid>* myset =  (Set<hybrid>*)(start_block+sizeof(TrieBlock<hybrid,M>));
-
   myset = ops::set_intersect(
             myset, 
             s1,
             s2);
 
   assert(alloc_size >= myset->number_of_bytes);
-  data_allocator->roll_back(tid,alloc_size-myset->number_of_bytes);
+  data_allocator->roll_back(tid,alloc_size - (myset->number_of_bytes) );
 
   //(3) set the offset and index of the trie block in a vector
-  next.at(cur_level).index = tid;
+  next.at(cur_level).index = (myset->cardinality > 0) ? tid: -1;
   next.at(cur_level).offset = offset;
 
   return myset->cardinality;
@@ -136,7 +135,9 @@ void TrieBuilder<A,M>::allocate_next(
     next.at(cur_level).index,
     next.at(cur_level).offset,
     trie->memoryBuffers);
-  block->init_next(tid,trie->memoryBuffers);
+  
+  if(block != NULL)
+    block->init_next(tid,trie->memoryBuffers);
 }
 
 //sets the pointers in the previous level to point to 
@@ -152,6 +153,7 @@ void TrieBuilder<A,M>::set_level(
     next.at(cur_level-1).offset,
     trie->memoryBuffers);
 
+  assert(next.at(cur_level).index <= (int)NUM_THREADS);
   //(2) call set block
   prev_block->set_next_block(
     index,
@@ -237,7 +239,10 @@ void TrieBuilder<A,M>::foreach_builder(
     const uint32_t a_i,
     const uint32_t a_d)> f) {
 
-    const uint32_t cur_index = next.at(cur_level).index;
+    const int cur_index = next.at(cur_level).index;
+    if(cur_index == -1){
+      return;
+    }
     const size_t cur_offset = next.at(cur_level).offset;
 
     auto buf = trie->memoryBuffers->elements.at(cur_index);

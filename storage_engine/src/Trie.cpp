@@ -78,7 +78,7 @@ void recursive_foreach(
   const std::function<void(std::vector<uint32_t>*,A)> body){
 
   if(level+1 == num_levels){
-    current->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
+    current->get_set()->foreach_index([&](const uint32_t a_i, const uint32_t a_d){
       tuple->push_back(a_d);
       (void) a_i;
       if(annotated)
@@ -89,7 +89,7 @@ void recursive_foreach(
       tuple->pop_back();
     });
   } else {
-    current->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
+    current->get_set()->foreach_index([&](const uint32_t a_i, const uint32_t a_d){
       //if not done recursing and we have data
       tuple->push_back(a_d);
       if(current->get_next_block(a_i,a_d,memoryBuffers) != NULL){
@@ -136,7 +136,7 @@ void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body
     } else if(annotated) {
       assert(false);
       //body(tuple,head->get_data(a_i,a_d));
-    } else{
+    } else if(num_columns == 1){
       body(tuple,(A)0); 
     }
     tuple->pop_back(); //delete the last element
@@ -416,7 +416,7 @@ Trie<A,M>::Trie(
     const size_t loop_size = new_head->nextSize();
     par::for_range(0,loop_size,100,[&](size_t tid, size_t i){
       (void) tid;
-      new_head->next(i)->index = -1;
+      new_head->getNext(i)->index = -1;
     });
 
     //reset new_head because a realloc could of occured

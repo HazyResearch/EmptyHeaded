@@ -649,8 +649,8 @@ namespace ops{
 
       count = intersect_range_block<N>(C,index_write,A+a_start_index,B+b_start_index,total_size*64,start_index,f,A32_index,B32_index);
 
-      C_in->number_of_bytes = count == 0 ? 0:(total_size*(sizeof(uint64_t)+sizeof(uint32_t))+sizeof(uint64_t));
-      C_in->range = count == 0 ? 0:(total_size+start_index)*64; //num words = total size, 64 values per word
+      C_in->number_of_bytes = (count == 0) ? 0:(total_size*(sizeof(uint64_t)+sizeof(uint32_t))+sizeof(uint64_t));
+      C_in->range = (count == 0) ? 0:(64*(total_size+start_index)); //num words = total size, 64 values per word
     }
 
     C_in->cardinality = count;

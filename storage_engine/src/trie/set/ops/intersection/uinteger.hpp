@@ -80,7 +80,7 @@ namespace ops{
   };
   struct unpack_materialize:no_check{
     static inline uint32_t range(uint32_t *C, size_t cardinality){
-      return (cardinality > 0) ? C[cardinality-1]-C[0] : 0;
+      return (cardinality > 0) ? C[cardinality-1] : 0;
     }
     static inline uint32_t* advanceC(uint32_t *C, size_t amount){
       return C+amount;
@@ -159,7 +159,7 @@ namespace ops{
   };
   struct unpack_uinteger_materialize:check{
     static inline uint32_t range(uint32_t *C, size_t cardinality){
-      return (cardinality > 0) ? C[cardinality-1]-C[0] : 0;
+      return (cardinality > 0) ? C[cardinality-1] : 0;
     }
     static inline uint32_t* advanceC(uint32_t *C, size_t amount){
       return C+amount;
@@ -512,7 +512,7 @@ namespace ops{
     C_in->number_of_bytes = (count+tail)*sizeof(uint32_t);
     C_in->type= type::UINTEGER;
 
-    return C_in;  
+    return C_in;
   }
   /**
    * This intersection function is similar to v1, but is faster when
