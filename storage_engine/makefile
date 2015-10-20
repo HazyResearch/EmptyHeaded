@@ -41,7 +41,7 @@ CODEGEN=$(CODEGEN_SOURCES:.cpp=)
 $(info $(CODEGEN))
 CODEGEN_EXES=$(CODEGEN:%=$(EXEDIR)/%)
 
-LIBS=-ltbb -lpthread -ljemalloc
+LIBS=-ltbb -lpthread
 
 all: $(APPS_EXES) $(TOOLS_EXES) $(SERVER_EXES)
 
@@ -58,7 +58,7 @@ $(EXEDIR):
 $(APPS_EXES): $(EXEDIR) emptyheaded
 	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
 
-$(CODEGEN_EXES): $(EXEDIR)
+$(CODEGEN_EXES): $(EXEDIR) emptyheaded
 	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
 
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
