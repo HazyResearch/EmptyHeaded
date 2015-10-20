@@ -7,8 +7,6 @@ SOURCES=$(shell find src -name "*cpp")
 #STRIPPED=$(notdir $(SOURCES))
 OBJECTS=$(SOURCES:src/%.cpp=$(OBJDIR)/%.o)
 
-
-
 ifdef DEBUG
 	override CXXFLAGS += -DDEBUG -g
 endif
@@ -30,7 +28,7 @@ endif
 ifdef CLANG
 	CXX = clang++
 else 
-	CXX = g++ 
+	CXX = g++
 endif
 
 APPS_SOURCES=$(shell ls apps)
@@ -43,7 +41,7 @@ CODEGEN=$(CODEGEN_SOURCES:.cpp=)
 $(info $(CODEGEN))
 CODEGEN_EXES=$(CODEGEN:%=$(EXEDIR)/%)
 
-LIBS=-ltbb -lpthread
+LIBS=-ltbb -lpthread -ljemalloc
 
 all: $(APPS_EXES) $(TOOLS_EXES) $(SERVER_EXES)
 
@@ -60,7 +58,7 @@ $(EXEDIR):
 $(APPS_EXES): $(EXEDIR) emptyheaded
 	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
 
-$(CODEGEN_EXES): $(EXEDIR) emptyheaded
+$(CODEGEN_EXES): $(EXEDIR)
 	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
 
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)

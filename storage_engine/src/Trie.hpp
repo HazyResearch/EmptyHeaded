@@ -31,7 +31,7 @@ struct Trie{
 
   Trie<A,M>(std::string path, size_t num_columns_in, bool annotated_in){
     annotated = annotated_in;
-    memoryBuffers = new M(path,2);
+    memoryBuffers = new M(path,7000);
     num_columns = num_columns_in;
   };
 

@@ -15,7 +15,7 @@ struct triangleMaterialize: public application {
         //"/Users/caberger/Documents/Research/data/databases/facebook/db_pruned/relations/R/R_0_1"
         //"/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
           //"/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
-          "/dfs/scratch0/caberger/datasets/higgs/db_python/relations/R/R_0_1"
+          "/dfs/scratch0/caberger/datasets/higgs/db_python_48t/relations/R/R_0_1"
           );
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
     }
@@ -73,6 +73,7 @@ struct triangleMaterialize: public application {
       
         Trie_Triangle_->num_rows = num_rows.evaluate(0);
         
+        /*
         Trie_Triangle_->foreach([&](std::vector<uint32_t>* tuple,void* value){
           assert(tuple->size() == 3);
           for(size_t i =0; i < tuple->size(); i++){
@@ -80,6 +81,7 @@ struct triangleMaterialize: public application {
           }
           std::cout << std::endl;
         });
+        */
 
       }
     }
