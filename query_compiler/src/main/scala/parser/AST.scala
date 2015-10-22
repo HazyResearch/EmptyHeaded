@@ -36,10 +36,11 @@ case class ASTQueryStatement(
     val joinQueryWithAnnotations = join.map(rel => Environment.setAnnotationAccordingToConfig(rel))
     val rootNodes = GHDSolver.getMinFHWDecompositions(join);
     val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs));
+    candidates.map(c => println(c.root.attrSet));
     candidates.map(c => c.doPostProcessingPass())
-    HeuristicUtils.getGHDsWithMaxCoveringRoot(
+    val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(
       HeuristicUtils.getGHDsWithMinBags(candidates))
-    val queryPlan = candidates.head.getQueryPlan
+    val queryPlan = chosen.head.getQueryPlan
     return queryPlan
   }
 
