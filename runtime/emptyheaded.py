@@ -2,24 +2,29 @@ import json
 import codegenerator.createDB
 import codegenerator.env
 import codegenerator.fetchRelation
+import subprocess
 
+QUERY_COMPILER_CONFIG_DIR = 'config'
 environment = codegenerator.env.Environment()
 
+def query(datalog_string):
+  print subprocess.Popen("target/start DunceCap.QueryPlanner %s \"%s\"" % (QUERY_COMPILER_CONFIG_DIR, datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
+
 def createDB(name):
-	codegenerator.createDB.fromJSON(name,environment)
-	#environment.dump()
+  codegenerator.createDB.fromJSON(name,environment)
+  #environment.dump()
 
 def fetchData(relation):
-	return codegenerator.fetchRelation.fetch(relation,environment)
+  return codegenerator.fetchRelation.fetch(relation,environment)
 
 def numRows(relation):
-	return codegenerator.fetchRelation.numRows(relation,environment)
+  return codegenerator.fetchRelation.numRows(relation,environment)
 
 def saveDB():
-	environment.toJSON(environment.config["database"]+"/config.json")
+  environment.toJSON(environment.config["database"]+"/config.json")
 
 def loadDB(path):
-	environment.fromJSON(path)
+  environment.fromJSON(path)
 
 def main():
 	db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"

@@ -8,8 +8,8 @@ generates code.
 object CodeGenerator {
   def main(args:Array[String]) = {
     if(args.length == 1){
-      val ghd = Generator.GHDFromJSON(args(0))
-      Generator.run(ghd)
+      //val ghd = Generator.GHDFromJSON(args(0))
+      //Generator.run(ghd)
     } else{
       println("""Usage: "./target/start/ DunceCap.CodeGenerator <JSON GHD>" """)
     }

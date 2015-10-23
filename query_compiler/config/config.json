@@ -1,0 +1,351 @@
+{
+   "layout":"hybrid",
+   "numNUMA":4,
+   "algorithm":"NPRR+",
+   "database":"/Users/caberger/Documents/Research/data/databases/higgs/db_pruned",
+   "numThreads":1,
+   "encodings":{
+      "node":"long"
+   },
+   "relations":[
+      {
+         "name":"R_1_0",
+         "storage":"disk"
+      },
+      {
+         "name":"R_0_1",
+         "storage":"disk"
+      },
+      {
+         "name":"takesCourse",
+         "storage":"disk"
+      },
+      {
+         "name":"type",
+         "storage":"disk"
+      },
+      {
+         "name":"subOrganizationOf",
+         "storage":"disk"
+      },
+      {
+         "name":"undegraduateDegreeFrom",
+         "storage":"disk"
+      },
+      {
+         "name":"memberOf",
+         "storage":"disk"
+      }
+      {
+         "name":"emailAddress",
+         "storage":"disk"
+      },
+      {
+         "name":"takesCourse",
+         "storage":"disk"
+      },
+      {
+         "name":"telephone",
+         "storage":"disk"
+      }
+      {
+         "name":"worksFor",
+         "storage":"disk"
+      }
+      {
+         "name":"teacherOf",
+         "storage":"disk"
+      }
+   ],
+   "memory":"ParMemoryBuffer",
+   "schemas":[
+      {
+         "name":"R",
+         "attributes":[
+            {
+               "attrType":"long",
+               "encoding":"node"
+            },
+            {
+               "attrType":"long",
+               "encoding":"node"
+            }
+         ],
+         "orderings":[
+            [
+               0,
+               1
+            ],
+            [
+               1,
+               0
+            ]
+         ],
+         "annotation":"void*"
+      },
+      {
+        "name" : "takesCourse",
+        "orderings" : [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "annotation" : "void*",
+        "attributes" : [
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          },
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          }
+        ]
+      },
+      {
+        "name" : "type",
+        "orderings" : [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "annotation" : "void*",
+        "attributes" : [
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          },
+          {
+            "attrType" : "std::string",
+            "encoding" : "types"
+          }
+        ]
+      },
+      {
+        "name" : "memberOf",
+        "orderings" : [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "annotation" : "void*",
+        "attributes" : [
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          },
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          }
+        ]
+      },
+      {
+        "name" : "undegraduateDegreeFrom",
+        "orderings" : [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "annotation" : "void*",
+        "attributes" : [
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          },
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          }
+        ]
+      },
+      {
+        "name" : "subOrganizationOf",
+        "orderings" : [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "annotation" : "void*",
+        "attributes" : [
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          },
+          {
+            "attrType" : "std::string",
+            "encoding" : "subject"
+          }
+        ]
+    },
+    {
+      "name" : "name",
+      "orderings" : [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "annotation" : "void*",
+      "attributes" : [
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        },
+        {
+          "attrType" : "std::string",
+          "encoding" : "name"
+        }
+      ]
+    },
+    {
+      "name" : "takesCourse",
+      "orderings" : [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "annotation" : "void*",
+      "attributes" : [
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        },
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        }
+      ]
+    },
+    {
+      "name" : "telephone",
+      "orderings" : [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "annotation" : "void*",
+      "attributes" : [
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        },
+        {
+          "attrType" : "std::string",
+          "encoding" : "telephone"
+        }
+      ]
+    },
+    {
+      "name" : "emailAddress",
+      "orderings" : [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "annotation" : "void*",
+      "attributes" : [
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        },
+        {
+          "attrType" : "std::string",
+          "encoding" : "email"
+        }
+      ]
+    },
+    {
+      "name" : "worksFor",
+      "orderings" : [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "annotation" : "void*",
+      "attributes" : [
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        },
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        }
+      ]
+    },
+    {
+      "name" : "teacherOf",
+      "orderings" : [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "annotation" : "void*",
+      "attributes" : [
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        },
+        {
+          "attrType" : "std::string",
+          "encoding" : "subject"
+        }
+      ]
+    },
+   ]
+}

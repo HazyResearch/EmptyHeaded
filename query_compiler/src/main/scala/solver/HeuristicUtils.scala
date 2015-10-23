@@ -2,12 +2,7 @@ package DunceCap
 
 object HeuristicUtils {
   def getGHDsWithMinBags(candidates:List[GHD]): List[GHD] = {
-    val minNumBags = candidates.foldLeft(Int.MaxValue)((acc, c) => {
-      if (c.numBags < acc)
-        c.numBags
-      else
-        acc
-    })
+    val minNumBags = candidates.map(_.numBags).min
     candidates.filter(c => {c.numBags == minNumBags})
   }
 
@@ -18,12 +13,7 @@ object HeuristicUtils {
       }).size
       (c, numCovered)
     })
-    val maxNumCovered = candidateAndCovering.foldLeft(0)((acc, c) => {
-      if (c._2 > acc)
-        c._2
-      else
-        acc
-    })
+    val maxNumCovered = candidateAndCovering.unzip._2.max
     candidateAndCovering.filter(c => {c._2 == maxNumCovered}).unzip._1
   }
 }

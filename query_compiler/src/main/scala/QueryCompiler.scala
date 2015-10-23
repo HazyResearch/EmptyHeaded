@@ -19,7 +19,7 @@ object QueryCompiler {
         return
       } 
       val ghd = DCParser.run(ln)
-      Generator.run(ghd)
+      //Generator.run(ghd)
       print(">")
     } 
   }
@@ -28,7 +28,7 @@ object QueryCompiler {
       Environment.fromJSON(args(0))
       if(args.length == 2){
         val ghd = DCParser.run(readFile(args(1)))
-        Generator.run(ghd)
+        //Generator.run(ghd)
       } else {
         getInput()
       }

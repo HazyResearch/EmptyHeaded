@@ -2,10 +2,7 @@ package DunceCap
 
 import java.util
 
-import DunceCap.GHDSolver
 import DunceCap.attr.Attr
-import argonaut.Argonaut._
-import argonaut.Json
 import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
@@ -28,25 +25,20 @@ class GHD(val root:GHDNode,
   var depth: Int = -1
   var numBags: Int = -1
 
-  def toJson(): Json = {
-    Json(
-      "query_type" -> jString("join"),
-      "relations" -> getRelationsSummary(),
-      "output" -> getOutputInfo(),
-      "ghd" -> jArray(getJsonFromPreOrderTraversal(root))
-    )
+  def getQueryPlan(): QueryPlan = {
+    new QueryPlan("join", getRelationsSummary(), getOutputInfo(), getPlanFromPreorderTraversal(root))
   }
 
   /**
    * Summary of all the relations in the GHD
    * @return Json for the relation summary
    */
-  private def getRelationsSummary(): Json = {
-    jArray(getRelationSummaryFromPreOrderTraversal(root).distinct)
+  private def getRelationsSummary(): List[QueryPlanRelationInfo] = {
+    getRelationSummaryFromPreOrderTraversal(root).distinct
   }
 
-  private def getRelationSummaryFromPreOrderTraversal(node:GHDNode): List[Json] = {
-    node.getJsonRelationInfo(true):::node.children.flatMap(c => {getRelationSummaryFromPreOrderTraversal(c)})
+  private def getRelationSummaryFromPreOrderTraversal(node:GHDNode): List[QueryPlanRelationInfo] = {
+    node.getRelationInfo(true):::node.children.flatMap(c => {getRelationSummaryFromPreOrderTraversal(c)})
   }
 
   /**
@@ -56,21 +48,20 @@ class GHD(val root:GHDNode,
 		"annotation":"long"
 	  },
    */
-  private def getOutputInfo(): Json = {
-    Json(
-      "name" -> jString(outputRelation.name),
-      "ordering" -> jArray(GHD.getNumericalOrdering(attributeOrdering, outputRelation).map(o => jNumber(o))),
-      "annotation" -> jString(outputRelation.annotationType)
-    )
+  private def getOutputInfo(): QueryPlanOutputInfo = {
+    new QueryPlanOutputInfo(
+      outputRelation.name,
+      GHD.getNumericalOrdering(attributeOrdering, outputRelation),
+      outputRelation.annotationType)
   }
 
-  private def getJsonFromPreOrderTraversal(node:GHDNode): List[Json] = {
-    node.getJsonBagInfo(joinAggregates)::node.children.flatMap(c => getJsonFromPreOrderTraversal(c))
+  private def getPlanFromPreorderTraversal(node:GHDNode): List[QueryPlanBagInfo] = {
+    node.getBagInfo(joinAggregates)::node.children.flatMap(c => getPlanFromPreorderTraversal(c))
   }
 
   /**
    * Do a post-processiing pass to fill out some of the other vars in this class
-   * You should call this before calling toJson
+   * You should call this before calling getQueryPlan
    */
   def doPostProcessingPass() = {
     root.computeDepth
@@ -114,15 +105,14 @@ class GHDNode(var rels: List[QueryRelation]) {
     bagName = name
   }
 
-  def getJsonBagInfo(joinAggregates:Map[String,ParsedAggregate]): Json = {
-    val jsonRelInfo = getJsonRelationInfo()
-    Json(
-      "name" -> jString(bagName),
-      "attributes" -> jArray(outputRelation.attrNames.map(attrName => {jString(attrName)})),
-      "annotation" -> jString(outputRelation.annotationType),
-      "relations" -> jArray(jsonRelInfo),
-      "nprr" -> jArray(getJsonNPRRInfo(joinAggregates))
-    )
+  def getBagInfo(joinAggregates:Map[String,ParsedAggregate]): QueryPlanBagInfo = {
+    val jsonRelInfo = getRelationInfo()
+    new QueryPlanBagInfo(
+      bagName,
+      outputRelation.attrNames,
+      outputRelation.annotationType,
+      jsonRelInfo,
+      getNPRRInfo(joinAggregates))
   }
 
   def setDescendantNames(depth:Int): Unit = {
@@ -132,51 +122,50 @@ class GHDNode(var rels: List[QueryRelation]) {
     children.map(child => {child.setDescendantNames(depth+1)})
   }
 
-  private def getJsonNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) : List[Json] = {
-    val attrsWithAccessorJson = getOrderedAttrsWithAccessorJson()
+  private def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) : List[QueryPlanNPRRInfo] = {
+    val attrsWithAccessor = getOrderedAttrsWithAccessor()
     val prevAndNextAttrMaterialized = getPrevAndNextAttrMaterialized(
-      attrsWithAccessorJson,
+      attrsWithAccessor,
       ((attr:Attr) => outputRelation.attrNames.contains(attr)))
     val prevAndNextAttrAggregated = getPrevAndNextAttrMaterialized(
-      attrsWithAccessorJson,
+      attrsWithAccessor,
       ((attr:Attr) => joinAggregates.get(attr).isDefined))
 
-    attrsWithAccessorJson.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
+    attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
       val (attr, prevNextInfo) = attrAndPrevNextInfo
       val (materializedInfo, aggregatedInfo) = prevNextInfo
-      val accessorJson = getAccessorJson(attr)
-      if (accessorJson.isEmpty) {
+      val accessor = getAccessor(attr)
+      if (accessor.isEmpty) {
         None // this should not happen
       } else {
-        Some(Json(
-          "name" -> jString(attr),
-          "accessors" -> jArray(accessorJson),
-          "materialize" -> jBool(outputRelation.attrNames.contains(attr)),
-          "selection" -> jBool(hasSelection(attr)),
-          "materialize" -> jBool(outputRelation.attrNames.contains(attr)),
-          "annotation" -> getNextAnnotatedForLastMaterialized(attr, joinAggregates),
-          "aggregation" -> getAggregationJson(joinAggregates, attr, aggregatedInfo),
-          "prevMaterialized" -> jString(materializedInfo._1),
-          "nextMaterialized" -> jString(materializedInfo._2)
-        ))
+        Some(new QueryPlanNPRRInfo(
+          attr,
+          accessor,
+          outputRelation.attrNames.contains(attr),
+          hasSelection(attr),
+          getNextAnnotatedForLastMaterialized(attr, joinAggregates),
+          getAggregation(joinAggregates, attr, aggregatedInfo),
+          materializedInfo._1,
+          materializedInfo._2))
       }
     })
   }
 
-  private def getPrevAndNextAttrMaterialized(attrsWithAccessorJson: List[Attr], filterFn:(Attr => Boolean)): List[(Attr, Attr)] = {
-    val prevAttrsMaterialized = attrsWithAccessorJson.foldLeft((List[String](), "None"))((acc, attr) => {
+  private def getPrevAndNextAttrMaterialized(attrsWithAccessor: List[Attr],
+                                             filterFn:(Attr => Boolean)): List[(Option[Attr], Option[Attr])] = {
+    val prevAttrsMaterialized = attrsWithAccessor.foldLeft((List[Option[Attr]](), Option.empty[Attr]))((acc, attr) => {
       val prevAttrMaterialized = (
         if (filterFn(attr)) {
-          attr
+          Some(attr)
         } else {
           acc._2
         })
       (acc._2::acc._1, prevAttrMaterialized)
     })._1.reverse
-    val nextAttrsMaterialized = attrsWithAccessorJson.foldRight((List[String](), "None"))((attr, acc) => {
+    val nextAttrsMaterialized = attrsWithAccessor.foldRight((List[Option[Attr]](), Option.empty[Attr]))((attr, acc) => {
       val nextAttrMaterialized = (
         if (filterFn(attr)) {
-          attr
+          Some(attr)
         } else {
           acc._2
         })
@@ -185,29 +174,18 @@ class GHDNode(var rels: List[QueryRelation]) {
     prevAttrsMaterialized.zip(nextAttrsMaterialized)
   }
 
-  private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,ParsedAggregate]): Json = {
+  private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,ParsedAggregate]): Option[Attr] = {
     if (!outputRelation.attrNames.isEmpty && outputRelation.attrNames.last == attr) {
-      val annotatedAttr = attributeOrdering.dropWhile(a => a != attr).tail.find(a => joinAggregates.contains(a) && attrSet.contains(a))
-      jString(annotatedAttr.getOrElse("None"))
+      attributeOrdering.dropWhile(a => a != attr).tail.find(a => joinAggregates.contains(a) && attrSet.contains(a))
     } else {
-      jString("None")
+      None
     }
   }
 
-  private def getAggregationJson(joinAggregates:Map[String,ParsedAggregate], attr:Attr, prevNextInfo:(Attr, Attr)): Json = {
-    val maybeJson = joinAggregates.get(attr).map(parsedAggregate => {
-      Json(
-        "operation" -> jString(parsedAggregate.op),
-        "init" -> jString(parsedAggregate.init),
-        "expression" -> jString(parsedAggregate.expression),
-        "prev" -> jString(prevNextInfo._1),
-        "next" -> jString(prevNextInfo._2)
-      )
+  private def getAggregation(joinAggregates:Map[String,ParsedAggregate], attr:Attr, prevNextInfo:(Option[Attr], Option[Attr])): Option[QueryPlanAggregation] = {
+   joinAggregates.get(attr).map(parsedAggregate => {
+      new QueryPlanAggregation(parsedAggregate.op, parsedAggregate.init, parsedAggregate.expression, prevNextInfo._1, prevNextInfo._2)
     })
-    maybeJson match {
-      case Some(json) => json
-      case None => jString("None")
-    }
   }
 
   /**
@@ -219,10 +197,10 @@ class GHDNode(var rels: List[QueryRelation]) {
       .filter(rel => !rel.attrs.filter(attrInfo => attrInfo._1 == attr).head._2.isEmpty).isEmpty
   }
 
-  private def getOrderedAttrsWithAccessorJson(): List[Attr] = {
+  private def getOrderedAttrsWithAccessor(): List[Attr] = {
     attributeOrdering.flatMap(attr => {
-      val accessorJson = getAccessorJson(attr)
-      if (accessorJson.isEmpty) {
+      val accessor = getAccessor(attr)
+      if (accessor.isEmpty) {
         None
       } else {
         Some(attr)
@@ -230,13 +208,9 @@ class GHDNode(var rels: List[QueryRelation]) {
     })
   }
 
-  private def getAccessorJson(attr:Attr): List[Json] = {
+  private def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
     attrToRels.get(attr).getOrElse(List()).map(rel => {
-      Json(
-        "name" -> jString(rel.name),
-        "attrs" -> jArray(rel.attrNames.map(attrName => {jString(attrName)})),
-        "annotated" -> jBool(rel.attrNames.tail == attr && rel.annotationType != "void*")
-      )
+      new QueryPlanAccessor(rel.name, rel.attrNames,(rel.attrNames.tail == attr && rel.annotationType != "void*"))
     })
   }
 
@@ -252,7 +226,7 @@ class GHDNode(var rels: List[QueryRelation]) {
         }
       ],
    */
-  def getJsonRelationInfo(forTopLevelSummary:Boolean = false): List[Json] = {
+  def getRelationInfo(forTopLevelSummary:Boolean = false): List[QueryPlanRelationInfo] = {
     val relsToUse =
       if (forTopLevelSummary) {
         rels }
@@ -273,18 +247,9 @@ class GHDNode(var rels: List[QueryRelation]) {
         val ordering = orderingAndRels._1
         val rels = orderingAndRels._2
         if (forTopLevelSummary) {
-          Json(
-            "name" -> jString(rels.head.name),
-            "ordering" -> jArray(ordering.map(o => jNumber(o))),
-            "annotation" -> jString(rels.head.annotationType)
-          )
+          new QueryPlanRelationInfo(rels.head.name, ordering, None, rels.head.annotationType)
         } else {
-          Json(
-            "name" -> jString(rels.head.name),
-            "ordering" -> jArray(ordering.map(o => jNumber(o))),
-            "attributes" -> jArray(rels.map(rel => jArray(rel.attrNames.map(attrName => jString(attrName))))),
-            "annotation" -> jString(rels.head.annotationType)
-          )
+          new QueryPlanRelationInfo(rels.head.name, ordering, Some(rels.map(rel => rel.attrNames)), rels.head.annotationType)
         }
       })
     })

@@ -25,12 +25,12 @@ object QueryPlanner {
     if( (args.length == 1) || (args.length == 2)){
       Environment.fromJSON(args(0))
       if(args.length == 2){
-        DCParser.run(readFile(args(1)))
+        DCParser.run(args(1))
       } else {
         getInput()
       }
     } else{
-      println("""Usage: "./target/start/QueryCompiler <JSON config>" or "./target/start/QueryCompiler <JSON config> <datalog file>" """)
+      println("""Usage: "./target/start/QueryCompiler <JSON config>" or "./target/start/QueryCompiler <JSON config> <datalog query>" """)
     }
   }
 }
