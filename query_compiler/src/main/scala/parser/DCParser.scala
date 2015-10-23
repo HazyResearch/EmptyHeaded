@@ -1,5 +1,7 @@
 package DunceCap
 
+import java.io.{PrintStream, FileWriter, BufferedWriter, File}
+
 import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
 
 import scala.collection.immutable.List
@@ -23,7 +25,6 @@ class QueryRelation(val name:String, val attrs:List[(Attr, SelectionOp, Selectio
     println("name: " + name + " attrs: " + attrs + " annotationType: " + annotationType)
   }
 }
-
 
 class RecursionStatement(val functionName:String, val inputArgument:QueryRelation, val convergance:ConverganceCriteria)
 
@@ -56,10 +57,11 @@ class AnnotationExpression( val boundVariable:String,
 }
 
 object DCParser extends RegexParsers {
-  def run(line:String) : Unit = {
+  def run(line:String, output:Option[PrintStream]) : Unit = {
     this.parseAll(this.statements, line) match {
       case DCParser.Success(parsedStatements, _) => {
-        parsedStatements.map(println)
+        parsedStatements.map(parsedStatement =>
+          output.map(o => o.print(parsedStatement.toString())))
       }
     }
   }

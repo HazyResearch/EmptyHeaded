@@ -6,7 +6,7 @@ package DunceCap
   to the codegen.
 */
 
-object QueryCompiler {
+/* object QueryCompiler {
   def readFile(file:String): String = {
     val source = scala.io.Source.fromFile(file)
     val line = try source.mkString finally source.close()
@@ -18,7 +18,7 @@ object QueryCompiler {
       if(ln == "exit()"){
         return
       } 
-      val ghd = DCParser.run(ln)
+      val ghd = DCParser.run(ln, Some(System.out))
       //Generator.run(ghd)
       print(">")
     } 
@@ -27,7 +27,7 @@ object QueryCompiler {
     if( (args.length == 1) || (args.length == 2)){
       Environment.fromJSON(args(0))
       if(args.length == 2){
-        val ghd = DCParser.run(readFile(args(1)))
+        val ghd = DCParser.run(readFile(args(1)), Some(System.out))
         //Generator.run(ghd)
       } else {
         getInput()
@@ -36,4 +36,4 @@ object QueryCompiler {
       println("""Usage: "./target/start/ DunceCap.QueryCompiler <JSON config>" or "./target/start DunceCap.QueryCompiler <JSON config> <datalog file>" """)
     }
   }
-}
+} */

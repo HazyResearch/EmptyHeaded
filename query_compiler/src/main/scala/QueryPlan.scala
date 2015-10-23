@@ -1,8 +1,6 @@
-package DunceCap
+package scala
 
 import DunceCap.attr.Attr
-import argonaut.Json
-import argonaut.Json._
 
 case class QueryPlan(val query_type:String,
                 val relations:List[QueryPlanRelationInfo],
