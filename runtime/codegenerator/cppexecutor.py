@@ -1,10 +1,11 @@
 import os
 import code.wrappertemplate
+import imp
 
 def loadQuery(name):
-    name = "queries." + name
-    mod = __import__(name, fromlist=[''])
-    return mod
+	fname = "queries/" + name +".so"
+	mod = imp.load_dynamic(name,fname)
+	return mod
 
 def compileQuery(name):
 	os.chdir("wrapper")
@@ -13,6 +14,7 @@ def compileQuery(name):
 	os.chdir("..")
 
 def execute(name,mem,types,annotationType):
+	#os.system("rm -rf queries/" + name + ".so")
 	wrapperfile = open("wrapper/querywrapper.cpp","w")
 	wrapperfile.write(code.wrappertemplate.getCode(name,mem,types,annotationType))
 	wrapperfile.close()

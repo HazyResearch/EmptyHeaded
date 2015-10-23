@@ -622,11 +622,11 @@ namespace ops{
     C_in->range = 0;
 
     if(A_in->number_of_bytes > 0 && B_in->number_of_bytes > 0){
-      const uint64_t *a_index = (uint64_t*) A_in->data;
-      const uint64_t *b_index = (uint64_t*) B_in->data;
+      const uint64_t *a_index = (uint64_t*) A_in->get_data();
+      const uint64_t *b_index = (uint64_t*) B_in->get_data();
 
-      const uint64_t * const A = (uint64_t*)(A_in->data+sizeof(uint64_t));
-      const uint64_t * const B = (uint64_t*)(B_in->data+sizeof(uint64_t));
+      const uint64_t * const A = (uint64_t*)(A_in->get_data()+sizeof(uint64_t));
+      const uint64_t * const B = (uint64_t*)(B_in->get_data()+sizeof(uint64_t));
       const size_t s_a = range_bitset::get_number_of_words(A_in->number_of_bytes); 
       const size_t s_b = range_bitset::get_number_of_words(B_in->number_of_bytes);
 
@@ -644,13 +644,13 @@ namespace ops{
       //16 uint16_ts
       //8 ints
       //4 longs
-      uint64_t * const C = N::write_range_index(C_in->data,start_index);
+      uint64_t * const C = N::write_range_index(C_in->get_data(),start_index);
       uint32_t * index_write = N::index_data(C,total_size);
 
       count = intersect_range_block<N>(C,index_write,A+a_start_index,B+b_start_index,total_size*64,start_index,f,A32_index,B32_index);
 
-      C_in->number_of_bytes = total_size*(sizeof(uint64_t)+sizeof(uint32_t))+sizeof(uint64_t);
-      C_in->range = (total_size+start_index)*64; //num words = total size, 64 values per word
+      C_in->number_of_bytes = (count == 0) ? 0:(total_size*(sizeof(uint64_t)+sizeof(uint32_t))+sizeof(uint64_t));
+      C_in->range = (count == 0) ? 0:(64*(total_size+start_index)); //num words = total size, 64 values per word
     }
 
     C_in->cardinality = count;
@@ -696,10 +696,10 @@ namespace ops{
     size_t count = 0;
     const size_t bytes_per_block = (BLOCK_SIZE/8);
 
-    uint8_t *C = C_in->data;
-    const uint8_t * const C_start = C_in->data;
-    const uint8_t * const A_data = A_in->data+2*sizeof(uint32_t);
-    const uint8_t * const B_data = B_in->data+2*sizeof(uint32_t);
+    uint8_t *C = C_in->get_data();
+    const uint8_t * const C_start = C_in->get_data();
+    const uint8_t * const A_data = A_in->get_data()+2*sizeof(uint32_t);
+    const uint8_t * const B_data = B_in->get_data()+2*sizeof(uint32_t);
     const uint32_t offset = 2*sizeof(uint32_t)+WORDS_PER_BLOCK*sizeof(uint64_t);
     
     auto check_f = [&](uint32_t d){(void) d; return;};
@@ -707,8 +707,8 @@ namespace ops{
       (void) start, (void) end; (void) increment;
       return;};
 
-    find_matching_offsets(A_in->data,A_num_blocks,offset,[&](uint32_t a){return a;},check_f,finish_f,
-        B_in->data,B_num_blocks,offset,[&](uint32_t b){return b;},check_f,finish_f, 
+    find_matching_offsets(A_in->get_data(),A_num_blocks,offset,[&](uint32_t a){return a;},check_f,finish_f,
+        B_in->get_data(),B_num_blocks,offset,[&](uint32_t b){return b;},check_f,finish_f, 
         
         [&](uint32_t a_index, uint32_t b_index, uint32_t data){    
           N::write_block_header((uint32_t*)C,data,count);

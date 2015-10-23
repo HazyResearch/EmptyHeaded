@@ -1,9 +1,15 @@
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 
+#include <thread>
+#include <atomic>
+#include <cstring>
+#include <pthread.h>
+#include <sched.h>
+
 #ifdef __APPLE__
 #include "pthread_barrier.hpp"
-#endif // __APPLE__
+#endif
 
 struct thread_pool { 
   static pthread_barrier_t barrier; // barrier synchronization object 

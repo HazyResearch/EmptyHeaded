@@ -24,9 +24,6 @@ namespace ops{
             case type::RANGE_BITSET:
               return (Set<hybrid>*)set_intersect((Set<uinteger>*)C_in,(const Set<uinteger>*)A_in,(const Set<range_bitset>*)B_in,f);
               break;
-            case type::BLOCK_BITSET:
-              return (Set<hybrid>*)set_intersect((Set<uinteger>*)C_in,(const Set<uinteger>*)A_in,(const Set<block_bitset>*)B_in,f);
-              break;
             default:
               break;
           }
@@ -41,21 +38,6 @@ namespace ops{
             break;
             case type::RANGE_BITSET:
               return (Set<hybrid>*)set_intersect((Set<range_bitset>*)C_in,(const Set<range_bitset>*)A_in,(const Set<range_bitset>*)B_in,f);
-            break;
-            default:
-            break;
-          }
-        break;
-        case type::BLOCK_BITSET:
-          switch (B_in->type) {
-            case type::UINTEGER:
-              return (Set<hybrid>*)set_intersect((Set<uinteger>*)C_in,(const Set<uinteger>*)B_in,(const Set<block_bitset>*)A_in,f);
-            break;
-            case type::RANGE_BITSET:
-              return (Set<hybrid>*)set_intersect((Set<block_bitset>*)C_in,(const Set<block_bitset>*)A_in,(const Set<range_bitset>*)B_in,f);
-            break;
-            case type::BLOCK_BITSET:
-              return (Set<hybrid>*)set_intersect((Set<block_bitset>*)C_in,(const Set<block_bitset>*)A_in,(const Set<block_bitset>*)B_in,f);
             break;
             default:
             break;
@@ -85,9 +67,6 @@ namespace ops{
             case type::RANGE_BITSET:
               return (Set<hybrid>*)set_intersect((Set<uinteger>*)C_in,(const Set<uinteger>*)A_in,(const Set<range_bitset>*)B_in);
               break;
-            case type::BLOCK_BITSET:
-              return (Set<hybrid>*)set_intersect((Set<uinteger>*)C_in,(const Set<uinteger>*)A_in,(const Set<block_bitset>*)B_in);
-              break;
             default:
               break;
           }
@@ -97,26 +76,8 @@ namespace ops{
             case type::UINTEGER:
               return (Set<hybrid>*)set_intersect((Set<uinteger>*)C_in,(const Set<uinteger>*)B_in,(const Set<range_bitset>*)A_in);
             break;
-            case type::BLOCK_BITSET:
-              return (Set<hybrid>*)set_intersect((Set<block_bitset>*)C_in,(const Set<range_bitset>*)A_in,(const Set<block_bitset>*)B_in);
-            break;
             case type::RANGE_BITSET:
               return (Set<hybrid>*)set_intersect((Set<range_bitset>*)C_in,(const Set<range_bitset>*)A_in,(const Set<range_bitset>*)B_in);
-            break;
-            default:
-            break;
-          }
-        break;
-        case type::BLOCK_BITSET:
-          switch (B_in->type) {
-            case type::UINTEGER:
-              return (Set<hybrid>*)set_intersect((Set<uinteger>*)C_in,(const Set<uinteger>*)B_in,(const Set<block_bitset>*)A_in);
-            break;
-            case type::RANGE_BITSET:
-              return (Set<hybrid>*)set_intersect((Set<block_bitset>*)C_in,(const Set<block_bitset>*)A_in,(const Set<range_bitset>*)B_in);
-            break;
-            case type::BLOCK_BITSET:
-              return (Set<hybrid>*)set_intersect((Set<block_bitset>*)C_in,(const Set<block_bitset>*)A_in,(const Set<block_bitset>*)B_in);
             break;
             default:
             break;
@@ -143,9 +104,7 @@ static size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f
             case type::RANGE_BITSET:
               return set_intersect((const Set<uinteger>*)A_in,(const Set<range_bitset>*)B_in,f);
               break;
-            case type::BLOCK_BITSET:
-              return set_intersect((const Set<uinteger>*)A_in,(const Set<block_bitset>*)B_in,f);
-              break;
+
             default:
               break;
           }
@@ -155,26 +114,8 @@ static size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f
             case type::UINTEGER:
               return set_intersect((const Set<uinteger>*)B_in,(const Set<range_bitset>*)A_in,f);
             break;
-            case type::BLOCK_BITSET:
-              return set_intersect((const Set<range_bitset>*)A_in,(const Set<block_bitset>*)B_in,f);
-            break;
             case type::RANGE_BITSET:
               return set_intersect((const Set<range_bitset>*)A_in,(const Set<range_bitset>*)B_in,f);
-            break;
-            default:
-            break;
-          }
-        break;
-        case type::BLOCK_BITSET:
-          switch (B_in->type) {
-            case type::UINTEGER:
-              return set_intersect((const Set<uinteger>*)B_in,(const Set<block_bitset>*)A_in,f);
-            break;
-            case type::RANGE_BITSET:
-              return set_intersect((const Set<block_bitset>*)A_in,(const Set<range_bitset>*)B_in,f);
-            break;
-            case type::BLOCK_BITSET:
-              return set_intersect((const Set<block_bitset>*)A_in,(const Set<block_bitset>*)B_in,f);
             break;
             default:
             break;
@@ -201,9 +142,6 @@ static size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f
             case type::RANGE_BITSET:
               return set_intersect((const Set<uinteger>*)A_in,(const Set<range_bitset>*)B_in);
               break;
-            case type::BLOCK_BITSET:
-              return set_intersect((const Set<uinteger>*)A_in,(const Set<block_bitset>*)B_in);
-              break;
             default:
               break;
           }
@@ -213,26 +151,8 @@ static size_t set_intersect(const Set<hybrid> *A_in,const Set<hybrid> *B_in, F f
             case type::UINTEGER:
               return set_intersect((const Set<uinteger>*)B_in,(const Set<range_bitset>*)A_in);
             break;
-            case type::BLOCK_BITSET:
-              return set_intersect((const Set<range_bitset>*)A_in,(const Set<block_bitset>*)B_in);
-            break;
             case type::RANGE_BITSET:
               return set_intersect((const Set<range_bitset>*)A_in,(const Set<range_bitset>*)B_in);
-            break;
-            default:
-            break;
-          }
-        break;
-        case type::BLOCK_BITSET:
-          switch (B_in->type) {
-            case type::UINTEGER:
-              return set_intersect((const Set<uinteger>*)B_in,(const Set<block_bitset>*)A_in);
-            break;
-            case type::RANGE_BITSET:
-              return set_intersect((const Set<block_bitset>*)A_in,(const Set<range_bitset>*)B_in);
-            break;
-            case type::BLOCK_BITSET:
-              return set_intersect((const Set<block_bitset>*)A_in,(const Set<block_bitset>*)B_in);
             break;
             default:
             break;

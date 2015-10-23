@@ -13,15 +13,15 @@
 
 #include "MemoryBuffer.hpp"
 
-#define INIT_PAGE_COUNT 100
+#define INIT_PAGE_COUNT 1000000
 unsigned MemoryBuffer::pagesize = 4096; //4KB
 
 MemoryBuffer::MemoryBuffer(){}
 
-MemoryBuffer::MemoryBuffer(unsigned _size) :size(_size) {
+MemoryBuffer::MemoryBuffer(size_t _size) :size(_size) {
   // TODO Auto-generated constructor stub
   buffer = NULL;
-  buffer = (char*)malloc(size * sizeof(char));
+  buffer = (uint8_t*)malloc(size * sizeof(char));
   if(buffer == NULL) {
     std::cout << "MemoryBuffer::MemoryBuffer, malloc error!" << std::endl;
     assert(false);
@@ -48,7 +48,7 @@ MemoryBuffer::~MemoryBuffer() {
   size = 0;
 }
 
-char* MemoryBuffer::get_next(const size_t size_requested){
+uint8_t* MemoryBuffer::get_next(const size_t size_requested){
   const size_t head_offset = currentHead-buffer;
   const size_t size_left = size-head_offset;
   if(size_left > size_requested){
@@ -61,7 +61,7 @@ char* MemoryBuffer::get_next(const size_t size_requested){
     resize(extra_alloc_size);
     currentHead += size_requested;
   }
-  return (char*)(buffer+head_offset);
+  return (uint8_t*)(buffer+head_offset);
 }
 
 void MemoryBuffer::roll_back(const size_t size_requested){
@@ -69,11 +69,12 @@ void MemoryBuffer::roll_back(const size_t size_requested){
   currentHead -= size_requested;
 }
 
-char* MemoryBuffer::resize(unsigned increaseSize)
+uint8_t* MemoryBuffer::resize(size_t increaseSize)
 {
   const size_t old_head_offset = currentHead-buffer;
   size_t newsize = size + increaseSize;
-  buffer = (char*)realloc(buffer, newsize * sizeof(char));
+  buffer = (uint8_t*)realloc(buffer, newsize * sizeof(char));
+  //std::cout << "REALLOC: " << (void*)buffer << std::endl;
   if(buffer == NULL) {
     std::cout << "MemoryBuffer::addBuffer, realloc error!" << std::endl;
     assert(false);
@@ -85,17 +86,17 @@ char* MemoryBuffer::resize(unsigned increaseSize)
   return buffer;
 }
 
-char* MemoryBuffer::getBuffer()
+uint8_t* MemoryBuffer::getBuffer()
 {
   return buffer;
 }
 
-void MemoryBuffer::memset(char value)
+void MemoryBuffer::memset(uint8_t value)
 {
   ::memset(buffer, value, size);
 }
 
-char* MemoryBuffer::getBuffer(int pos)
+uint8_t* MemoryBuffer::get_address(size_t pos)
 {
   return buffer + pos;
 }
@@ -129,10 +130,10 @@ void MemoryBuffer::load(std::ifstream& ifile)
   remainSize = size; writeSize = 0; allocSize = 0;
 
   if(remainSize >= INIT_PAGE_COUNT * pagesize) {
-    buffer = (char*)malloc(INIT_PAGE_COUNT * pagesize);
+    buffer = (uint8_t*)malloc(INIT_PAGE_COUNT * pagesize);
     writeSize = allocSize = INIT_PAGE_COUNT * pagesize;
   } else {
-    buffer = (char*)malloc(remainSize);
+    buffer = (uint8_t*)malloc(remainSize);
     writeSize = allocSize = remainSize;
   }
 
@@ -151,10 +152,11 @@ void MemoryBuffer::load(std::ifstream& ifile)
 
     remainSize = remainSize - writeSize;
     if(remainSize >= INIT_PAGE_COUNT * pagesize) {
-      buffer = (char*)realloc(buffer, allocSize + INIT_PAGE_COUNT * pagesize);
+      std::cout << "REALLOC IN LOADING" << std::endl;
+      buffer = (uint8_t*)realloc(buffer, allocSize + INIT_PAGE_COUNT * pagesize);
       writeSize = INIT_PAGE_COUNT * pagesize;
     } else {
-      buffer = (char*)realloc(buffer, allocSize + remainSize);
+      buffer = (uint8_t*)realloc(buffer, allocSize + remainSize);
       writeSize = remainSize;
     }
 

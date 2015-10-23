@@ -16,17 +16,20 @@
 template<class A,class M>
 void Trie<A,M>::save(){
   std::ofstream *writefile = new std::ofstream();
+  std::cout << memoryBuffers->path <<  " " << M::folder << std::endl;
   std::string file = memoryBuffers->path+M::folder+std::string("trieinfo.bin");
-  writefile->open(file, std::ios::binary | std::ios::out);
+  writefile->open(file, std::ios::binary | std::ios::trunc);
   writefile->write((char *)&annotated, sizeof(annotated));
   writefile->write((char *)&num_rows, sizeof(num_rows));
   writefile->write((char *)&num_columns, sizeof(num_columns));
-  writefile->write((char *)&NUM_THREADS, sizeof(NUM_THREADS));
-  for(size_t i = 0; i < NUM_THREADS; i++){
+  writefile->write((char *)&memoryBuffers->num_buffers, sizeof(memoryBuffers->num_buffers));
+  
+  const size_t h_size = memoryBuffers->head->getSize();
+  writefile->write((char *)&h_size, sizeof(h_size));
+  for(size_t i = 0; i < memoryBuffers->num_buffers; i++){
     const size_t t_size = memoryBuffers->get_size(i);
     writefile->write((char *)&t_size, sizeof(t_size));
   }
-
   writefile->close();
 
   memoryBuffers->save();
@@ -42,19 +45,23 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
   infile->read((char *)&ret->annotated, sizeof(ret->annotated));
   infile->read((char *)&ret->num_rows, sizeof(ret->num_rows));
   infile->read((char *)&ret->num_columns, sizeof(ret->num_columns));
-  
+
   size_t w_n_threads;
   infile->read((char *)&w_n_threads, sizeof(w_n_threads));
-  std::vector<size_t>* buf_sizes = new std::vector<size_t>();
+  std::vector<size_t> buf_sizes;
+  size_t h_size;
+  infile->read((char *)&h_size, sizeof(h_size));
+  buf_sizes.push_back(h_size);
+  
   for(size_t i = 0 ; i < w_n_threads; i++){
     size_t b_size;
     infile->read((char *)&b_size, sizeof(b_size));
-    buf_sizes->push_back(b_size);
+    buf_sizes.push_back(b_size);
   }
   infile->close();
 
   //init memory buffers
-  ret->memoryBuffers = M::load(path,buf_sizes);
+  ret->memoryBuffers = M::load(path,w_n_threads,&buf_sizes);
 
   return ret;
 }
@@ -71,7 +78,7 @@ void recursive_foreach(
   const std::function<void(std::vector<uint32_t>*,A)> body){
 
   if(level+1 == num_levels){
-    current->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
+    current->get_set()->foreach_index([&](const uint32_t a_i, const uint32_t a_d){
       tuple->push_back(a_d);
       (void) a_i;
       if(annotated)
@@ -82,7 +89,7 @@ void recursive_foreach(
       tuple->pop_back();
     });
   } else {
-    current->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
+    current->get_set()->foreach_index([&](const uint32_t a_i, const uint32_t a_d){
       //if not done recursing and we have data
       tuple->push_back(a_d);
       if(current->get_next_block(a_i,a_d,memoryBuffers) != NULL){
@@ -102,8 +109,7 @@ void recursive_foreach(
 
 template<class A,class M>
 TrieBlock<layout,M>* Trie<A,M>::getHead(){
-  TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,0);
-  head->set.data = (uint8_t*)((uint8_t*)head + sizeof(TrieBlock<layout,M>));
+  TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)(memoryBuffers->get_address(NUM_THREADS,0));
   return head; 
 }
 
@@ -115,7 +121,7 @@ void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
   TrieBlock<layout,M>* head = this->getHead();
 
-  head->set.foreach_index([&](uint32_t a_i, uint32_t a_d){
+  head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
     tuple->push_back(a_d);
     TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
     if(num_columns > 1 && next != NULL){
@@ -130,7 +136,7 @@ void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body
     } else if(annotated) {
       assert(false);
       //body(tuple,head->get_data(a_i,a_d));
-    } else{
+    } else if(num_columns == 1){
       body(tuple,(A)0); 
     }
     tuple->pop_back(); //delete the last element
@@ -214,15 +220,44 @@ size_t build_block(
   const uint8_t * const start_block = data_allocator->get_next(tid,sizeof(B));
   const size_t offset = start_block-data_allocator->get_address(tid);
 
+  Set<hybrid>* myset = (Set<hybrid>*)(data_allocator->get_next(tid,sizeof(Set<layout>)));
   const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
-  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range);
+  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range)+100;
   uint8_t* set_data_in = data_allocator->get_next(tid,set_alloc_size);
+  
+  TrieBlock<layout,A>* tmp = TrieBlock<layout,A>::get_block(tid,offset,data_allocator);
+  myset = tmp->get_set();
+  myset->from_array(set_data_in,set_data_buffer,set_size);
 
-  B* block = TrieBlock<layout,A>::get_block(tid,offset,data_allocator);
-  block->set = Set<layout>::from_array(set_data_in,set_data_buffer,set_size);
+  assert(set_alloc_size >= myset->number_of_bytes);
+  data_allocator->roll_back(tid,set_alloc_size-myset->number_of_bytes);
 
-  assert(set_alloc_size >= block->set.number_of_bytes);
-  data_allocator->roll_back(tid,set_alloc_size-block->set.number_of_bytes);
+  return offset;
+}
+
+/*
+* Produce a TrieBlock
+*/
+template<class B, class A>
+size_t build_head(
+  A *data_allocator, 
+  const size_t set_size, 
+  uint32_t *set_data_buffer){
+
+  const uint8_t * const start_block = (uint8_t*) (data_allocator->get_next(NUM_THREADS,sizeof(B)));
+  const size_t offset = start_block-((uint8_t*)data_allocator->get_address(NUM_THREADS));
+
+  Set<layout>* myset = (Set<layout>*)(data_allocator->get_next(NUM_THREADS,sizeof(Set<layout>)));
+  const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
+  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range)+100;
+  uint8_t* set_data_in = (uint8_t*)data_allocator->get_next(NUM_THREADS,set_alloc_size);
+  
+  TrieBlock<layout,A>* tmp = TrieBlock<layout,A>::get_block(NUM_THREADS,offset,data_allocator);
+  myset = tmp->get_set();
+  myset->from_array(set_data_in,set_data_buffer,set_size);
+
+  assert(set_alloc_size >= myset->number_of_bytes);
+  data_allocator->head->roll_back(set_alloc_size - myset->number_of_bytes);
 
   return offset;
 }
@@ -241,7 +276,7 @@ void recursive_build(
   const size_t start, 
   const size_t end, 
   const uint32_t data, 
-  const size_t offset, 
+  const size_t prev_offset, 
   const size_t level, 
   const size_t num_levels, 
   const size_t tid, 
@@ -256,10 +291,15 @@ void recursive_build(
   encode_tail(start,end,sb,&attr_in->at(level),indicies);
 
   const size_t next_offset = build_block<B,M>(tid,data_allocator,(end-start),sb);
-  const size_t tid_prev = level == 1 ? 0:tid;
-  B* prev_block = B::get_block(tid_prev,offset,data_allocator);
 
-  prev_block->set_block(index,data,tid,next_offset);
+  if(level == 1){
+    //get the head
+    B* prev_block = B::get_block(NUM_THREADS,prev_offset,data_allocator);
+    prev_block->set_next_block(index,data,tid,next_offset);
+  } else {
+    B* prev_block = B::get_block(tid,prev_offset,data_allocator);
+    prev_block->set_next_block(index,data,tid,next_offset);
+  }
 
   if(level < (num_levels-1)){
     B* tail = (B*)data_allocator->get_address(tid,next_offset);
@@ -357,27 +397,26 @@ Trie<A,M>::Trie(
   
   //Build the head set.
   const size_t head_offset = 
-    build_block<TrieBlock<layout,M>,M>(
-      0,
+    build_head<TrieBlock<layout,M>,M>(
       memoryBuffers,
       head_size,
       set_data_buffer->at(0));
 
   size_t cur_level = 1;
   if(num_columns > 1){
-    TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->get_address(0,head_offset);
-    new_head->init_next(0,memoryBuffers);
+    TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
+    new_head->init_next(NUM_THREADS,memoryBuffers);
 
     //encode the set, create a block with NULL pointers to next level
     //should be a 1-1 between pointers in block and next ranges
     //also a 1-1 between blocks and numbers of next ranges
 
     //reset new_head because a realloc could of occured
-    new_head = TrieBlock<layout,M>::get_block(0,head_offset,memoryBuffers);
+    new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
     const size_t loop_size = new_head->nextSize();
     par::for_range(0,loop_size,100,[&](size_t tid, size_t i){
       (void) tid;
-      new_head->next(i)->index = -1;
+      new_head->getNext(i)->index = -1;
     });
 
     //reset new_head because a realloc could of occured
@@ -386,7 +425,6 @@ Trie<A,M>::Trie(
       const size_t start = ranges_buffer->at(0)[i];
       const size_t end = ranges_buffer->at(0)[i+1];
       const uint32_t data = set_data_buffer->at(0)[i];
-
       recursive_build<TrieBlock<layout,M>,M,A>(
         i,
         start,

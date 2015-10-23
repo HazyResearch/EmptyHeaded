@@ -5,7 +5,6 @@
 #include <chrono>
 
 namespace timer{
-  static struct timeval tim; 
   static std::chrono::time_point<std::chrono::system_clock> start_clock (){
     return std::chrono::system_clock::now(); 
   }

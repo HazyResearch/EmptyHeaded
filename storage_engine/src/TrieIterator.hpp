@@ -23,20 +23,30 @@ template<class A, class M> struct Trie;
 */
 template<class A, class M>
 struct TrieIterator{
-  Trie<A,M>* trie;
-  std::vector<TrieBlock<layout,M>*> levels;
+  Trie<A,M> trie;
+  std::vector<const TrieBlock<layout,M>*> levels;
+  size_t num_rows;
+  int a[3000]; //padding
+
   TrieIterator<A,M>(Trie<A,M>* t_in);
+
+  void get_next_block(const uint32_t data);
 
   void get_next_block(
     const size_t level, 
     const uint32_t data);
 
-  TrieBlock<hybrid,M>* get_block(
-    const size_t level);
+  A get_annotation(
+    const size_t level,
+    const uint32_t data);
+
+  const TrieBlock<hybrid,M>* get_block(
+    const size_t level) const;
 };
 
 template<class A, class M>
 struct ParTrieIterator{
+  TrieBlock<hybrid,M> * head;
   std::vector<TrieIterator<A,M>*> iterators;
   ParTrieIterator<A,M>(Trie<A,M>* t_in);
 };

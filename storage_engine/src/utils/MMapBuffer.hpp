@@ -24,7 +24,7 @@ class MMapBuffer {
 public:
   char* resize(size_t incrementSize);
   char* getBuffer();
-  char* getBuffer(int pos);
+  char* get_address(int pos);
   void discard();
   void free();
   int flush();
