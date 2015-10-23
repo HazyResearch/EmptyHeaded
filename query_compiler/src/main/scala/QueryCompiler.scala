@@ -24,16 +24,17 @@ object QueryCompiler {
     } 
   }
   def main(args:Array[String]) = {
-    if( (args.length == 1) || (args.length == 2)){
-      Environment.fromJSON(args(0))
-      if(args.length == 2){
-        val ghd = DCParser.run(readFile(args(1)))
-        //Generator.run(ghd)
+    println("ARGS LENGTH: " + args.length + " " + args(2) + " " + args(1))
+    if( (args.length == 2) || (args.length == 3)){
+      Environment.fromJSON(args(1))
+      if(args.length == 3){
+        val ghd = DCParser.run(readFile(args(2)))
+        val a = CPPGenerator.run(ghd)
       } else {
         getInput()
       }
     } else{
-      println("""Usage: "./target/start/ DunceCap.QueryCompiler <JSON config>" or "./target/start DunceCap.QueryCompiler <JSON config> <datalog file>" """)
+      println("""Usage: "./target/start DunceCap.QueryCompiler <JSON config>" or "./target/start DunceCap.QueryCompiler <JSON config> <datalog file>" """)
     }
   }
 }

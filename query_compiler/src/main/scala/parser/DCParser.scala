@@ -56,10 +56,13 @@ class AnnotationExpression( val boundVariable:String,
 }
 
 object DCParser extends RegexParsers {
-  def run(line:String) : Unit = {
+  def run(line:String) : QueryPlan = {
     this.parseAll(this.statements, line) match {
       case DCParser.Success(parsedStatements, _) => {
-        parsedStatements.map(println)
+        parsedStatements.head match {
+          case a:ASTQueryStatement =>
+            return a.queryPlan
+        }
       }
     }
   }
@@ -165,6 +168,6 @@ object DCParser extends RegexParsers {
     new ASTQueryStatement(a,b,c._1,c._2,c._3,c._4)
   }
 
-  def statement = queryStatement | lambdaExpression
+  def statement = queryStatement
   def statements = rep(statement)
 }

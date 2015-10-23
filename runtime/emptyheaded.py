@@ -8,6 +8,9 @@ QUERY_COMPILER_CONFIG_DIR = 'config'
 environment = codegenerator.env.Environment()
 
 def query(datalog_string):
+  print subprocess.Popen("target/start DunceCap.QueryCompiler %s \"%s\"" % (QUERY_COMPILER_CONFIG_DIR, datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
+
+def compileQuery(datalog_string):
   print subprocess.Popen("target/start DunceCap.QueryPlanner %s \"%s\"" % (QUERY_COMPILER_CONFIG_DIR, datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
 
 def createDB(name):

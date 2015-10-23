@@ -120,7 +120,7 @@ size_t TrieBuilder<A,M>::count_set(
     return 0;
   const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));   
   const size_t result = s1->cardinality;
-  return s1->cardinality;
+  return result;
 }
 
 //perform a count on two sets
