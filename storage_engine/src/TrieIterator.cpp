@@ -30,6 +30,23 @@ const TrieBlock<hybrid,M>* TrieIterator<A,M>::get_block(const size_t level) cons
   return levels.at(level);
 }
 
+template<class A,class M>
+A TrieIterator<A,M>::get_annotation(
+  const size_t level,
+  const uint32_t data){
+  const TrieBlock<hybrid,M>* block = levels.at(level);
+  const Set<hybrid>* s1 = block->get_const_set();
+  long index = s1->find(data);
+  if(index != -1){
+    A* annotation = (A*)( ((uint8_t*)block)+
+      (sizeof(TrieBlock<hybrid,M>)+
+      sizeof(Set<hybrid>) +
+      s1->number_of_bytes) );
+    return annotation[block->get_index(index,data)];
+  }
+  return (A)0;
+}
+
 template<class A, class M>
 ParTrieIterator<A,M>::ParTrieIterator(Trie<A,M> *t_in){
   head = t_in->getHead();

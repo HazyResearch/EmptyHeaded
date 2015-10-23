@@ -37,6 +37,9 @@ struct TrieBuilder{
     const TrieBlock<hybrid,M> *s2);
 
   size_t count_set(
+    const TrieBlock<hybrid,M> *s1);
+
+  size_t count_set(
     const TrieBlock<hybrid,M> *s1, 
     const TrieBlock<hybrid,M> *s2);
 
@@ -60,10 +63,6 @@ struct TrieBuilder{
     const uint32_t index,
     const uint32_t data);
 
-  A get_annotation(
-    const uint32_t index,
-    const uint32_t data);
-
   void foreach_aggregate(
     std::function<void(
       const uint32_t a_d)> f
@@ -82,14 +81,18 @@ struct ParTrieBuilder{
   std::vector<TrieBuilder<A,M>*> builders;
   ParTrieBuilder<A,M>(Trie<A,M>* t_in);
   const TrieBlock<hybrid,M>* tmp_head;
-
+  
   size_t build_aggregated_set(
     const TrieBlock<hybrid,M> *s1);
+
+  size_t build_aggregated_set(
+    const TrieBlock<hybrid,M> *s1,
+    const TrieBlock<hybrid,M> *s2);
 
   size_t build_set(
     const TrieBlock<hybrid,M> *s1);
 
-  const Set<hybrid>* allocate_next();
+  void allocate_next();
 
   void allocate_annotation();
 

@@ -115,6 +115,17 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
 //perform a count on two sets
 template<class A,class M>
 size_t TrieBuilder<A,M>::count_set(
+  const TrieBlock<hybrid,M> *tb1){
+  if(tb1 == NULL)
+    return 0;
+  const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));   
+  const size_t result = s1->cardinality;
+  return s1->cardinality;
+}
+
+//perform a count on two sets
+template<class A,class M>
+size_t TrieBuilder<A,M>::count_set(
   const TrieBlock<hybrid,M> *tb1, 
   const TrieBlock<hybrid,M> *tb2){
   if(tb1 == NULL || tb2 == NULL)
@@ -163,17 +174,19 @@ void TrieBuilder<A,M>::set_level(
   //return the set
 }
 
-/*
 template<class A,class M>
 void TrieBuilder<A,M>::allocate_annotation(
   const size_t tid){
-  //(1) get the trie block at the previous level
+    //(1) get the trie block at the previous level
   TrieBlock<hybrid,M>* block = TrieBlock<hybrid,M>::get_block(
     next.at(cur_level).index,
     next.at(cur_level).offset,
     trie->memoryBuffers);
-  //annotation is always placed right after the trie block right now
-  trie->memoryBuffers->get_next(tid, sizeof(A)*(block->nextSize()));
+  
+  if(block != NULL){
+    //annotation is always placed right after the trie block right now
+    trie->memoryBuffers->get_next(tid, sizeof(A)*(block->nextSize()));
+  }
 }
 
 //sets the pointers in the previous level to point to 
@@ -183,41 +196,20 @@ void TrieBuilder<A,M>::set_annotation(
   const A value, 
   const uint32_t index,
   const uint32_t data){
-  //(1) get the trie block at the previous level
-  TrieBlock<hybrid,M>* block = TrieBlock<hybrid,M>::get_block(
-    next.at(cur_level).index,
-    next.at(cur_level).offset,
+
+  TrieBlock<hybrid,M>* prev_block = TrieBlock<hybrid,M>::get_block(
+    next.at(cur_level-1).index,
+    next.at(cur_level-1).offset,
     trie->memoryBuffers);
-  //(2) call set block
-  A* annotation = (A*)(((uint8_t*)block)+(
+
+  assert(next.at(cur_level).index <= (int)NUM_THREADS);
+  A* annotation = (A*)(((uint8_t*)prev_block)+(
     sizeof(TrieBlock<hybrid,M>)+
     sizeof(Set<hybrid>)+
-    block->get_set()->number_of_bytes) );
-  annotation[block->get_index(index,data)] = value;
-  //return the set
+    prev_block->get_const_set()->number_of_bytes) );
+  annotation[prev_block->get_index(index,data)] = value;
 }
 
-//sets the pointers in the previous level to point to 
-//the current level
-template<class A,class M>
-A TrieBuilder<A,M>::get_annotation(
-  const uint32_t index,
-  const uint32_t data){
-  //(1) get the trie block at the previous level
-  TrieBlock<hybrid,M>* block = TrieBlock<hybrid,M>::get_block(
-    next.at(cur_level).index,
-    next.at(cur_level).offset,
-    trie->memoryBuffers);
-  const Set<hybrid>* s1 = block->get_set();
-  //(2) call set block
-  A* annotation = (A*)( ((uint8_t*)block)+
-    (sizeof(TrieBlock<hybrid,M>)+
-    sizeof(Set<hybrid>) +
-    s1->number_of_bytes) );
-  return annotation[block->get_index(index,data)];
-  //return the set
-}
-*/
 
 template<class A,class M>
 void TrieBuilder<A,M>::foreach_aggregate(
@@ -283,6 +275,41 @@ size_t ParTrieBuilder<A,M>::build_aggregated_set(
   return s1->get_set()->cardinality;
 }
 
+template<class A,class M>
+size_t ParTrieBuilder<A,M>::build_aggregated_set(
+  const TrieBlock<hybrid,M> *tb1,
+  const TrieBlock<hybrid,M> *tb2) {
+
+  //fixme
+  assert(tb1 != NULL && tb2 != NULL);
+  if(tb1 == NULL || tb2 == NULL){
+    //clear the memory and move on (will set num bytes and cardinality to 0)
+    uint8_t* place = (uint8_t*)trie->memoryBuffers->head->get_next(sizeof(Set<hybrid>));
+    memset(place,(uint8_t)0,sizeof(Set<hybrid>));
+    return 0;
+  }
+
+  const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));  
+  const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));  
+
+  const size_t alloc_size =
+    std::max(s1->number_of_bytes,
+             s2->number_of_bytes);
+
+  uint8_t* place = (uint8_t*) (trie->memoryBuffers->head->get_next(sizeof(TrieBlock<hybrid,M>)+alloc_size+sizeof(Set<hybrid>)));
+  Set<hybrid> *r = (Set<hybrid>*)(place+sizeof(TrieBlock<hybrid,M>));
+  trie->memoryBuffers->head->roll_back(alloc_size+sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>)); 
+  
+  //we can roll back because we won't try another buffer at this level and tid until
+  //after this memory is consumed.
+  r = ops::set_intersect(
+          r, 
+          s1,
+          s2);  
+  tmp_head = (const TrieBlock<hybrid,M>*)place;
+  return r->cardinality;
+}
+
 //When we have just a single trie accessor 
 //and it is aggregated just return it
 template<class A,class M>
@@ -305,16 +332,12 @@ size_t ParTrieBuilder<A,M>::build_set(
 }
 
 template<class A,class M>
-const Set<hybrid>* ParTrieBuilder<A,M>::allocate_next(){
+void ParTrieBuilder<A,M>::allocate_next(){
   //(1) get the trie block at the previous level
   TrieBlock<hybrid,M>* block = trie->getHead();
   const size_t next_size = block->nextSize();
   const size_t alloc_size = sizeof(NextLevel)*(next_size);
   trie->memoryBuffers->get_next(NUM_THREADS,alloc_size);
-
-  //a realloc might of occured
-  block = trie->getHead();
-  return (const Set<hybrid>*)(block+sizeof(TrieBlock<hybrid,M>));
 }
 
 template<class A,class M>
@@ -341,14 +364,13 @@ void ParTrieBuilder<A,M>::par_foreach_builder(
     s->par_foreach_index(f);
 }
 
-/*
 template<class A,class M>
 void ParTrieBuilder<A,M>::allocate_annotation(){
   //(1) get the trie block at the previous level
   TrieBlock<hybrid,M>* block = trie->getHead();
   //annotation is always placed right after the trie block right now
   trie->memoryBuffers->head->get_next(sizeof(A)*(block->nextSize()));
-}*/
+}
 
 template struct TrieBuilder<void*,ParMemoryBuffer>;
 template struct TrieBuilder<long,ParMemoryBuffer>;

@@ -93,7 +93,7 @@ void ParMemoryBuffer::save(){
   myfile.close();
   for(size_t i = 0; i < num_buffers; i++){
     dataF = path + folder + "data_" + std::to_string(i) + ".bin";
-    myfile.open(dataF,std::ios::trunc);
+    myfile.open(dataF,std::ios::trunc | std::ios::out);
     elements.at(i)->save(myfile);
     myfile.close();
   }
