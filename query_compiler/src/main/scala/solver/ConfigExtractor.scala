@@ -2,7 +2,7 @@ package DunceCap
 
 case class Encoding(val node:String)
 case class Relation(val name:String, val storage:String)
-case class Config(val layout:String,
+case class DatabaseConfig(val layout:String,
                   val numNUMA:Int,
                   val algorithm:String,
                   val database:String,

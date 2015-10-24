@@ -1,10 +1,7 @@
 package DunceCap
 
-import java.nio.file.{Paths, Files}
-import java.io.{FileWriter, File, BufferedWriter}
 import net.liftweb.json._
 
-import scala.util.parsing.json._
 import scala.io._
 
 /*
@@ -16,11 +13,11 @@ import scala.io._
 case class RelationNotFoundException(what:String)  extends Exception
 
 object Environment {
-  var config:Config = null
+  var config:DatabaseConfig = null
   def fromJSON(filename:String) = {
-    val fileContents = Source.fromFile(filename +"/config.json").getLines.mkString
+    val fileContents = Source.fromFile(filename).getLines.mkString
     implicit val formats = DefaultFormats
-    config = parse(fileContents).extract[Config]
+    config = parse(fileContents).extract[DatabaseConfig]
   }
 
   /**

@@ -4,7 +4,7 @@ import DunceCap._
 import net.liftweb.json._
 import org.scalatest.FunSuite
 
-class ConfigExtractorTest extends FunSuite {
+class DatabaseConfigExtractorTest extends FunSuite {
   test("Can properly extract everything from a config file") {
     val serializedJson =
     """
@@ -59,9 +59,9 @@ class ConfigExtractorTest extends FunSuite {
 
     implicit val formats = DefaultFormats
     val json = parse(serializedJson)
-    val config = json.extract[Config]
+    val config = json.extract[DatabaseConfig]
     assert(config.equals(
-      new Config("hybrid", 4, "NPRR+", "/Users/caberger/Documents/Research/data/databases/higgs/db_pruned", 1,
+      new DatabaseConfig("hybrid", 4, "NPRR+", "/Users/caberger/Documents/Research/data/databases/higgs/db_pruned", 1,
         new Encoding("long"), List[Relation](
           new Relation("R_1_0", "disk"), new Relation("R_0_1", "disk")), "ParMemoryBuffer", List[Schema](
           new Schema("R", List[Attribute](

@@ -25,7 +25,7 @@ case class ASTQueryStatement(
                               joinAggregates:Map[String,ParsedAggregate]) extends ASTStatement {
   // TODO (sctu) : ignoring everything except for join, joinAggregates for now
 
-  var queryPlan: QueryPlan = getBestPlan()
+  val queryPlan: QueryPlan = getBestPlan()
 
   private def getBestPlan(): QueryPlan = {
     // We get the candidate GHDs, i.e., the ones of min width
@@ -42,10 +42,5 @@ case class ASTQueryStatement(
       HeuristicUtils.getGHDsWithMinBags(candidates))
     val queryPlan = chosen.head.getQueryPlan
     return queryPlan
-  }
-
-  override def toString(): String = {
-    implicit val formats = DefaultFormats
-    writePretty(queryPlan)
   }
 }

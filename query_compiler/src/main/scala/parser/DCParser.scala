@@ -1,5 +1,7 @@
 package DunceCap
 
+import java.io.{PrintStream, FileWriter, BufferedWriter, File}
+
 import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
 
 import scala.collection.immutable.List
@@ -23,7 +25,6 @@ class QueryRelation(val name:String, val attrs:List[(Attr, SelectionOp, Selectio
     println("name: " + name + " attrs: " + attrs + " annotationType: " + annotationType)
   }
 }
-
 
 class RecursionStatement(val functionName:String, val inputArgument:QueryRelation, val convergance:ConverganceCriteria)
 
