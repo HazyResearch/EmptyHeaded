@@ -130,7 +130,7 @@ object CPPGenerator {
 
   def emitParallelBuilder(name:String,annotation:String) : StringBuilder = {
     val code = new StringBuilder()
-    code.append(s"""const ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name});""")
+    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name});""")
 
     return code
   }
@@ -211,6 +211,44 @@ object CPPGenerator {
     return code
   }
 
+  def emitHeadAllocations(head:QueryPlanNPRRInfo) : StringBuilder = {
+    val code = new StringBuilder()
+    (head.annotation,head.nextMaterialized) match {
+      case (Some(annotation),None) =>
+        code.append("Builders.allocate_annotation();")
+      case (None,Some(nextMaterialized)) =>
+        code.append("Builders.allocate_next();")
+      case (Some(a),Some(b)) =>
+        throw new IllegalArgumentException("Undefined behaviour.")
+      case _ =>
+    }
+    code
+  }
+
+  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:Map[String,List[String]]) : StringBuilder = {
+    val code = new StringBuilder()
+
+    head.materialize match {
+      case true =>
+        code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t a_i, const uint32_t a_d) {""")
+      case false =>
+        code.append(s"""Builders.par_foreach_aggregate([&](const size_t tid, const uint32_t a_d) {""")
+    }
+
+    //get iterator and builder for each thread
+    code.append(s"""TrieBuilder<${outputAnnotation},${Environment.config.memory}>* Builder = Builders.builders.at(tid);""")
+    relations.foreach(r => {
+      val name = r.name + "_" + r.ordering.mkString("_")
+      r.attributes.foreach(attr => {
+        attr.foreach(a => {
+          code.append(s"""TrieIterator<${r.annotation},${Environment.config.memory}>* Iterator_${r.name}_${a.mkString("_")} = Iterators_${r.name}_${a.mkString("_")}.iterators.at(tid);""")
+        })
+      })
+    })
+
+    code
+  }
+
   def emitNPRR(output:Boolean,bag:QueryPlanBagInfo) : StringBuilder = {
     val code = new StringBuilder()
 
@@ -234,9 +272,11 @@ object CPPGenerator {
 
     val remainingAttrs = bag.nprr.tail
     if(remainingAttrs.length > 0){
-      //emitAllocations
-      //emitHeadParForeach(bag.nprr.head,bag.relations,iteratorAccessors)
+      code.append(emitHeadAllocations(bag.nprr.head))
+      code.append(emitHeadParForeach(bag.nprr.head,bag.annotation,bag.relations,iteratorAccessors))
       nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail)
+    
+      code.append("});")
     }
 
     code.append("}")
