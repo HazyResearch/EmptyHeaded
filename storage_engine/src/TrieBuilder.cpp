@@ -310,8 +310,6 @@ size_t ParTrieBuilder<A,M>::build_aggregated_set(
   return r->cardinality;
 }
 
-//When we have just a single trie accessor 
-//and it is aggregated just return it
 template<class A,class M>
 size_t ParTrieBuilder<A,M>::build_set(
   const TrieBlock<hybrid,M> *tb1){
@@ -324,16 +322,41 @@ size_t ParTrieBuilder<A,M>::build_set(
     uint8_t * const start_block = (uint8_t*)data_allocator->get_next(block_size);
     memcpy((uint8_t*)start_block,(uint8_t*)tb1,block_size);
     return s1->cardinality;
-  //(1) copy the trie block to head buffer (do not copy pointers)
-  //(3) set the offset and index of the trie block in a vector
-  //aside: when you call set block it will just pull the values and set with (data,index) value
-  //(4) allocated space for the next blocks
-  //return the set
+}
+
+template<class A,class M>
+size_t ParTrieBuilder<A,M>::build_set(
+  const TrieBlock<hybrid,M> *tb1,
+  const TrieBlock<hybrid,M> *tb2){
+
+  auto data_allocator = trie->memoryBuffers->head;
+  //fixme
+  assert(tb1 != NULL && tb2 != NULL);
+  if(tb1 == NULL || tb2 == NULL){
+    //clear the memory and move on (will set num bytes and cardinality to 0)
+    uint8_t* place = (uint8_t*)data_allocator->get_next(sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>));
+    memset(place,(uint8_t)0,sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>));
+    return 0;
+  }
+
+  const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));  
+  const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));  
+
+  const size_t alloc_size =
+    std::max(s1->number_of_bytes,
+             s2->number_of_bytes);
+
+  uint8_t* place = (uint8_t*) (trie->memoryBuffers->head->get_next(sizeof(TrieBlock<hybrid,M>)+alloc_size+sizeof(Set<hybrid>)));
+  Set<hybrid> *r = (Set<hybrid>*)(place+sizeof(TrieBlock<hybrid,M>));  
+  r = ops::set_intersect(
+          r, 
+          s1,
+          s2);  
+  return r->cardinality;
 }
 
 template<class A,class M>
 void ParTrieBuilder<A,M>::allocate_next(){
-  //(1) get the trie block at the previous level
   TrieBlock<hybrid,M>* block = trie->getHead();
   const size_t next_size = block->nextSize();
   const size_t alloc_size = sizeof(NextLevel)*(next_size);

@@ -12,10 +12,10 @@ struct triangleMaterialize: public application {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_R_0_1 = Trie<void *,mem>::load(
-        //"/Users/caberger/Documents/Research/data/databases/facebook/db_pruned/relations/R/R_0_1"
+        "/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/R/R_0_1"
         //"/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
           //"/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
-          "/dfs/scratch0/caberger/datasets/higgs/db_python_48t/relations/R/R_0_1"
+          //"/dfs/scratch0/caberger/datasets/higgs/db_python_48t/relations/R/R_0_1"
           );
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
     }
@@ -34,6 +34,7 @@ struct triangleMaterialize: public application {
         ParTrieBuilder<void*,mem> Builders_Triangle(Trie_Triangle_);
 
         Builders_Triangle.build_set(Iterators_R_a_b.head);
+        //Builders_Triangle.build_set(Iterators_R_a_b.head,Iterators_R_a_c.head);
         Builders_Triangle.allocate_next();
 
         par::reducer<long> num_rows(0,
