@@ -24,7 +24,6 @@ object CPPGenerator {
     val cpp = new StringBuilder()
     
     val includeCode = getIncludes(ghd)
-    println(ghd)
     val cppCode = emitLoadRelations(ghd.relations)
     cppCode.append(emitInitializeOutput(ghd.output))
     ghd.ghd.foreach(bag => {
@@ -51,6 +50,14 @@ object CPPGenerator {
   def getCode(includes:StringBuilder,run:StringBuilder) : String ={
     return s"""
       #include "../codegen/Query.hpp"
+      #include "utils/thread_pool.hpp"
+      #include "utils/parallel.hpp"
+      #include "Trie.hpp"
+      #include "TrieBuilder.hpp"
+      #include "TrieIterator.hpp"
+      #include "utils/timer.hpp"
+      #include "utils/ParMemoryBuffer.hpp"
+      #include "Encoding.hpp"
       ${includes.toString}
 
       Query::Query(){
@@ -404,6 +411,7 @@ object CPPGenerator {
     code.append(parItCode)
     code.append(emitHeadBuildCode(bag.nprr.headOption))
 
+    println("ENCODINGS: " + encodings)
     println("ITERATOR ACCESSORS: " + iteratorAccessors)
 
     val remainingAttrs = bag.nprr.tail

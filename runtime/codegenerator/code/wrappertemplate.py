@@ -47,7 +47,7 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
 
   Query* q = (Query*)PyCObject_AsVoidPtr(p);
   Trie<%(annotationType)s,%(mem)s>* result = (Trie<%(annotationType)s,%(mem)s>*) q->result;
-  std::vector<void*>* encodings = (std::vector<void*>*) q->encodings;
+  std::vector<void*> encodings = result->encodings;
   PyObject *retTable = PyList_New(0);
   (void) encodings;
 	result->foreach([&](std::vector<uint32_t>* tuple,%(annotationType)s value){
@@ -56,7 +56,7 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
   	i = 0
 	for t in types:
 		if t == "long":
-			code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(((Encoding<%(t)s>*)encodings->at(%(i)s))->key_to_value.at(tuple->at(%(i)s)));
+			code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(((Encoding<%(t)s>*)encodings.at(%(i)s))->key_to_value.at(tuple->at(%(i)s)));
 			PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
 		elif t == "int":
 			print "NOT IMPLEMENTED"

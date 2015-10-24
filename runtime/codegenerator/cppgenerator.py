@@ -12,9 +12,10 @@ def generate(f,name):
 
 def compileC(name):
 	#compile C++ code
+	print "HERE"
 	os.chdir(os.environ["EMPTYHEADED_HOME"]+"/storage_engine")
 	try:
-		os.system("make "+name+" >/dev/null")
+		os.system("make "+name)#+" >/dev/null")
 	except:
 		print "C++ compilation failed"
 		sys.exit(1)
