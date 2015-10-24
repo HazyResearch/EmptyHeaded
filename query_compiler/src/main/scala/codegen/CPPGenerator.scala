@@ -8,6 +8,9 @@ import sys.process._
 import scala.collection.mutable
 
 object CPPGenerator {  
+  type IteratorAccessors = Map[String,List[(String,Int,Int)]]
+  type Encodings = Map[String,Attribute]
+
   def GHDFromJSON(filename:String):Map[String,Any] = {
     val fileContents = Source.fromFile(filename).getLines.mkString
     val ghd:Map[String,Any] = JSON.parseFull(fileContents) match {
@@ -21,7 +24,7 @@ object CPPGenerator {
     val cpp = new StringBuilder()
     
     val includeCode = getIncludes(ghd)
-    
+    println(ghd)
     val cppCode = emitLoadRelations(ghd.relations)
     cppCode.append(emitInitializeOutput(ghd.output))
     ghd.ghd.foreach(bag => {
@@ -115,7 +118,6 @@ object CPPGenerator {
       Trie<${output.annotation},${Environment.config.memory}> *Trie_${output.name} = new Trie<${output.annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}",${output.ordering.length},${output.annotation != "void*"});
       par::reducer<size_t> num_rows_reducer(0,[](size_t a, size_t b) { return a + b; });
     """)
-    println(output)
     return code
   }
 
@@ -123,10 +125,11 @@ object CPPGenerator {
     val code = new StringBuilder()
 
     code.append(s"""
+      result = (void*) Trie_${output.name};
       std::cout << "NUMBER OF ROWS: " << Trie_${output.name}->num_rows << std::endl;
       timer::stop_clock("QUERY TIME", query_timer);
     """)
-    println(output)
+
     return code
   }
 
@@ -142,31 +145,50 @@ object CPPGenerator {
     return code
   }
 
-  def emitParallelBuilder(name:String,annotation:String) : StringBuilder = {
+  def emitParallelBuilder(name:String,attributes:List[String],annotation:String,encodings:Encodings) : StringBuilder = {
     val code = new StringBuilder()
     code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name});""")
-
+    attributes.foreach(attr => {
+      code.append(s"""Builders.trie->encodings.push_back((void*)Encoding_${encodings(attr).encoding});""")
+    })
     return code
   }
 
-  def emitParallelIterators(relations:List[QueryPlanRelationInfo]) : (StringBuilder,Map[String,List[(String,Int,Int)]]) = {
+  def emitParallelIterators(relations:List[QueryPlanRelationInfo]) : (StringBuilder,IteratorAccessors,Encodings) = {
     val code = new StringBuilder()
     val dependers = mutable.ListBuffer[(String,(String,Int,Int))]()
+    val encodings = mutable.ListBuffer[(String,Attribute)]()
     relations.foreach(r => {
       val name = r.name + "_" + r.ordering.mkString("_")
+
+      val schema = Environment.config.schemas.find(schema => schema.name == r.name)
+      val enc = schema match {
+        case Some(s) => {
+          s.attributes
+        }
+        case _ => 
+          throw new IllegalArgumentException("Schema not found.");
+      }
+
       r.attributes.foreach(attr => {
         attr.foreach(a => {
           a.foreach(i => {
+            encodings += ((i,enc(a.indexOf(i))))
             dependers += ((i,(r.name + "_" + a.mkString("_"),a.indexOf(i),a.length)))
           })
           code.append(s"""const ParTrieIterator<${r.annotation},${Environment.config.memory}> Iterators_${r.name}_${a.mkString("_")}(Trie_${name});""")
         })
       })
     })
+    val retEncodings = encodings.groupBy(_._1).map(m => {
+      val e = m._2.map(_._2).toList.distinct
+      assert(e.length == 1) //one encoding per attribute
+      ((m._1 -> e.head))
+    })
     val iteratorAccessors = dependers.groupBy(_._1).map(m =>{
       ((m._1 -> m._2.map(_._2).toList.distinct))
     })
-    return (code,iteratorAccessors)
+    return (code,iteratorAccessors,retEncodings)
   }
   
   def emitHeadBuildCode(head:Option[QueryPlanNPRRInfo]) : StringBuilder = {
@@ -220,7 +242,7 @@ object CPPGenerator {
     code
   }
 
-  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:Map[String,List[(String,Int,Int)]]) : StringBuilder = {
+  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
 
     head.materialize match {
@@ -249,7 +271,7 @@ object CPPGenerator {
     code
   }
 
-  def emitBuildCode(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int,Int)]]) : StringBuilder = {
+  def emitBuildCode(head:QueryPlanNPRRInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
 
     val relationNames = iteratorAccessors(head.name).map(_._1)
@@ -264,8 +286,6 @@ object CPPGenerator {
             code.append(s"""const size_t count_${head.name} = Builder->build_set(tid,Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}));""")
           }
           case 2 =>{
-            println(head.accessors(0))
-            println(relationNames)
             val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
             val index2 = relationIndices(relationNames.indexOf(head.accessors(1).name + "_" + head.accessors(1).attrs.mkString("_")))
             code.append(s"""const size_t count_${head.name} = Builder->build_set(tid,Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}),Iterator_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}->get_block(${index2}));""")
@@ -323,7 +343,7 @@ object CPPGenerator {
     code
   }
 
-  def emitForeach(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int,Int)]]) : StringBuilder = {
+  def emitForeach(head:QueryPlanNPRRInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
     head.materialize match {
       case true =>
@@ -338,7 +358,7 @@ object CPPGenerator {
     code
   }
 
-  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:Map[String,List[(String,Int,Int)]]) : StringBuilder = {
+  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
     (head,tail) match {
       case (Some(a),List()) => {
@@ -377,10 +397,10 @@ object CPPGenerator {
     }
 
     code.append("{")
-    code.append(emitParallelBuilder(bag.name,bag.annotation))
  
     //fixme Susan should add this to the query compiler.
-    val (parItCode,iteratorAccessors) = emitParallelIterators(bag.relations)
+    val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations)
+    code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings))
     code.append(parItCode)
     code.append(emitHeadBuildCode(bag.nprr.headOption))
 
@@ -397,8 +417,6 @@ object CPPGenerator {
     }
 
     code.append("}")
-    println(output)
-    println(bag)
     return code
   }
 }
