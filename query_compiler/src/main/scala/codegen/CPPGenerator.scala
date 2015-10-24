@@ -135,15 +135,15 @@ object CPPGenerator {
     return code
   }
 
-  def emitParallelIterators(relations:List[QueryPlanRelationInfo]) : (StringBuilder,Map[String,List[String]]) = {
+  def emitParallelIterators(relations:List[QueryPlanRelationInfo]) : (StringBuilder,Map[String,List[(String,Int)]]) = {
     val code = new StringBuilder()
-    val dependers = mutable.ListBuffer[(String,String)]()
+    val dependers = mutable.ListBuffer[(String,(String,Int))]()
     relations.foreach(r => {
       val name = r.name + "_" + r.ordering.mkString("_")
       r.attributes.foreach(attr => {
         attr.foreach(a => {
           a.foreach(i => {
-            dependers += ((i,r.name + "_" + a.mkString("_")))
+            dependers += ((i,(r.name + "_" + a.mkString("_"),a.indexOf(i))))
           })
           code.append(s"""const ParTrieIterator<${r.annotation},${Environment.config.memory}> Iterators_${r.name}_${a.mkString("_")}(Trie_${name});""")
         })
@@ -155,25 +155,6 @@ object CPPGenerator {
     return (code,iteratorAccessors)
   }
   
-
-  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo]) : StringBuilder = {
-    val code = new StringBuilder()
-    (head,tail) match {
-      case (Some(a),List()) =>
-        println("last attr")
-      case (Some(a),_) =>
-        //build 
-        //allocate
-        //foreach
-        println("middle attr")
-        nprrRecursiveCall(tail.headOption,tail.tail)
-        //set
-      case (None,_) =>
-        throw new IllegalArgumentException("Should not reach this state.")
-    }
-    return code
-  }
-
   def emitHeadBuildCode(head:Option[QueryPlanNPRRInfo]) : StringBuilder = {
     val code = new StringBuilder()
     head match {
@@ -225,7 +206,7 @@ object CPPGenerator {
     code
   }
 
-  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:Map[String,List[String]]) : StringBuilder = {
+  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
     val code = new StringBuilder()
 
     head.materialize match {
@@ -246,7 +227,109 @@ object CPPGenerator {
       })
     })
 
+    iteratorAccessors(head.name).foreach(i => {
+      code.append(s"""Iterator_${i._1}->get_next_block(${i._2},${head.name}_d);""")
+    })
+
     code
+  }
+
+  def emitBuildCode(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
+    val code = new StringBuilder()
+
+    val relationNames = iteratorAccessors(head.name).map(_._1)
+    val relationIndices = iteratorAccessors(head.name).map(_._2)
+    head.materialize match {
+      case true => {
+        head.accessors.length match {
+          case 0 =>
+            throw new IllegalArgumentException("This probably not be occuring.")
+          case 1 =>{
+            val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
+            code.append(s"""Builder.build_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}));""")
+          }
+          case 2 =>{
+            println(head.accessors(0))
+            println(relationNames)
+            val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
+            val index2 = relationIndices(relationNames.indexOf(head.accessors(1).name + "_" + head.accessors(1).attrs.mkString("_")))
+            code.append(s"""Builder.build_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}),Iterator_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}->get_block(${index2}));""")
+          }
+          case 3 =>
+            throw new IllegalArgumentException("3 arguments not supported yet.")
+        } 
+      }
+      case false => {
+        head.accessors.length match {
+          case 0 =>
+            throw new IllegalArgumentException("This probably not be occuring.")
+          case 1 =>{
+            val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
+            code.append(s"""Builder.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
+          }
+          case 2 =>{
+            val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
+            val index2 = relationIndices(relationNames.indexOf(head.accessors(1).name + "_" + head.accessors(1).attrs.mkString("_")))
+            code.append(s"""Builder.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")},Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
+          }
+          case 3 =>
+            throw new IllegalArgumentException("3 arguments not supported yet.")
+        } 
+      }
+    }
+    code
+  }
+
+  def emitAllocateCode(head:QueryPlanNPRRInfo) : StringBuilder = {
+    val code = new StringBuilder()
+    (head.annotation,head.nextMaterialized) match {
+      case (Some(annotation),None) =>
+        code.append("Builder.allocate_annotation();")
+      case (None,Some(nextMaterialized)) =>
+        code.append("Builder.allocate_next();")
+      case (Some(a),Some(b)) =>
+        throw new IllegalArgumentException("Undefined behaviour.")
+      case _ =>
+    }
+    code
+  }
+
+  def emitForeach(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
+    val code = new StringBuilder()
+    head.materialize match {
+      case true =>
+        code.append(s"""Builder.foreach_builder([&](const uint32_t a_i, const uint32_t a_d) {""")
+      case false =>
+        code.append(s"""Builder.foreach_aggregate([&](const uint32_t a_d) {""")
+    }
+    iteratorAccessors(head.name).foreach(i => {
+      code.append(s"""Iterator_${i._1}->get_next_block(${i._2},${head.name}_d);""")
+    })
+    code
+  }
+
+  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
+    val code = new StringBuilder()
+    (head,tail) match {
+      case (Some(a),List()) =>
+        code.append("//last attr")
+      case (Some(a),_) =>
+        //build 
+        code.append(emitBuildCode(a,iteratorAccessors))
+        //allocate
+        code.append(emitAllocateCode(a))
+        //foreach
+        code.append(emitForeach(a,iteratorAccessors))
+
+        code.append("//middle attr\n")
+        code.append(nprrRecursiveCall(tail.headOption,tail.tail,iteratorAccessors))
+
+        code.append("});//end middle attr\n")
+        //set
+      case (None,_) =>
+        throw new IllegalArgumentException("Should not reach this state.")
+    }
+    return code
   }
 
   def emitNPRR(output:Boolean,bag:QueryPlanBagInfo) : StringBuilder = {
@@ -274,7 +357,7 @@ object CPPGenerator {
     if(remainingAttrs.length > 0){
       code.append(emitHeadAllocations(bag.nprr.head))
       code.append(emitHeadParForeach(bag.nprr.head,bag.annotation,bag.relations,iteratorAccessors))
-      nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail)
+      code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors))
     
       code.append("});")
     }
