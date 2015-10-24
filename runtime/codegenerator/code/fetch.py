@@ -22,7 +22,8 @@ def loadEncoding(path,name,type):
 	return code
 
 def setResult(name,encodings):
+	code = ""
 	for e in encodings:
 		code += """Trie_%(name)s->encodings.push_back((void*)Encoding_%(e)s);"""% locals()
-	code="""result = (void*)Trie_%(name)s;"""% locals()
+	code+="""result = (void*)Trie_%(name)s;"""% locals()
 	return code
