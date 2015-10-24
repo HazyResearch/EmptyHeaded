@@ -1,11 +1,18 @@
 package scala
 
 import DunceCap.attr.Attr
+import net.liftweb.json.DefaultFormats
+import net.liftweb.json.Serialization._
 
 case class QueryPlan(val query_type:String,
                 val relations:List[QueryPlanRelationInfo],
                 val output:QueryPlanOutputInfo,
-                val ghd:List[QueryPlanBagInfo])
+                val ghd:List[QueryPlanBagInfo]) {
+  override def toString(): String = {
+    implicit val formats = DefaultFormats
+    writePretty(this)
+  }
+}
 
 case class QueryPlanRelationInfo(val name:String,
                             val ordering:List[Int],

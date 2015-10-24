@@ -14,7 +14,7 @@ case class Config(directory: Option[String] = None,
                   query:String = "",
                   explain:Boolean = false)
 
-object QueryPlanner {
+object QueryCompiler {
   def readFile(file:String): String = {
     val source = scala.io.Source.fromFile(file)
     val line = try source.mkString finally source.close()
