@@ -12,29 +12,49 @@
 
 template<class A,class M>
 TrieIterator<A,M>::TrieIterator(Trie<A,M>* t_in){
-  trie = t_in;
-  levels.resize(trie->num_columns);
-  levels.at(0) = t_in->getHead();
-};
-
-template<class A,class M>
-void TrieIterator<A,M>::get_next_block(const size_t level, const uint32_t data){
-  levels.at(level+1) =
-    levels.at(level)->get_next_block(data,trie->memoryBuffers);
+  trie = *t_in;
+  levels.resize(trie.num_columns);
+  assert(trie.num_columns > 0);
+  num_rows = 0;
+  levels.at(0) = trie.getHead();
 }
 
 template<class A,class M>
-TrieBlock<hybrid,M>* TrieIterator<A,M>::get_block(const size_t level){
+void TrieIterator<A,M>::get_next_block(const size_t level, const uint32_t data){
+  levels.at(level+1) = (const TrieBlock<hybrid,M>*)
+    levels.at(level)->get_next_block(data,trie.memoryBuffers);
+}
+
+template<class A,class M>
+const TrieBlock<hybrid,M>* TrieIterator<A,M>::get_block(const size_t level) const {
   return levels.at(level);
+}
+
+template<class A,class M>
+A TrieIterator<A,M>::get_annotation(
+  const size_t level,
+  const uint32_t data){
+  const TrieBlock<hybrid,M>* block = levels.at(level);
+  const Set<hybrid>* s1 = block->get_const_set();
+  long index = s1->find(data);
+  if(index != -1){
+    A* annotation = (A*)( ((uint8_t*)block)+
+      (sizeof(TrieBlock<hybrid,M>)+
+      sizeof(Set<hybrid>) +
+      s1->number_of_bytes) );
+    return annotation[block->get_index(index,data)];
+  }
+  return (A)0;
 }
 
 template<class A, class M>
 ParTrieIterator<A,M>::ParTrieIterator(Trie<A,M> *t_in){
+  head = t_in->getHead();
   iterators.resize(NUM_THREADS);
   for(size_t i = 0; i < NUM_THREADS; i++){
     iterators.at(i) = new TrieIterator<A,M>(t_in);
   }
-};
+}
 
 template struct ParTrieIterator<void*,ParMemoryBuffer>;
 template struct ParTrieIterator<long,ParMemoryBuffer>;

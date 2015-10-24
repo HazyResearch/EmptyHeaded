@@ -28,13 +28,13 @@ namespace ops{
 
   template<class N, typename F>
   inline Set<uinteger>* run_intersection(Set<uinteger> *C_in,const Set<uinteger> *A_in,const Set<range_bitset> *B_in, F f){
-    uint32_t * C = (uint32_t*)C_in->data;
-    const uint32_t * const A = (uint32_t*)A_in->data;
+    uint32_t * C = (uint32_t*)C_in->get_data();
+    const uint32_t * const A = (uint32_t*)A_in->get_data();
     const size_t s_a = A_in->cardinality;
     const size_t s_b = (B_in->number_of_bytes > 0) ? range_bitset::get_number_of_words(B_in->number_of_bytes):0;
-    const uint64_t start_index = (B_in->number_of_bytes > 0) ? ((uint64_t*)B_in->data)[0]:0;
+    const uint64_t start_index = (B_in->number_of_bytes > 0) ? ((uint64_t*)B_in->get_data())[0]:0;
 
-    const uint64_t * const B = (uint64_t*)(B_in->data+sizeof(uint64_t));
+    const uint64_t * const B = (uint64_t*)(B_in->get_data()+sizeof(uint64_t));
     const uint32_t * const B_index = (uint32_t*)(B+s_b);
 
     size_t count = 0;
@@ -52,7 +52,7 @@ namespace ops{
     }
 
     C_in->cardinality = count;
-    C_in->range = N::range((uint32_t*)C_in->data,C_in->cardinality);
+    C_in->range = N::range((uint32_t*)C_in->get_data(),C_in->cardinality);
     C_in->number_of_bytes = count*sizeof(uint32_t);
     C_in->type= type::UINTEGER;
 
@@ -116,18 +116,18 @@ namespace ops{
     const size_t B_num_blocks = B_in->number_of_bytes/(2*sizeof(uint32_t)+(BLOCK_SIZE/8));
 
     size_t count = 0;
-    uint32_t *C = (uint32_t*)C_in->data;
+    uint32_t *C = (uint32_t*)C_in->get_data();
 
-    const uint32_t * const A_data = (uint32_t*)A_in->data;
-    const uint8_t * const B_data = B_in->data+2*sizeof(uint32_t);
+    const uint32_t * const A_data = (uint32_t*)A_in->get_data();
+    const uint8_t * const B_data = B_in->get_data()+2*sizeof(uint32_t);
     const uint32_t offset = 2*sizeof(uint32_t)+WORDS_PER_BLOCK*sizeof(uint64_t);
     
     auto check_f = [&](uint32_t d){(void) d; return;};
     auto finish_f = [&](const uint8_t *start, const uint8_t *end, size_t increment){
       (void) start, (void) end; (void) increment;
       return;};
-    find_matching_offsets(A_in->data,A_in->cardinality,sizeof(uint32_t),[&](uint32_t a){return a >> ADDRESS_BITS_PER_BLOCK;},check_f,finish_f,
-        B_in->data,B_num_blocks,offset,[&](uint32_t b){return b;},check_f,finish_f,
+    find_matching_offsets(A_in->get_data(),A_in->cardinality,sizeof(uint32_t),[&](uint32_t a){return a >> ADDRESS_BITS_PER_BLOCK;},check_f,finish_f,
+        B_in->get_data(),B_num_blocks,offset,[&](uint32_t b){return b;},check_f,finish_f,
         
         //the uinteger value is returned in data->not the best interface 
         [&](uint32_t a_index, uint32_t b_index, uint32_t data){    
@@ -205,21 +205,21 @@ namespace ops{
 
     if(A_in->number_of_bytes > 0 && B_in->number_of_bytes > 0){
       const size_t A_num_blocks = A_in->number_of_bytes/(2*sizeof(uint32_t)+(BLOCK_SIZE/8));
-      uint8_t *C = C_in->data;
+      uint8_t *C = C_in->get_data();
       const uint32_t offset = 2*sizeof(uint32_t)+WORDS_PER_BLOCK*sizeof(uint64_t);
 
-      const uint64_t *b_index = (uint64_t*) B_in->data;
-      const uint64_t * const B = (uint64_t*)(B_in->data+sizeof(uint64_t));
+      const uint64_t *b_index = (uint64_t*) B_in->get_data();
+      const uint64_t * const B = (uint64_t*)(B_in->get_data()+sizeof(uint64_t));
       const size_t s_b = range_bitset::get_number_of_words(B_in->number_of_bytes);
       const uint64_t b_end = (b_index[0]+s_b);
       const uint64_t b_start = b_index[0];
 
       for(size_t i = 0; i < A_num_blocks; i++){
-        uint32_t index = WORDS_PER_BLOCK * (*((uint32_t*)(A_in->data+i*offset)));
+        uint32_t index = WORDS_PER_BLOCK * (*((uint32_t*)(A_in->get_data()+i*offset)));
         if( (index+WORDS_PER_BLOCK-1) >= b_start && index < b_end){
           size_t j = 0;
-          uint64_t *A_data = (uint64_t*)(A_in->data+ i*offset + 2*sizeof(uint32_t));
-          uint32_t A_index = *(uint32_t*)(A_in->data+ i*offset + 1*sizeof(uint32_t));
+          uint64_t *A_data = (uint64_t*)(A_in->get_data()+ i*offset + 2*sizeof(uint32_t));
+          uint32_t A_index = *(uint32_t*)(A_in->get_data()+ i*offset + 1*sizeof(uint32_t));
           uint32_t BB_index = *( ((uint32_t*)(B+s_b)) + (index-b_start) );
 
           N::write_block_header((uint32_t*)C,index/WORDS_PER_BLOCK,count);

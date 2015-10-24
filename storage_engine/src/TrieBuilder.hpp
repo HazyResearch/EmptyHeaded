@@ -8,8 +8,13 @@
 #ifndef _TRIEBUILDER_H_
 #define _TRIEBUILDER_H_
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <vector>
+#include <functional>
 #include "layout.hpp"
+#include "utils/MemoryBuffer.hpp"
+#include "trie/NextLevel.hpp"
 
 template<class A, class M> struct Trie;
 
@@ -21,19 +26,87 @@ template<class A, class M> struct Trie;
 template<class A, class M>
 struct TrieBuilder{
   Trie<A,M>* trie;
-  std::vector<ParMemoryBuffer*> tmp_buffers;
+  std::vector<MemoryBuffer*> tmp_buffers;
+  std::vector<NextLevel> next;
   TrieBuilder<A,M>(Trie<A,M>* t_in);
+  uint32_t cur_level;
+  uint32_t tmp_level;
 
-  Set<hybrid>* build_aggregated_set(
-    const size_t tid,
-    const size_t level,
-    TrieBlock<hybrid,M> *s1, 
-    TrieBlock<hybrid,M> *s2);
+  size_t build_aggregated_set(
+    const TrieBlock<hybrid,M> *s1, 
+    const TrieBlock<hybrid,M> *s2);
 
   size_t count_set(
-    TrieBlock<hybrid,M> *s1, 
-    TrieBlock<hybrid,M> *s2);
+    const TrieBlock<hybrid,M> *s1);
 
+  size_t count_set(
+    const TrieBlock<hybrid,M> *s1, 
+    const TrieBlock<hybrid,M> *s2);
+
+  size_t build_set(
+    const size_t tid,
+    const TrieBlock<hybrid,M> *s1,
+    const TrieBlock<hybrid,M> *s2);
+
+  void set_level(
+    const uint32_t index,
+    const uint32_t data);
+
+  void allocate_next(
+    const size_t tid);
+
+  void allocate_annotation(
+    const size_t tid);
+
+  void set_annotation(
+    const A value,
+    const uint32_t index,
+    const uint32_t data);
+
+  void foreach_aggregate(
+    std::function<void(
+      const uint32_t a_d)> f
+  );
+
+  void foreach_builder(
+    std::function<void(
+      const uint32_t a_i,
+      const uint32_t a_d)> f);
+
+};
+
+template<class A, class M>
+struct ParTrieBuilder{
+  Trie<A,M>* trie;
+  std::vector<TrieBuilder<A,M>*> builders;
+  ParTrieBuilder<A,M>(Trie<A,M>* t_in);
+  const TrieBlock<hybrid,M>* tmp_head;
+  
+  size_t build_aggregated_set(
+    const TrieBlock<hybrid,M> *s1);
+
+  size_t build_aggregated_set(
+    const TrieBlock<hybrid,M> *s1,
+    const TrieBlock<hybrid,M> *s2);
+
+  size_t build_set(
+    const TrieBlock<hybrid,M> *s1);
+
+  void allocate_next();
+
+  void allocate_annotation();
+
+  void par_foreach_aggregate(
+    std::function<void(
+      const size_t tid,
+      const uint32_t a_d)> f
+  );
+
+  void par_foreach_builder(
+    std::function<void(
+      const size_t tid,
+      const size_t a_i,
+      const uint32_t a_d)> f);
 };
 
 #endif

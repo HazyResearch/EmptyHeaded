@@ -29,10 +29,28 @@ class hybrid{
         const size_t number_of_bytes,
         const type::layout t);
 
+    template<class M, typename F>
+    static void foreach(
+        const size_t index,
+        M* memoryBuffer,
+        F f,
+        const size_t cardinality,
+        const size_t number_of_bytes,
+        const type::layout t);
+
     template<typename F>
     static void foreach_index(
         F f,
         const uint8_t *data_in,
+        const size_t cardinality,
+        const size_t number_of_bytes,
+        const type::layout t);
+
+    template<class M, typename F>
+    static void foreach_index(
+        const size_t index,
+        M* memoryBuffer,
+        F f,
         const size_t cardinality,
         const size_t number_of_bytes,
         const type::layout t);
@@ -150,6 +168,27 @@ inline void hybrid::foreach(
 }
 
 //Iterates over set applying a lambda.
+template<class M, typename F>
+inline void hybrid::foreach(
+    const size_t index,
+    M* memoryBuffer,
+    F f,
+    const size_t cardinality,
+    const size_t number_of_bytes,
+    const type::layout t) {
+  switch(t){
+    case type::UINTEGER :
+      uinteger::foreach(index,memoryBuffer,f,cardinality,number_of_bytes,type::UINTEGER);
+      break;
+    case type::RANGE_BITSET :
+      range_bitset::foreach(index,memoryBuffer,f,cardinality,number_of_bytes,type::RANGE_BITSET);
+      break;
+    default:
+      break;
+  }
+}
+
+//Iterates over set applying a lambda.
 template<typename F>
 inline void hybrid::foreach_index(
     F f,
@@ -168,6 +207,28 @@ inline void hybrid::foreach_index(
       break;
   }
 }
+
+//Iterates over set applying a lambda.
+template<class M, typename F>
+inline void hybrid::foreach_index(
+    const size_t index,
+    M* memoryBuffer,
+    F f,
+    const size_t cardinality,
+    const size_t number_of_bytes,
+    const type::layout t) {
+  switch(t){
+    case type::UINTEGER :
+      uinteger::foreach_index(index,memoryBuffer,f,cardinality,number_of_bytes,type::UINTEGER);
+      break;
+    case type::RANGE_BITSET :
+      range_bitset::foreach_index(index,memoryBuffer,f,cardinality,number_of_bytes,type::RANGE_BITSET);
+      break;
+    default:
+      break;
+  }
+}
+
 
 //Iterates over set applying a lambda.
 template<typename F>

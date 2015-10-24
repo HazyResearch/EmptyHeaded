@@ -1,9 +1,10 @@
-# python_fun
+# EmptyHeaded
 
 # Dependencies
 
 * Clang-format
 * Clang 3.6 or GCC 4.9.2
+* jemalloc
 * SBT 0.13.8
 * Intel TBB
 * C++11
@@ -31,6 +32,10 @@ sudo apt-get update
 sudo apt-get install g++-4.9
 ```
 
+**Need jemalloc?**
+```
+sudo apt-get install libjemalloc-dev
+```
 **Need SBT?**
 
 http://www.scala-sbt.org/download.html

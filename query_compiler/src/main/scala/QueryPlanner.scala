@@ -56,7 +56,11 @@ object QueryPlanner {
             None
           }
         )
-      DCParser.run(queryString, output)
+      val queryPlan = DCParser.run(queryString)
+      if (!config.explain) {
+        CPPGenerator.run(queryPlan)
+      }
+      output.map(o => o.print(queryPlan))
       output.map(_.close)
     } getOrElse {
       // arguments are bad, usage message will have been displayed

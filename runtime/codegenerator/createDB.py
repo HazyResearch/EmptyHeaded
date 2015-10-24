@@ -25,8 +25,8 @@ def fromJSON(path,env):
 	relations = data.pop("relations",0)
 	env.setup(data)
 	
-	libname = "loadDB"#env.config["database"].replace("/","_")
-	cppgenerator.compileAndRun(
+	libname = "loadDB"
+	a = cppgenerator.compileAndRun(
 		lambda: loadRelations(relations,env),
 		libname,env.config["memory"],[],"void*")
 
@@ -37,7 +37,7 @@ def fromJSON(path,env):
 		orderings = relation["orderings"]
 		if len(orderings) == 1 and orderings[0] == "all":
 			orderings = generateAllOrderings(len(attributes))
-		cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env),
+		r = cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env),
 			"build_"+relation["name"],env.config["memory"],[],"void*")
 
 		envRelations[relation["name"]] = { \

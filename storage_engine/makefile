@@ -41,7 +41,7 @@ CODEGEN=$(CODEGEN_SOURCES:.cpp=)
 $(info $(CODEGEN))
 CODEGEN_EXES=$(CODEGEN:%=$(EXEDIR)/%)
 
-LIBS=-ltbb -lpthread
+LIBS=-ljemalloc -ltbb -lpthread
 
 all: $(APPS_EXES) $(TOOLS_EXES) $(SERVER_EXES)
 
@@ -80,5 +80,6 @@ tests: $(TESTS_EXES)
 
 clean:
 	rm -rf $(OBJDIR) $(EXEDIR)
+	rm -rf ../libs/emptyheaded.so
 
 .PHONY: all libs tests clean

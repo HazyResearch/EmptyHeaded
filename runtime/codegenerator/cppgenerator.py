@@ -22,7 +22,11 @@ def compileC(name):
 	os.chdir(os.environ["EMPTYHEADED_HOME"]+"/runtime")
 
 def compileAndRun(f,name,mem,types,annotationType):
+	#os.system("rm -rf ../libs/lib" + name + ".so")
 	generate(f,name) #generates C++ code
 	compileC(name) #compiles C++ library
 	return cppexecutor.execute(name,mem,types,annotationType) 	#generates python wrapper and excutes C++ code
 
+def compile(f,name,mem,types,annotationType):
+	generate(f,name) #generates C++ code
+	compileC(name) #compiles C++ library

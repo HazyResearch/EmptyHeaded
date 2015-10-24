@@ -80,7 +80,7 @@ namespace ops{
   };
   struct unpack_materialize:no_check{
     static inline uint32_t range(uint32_t *C, size_t cardinality){
-      return (cardinality > 0) ? C[cardinality-1]-C[0] : 0;
+      return (cardinality > 0) ? C[cardinality-1] : 0;
     }
     static inline uint32_t* advanceC(uint32_t *C, size_t amount){
       return C+amount;
@@ -159,7 +159,7 @@ namespace ops{
   };
   struct unpack_uinteger_materialize:check{
     static inline uint32_t range(uint32_t *C, size_t cardinality){
-      return (cardinality > 0) ? C[cardinality-1]-C[0] : 0;
+      return (cardinality > 0) ? C[cardinality-1] : 0;
     }
     static inline uint32_t* advanceC(uint32_t *C, size_t amount){
       return C+amount;
@@ -300,11 +300,11 @@ namespace ops{
   
   template<class N,typename F>
   inline Set<uinteger>* scalar_gallop(Set<uinteger> *C_in, const Set<uinteger> *A_in, const Set<uinteger> *B_in, F f){
-      const uint32_t *smallset = (uint32_t*)A_in->data;
+      const uint32_t *smallset = (uint32_t*)A_in->get_data();
       const size_t smalllength = A_in->cardinality;
-      const uint32_t *largeset = (uint32_t*)B_in->data;
+      const uint32_t *largeset = (uint32_t*)B_in->get_data();
       const size_t largelength = B_in->cardinality;
-      uint32_t *out = (uint32_t*)C_in->data;
+      uint32_t *out = (uint32_t*)C_in->get_data();
       size_t count = 0;
       if(A_in->cardinality < B_in->cardinality){
         return scalar_gallop<N>(C_in,B_in,A_in);
@@ -342,7 +342,7 @@ namespace ops{
           }
       }
       C_in->cardinality = count;
-      C_in->range = N::range((uint32_t*)C_in->data,C_in->cardinality);
+      C_in->range = N::range((uint32_t*)C_in->get_data(),C_in->cardinality);
       C_in->number_of_bytes = C_in->cardinality*sizeof(uint32_t);
       return C_in;
   }
@@ -405,11 +405,11 @@ namespace ops{
    */
   template<class N,typename F>
   inline Set<uinteger>* set_intersect_v1(Set<uinteger> *C_in, const Set<uinteger> *A_in, const Set<uinteger> *B_in, F f){
-      const uint32_t *rare = (uint32_t*)A_in->data;
+      const uint32_t *rare = (uint32_t*)A_in->get_data();
       size_t lenRare = A_in->cardinality;
-      const uint32_t *freq = (uint32_t*)B_in->data;
+      const uint32_t *freq = (uint32_t*)B_in->get_data();
       size_t lenFreq = B_in->cardinality;
-      uint32_t *matchOut = (uint32_t*)C_in->data;
+      uint32_t *matchOut = (uint32_t*)C_in->get_data();
 
       size_t count = 0;
       const uint32_t *startFreq = freq;
@@ -508,11 +508,11 @@ namespace ops{
     size_t tail = scalar<N>(freq, lenFreq, rare, lenRare, matchOut,f,rare-startRare,freq-startFreq);
 
     C_in->cardinality = count + tail;
-    C_in->range = N::range((uint32_t*)C_in->data,C_in->cardinality);
+    C_in->range = N::range((uint32_t*)C_in->get_data(),C_in->cardinality);
     C_in->number_of_bytes = (count+tail)*sizeof(uint32_t);
     C_in->type= type::UINTEGER;
 
-    return C_in;  
+    return C_in;
   }
   /**
    * This intersection function is similar to v1, but is faster when
@@ -529,11 +529,11 @@ namespace ops{
    */
   template<class N,typename F>
   inline Set<uinteger>* set_intersect_v3(Set<uinteger> *C_in, const Set<uinteger> *A_in, const Set<uinteger> *B_in, F f){
-      const uint32_t *rare = (uint32_t*)A_in->data;
+      const uint32_t *rare = (uint32_t*)A_in->get_data();
       const size_t lenRare = A_in->cardinality;
-      const uint32_t *freq = (uint32_t*)B_in->data;
+      const uint32_t *freq = (uint32_t*)B_in->get_data();
       const size_t lenFreq = B_in->cardinality;
-      uint32_t *out = (uint32_t*)C_in->data;
+      uint32_t *out = (uint32_t*)C_in->get_data();
 
       size_t count = 0;
       const uint32_t *startRare = rare;
@@ -746,7 +746,7 @@ namespace ops{
   FINISH_SCALAR: 
     const size_t final_count = count + scalar<N>(rare, stopRare + rarespace - rare, freq,stopFreq + freqspace - freq, out, f, rare-startRare, freq-startFreq);
     C_in->cardinality = final_count;
-    C_in->range = N::range((uint32_t*)C_in->data,C_in->cardinality);
+    C_in->range = N::range((uint32_t*)C_in->get_data(),C_in->cardinality);
     C_in->number_of_bytes = (final_count)*sizeof(uint32_t);
     C_in->type= type::UINTEGER;
     return C_in;
@@ -767,11 +767,11 @@ namespace ops{
    */
   template<class N,typename F>
   inline Set<uinteger>* set_intersect_galloping(Set<uinteger> *C_in, const Set<uinteger> *A_in, const Set<uinteger> *B_in, F f){
-      const uint32_t *rare = (uint32_t*)A_in->data;
+      const uint32_t *rare = (uint32_t*)A_in->get_data();
       const size_t lenRare = A_in->cardinality;
-      const uint32_t *freq = (uint32_t*)B_in->data;
+      const uint32_t *freq = (uint32_t*)B_in->get_data();
       const size_t lenFreq = B_in->cardinality;
-      uint32_t *out = (uint32_t*)C_in->data;
+      uint32_t *out = (uint32_t*)C_in->get_data();
 
       const uint32_t * const startRare = rare;
       const uint32_t * const startFreq = freq;
@@ -1007,7 +1007,7 @@ namespace ops{
   FINISH_SCALAR: 
     const size_t final_count = count + scalar<N>(rare, stopRare + rarespace - rare, freq,stopFreq + freqspace - freq, out, f, rare-startRare, freq-startFreq);
     C_in->cardinality = final_count;
-    C_in->range = N::range((uint32_t*)C_in->data,C_in->cardinality);
+    C_in->range = N::range((uint32_t*)C_in->get_data(),C_in->cardinality);
     C_in->number_of_bytes = (final_count)*sizeof(uint32_t);
     C_in->type= type::UINTEGER;
     return C_in;
@@ -1015,9 +1015,9 @@ namespace ops{
 
   template<class N,typename F>
   inline Set<uinteger>* set_intersect_ibm(Set<uinteger> *C_in, const Set<uinteger> *A_in, const Set<uinteger> *B_in, F f){
-    uint32_t * C = (uint32_t*) C_in->data; 
-    const uint32_t * const A = (uint32_t*) A_in->data;
-    const uint32_t * const B = (uint32_t*) B_in->data;
+    uint32_t * C = (uint32_t*) C_in->get_data(); 
+    const uint32_t * const A = (uint32_t*) A_in->get_data();
+    const uint32_t * const B = (uint32_t*) B_in->get_data();
     const size_t s_a = A_in->cardinality;
     const size_t s_b = B_in->cardinality;
 
@@ -1111,7 +1111,7 @@ namespace ops{
     count += scalar<N>(&A[i_a],s_a-i_a,&B[i_b],s_b-i_b,C,f,i_a,i_b);
 
     C_in->cardinality = count;
-    C_in->range = N::range((uint32_t*)C_in->data,C_in->cardinality);
+    C_in->range = N::range((uint32_t*)C_in->get_data(),C_in->cardinality);
     C_in->number_of_bytes = count*sizeof(uint32_t);
     C_in->type= type::UINTEGER;
 
@@ -1120,9 +1120,9 @@ namespace ops{
 
   template<class N,typename F>
   inline Set<uinteger>* set_intersect_shuffle(Set<uinteger> *C_in, const Set<uinteger> *A_in, const Set<uinteger> *B_in, F f){
-    uint32_t * C = (uint32_t*) C_in->data; 
-    const uint32_t * const A = (uint32_t*) A_in->data;
-    const uint32_t * const B = (uint32_t*) B_in->data;
+    uint32_t * C = (uint32_t*) C_in->get_data(); 
+    const uint32_t * const A = (uint32_t*) A_in->get_data();
+    const uint32_t * const B = (uint32_t*) B_in->get_data();
     const size_t s_a = A_in->cardinality;
     const size_t s_b = B_in->cardinality;
 
@@ -1199,7 +1199,7 @@ namespace ops{
     count += scalar<N>(&A[i_a],s_a-i_a,&B[i_b],s_b-i_b,C,f,i_a,i_b);
     
     C_in->cardinality = count;
-    C_in->range = N::range((uint32_t*)C_in->data,C_in->cardinality);
+    C_in->range = N::range((uint32_t*)C_in->get_data(),C_in->cardinality);
     C_in->number_of_bytes = count*sizeof(uint32_t);
     C_in->type= type::UINTEGER;
 

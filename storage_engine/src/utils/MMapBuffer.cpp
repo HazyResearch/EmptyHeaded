@@ -30,8 +30,6 @@ MMapBuffer::MMapBuffer(const char* _filename, size_t initSize) : filename(_filen
     assert(false);
   }
 
-  bool createNew = false;
-
   size = lseek(fd, 0, SEEK_END);
   if(size < initSize) {
     size = initSize;
@@ -39,7 +37,6 @@ MMapBuffer::MMapBuffer(const char* _filename, size_t initSize) : filename(_filen
       std::cout << "ftruncate file error" << std::endl;
       assert(false);
     }
-    createNew = true;
   }
   if(lseek(fd, 0, SEEK_SET) != 0) {
     std::cout << "lseek file error" << std::endl;
@@ -147,7 +144,7 @@ char* MMapBuffer::getBuffer()
   return (char*)mmap_addr;
 }
 
-char* MMapBuffer::getBuffer(int pos)
+char* MMapBuffer::get_address(int pos)
 {
   return (char*)mmap_addr + pos;
 }
@@ -166,6 +163,7 @@ MMapBuffer* MMapBuffer::create(const char* filename, size_t initSize)
   for(size_t i = 0 ; i < buffer->size; i++) {
     ch = buffer->mmap_addr[i];
   }
+  (void) ch;
 
   return buffer;
 }

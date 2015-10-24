@@ -55,7 +55,7 @@ def fetchData(relation,trieName,annotationType,attributes,env):
 	memType = env.config["memory"]
 	include = """#include "utils/thread_pool.hpp"
 	#include "Trie.hpp"
-	#include "utils/Timer.hpp"
+	#include "utils/timer.hpp"
 	#include "utils/%(memType)s.hpp"
 	"""% locals()
 	path = env.config["database"] + "/relations/" + relation + "/" + trieName

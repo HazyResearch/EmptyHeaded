@@ -3,111 +3,127 @@
 
 #include "../utils/utils.hpp"
 #include "set/ops.hpp"
-
-struct NextLevel{
-  int index; //# of threads
-  size_t offset;
-};
+#include "NextLevel.hpp"
 
 template<class T, class M>
 struct TrieBlock{
   bool is_sparse;  
-  Set<T> set;
 
-  TrieBlock(Set<T> setIn){
-    set = setIn;
-  }
   TrieBlock(){}
 
-
-  inline size_t nextSize(){
-    return is_sparse ? set.cardinality:(set.range+1);
+  inline const Set<hybrid>* get_const_set() const {
+    const Set<hybrid>* const result = (const Set<hybrid>*)((uint8_t*)this + sizeof(TrieBlock<T,M>));
+    //result->data = ((uint8_t*)result + sizeof(Set<hybrid>));
+    return result;
   }
 
-  inline NextLevel* next(size_t index) const {
+  inline Set<hybrid>* get_set() const {
+    Set<hybrid> *result = (Set<hybrid>*)((uint8_t*)this + sizeof(TrieBlock<T,M>));
+    //result->data = ((uint8_t*)result + sizeof(Set<hybrid>));
+    return result;
+  }
+
+  inline size_t nextSize() {
+   const Set<hybrid>* const set = this->get_const_set();
+    is_sparse = common::is_sparse(set->cardinality,set->range);
+    return is_sparse ? set->cardinality:(set->range+1);
+  }
+
+  inline size_t getNextIndex(const uint32_t index, const uint32_t data) {
+   const Set<hybrid>* const set = this->get_const_set();
+    is_sparse = common::is_sparse(set->cardinality,set->range);
+    return is_sparse ? index:data;
+  }
+  
+  inline size_t get_index(const size_t index, const size_t data) const {
+    return is_sparse ? index:data;
+  }
+
+  inline NextLevel* getNext(size_t index) const {
+    const Set<hybrid>* const set = this->get_const_set();
     return (NextLevel*)(
-      (uint8_t*)this + 
-      sizeof(TrieBlock<T,M>) + 
-      set.number_of_bytes +
-      sizeof(NextLevel)*index);
+      ((uint8_t*)set)+
+      sizeof(Set<hybrid>) +
+      (set->number_of_bytes) +
+      (sizeof(NextLevel)*index) );
   }
 
   inline void init_next(const size_t tid, M* allocator_in){
-    is_sparse = common::is_sparse(set.cardinality,set.range);
-    const size_t next_size = this->nextSize(); 
+    const size_t next_size = this->nextSize();
     allocator_in->get_next(tid, sizeof(NextLevel)*(next_size));
   }
 
-  inline void set_block(
+  inline void set_next_block(
     const uint32_t index, 
     const uint32_t data, 
     int setIndex,
     const size_t setOffset){
 
-    setIndex = (set.cardinality != 0) ? setIndex : -1;
-    if(!is_sparse){
+    const Set<hybrid>* const set = this->get_const_set();
+    setIndex = (set->cardinality != 0) ? setIndex : -1;
+    if(!is_sparse){  //allocate has to be called first
       (void) index;
-      NextLevel* next = this->next(data);
+      NextLevel* next = this->getNext(data);
       next->index = setIndex;
       next->offset = setOffset;
     } else{
       (void) data;
-      NextLevel* next = this->next(index);
+      NextLevel* next = this->getNext(index);
       next->index = setIndex;
-      next->offset = setOffset;    }
+      next->offset = setOffset;    
+    }
   }
 
   inline static TrieBlock<T,M>* get_block(
     const int bufferIndex,
-    const int bufferOffset,
+    const size_t bufferOffset,
     M* buffer) {
+      if(bufferIndex == -1)
+        return NULL;
       TrieBlock<T,M>* result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-      result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
       return result;
   }
 
   inline TrieBlock<T,M>* get_next_block(
     const uint32_t data,
     M* buffer) const {
-
     TrieBlock<T,M>* result = NULL;
-    if(!is_sparse){
-      NextLevel* next = this->next(data);
+    const Set<hybrid> * const set = this->get_const_set();
+    if(!common::is_sparse(set->cardinality,set->range)){
+      NextLevel* next = this->getNext(data);
       const int bufferIndex = next->index;
       const size_t bufferOffset = next->offset;
       if(bufferIndex != -1){
         result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-        result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
       }
     } else{
       //first need to see if the data is in the set
-      const long index = set.find(data);
+      const long index = set->find(data);
       if(index != -1){
-        NextLevel* next = this->next(data);
+        NextLevel* next = this->getNext(data);
         const int bufferIndex = next->index;
         const size_t bufferOffset = next->offset;
         if(bufferIndex != -1){
           result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-          result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
         }
       }
     }
     return result;
   }
-
+  
   inline TrieBlock<T,M>* get_next_block(
     const uint32_t index, 
     const uint32_t data,
     M* buffer) {
-
+    //we must 
     TrieBlock<T,M>* result = NULL;
-    const uint32_t nextIndex = this->is_sparse ? index:data;
-    NextLevel* next = this->next(nextIndex);
+    const uint32_t nextIndex = this->getNextIndex(index,data);
+    NextLevel* next = this->getNext(nextIndex);
     const int bufferIndex = next->index;
     const size_t bufferOffset = next->offset;
+    assert(bufferIndex <= (int) NUM_THREADS);
     if(bufferIndex != -1){
       result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
-      result->set.data = (uint8_t*)((uint8_t*)result + sizeof(TrieBlock<T,M>));
     }
     return result;
   }
