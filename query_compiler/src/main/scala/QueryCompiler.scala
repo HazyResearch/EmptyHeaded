@@ -31,8 +31,8 @@ object QueryCompiler {
         c.copy(dbConfig = x)} text("database config file")
       opt[Boolean]('g', "use-ghd") action { (x, c) =>
         c.copy(useGHD = x)} text("whether to use GHD, defaults to true (TODO)")
-      opt[Boolean]('f', "read-query-from-file") action { (x, c) =>
-        c.copy(readQueryFromFile = x)} text("whether to read the query from a file, defaults to false")
+      opt[Unit]('f', "read-query-from-file") action { (_, c) =>
+        c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
       arg[String]("<query>") action { (x, c) =>
         c.copy(query = x)} text("query")
     }
