@@ -294,6 +294,20 @@ object CPPGenerator {
     code
   }
 
+  def emitSetValues(head:QueryPlanNPRRInfo) : StringBuilder = {
+    val code = new StringBuilder()
+    (head.annotation,head.nextMaterialized) match {
+      case (Some(annotation),None) =>
+        code.append(s"""Builder.set_annotation(annotation_${annotation},${head.name}_i,${head.name}_d);""")
+      case (None,Some(nextMaterialized)) =>
+        code.append(s"""Builder.set_level(${head.name}_i,${head.name}_d);""")
+      case (Some(a),Some(b)) =>
+        throw new IllegalArgumentException("Undefined behaviour.")
+      case _ =>
+    }
+    code
+  }
+
   def emitForeach(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
     val code = new StringBuilder()
     head.materialize match {
@@ -311,21 +325,23 @@ object CPPGenerator {
   def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
     val code = new StringBuilder()
     (head,tail) match {
-      case (Some(a),List()) =>
-        code.append("//last attr")
-      case (Some(a),_) =>
+      case (Some(a),List()) => {
+        code.append(emitBuildCode(a,iteratorAccessors))
+      }
+      case (Some(a),_) => {
         //build 
         code.append(emitBuildCode(a,iteratorAccessors))
         //allocate
         code.append(emitAllocateCode(a))
         //foreach
         code.append(emitForeach(a,iteratorAccessors))
-
-        code.append("//middle attr\n")
+        //recurse
         code.append(nprrRecursiveCall(tail.headOption,tail.tail,iteratorAccessors))
-
-        code.append("});//end middle attr\n")
         //set
+        code.append(emitSetValues(a))
+        //close out foreach
+        code.append("});")
+      }
       case (None,_) =>
         throw new IllegalArgumentException("Should not reach this state.")
     }
@@ -358,7 +374,7 @@ object CPPGenerator {
       code.append(emitHeadAllocations(bag.nprr.head))
       code.append(emitHeadParForeach(bag.nprr.head,bag.annotation,bag.relations,iteratorAccessors))
       code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors))
-    
+      code.append(emitSetValues(bag.nprr.head))
       code.append("});")
     }
 

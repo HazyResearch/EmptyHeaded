@@ -92,6 +92,10 @@ struct ParTrieBuilder{
   size_t build_set(
     const TrieBlock<hybrid,M> *s1);
 
+  size_t build_set(
+    const TrieBlock<hybrid,M> *tb1,
+    const TrieBlock<hybrid,M> *tb2);
+
   void allocate_next();
 
   void allocate_annotation();
