@@ -27,6 +27,7 @@ object CPPGenerator {
     ghd.ghd.foreach(bag => {
       cppCode.append(emitNPRR(bag.name==ghd.output.name,bag))
     })
+    cppCode.append(emitEndQuery(ghd.output))
 
     cpp.append(getCode(includeCode,cppCode))
 
@@ -110,7 +111,20 @@ object CPPGenerator {
     s"""mkdir -p ${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}""" !
 
     code.append(s"""
+      auto query_timer = timer::start_clock();
       Trie<${output.annotation},${Environment.config.memory}> *Trie_${output.name} = new Trie<${output.annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}",${output.ordering.length},${output.annotation != "void*"});
+      par::reducer<size_t> num_rows_reducer(0,[](size_t a, size_t b) { return a + b; });
+    """)
+    println(output)
+    return code
+  }
+
+  def emitEndQuery(output:QueryPlanOutputInfo) : StringBuilder = {
+    val code = new StringBuilder()
+
+    code.append(s"""
+      std::cout << "NUMBER OF ROWS: " << Trie_${output.name}->num_rows << std::endl;
+      timer::stop_clock("QUERY TIME", query_timer);
     """)
     println(output)
     return code
@@ -135,15 +149,15 @@ object CPPGenerator {
     return code
   }
 
-  def emitParallelIterators(relations:List[QueryPlanRelationInfo]) : (StringBuilder,Map[String,List[(String,Int)]]) = {
+  def emitParallelIterators(relations:List[QueryPlanRelationInfo]) : (StringBuilder,Map[String,List[(String,Int,Int)]]) = {
     val code = new StringBuilder()
-    val dependers = mutable.ListBuffer[(String,(String,Int))]()
+    val dependers = mutable.ListBuffer[(String,(String,Int,Int))]()
     relations.foreach(r => {
       val name = r.name + "_" + r.ordering.mkString("_")
       r.attributes.foreach(attr => {
         attr.foreach(a => {
           a.foreach(i => {
-            dependers += ((i,(r.name + "_" + a.mkString("_"),a.indexOf(i))))
+            dependers += ((i,(r.name + "_" + a.mkString("_"),a.indexOf(i),a.length)))
           })
           code.append(s"""const ParTrieIterator<${r.annotation},${Environment.config.memory}> Iterators_${r.name}_${a.mkString("_")}(Trie_${name});""")
         })
@@ -206,7 +220,7 @@ object CPPGenerator {
     code
   }
 
-  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
+  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:Map[String,List[(String,Int,Int)]]) : StringBuilder = {
     val code = new StringBuilder()
 
     head.materialize match {
@@ -228,13 +242,14 @@ object CPPGenerator {
     })
 
     iteratorAccessors(head.name).foreach(i => {
-      code.append(s"""Iterator_${i._1}->get_next_block(${i._2},${head.name}_d);""")
+      if(i._2 != (i._3-1)) //not for the last level
+        code.append(s"""Iterator_${i._1}->get_next_block(${i._2},${head.name}_d);""")
     })
 
     code
   }
 
-  def emitBuildCode(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
+  def emitBuildCode(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int,Int)]]) : StringBuilder = {
     val code = new StringBuilder()
 
     val relationNames = iteratorAccessors(head.name).map(_._1)
@@ -246,14 +261,14 @@ object CPPGenerator {
             throw new IllegalArgumentException("This probably not be occuring.")
           case 1 =>{
             val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
-            code.append(s"""Builder.build_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}));""")
+            code.append(s"""const size_t count_${head.name} = Builder->build_set(tid,Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}));""")
           }
           case 2 =>{
             println(head.accessors(0))
             println(relationNames)
             val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
             val index2 = relationIndices(relationNames.indexOf(head.accessors(1).name + "_" + head.accessors(1).attrs.mkString("_")))
-            code.append(s"""Builder.build_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}),Iterator_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}->get_block(${index2}));""")
+            code.append(s"""const size_t count_${head.name} = Builder->build_set(tid,Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}),Iterator_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}->get_block(${index2}));""")
           }
           case 3 =>
             throw new IllegalArgumentException("3 arguments not supported yet.")
@@ -265,12 +280,12 @@ object CPPGenerator {
             throw new IllegalArgumentException("This probably not be occuring.")
           case 1 =>{
             val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
-            code.append(s"""Builder.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
+            code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
           }
           case 2 =>{
             val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
             val index2 = relationIndices(relationNames.indexOf(head.accessors(1).name + "_" + head.accessors(1).attrs.mkString("_")))
-            code.append(s"""Builder.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")},Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
+            code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")},Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
           }
           case 3 =>
             throw new IllegalArgumentException("3 arguments not supported yet.")
@@ -284,9 +299,9 @@ object CPPGenerator {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
-        code.append("Builder.allocate_annotation();")
+        code.append("Builder->allocate_annotation(tid);")
       case (None,Some(nextMaterialized)) =>
-        code.append("Builder.allocate_next();")
+        code.append("Builder->allocate_next(tid);")
       case (Some(a),Some(b)) =>
         throw new IllegalArgumentException("Undefined behaviour.")
       case _ =>
@@ -298,9 +313,9 @@ object CPPGenerator {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
-        code.append(s"""Builder.set_annotation(annotation_${annotation},${head.name}_i,${head.name}_d);""")
+        code.append(s"""Builder->set_annotation(annotation_${annotation},${head.name}_i,${head.name}_d);""")
       case (None,Some(nextMaterialized)) =>
-        code.append(s"""Builder.set_level(${head.name}_i,${head.name}_d);""")
+        code.append(s"""Builder->set_level(${head.name}_i,${head.name}_d);""")
       case (Some(a),Some(b)) =>
         throw new IllegalArgumentException("Undefined behaviour.")
       case _ =>
@@ -308,25 +323,27 @@ object CPPGenerator {
     code
   }
 
-  def emitForeach(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
+  def emitForeach(head:QueryPlanNPRRInfo,iteratorAccessors:Map[String,List[(String,Int,Int)]]) : StringBuilder = {
     val code = new StringBuilder()
     head.materialize match {
       case true =>
-        code.append(s"""Builder.foreach_builder([&](const uint32_t a_i, const uint32_t a_d) {""")
+        code.append(s"""Builder->foreach_builder([&](const uint32_t ${head.name}_i, const uint32_t ${head.name}_d) {""")
       case false =>
-        code.append(s"""Builder.foreach_aggregate([&](const uint32_t a_d) {""")
+        code.append(s"""Builder->foreach_aggregate([&](const uint32_t ${head.name}_d) {""")
     }
     iteratorAccessors(head.name).foreach(i => {
-      code.append(s"""Iterator_${i._1}->get_next_block(${i._2},${head.name}_d);""")
+      if(i._2 != (i._3-1)) //not for the last level
+        code.append(s"""Iterator_${i._1}->get_next_block(${i._2},${head.name}_d);""")
     })
     code
   }
 
-  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:Map[String,List[(String,Int)]]) : StringBuilder = {
+  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:Map[String,List[(String,Int,Int)]]) : StringBuilder = {
     val code = new StringBuilder()
     (head,tail) match {
       case (Some(a),List()) => {
         code.append(emitBuildCode(a,iteratorAccessors))
+        code.append(s"""num_rows_reducer.update(tid,count_${a.name});""")
       }
       case (Some(a),_) => {
         //build 
@@ -376,6 +393,7 @@ object CPPGenerator {
       code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors))
       code.append(emitSetValues(bag.nprr.head))
       code.append("});")
+      code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
     }
 
     code.append("}")
