@@ -193,7 +193,6 @@ object GHDSolver {
   }
 
   def getMinFHWDecompositions(rels: List[QueryRelation]): List[GHDNode] = {
-    println("NUMBER OF FHW RELATIONS:" + rels.length)
     val decomps = getDecompositions(rels)
     val fhwsAndDecomps = decomps.map((root : GHDNode) => (root.fractionalScoreTree(), root))
     val minScore = fhwsAndDecomps.unzip._1.min

@@ -89,7 +89,7 @@ object CPPGenerator {
     }).reduce((a,b) => a+b))
 
     val encodings = relations.flatMap(r => {
-      val schema = Environment.config.schemas.find(schema => schema.name == r.name)
+      val schema = Environment.config.schemas.get(r.name)
       schema match {
         case Some(s) => {
           s.attributes
@@ -168,7 +168,7 @@ object CPPGenerator {
     relations.foreach(r => {
       val name = r.name + "_" + r.ordering.mkString("_")
 
-      val schema = Environment.config.schemas.find(schema => schema.name == r.name)
+    val schema = Environment.config.schemas.get(r.name)
       val enc = schema match {
         case Some(s) => {
           s.attributes

@@ -37,7 +37,6 @@ object QueryCompiler {
         c.copy(query = x)} text("query")
     }
 
-    // parser.parse returns Option[C]
     parser.parse(args, Config()) map { config =>
       Environment.fromJSON(config.dbConfig)
       val queryString =
@@ -48,22 +47,22 @@ object QueryCompiler {
         }
         
       val queryPlan = DCParser.run(queryString)
+
+      val output = config.directory.map(dir => {
+        Some(new PrintStream(new FileOutputStream(
+          new File(new File(sys.env("EMPTYHEADED_HOME"), dir).getPath(), queryString.hashCode + ".json"))))
+      }).getOrElse(
+          if (config.explain) {
+            Some(System.out)
+          } else {
+            None
+          }
+        )
       if (!config.explain) {
         CPPGenerator.run(queryPlan)
-      } else{
-        val output = config.directory.map(dir => {
-          Some(new PrintStream(new FileOutputStream(
-            new File(new File(sys.env("EMPTYHEADED_HOME"), dir).getPath(), queryString.hashCode + ".json"))))
-        }).getOrElse(
-            if (config.explain) {
-              Some(System.out)
-            } else {
-              None
-            }
-          )
-        output.map(o => o.print(queryPlan))
-        output.map(_.close)
       }
+      output.map(o => o.print(queryPlan))
+      output.map(_.close)
     } getOrElse {
       // arguments are bad, usage message will have been displayed
     }

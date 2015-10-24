@@ -24,20 +24,19 @@ object Environment {
    * Check that a relation with this name and this number of attributes has been loaded
    */
   def isLoaded(queryRelation: QueryRelation): Boolean = {
-    config.schemas.find(schema => schema.name == queryRelation.name
-      && schema.attributes.length == queryRelation.attrs.length).isDefined
+    config.schemas.get(queryRelation.name)
+      .map(schema => schema.attributes.length == queryRelation.attrs.length).getOrElse(false)
   }
 
   /**
    * @param queryRelation find the query relation with this name and attrs and set it's annotation as in the config
-   * @return boolean indicates whether this was successful (may not be is queryRelation does not exist)
+   * @return boolean indicates whether this was successful (may not be if queryRelation does not exist)
    */
   def setAnnotationAccordingToConfig(queryRelation: QueryRelation): Boolean = {
-    if (isLoaded(queryRelation)) {
-      config.schemas.find(schema => schema.name == queryRelation.name
-        && schema.attributes.length == queryRelation.attrs.length).map(schema => {
-        queryRelation.annotationType = schema.annotation
-      })
+   if (isLoaded(queryRelation)) {
+     config.schemas.get(queryRelation.name)
+       .filter(schema => schema.attributes.length == queryRelation.attrs.length)
+       .map(schema => queryRelation.annotationType = schema.annotation)
       return true
     }
     return false
