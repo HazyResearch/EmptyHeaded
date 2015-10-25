@@ -16,7 +16,7 @@ def generateAllOrderings(num):
 
 def printLoadedRelation(relation):
 	printraw("\t" + relation["name"] + "(")
-	printRels = map(lambda x: str(x["encoding"]+":"+x["type"]),relation["attributes"])
+	printRels = map(lambda x: str(x["encoding"]+":"+x["attrType"]),relation["attributes"])
 	printraw(",".join(printRels))
 	print ")"
 
@@ -24,7 +24,7 @@ def fromJSON(path,env):
 	data = json.load(open(path))
 	relations = data.pop("relations",0)
 	env.setup(data)
-	
+
 	libname = "loadDB"
 	a = cppgenerator.compileAndRun(
 		lambda: loadRelations(relations,env),
@@ -64,8 +64,8 @@ def loadRelationCode(relations,env):
 	for relation in relations:
 		os.system("mkdir -p " + env.config["database"] + "/relations/"+relation["name"])
 
-		types = ",".join(list(map(lambda x: str(x["type"]),relation["attributes"])))
-		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["type"])),relation["attributes"]))
+		types = ",".join(list(map(lambda x: str(x["attrType"]),relation["attributes"])))
+		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["attrType"])),relation["attributes"]))
 
 		codeString += code.build.declareColumnStore(relation["name"],types)
 		codeString += code.build.declareAnnotationStore(relation["annotation"])
@@ -83,7 +83,7 @@ def loadRelationCode(relations,env):
 	env.setEncodings(envEncodings)
 
 	for relation in relations:
-		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["type"])),relation["attributes"]))
+		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["attrType"])),relation["attributes"]))
 		codeString += code.build.encodeRelation(
 			env.config["database"],
 			relation["name"],
@@ -99,7 +99,7 @@ def loadRelations(relations,env):
 def buildTrie(orderings,relation,env):
 	include = """#include "emptyheaded.hpp" """
 	codeString = code.build.loadEncodedRelation(env.config["database"],relation["name"])
-	
+
 	envRelations = {}
 	for ordering in orderings:
 		roname = relation["name"] + "_" + "_".join(map(str,ordering))
