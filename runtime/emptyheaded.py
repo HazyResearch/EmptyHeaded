@@ -36,13 +36,13 @@ def loadDB(path):
   environment.fromJSON(path)
 
 def main():
-	db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
+	#db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
 	#db_config="/Users/caberger/Documents/Research/data/databases/facebook/config_pruned.json"
 
-	#db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
+	db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
 	createDB(db_config)
-	loadDB("/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/config.json")
-	query("Triangle(a,b,c) :- R(a,b),R(b,c),R(a,c).")
+	#loadDB("/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/config.json")
+	#query("Triangle(a,b,c) :- R(a,b),R(b,c),R(a,c).")
 	#print fetchData("R")
 	#print numRows("R")
 

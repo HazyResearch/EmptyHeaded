@@ -1,0 +1,26 @@
+{
+  "numThreads": 1,
+  "numNUMA": 4,
+  "database": "/Users/caberger/Documents/Research/data/databases/facebook/db_pruned",
+  "algorithm": "NPRR+",
+  "layout": "hybrid",
+  "memory": "RAM",
+  "relations": [
+    {
+      "name": "R",
+      "source": "/Users/caberger/Documents/Research/data/databases/facebook/duplicate_pruned.tsv",
+      "annotation":"void*",
+      "attributes":[
+        {
+          "type":"long",
+          "encoding":"node"
+        },
+        {
+          "type":"long",
+          "encoding":"node"
+        }
+      ],
+      "orderings":["all"]
+    }
+  ]
+}
