@@ -7,6 +7,7 @@ import code.querytemplate
 import os
 from sets import Set
 import code.build
+import imp
 
 def printraw(s):
 	sys.stdout.write(s)
@@ -26,7 +27,7 @@ def fromJSON(path,env):
 	env.setup(data)
 
 	libname = "loadDB"
-	a = cppgenerator.compileAndRun(
+	cppgenerator.compile(
 		lambda: loadRelations(relations,env),
 		libname,env.config["memory"],[],"void*")
 
@@ -37,7 +38,7 @@ def fromJSON(path,env):
 		orderings = relation["orderings"]
 		if len(orderings) == 1 and orderings[0] == "all":
 			orderings = generateAllOrderings(len(attributes))
-		r = cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env),
+		cppgenerator.compile(lambda: buildTrie(orderings,relation,env),
 			"build_"+relation["name"],env.config["memory"],[],"void*")
 
 		envRelations[relation["name"]] = { \
@@ -46,11 +47,18 @@ def fromJSON(path,env):
 			"attributes":relation["attributes"]}
 	env.setSchemas(envRelations)
 
+	cppgenerator.run(
+		lambda: loadRelations(relations,env),
+		libname,env.config["memory"],[],"void*")
+
 	env.toJSON(env.config["database"]+"/config.json")
+	for relation in relations:
+		cppgenerator.run(lambda: buildTrie(orderings,relation,env),
+			"build_"+relation["name"],env.config["memory"],[],"void*")
+
 	print "Created database with the following relations: "
 	for relation in relations:
 		printLoadedRelation(relation)
-
 
 ##########
 #Code generation methods
@@ -68,7 +76,7 @@ def loadRelationCode(relations,env):
 		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["attrType"])),relation["attributes"]))
 
 		codeString += code.build.declareColumnStore(relation["name"],types)
-		codeString += code.build.declareAnnotationStore(relation["annotation"])
+		codeString += code.build.declareAnnotationStore(relation["name"],relation["annotation"])
 		for e in set(relencodings):
 			encodings.add(e)
 			codeString += code.build.declareEncoding(e)

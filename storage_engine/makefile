@@ -38,7 +38,6 @@ APPS_EXES=$(APPS:%=$(EXEDIR)/%)
 $(shell mkdir -p generated)
 CODEGEN_SOURCES=$(shell ls generated)
 CODEGEN=$(CODEGEN_SOURCES:.cpp=)
-$(info $(CODEGEN))
 CODEGEN_EXES=$(CODEGEN:%=$(EXEDIR)/%)
 
 LIBS=-ljemalloc -ltbb -lpthread
@@ -56,25 +55,24 @@ $(EXEDIR):
 	mkdir -p $(EXEDIR)
 
 $(APPS_EXES): $(EXEDIR) emptyheaded
-	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
+	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L../libs -lemptyheaded -o $@ -Isrc
 
 $(CODEGEN_EXES): $(EXEDIR) emptyheaded
-	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -L$(OBJDIR) -lemptyheaded -o $@ -Isrc
+	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -L../libs -lemptyheaded -o $@ -Isrc
 
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(@) -c $(@:build%.o=src%.cpp)
 
 $(CODEGEN):
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/$(@).o -c generated/$(@).cpp -Isrc
-	$(CXX) -shared -o lib$(@).so $(OBJDIR)/$(@).o -L$(OBJDIR) -lemptyheaded $(LIBS)
+	$(CXX) -shared -o lib$(@).so $(OBJDIR)/$(@).o -L../libs -lemptyheaded $(LIBS)
 	rm -rf $(OBJDIR)/$(@).o
 	mv lib$(@).so ../libs/.
 
 emptyheaded: $(OBJDIR) $(OBJECTS) libdir
 	#ar rvs $(OBJDIR)/lib$(@).a $(OBJECTS)
 	$(CXX) -shared -o lib$(@).so $(OBJECTS) $(LIBS)
-	cp -f lib$(@).so ../libs/.
-	mv lib$(@).so $(OBJDIR)/.
+	mv -f lib$(@).so ../libs/.
 
 tests: $(TESTS_EXES)
 

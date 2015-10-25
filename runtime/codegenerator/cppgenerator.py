@@ -12,7 +12,6 @@ def generate(f,name):
 
 def compileC(name):
 	#compile C++ code
-	print "HERE"
 	os.chdir(os.environ["EMPTYHEADED_HOME"]+"/storage_engine")
 	try:
 		os.system("make "+name)#+" >/dev/null")
@@ -28,6 +27,10 @@ def compileAndRun(f,name,mem,types,annotationType):
 	compileC(name) #compiles C++ library
 	return cppexecutor.execute(name,mem,types,annotationType) 	#generates python wrapper and excutes C++ code
 
+def run(f,name,mem,types,annotationType):
+	return cppexecutor.run(name,mem,types,annotationType) 	#generates python wrapper and excutes C++ code
+
 def compile(f,name,mem,types,annotationType):
 	generate(f,name) #generates C++ code
 	compileC(name) #compiles C++ library
+	return cppexecutor.compile(name,mem,types,annotationType) 	#generates python wrapper and excutes C++ code

@@ -1,22 +1,22 @@
 {
   "numThreads": 1,
   "numNUMA": 4,
-  "database": "/Users/caberger/Documents/Research/data/databases/facebook/db_pruned",
+  "database": "$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned",
   "algorithm": "NPRR+",
   "layout": "hybrid",
   "memory": "RAM",
   "relations": [
     {
-      "name": "R",
-      "source": "/Users/caberger/Documents/Research/data/databases/facebook/duplicate_pruned.tsv",
+      "name": "Edge",
+      "source": "$EMPTYHEADED_HOME/examples/graph/data/facebook/duplicate_pruned.tsv",
       "annotation":"void*",
       "attributes":[
         {
-          "type":"long",
+          "attrType":"long",
           "encoding":"node"
         },
         {
-          "type":"long",
+          "attrType":"long",
           "encoding":"node"
         }
       ],

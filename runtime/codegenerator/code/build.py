@@ -1,8 +1,10 @@
+import os
+
 def declareColumnStore(name,types):
 	return """ColumnStore<%(types)s> *ColumnStore_%(name)s = new ColumnStore<%(types)s>();"""% locals()
 
-def declareAnnotationStore(name):
-  	return """std::vector<%(name)s> *annotation_R = new std::vector<%(name)s>();"""% locals()
+def declareAnnotationStore(name,type):
+  	return """std::vector<%(type)s> *annotation_%(name)s = new std::vector<%(type)s>();"""% locals()
 
 def declareEncoding(e):
 	name,types = e
@@ -12,6 +14,7 @@ def declareEncoding(e):
 	"""% locals()
 
 def readRelationFromTSV(name,encodings,path):
+	path = os.path.expandvars(path)
 	code = """{
 	    auto start_time = timer::start_clock();
 	    tsv_reader f_reader(

@@ -16,7 +16,7 @@
 template<class A,class M>
 void Trie<A,M>::save(){
   std::ofstream *writefile = new std::ofstream();
-  std::cout << memoryBuffers->path <<  " " << M::folder << std::endl;
+  //std::cout << memoryBuffers->path <<  " " << M::folder << std::endl;
   std::string file = memoryBuffers->path+M::folder+std::string("trieinfo.bin");
   writefile->open(file, std::ios::binary | std::ios::trunc);
   writefile->write((char *)&annotated, sizeof(annotated));
