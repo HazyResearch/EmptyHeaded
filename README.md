@@ -1,5 +1,7 @@
 # EmptyHeaded
 
+<img src="docs/figures/eh_logo.png" height="200" >
+
 # Dependencies
 
 * AVX
