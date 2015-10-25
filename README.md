@@ -73,4 +73,4 @@ One all the dependencies above are met one can simply run `setup.sh.` This scrip
 
 # Running Queries
 
-We demonstrate using EmptyHeaded in a sample iPython notebook. Please execute `iPython notebook` in the EMPTYHEADED_HOME directory and view one of our sample iPython notebooks in the `examples` directory.
+We demonstrate using EmptyHeaded in a example iPython notebooks. Please execute `iPython notebook` in the EMPTYHEADED_HOME directory and view one of our sample iPython notebooks in the `examples` directory.  
