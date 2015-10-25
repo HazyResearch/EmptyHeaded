@@ -48,8 +48,8 @@ def loadDB(path):
   environment.fromJSON(path)
 
 def main():
-	#db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config_pruned.json"
-	#createDB(db_config)
+	db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config_pruned.json"
+	createDB(db_config)
 	loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
 	query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
 
