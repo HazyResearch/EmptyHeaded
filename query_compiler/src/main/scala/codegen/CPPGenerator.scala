@@ -21,19 +21,29 @@ object CPPGenerator {
   }
 
   def run(ghd:QueryPlan) = {
+    var outputAttributes:List[Attribute] = List()
     val cpp = new StringBuilder()
-    
     val includeCode = getIncludes(ghd)
     val cppCode = emitLoadRelations(ghd.relations)
     cppCode.append(emitInitializeOutput(ghd.output))
     ghd.ghd.foreach(bag => {
-      cppCode.append(emitNPRR(bag.name==ghd.output.name,bag))
+      val (bagCode,bagOutput) = emitNPRR(bag.name==ghd.output.name,bag)
+      outputAttributes = bagOutput
+      cppCode.append(bagCode)
     })
     cppCode.append(emitEndQuery(ghd.output))
 
     cpp.append(getCode(includeCode,cppCode))
 
-    val cppFilepath = "/Users/caberger/Documents/Research/code/eh_python/storage_engine/generated/cgen.cpp"
+    val newSchema = ((ghd.output.name -> Schema(outputAttributes,List(ghd.output.ordering),ghd.output.annotation)))
+    val newRelation = ((ghd.output.name+"_"+ghd.output.ordering.mkString("_"))->"disk")
+    Environment.config.schemas = Environment.config.schemas+newSchema
+    Environment.config.relations = Environment.config.relations+newRelation
+    Environment.config.resultName = ghd.output.name
+    Environment.config.resultOrdering = ghd.output.ordering
+    Environment.toJSON()
+
+    val cppFilepath = sys.env("EMPTYHEADED_HOME")+"/storage_engine/generated/Query.cpp"
     val file = new File(cppFilepath)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(cpp.toString)
@@ -80,7 +90,7 @@ object CPPGenerator {
       s"""Trie<${r.annotation},${Environment.config.memory}>* Trie_${r.name}_${r.ordering.mkString("_")} = NULL;
       {
         auto start_time = timer::start_clock();
-        Trie_R_0_1 = Trie<void *,${Environment.config.memory}>::load( 
+        Trie_${r.name}_${r.ordering.mkString("_")} = Trie<void *,${Environment.config.memory}>::load( 
           "${Environment.config.database}/relations/${r.name}/${r.name}_${r.ordering.mkString("_")}"
         );
         timer::stop_clock("LOADING Trie ${r.name}_${r.ordering.mkString("_")}", start_time);      
@@ -392,7 +402,7 @@ object CPPGenerator {
     return code
   }
 
-  def emitNPRR(output:Boolean,bag:QueryPlanBagInfo) : StringBuilder = {
+  def emitNPRR(output:Boolean,bag:QueryPlanBagInfo) : (StringBuilder,List[Attribute]) = {
     val code = new StringBuilder()
 
     //Emit the output trie for the bag.
@@ -414,6 +424,7 @@ object CPPGenerator {
     println("ENCODINGS: " + encodings)
     println("ITERATOR ACCESSORS: " + iteratorAccessors)
 
+    val outputAttributes:List[Attribute] = bag.attributes.map(a => encodings(a))
     val remainingAttrs = bag.nprr.tail
     if(remainingAttrs.length > 0){
       code.append(emitHeadAllocations(bag.nprr.head))
@@ -423,8 +434,8 @@ object CPPGenerator {
       code.append("});")
       code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
     }
-
     code.append("}")
-    return code
+    
+    return (code,outputAttributes)
   }
 }

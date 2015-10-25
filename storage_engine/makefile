@@ -4,7 +4,6 @@ OBJDIR=build
 EXEDIR=bin
 HEADERS=$(wildcard include/*hpp)
 SOURCES=$(shell find src -name "*cpp")
-#STRIPPED=$(notdir $(SOURCES))
 OBJECTS=$(SOURCES:src/%.cpp=$(OBJDIR)/%.o)
 
 ifdef DEBUG
@@ -29,6 +28,10 @@ ifdef CLANG
 	CXX = clang++
 else 
 	CXX = g++
+endif
+
+ifdef NUM_THREADS
+	override CXXFLAGS += -DNUM_THREADS_IN=$(NUM_THREADS)
 endif
 
 APPS_SOURCES=$(shell ls apps)

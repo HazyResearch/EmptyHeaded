@@ -27,6 +27,7 @@ def fromJSON(path,env):
 	env.setup(data)
 
 	libname = "loadDB"
+	os.system("cd $EMPTYHEADED_HOME/storage_engine && make clean && make emptyheaded NUM_THREADS=" + str(env.config["numThreads"]) + "&& cd -")
 	cppgenerator.compile(
 		lambda: loadRelations(relations,env),
 		libname,env.config["memory"],[],"void*")

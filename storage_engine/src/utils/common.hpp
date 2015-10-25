@@ -29,7 +29,12 @@
 #include <vector>
 #include "tbb/parallel_sort.h"
 
+#ifndef NUM_THREADS_IN
 const static size_t NUM_THREADS = 1;
+#else
+static size_t NUM_THREADS = NUM_THREADS_IN; 
+#endif
+
 const static size_t GIGABYTE = 1073741824;
 //Needed for parallelization, prevents false sharing of cache lines
 #define PADDING 300
@@ -49,7 +54,6 @@ const static size_t GIGABYTE = 1073741824;
 #define BITS_PER_WORD 64
 #define ADDRESS_BITS_PER_WORD 6
 #define BYTES_PER_WORD 8
-
 
 namespace common{
   static size_t bitset_length = 2;

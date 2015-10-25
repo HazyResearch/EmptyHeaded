@@ -18,6 +18,7 @@ case class QueryPlanRelationInfo(val name:String,
                             val ordering:List[Int],
                             val attributes:Option[List[List[Attr]]],
                             val annotation:String)
+
 case class QueryPlanOutputInfo(val name:String,
                           val ordering:List[Int],
                           val annotation:String)

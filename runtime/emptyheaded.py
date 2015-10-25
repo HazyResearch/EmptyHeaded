@@ -11,10 +11,13 @@ environment = codegenerator.env.Environment()
 def query(datalog_string):
   print environment.config["database"]
   print subprocess.Popen("target/start -c %s/config.json \"%s\"" % (environment.config["database"],datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
-  cppgenerator.compileC("cgen")
-  result = cppexecutor.execute("cgen",environment.config["memory"],["long","long","long"],"void*")
+  environment.fromJSON(environment.config["database"]+"/config.json")
+  cppgenerator.compileC("Query")
+  schema = environment.schemas[environment.config["resultName"]]
+  eTypes = map(lambda i:str(schema["attributes"][i]["attrType"]),environment.config["resultOrdering"])
+  result = cppexecutor.execute("Query",environment.config["memory"],eTypes,schema["annotation"])
   print result[0].num_rows(result[1])
-  print result[0].fetch_data(result[1])
+  #print result[0].fetch_data(result[1])
 
 def compileQuery(datalog_string):
   print subprocess.Popen("target/start DunceCap.QueryPlanner %s \"%s\"" % (QUERY_COMPILER_CONFIG_DIR, datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
@@ -39,10 +42,10 @@ def main():
 	#db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
 	#db_config="/Users/caberger/Documents/Research/data/databases/facebook/config_pruned.json"
 
-	db_config="../examples/graph/data/facebook/config_pruned.json"
-	createDB(db_config)
-	#loadDB("/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/config.json")
-	#query("Triangle(a,b,c) :- R(a,b),R(b,c),R(a,c).")
+	#db_config="../examples/graph/data/facebook/config_pruned.json"
+	#createDB(db_config)
+	loadDB("../examples/graph/data/facebook/db_pruned/config.json")
+	query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
 	#print fetchData("R")
 	#print numRows("R")
 

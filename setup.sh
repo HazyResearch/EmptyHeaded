@@ -1,7 +1,6 @@
 #!/bin/bash
+#set env variables
 export EMPTYHEADED_HOME=`pwd`
-cd $EMPTYHEADED_HOME/storage_engine
-make clean && make emptyheaded
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$EMPTYHEADED_HOME/libs
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -9,6 +8,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 else
 	echo "OS NOT SUPPORTED"
 fi
+#compiles the query compiler
 cd $EMPTYHEADED_HOME/query_compiler
 sbt start-script
 cd $EMPTYHEADED_HOME
