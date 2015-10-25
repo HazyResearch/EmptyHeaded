@@ -9,6 +9,7 @@
 * jemalloc
 * Intel TBB
 * C++11
+* Mac or Linux operating system
 
 The instructions below detail our dependencies and how to install them on a Linux machine with sudo priveledges. We for Mac's try `brew` (homebrew) instead of `apt-get`.
 
