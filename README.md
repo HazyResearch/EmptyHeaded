@@ -10,49 +10,63 @@
 * C++11
 * AVX
 
-It may work with different versions of these but this is what the system is currently tested on.
+The instructions below detail our dependencies and how to install them on a Linux machine with sudo priveledges. We for Mac's try `brew` (homebrew) instead of `apt-get`.
 
-**Need Clang-format**
+**Why AVX?**
 
-Linux:
-```
-sudo apt-get install clang-format
-```
-Mac:
-```
-brew install clang-format
-```
+A fundamental dependency of our system is that it is designed for machines that support the Advanced Vector Extensions (AVX) instruction set which is standard in modern and future hardware generations. Our performance is highly dependent on this instruction set being available.
 
-**Need GCC?**
+**Why GCC?**
 
-Linux:
+Our backend executes generated C++ code. We execute native code so that we can fully leverage the AVX instruction set.  
+
 ```
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  
 sudo apt-get update
 sudo apt-get install g++-4.9
 ```
 
-**Need jemalloc?**
-```
-sudo apt-get install libjemalloc-dev
-```
-**Need SBT?**
+**Why SBT?**
+
+Our query compiler and code generator are written using Scala.
 
 http://www.scala-sbt.org/download.html
 
-**Need TBB?**
+**Why clang-format?**
+
+EmptyHeaded generates code from a high level datalog description. Making generated code look nice is a challenging task! Clang-format is an easy solution.
+
+```
+sudo apt-get install clang-format
+```
+
+Our system is currently tested on gcc-4.9.2 but does work with other C compilers and clang. You are free to use these at your own risk. 
+
+**Why jemalloc?**
+
+The GNU malloc is ineffecient for multi-threaded programs. jemalloc to the rescue!
+
+```
+sudo apt-get install libjemalloc-dev
+```
+
+**Why TBB?**
+
+Writing an effecient parallel-sort is a challenging task. Why re-invent the wheel? Use TBB.
 
 Linux: `sudo apt-get install libtbb-dev`
-Mac: `brew install tbb`
 
 For more information....
 
 https://www.threadingbuildingblocks.org/
 
-**Need AVX?**
 
-Buy a new machine.
+# Installing from Source
 
-# Configuration
+One all the dependencies about are met you can install EmptyHeaded from source following the steps below.
 
-Run `source setupEnv.sh`
+1) Setting up the EmptyHeaded environment.
+
+Once the source code is downloaded execute `source setupEnv.sh` in the top level of this project. The top level of the project is set to an environment variable EMPTYHEADED_HOME via this script. 
+
+This script compiles a shared library (.so) for the EmptyHeaded storage engine and places this in `EMPTYHEADED_HOME/libs`. Then `EMPTYHEADED_HOME/libs` is next added to your `LD_LIBRARY_PATH`.  
