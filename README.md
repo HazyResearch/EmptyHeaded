@@ -1,7 +1,7 @@
 EmptyHeaded v. 0.1
 ----------------------
 
-<img src="docs/figs/cct_logo.png" height="200" >
+<img src="docs/figs/eh_logo.png" height="200" >
 
 # Dependencies
 
