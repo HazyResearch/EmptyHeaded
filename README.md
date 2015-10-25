@@ -2,13 +2,13 @@
 
 # Dependencies
 
-* Clang-format
+* AVX
 * Clang 3.6 or GCC 4.9.2
-* jemalloc
 * SBT 0.13.8
+* Clang-format
+* jemalloc
 * Intel TBB
 * C++11
-* AVX
 
 The instructions below detail our dependencies and how to install them on a Linux machine with sudo priveledges. We for Mac's try `brew` (homebrew) instead of `apt-get`.
 
