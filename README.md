@@ -8,6 +8,7 @@
 * Clang-format
 * jemalloc
 * Intel TBB
+* iPython Notebook
 * C++11
 * Mac or Linux operating system
 
@@ -61,13 +62,15 @@ For more information....
 
 https://www.threadingbuildingblocks.org/
 
+**Why iPython Notebook?**
+
+iPython Notebook provides a easy and user-friendly front-end for users to enter, compile, and run queries.
+
 
 # Installing from Source
 
-One all the dependencies about are met you can install EmptyHeaded from source following the steps below.
+One all the dependencies above are met one can simply run `setup.sh.` This script sets up environment variables, adds EmptyHeaded to your LD_LIBRARY_PATH, compiles the storage engine, and compiles query compiler. After executing this script you are ready to run your try your first EmptyHeaded query.
 
-1) Setting up the EmptyHeaded environment.
+# Running Queries
 
-Once the source code is downloaded execute `source setupEnv.sh` in the top level of this project. The top level of the project is set to an environment variable EMPTYHEADED_HOME via this script. 
-
-This script compiles a shared library (.so) for the EmptyHeaded storage engine and places this in `EMPTYHEADED_HOME/libs`. Then `EMPTYHEADED_HOME/libs` is next added to your `LD_LIBRARY_PATH`.  
+We demonstrate using EmptyHeaded in a sample iPython notebook. Please execute `iPython notebook` in the EMPTYHEADED_HOME directory and view one of our sample iPython notebooks in the `examples` directory.
