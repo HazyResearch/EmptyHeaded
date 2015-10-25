@@ -13,7 +13,7 @@ def numRows(relation,env):
 		schema = env.schemas[relation]
 		ordering = schema["orderings"][0]
 		trieName = relation + "_" + "_".join(map(str,ordering))
-		types = map(lambda x : str(x["type"]),schema["attributes"])
+		types = map(lambda x : str(x["attrType"]),schema["attributes"])
 		if trieName in env.relations:
 			if env.relations[trieName] == "disk":
 				#get encodings
@@ -35,7 +35,7 @@ def fetch(relation,env):
 		schema = env.schemas[relation]
 		ordering = schema["orderings"][0]
 		trieName = relation + "_" + "_".join(map(str,ordering))
-		types = map(lambda x : str(x["type"]),schema["attributes"])
+		types = map(lambda x : str(x["attrType"]),schema["attributes"])
 		if trieName in env.relations:
 			if env.relations[trieName] == "disk":
 				#get encodings
@@ -64,7 +64,7 @@ def fetchData(relation,trieName,annotationType,attributes,env):
 	s = set()
 	for a in attributes:
 		if a["encoding"] not in s:
-			runCode += code.fetch.loadEncoding(env.config["database"],a["encoding"],a["type"])
+			runCode += code.fetch.loadEncoding(env.config["database"],a["encoding"],a["attrType"])
 			s.add(a["encoding"])
 	encodings = map(lambda i:i["encoding"],attributes)
 	runCode += code.fetch.setResult(trieName,encodings)
