@@ -8,6 +8,8 @@ class Environment:
 	relations = {}
 	encodings = {}
 
+	liverelations = {}
+
 	def setSchemas(self,scheme):
 		self.schemas = scheme
 
