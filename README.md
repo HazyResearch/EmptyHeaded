@@ -25,7 +25,7 @@ To install EmptyHeaded from source ensure that your system:
 Dependencies
 -----------------
 
-* AVX
+* [AVX](why-avx?)
 * Clang 3.6 or GCC 4.9.2
 * SBT 0.13.8
 * Clang-format
