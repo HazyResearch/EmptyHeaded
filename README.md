@@ -92,5 +92,5 @@ Running Queries
 -----------------
 We demonstrate using EmptyHeaded in a example iPython notebooks. Please execute `iPython notebook` in the `EMPTYHEADED_HOME` directory and view one of our sample iPython notebooks in the `examples` directory. We are in the process of adding full support to our language but right now can only guarantee that the examples we provide run correctly right now.
 
-Overview
+Contact
 -----------------
