@@ -7,12 +7,15 @@ Table of Contents
 -----------------
 
   * [Overview](#overview)  
+  * [Dependencies](#dependencies)  
+  * [Installing from Source](#installing-from-source)
   * [Contact](#contact)
 
 Overview
 -----------------
 
-# Dependencies
+Dependencies
+-----------------
 
 * AVX
 * Clang 3.6 or GCC 4.9.2
@@ -79,7 +82,8 @@ https://www.threadingbuildingblocks.org/
 iPython Notebook provides a easy and user-friendly front-end for users to enter, compile, and run queries.
 
 
-# Installing from Source
+Installing from Source
+-----------------
 
 One all the dependencies above are met one can simply run `source setup.sh.` This script sets up environment variables, adds EmptyHeaded to your LD_LIBRARY_PATH, compiles the storage engine, and compiles query compiler. After executing this script you are ready to run your try your first EmptyHeaded query.
 
