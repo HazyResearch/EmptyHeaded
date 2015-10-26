@@ -4,6 +4,8 @@ import imp
 
 def loadQuery(name):
 	fname = os.path.expandvars("$EMPTYHEADED_HOME/runtime/queries/") + name +".so"
+	print "FILENAME: " + fname
+	os.system("ls " + os.path.expandvars("$EMPTYHEADED_HOME/runtime/queries/"))
 	mod = imp.load_dynamic(name,fname)
 	return mod
 
