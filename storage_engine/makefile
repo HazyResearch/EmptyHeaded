@@ -58,7 +58,7 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)/utils
 
 libdir:
-	mkdir -p ../libs
+	mkdir -p libs
 
 $(EXEDIR):
 	mkdir -p $(EXEDIR)
@@ -74,13 +74,12 @@ $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
 
 $(CODEGEN):
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/$(@).o -c generated/$(@).cpp -Isrc
-	$(CXX) -shared -o lib$(@).so $(OBJDIR)/$(@).o -L$(EMPTYHEADED_HOME)/libs -lemptyheaded $(LIBS)
-	mv -f lib$(@).so $(EMPTYHEADED_HOME)/libs/.
+	$(CXX) -shared -o lib$(@).so $(OBJDIR)/$(@).o -L$(EMPTYHEADED_HOME)/storage_engine/libs -lemptyheaded $(LIBS)
+	mv -f lib$(@).so $(EMPTYHEADED_HOME)/runtime/queries/.
 
 emptyheaded: $(OBJDIR) $(OBJECTS) libdir
-	#ar rvs $(OBJDIR)/lib$(@).a $(OBJECTS)
 	$(CXX) -shared -o lib$(@).so $(OBJECTS) $(LIBS)
-	mv -f lib$(@).so $(EMPTYHEADED_HOME)/libs/.
+	mv -f lib$(@).so libs/.
 
 tests: $(TESTS_EXES)
 
