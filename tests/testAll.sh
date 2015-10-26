@@ -1,2 +1,2 @@
 source setup.sh
-python examples/triangle_materialized.py
+python tests/examples/triangle_materialized.py
