@@ -16,7 +16,9 @@ Table of Contents
 Overview
 -----------------
 
-EmptyHeaded is a new style of join processing engine. Joins are ubiqutous in data processing and often are the bottleneck of classic RDBMS workloads. Recent database theory has shown that Sellinger style join optimizers, which compute joins in a pairwise fashion are asympotically suboptimal. Therefore the join optimizers which have dominated the RDBMS for the past 40 years do not run the most optimal algorithm. Ngo et al. showed a new way to compute joins in a multiway fashion in this [paper](http://arxiv.org/abs/1203.1952). EmptyHeaded is a new worst-case optimal join engine that leverages [new theoretical advances for aggregate join queries](http://arxiv.org/abs/1508.07532) in its query compiler and storage engine  designed to take advantage of the SIMD hardware trend.
+EmptyHeaded is a new style of join processing engine. A full description is in our [manuscript](http://arxiv.org/abs/1503.02368). A brief overview is as follows.
+
+Joins are ubiqutous in data processing and often are the bottleneck of classic RDBMS workloads. Recent database theory has shown that Sellinger style join optimizers, which compute joins in a pairwise fashion are asympotically suboptimal. Therefore the join optimizers which have dominated the RDBMS for the past 40 years do not run the most optimal algorithm. Ngo et al. showed a new way to compute joins in a multiway fashion in this [paper](http://arxiv.org/abs/1203.1952). EmptyHeaded is a new worst-case optimal join engine that leverages [new theoretical advances for aggregate join queries](http://arxiv.org/abs/1508.07532) in its query compiler and storage engine  designed to take advantage of the SIMD hardware trend.
 
 EmptyHeaded is designed to run as a python library. Behind the scenes there are three pieces of the EmptyHeaded engine.
 
@@ -24,7 +26,7 @@ EmptyHeaded is designed to run as a python library. Behind the scenes there are 
 2. Code Generator
 3. Storage Engine
 
-The query compiler and code generator are written in Scala and the storage engine is written in C++. The query compiler accepts a datalog string and produces a generalized hypertree decomposition (GHD) which represents our query plan. The code generator takes in the GHD from the query compiler and generates C++ library calls in the storage engine. This code is then compiled and run. 
+The query compiler and code generator are written in Scala and the storage engine is written in C++. The query compiler accepts a datalog string and produces a generalized hypertree decomposition (GHD) which represents our query plan. The code generator takes in the GHD from the query compiler and generates C++ library calls in the storage engine. This code is then compiled and run.
 
 Installing from Source
 -----------------
