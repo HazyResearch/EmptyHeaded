@@ -27,7 +27,7 @@ endif
 ifdef CLANG
 	CXX = clang++
 else 
-	CXX = g++
+	CXX = g++-4.9
 endif
 
 ifdef NUM_THREADS
