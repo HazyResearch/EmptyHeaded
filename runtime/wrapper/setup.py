@@ -8,7 +8,7 @@ if platform.uname()[0] == "Darwin":
 	clibs = ["-arch","x86_64","-std=c++11"]
 	largs = ["-arch","x86_64"]
 else:
-	clibs = ["-std=c++11"]
+	clibs = ["-std=c++0x"]
 	largs = []
 	
 # the c++ extension module
