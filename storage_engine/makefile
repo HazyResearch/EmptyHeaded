@@ -74,18 +74,16 @@ $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
 
 $(CODEGEN):
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/$(@).o -c generated/$(@).cpp -Isrc
-	$(CXX) -shared -o lib$(@).so $(OBJDIR)/$(@).o -L$(EMPTYHEADED_HOME)/storage_engine/libs -lemptyheaded $(LIBS)
-	mv -f lib$(@).so $(EMPTYHEADED_HOME)/runtime/queries/.
+	$(CXX) -shared -o $(EMPTYHEADED_HOME)/runtime/queries/lib$(@).so $(OBJDIR)/$(@).o -L$(EMPTYHEADED_HOME)/storage_engine/libs -lemptyheaded $(LIBS)
 
 emptyheaded: $(OBJDIR) $(OBJECTS) libdir
-	$(CXX) -shared -o lib$(@).so $(OBJECTS) $(LIBS)
-	mv -f lib$(@).so libs/.
+	$(CXX) -shared -o $(EMPTYHEADED_HOME)/storage_engine/libs/lib$(@).so $(OBJECTS) $(LIBS)
 
 tests: $(TESTS_EXES)
 
 clean:
 	rm -rf $(OBJDIR) $(EXEDIR)
-	rm -rf $(EMPTYHEADED_HOME)/libs/*.so
+	rm -rf $(EMPTYHEADED_HOME)/storage_engine/libs
 	rm -rf $(EMPTYHEADED_HOME)/runtime/queries/*.so
 
 .PHONY: all libs tests clean
