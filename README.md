@@ -1,6 +1,41 @@
-# EmptyHeaded
+EmptyHeaded v. 0.1
+----------------------
 
-# Dependencies
+<img src="docs/figs/eh_logo.png" height="200" >
+
+Table of Contents
+-----------------
+
+  * [Overview](#overview)  
+  * [Installing from Source](#installing-from-source)
+   * [Dependencies](#dependencies)
+   * [Setting up Environment](#setting-up-environment)
+  * [Running Queries](#running-queries)
+  * [Contact](#contact)
+
+Overview
+-----------------
+
+EmptyHeaded is a new style of join processing engine. A full description is in our [manuscript](http://arxiv.org/abs/1503.02368). A brief overview is as follows.
+
+Joins are ubiqutous in data processing and often are the bottleneck of classic RDBMS workloads. Recent database theory has shown that Sellinger style join optimizers, which compute joins in a pairwise fashion are asympotically suboptimal. Therefore the join optimizers which have dominated the RDBMS for the past 40 years run suboptimal algorithms. Ngo et al. showed a new way to compute joins in a multiway fashion in this [paper](http://arxiv.org/abs/1203.1952). EmptyHeaded extends this line of work with novel theoretical and systems advances. Namely, in our query compiler we use a new worst-case optimal join algorithm (with stronger guarantees) that leverages [new theoretical advances for aggregate join queries](http://arxiv.org/abs/1508.07532).  We are also the first to translate this new theory into a system that leverages bit-level parallelism at several granularities within the data. Our storage engine accomplishes this through its design for SIMD parallelism.
+
+EmptyHeaded is designed to run as a python library. Behind the scenes there are three pieces of the EmptyHeaded engine.
+
+1. Query Compiler
+2. Code Generator
+3. Storage Engine
+
+The query compiler and code generator are written in Scala and the storage engine is written in C++. The query compiler accepts a datalog string and produces a generalized hypertree decomposition (GHD) which represents our query plan. The code generator takes in the GHD from the query compiler and generates C++ library calls in the storage engine. This code is then compiled and run.
+
+Installing from Source
+-----------------
+To install EmptyHeaded from source ensure that your system:
+- meets all dependencies detailed below
+- has setup the EmptyHeaded environment
+
+Dependencies
+-----------------
 
 * AVX
 * Clang 3.6 or GCC 4.9.2
@@ -66,11 +101,26 @@ https://www.threadingbuildingblocks.org/
 
 iPython Notebook provides a easy and user-friendly front-end for users to enter, compile, and run queries.
 
+Setting up Environment
+-----------------
 
-# Installing from Source
+EmptyHeaded relies on several environment variables being set.
 
-One all the dependencies above are met one can simply run `source setup.sh.` This script sets up environment variables, adds EmptyHeaded to your LD_LIBRARY_PATH, compiles the storage engine, and compiles query compiler. After executing this script you are ready to run your try your first EmptyHeaded query.
+-`EMPTYHEADED_HOME` the root directory for the EmptyHeaded project
 
-# Running Queries
+-`EMPTYHEADED_HOME/libs` must be in the library search path
 
-We demonstrate using EmptyHeaded in a example iPython notebooks. Please execute `iPython notebook` in the `EMPTYHEADED_HOME` directory and view one of our sample iPython notebooks in the `examples` directory. We are in the process of adding full support to our language but right now can only guarantee that the examples we provide run correctly right now.
+-`EMPTYHEADED_HOME/runtime` must be in the python search path
+
+The easiest way to meet all these dependencies is to run `setup.sh` provided in the root of this repository. Note: This script will set add paths to your `LD_LIBRARY_PATH` and `PYTHON_PATH`.
+
+Running Queries
+-----------------
+We provide demos of  EmptyHeaded in iPython notebooks. 
+
+We provide a tutorial of how to get started running your first EmptyHeaded query in the `examples/graph` folder. In this folder is a `Graph Tutorial` iPython notebook which can be loaded after executing `iPython notebook`
+
+Contact
+-----------------
+
+Chris Aberger
