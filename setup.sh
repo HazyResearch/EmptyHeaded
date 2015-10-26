@@ -1,5 +1,5 @@
 #!/bin/bash
-#set env variables
+#setup env variables
 export EMPTYHEADED_HOME=`pwd`
 export PYTHONPATH=$EMPTYHEADED_HOME/runtime
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
