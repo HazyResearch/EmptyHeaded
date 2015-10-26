@@ -14,7 +14,7 @@ before_install:
   - sudo apt-get install libjemalloc-dev
   - "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
 
-script: "./tests/testAll.sh"
+script: "sudo source ./tests/testAll.sh"
 
 notifications:
   email:
