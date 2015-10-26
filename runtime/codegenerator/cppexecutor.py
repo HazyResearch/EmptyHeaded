@@ -4,6 +4,7 @@ import imp
 
 def loadQuery(name):
 	fname = "queries/" + name +".so"
+	print "LOADING: " + fname
 	mod = imp.load_dynamic(name,fname)
 	return mod
 
