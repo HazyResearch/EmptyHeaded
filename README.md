@@ -38,7 +38,7 @@ Dependencies
 -----------------
 
 * AVX
-* Clang 3.6 or GCC 4.9.2
+* GCC 4.9
 * SBT 0.13.8
 * Clang-format
 * jemalloc
