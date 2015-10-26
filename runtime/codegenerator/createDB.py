@@ -28,10 +28,10 @@ def fromJSON(path,env):
 
 	libname = "loadDB"
 	os.system("cd $EMPTYHEADED_HOME/storage_engine && make clean && make emptyheaded NUM_THREADS=" + str(env.config["numThreads"]) + "&& cd -")
-	cppgenerator.compile(
+	a = cppgenerator.compile(
 		lambda: loadRelations(relations,env),
 		libname,env.config["memory"],[],"void*")
-
+	del a
 	envRelations = {}
 	for relation in relations:
 		attributes = relation["attributes"]
@@ -39,23 +39,16 @@ def fromJSON(path,env):
 		orderings = relation["orderings"]
 		if len(orderings) == 1 and orderings[0] == "all":
 			orderings = generateAllOrderings(len(attributes))
-		cppgenerator.compile(lambda: buildTrie(orderings,relation,env),
+		r = cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env),
 			"build_"+relation["name"],env.config["memory"],[],"void*")
-
+		del r
 		envRelations[relation["name"]] = { \
 			"orderings":orderings,\
 			"annotation":relation["annotation"],\
 			"attributes":relation["attributes"]}
 	env.setSchemas(envRelations)
 
-	cppgenerator.run(
-		lambda: loadRelations(relations,env),
-		libname,env.config["memory"],[],"void*")
-
 	env.toJSON(env.config["database"]+"/config.json")
-	for relation in relations:
-		cppgenerator.run(lambda: buildTrie(orderings,relation,env),
-			"build_"+relation["name"],env.config["memory"],[],"void*")
 
 	print "Created database with the following relations: "
 	for relation in relations:

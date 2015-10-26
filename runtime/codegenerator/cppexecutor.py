@@ -3,10 +3,10 @@ import code.wrappertemplate
 import imp
 
 def loadQuery(name):
+	imp.acquire_lock()
 	fname = os.path.expandvars("$EMPTYHEADED_HOME/runtime/queries/") + name +".so"
-	print "FILENAME: " + fname
-	os.system("ls " + os.path.expandvars("$EMPTYHEADED_HOME/runtime/queries/"))
 	mod = imp.load_dynamic(name,fname)
+	imp.release_lock()
 	return mod
 
 def compileQuery(name):
