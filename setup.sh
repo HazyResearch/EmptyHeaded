@@ -11,5 +11,5 @@ else
 fi
 #compiles the query compiler
 cd $EMPTYHEADED_HOME/query_compiler
-sbt start-script
+sbt assembly
 cd $EMPTYHEADED_HOME
