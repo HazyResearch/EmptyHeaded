@@ -47,37 +47,19 @@ Dependencies
 * C++11
 * Mac or Linux operating system
 
-The instructions below detail our dependencies and how to install them on a Linux machine with sudo priveledges. We for Mac's try `brew` (homebrew) instead of `apt-get`.
+The instructions below detail our dependencies and how to install them on a Linux machine with sudo priveledges. We for Mac's try `brew` (homebrew) instead of `apt-get`. A complete list of our dependencies as well as how to install them is in our `.travis.yml` file.
 
 **Why AVX?**
 
 A fundamental dependency of our system is that it is designed for machines that support the Advanced Vector Extensions (AVX) instruction set which is standard in modern and future hardware generations. Our performance is highly dependent on this instruction set being available.
 
-**Why GCC?**
+**Why iPython Notebook?**
 
-Our backend executes generated C++ code. We execute native code so that we can fully leverage the AVX instruction set.  
-
-```
-sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  
-sudo apt-get update
-sudo apt-get install g++-4.9
-```
-
-**Why SBT?**
-
-Our query compiler and code generator are written using Scala.
-
-http://www.scala-sbt.org/download.html
+iPython Notebook provides a easy and user-friendly front-end for users to enter, compile, and run queries.
 
 **Why clang-format?**
 
 EmptyHeaded generates code from a high level datalog description. Making generated code look nice is a challenging task! Clang-format is an easy solution.
-
-```
-sudo apt-get install clang-format
-```
-
-Our system is currently tested on gcc-4.9.2 but does work with other C compilers and clang. You are free to use these at your own risk. 
 
 **Why jemalloc?**
 
@@ -91,15 +73,6 @@ sudo apt-get install libjemalloc-dev
 
 Writing an effecient parallel-sort is a challenging task. Why re-invent the wheel? Use TBB.
 
-Linux: `sudo apt-get install libtbb-dev`
-
-For more information....
-
-https://www.threadingbuildingblocks.org/
-
-**Why iPython Notebook?**
-
-iPython Notebook provides a easy and user-friendly front-end for users to enter, compile, and run queries.
 
 Setting up Environment
 -----------------
