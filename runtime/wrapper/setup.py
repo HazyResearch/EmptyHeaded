@@ -10,13 +10,13 @@ if platform.uname()[0] == "Darwin":
 else:
 	clibs = ["-std=c++0x"]
 	largs = []
-	
+
+EH_PATH=os.path.expandvars("$EMPTYHEADED_HOME")
 # the c++ extension module
 extension_mod = Extension("emptyheaded",["querywrapper.cpp"],
-	include_dirs = ["../../storage_engine/codegen","../../storage_engine/src"],
-    library_dirs=["../../libs"],
+	include_dirs = [EH_PATH+"/storage_engine/codegen",EH_PATH+"/storage_engine/src"],
+    library_dirs=[EH_PATH+"/libs"],
     libraries=[lib],
-    #extra_compile_args = ["-std=c++11"],
     extra_compile_args = clibs,
     extra_link_args = largs,
     )
