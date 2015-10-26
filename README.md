@@ -85,7 +85,7 @@ EmptyHeaded relies on several environment variables being set.
 
 -`EMPTYHEADED_HOME/runtime` must be in the python search path
 
-The easiest way to meet all these dependencies is to run `setup.sh` provided in the root of this repository. Note: This script will set add paths to your `LD_LIBRARY_PATH` and `PYTHON_PATH`.
+The easiest way to meet all these dependencies is to run `source setup.sh` provided in the root of this repository. Note: This script will set add paths to your `LD_LIBRARY_PATH` and `PYTHON_PATH`.
 
 Running Queries
 -----------------
