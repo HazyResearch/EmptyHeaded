@@ -18,6 +18,9 @@ Overview
 
 Installing from Source
 -----------------
+To install EmptyHeaded from source ensure that your system:
+- meets all dependencies detailed below
+- has setup the EmptyHeaded environment
 
 Dependencies
 -----------------
@@ -89,7 +92,13 @@ iPython Notebook provides a easy and user-friendly front-end for users to enter,
 Setting up Environment
 -----------------
 
-One all the dependencies above are met one can simply run `source setup.sh.` This script sets up environment variables, adds EmptyHeaded to your LD_LIBRARY_PATH, compiles the storage engine, and compiles query compiler. After executing this script you are ready to run your try your first EmptyHeaded query.
+EmptyHeaded relies on several environment variables being set.
+
+-`EMPTYHEADED_HOME` the root directory for the EmptyHeaded project
+-`EMPTYHEADED_HOME/libs` must be in the library search path
+-`EMPTYHEADED_HOME/runtime` must be in the python search path
+
+The easiest way to meet all these dependencies is to run `setup.sh` provided in the root of this repository. Note: This script will set add paths to your `LD_LIBRARY_PATH` and `PYTHON_PATH`.
 
 Running Queries
 -----------------
