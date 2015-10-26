@@ -3,18 +3,18 @@ import code.wrappertemplate
 import imp
 
 def loadQuery(name):
-	fname = "queries/" + name +".so"
-	print "LOADING: " + fname
+	fname = os.path.expandvars("$EMPTYHEADED_HOME/runtime/queries/") + name +".so"
 	mod = imp.load_dynamic(name,fname)
 	return mod
 
 def compileQuery(name):
-	os.chdir("wrapper")
+	mydir=os.getcwd()
+	os.chdir(os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper"))
 	os.system("./build.sh " + name + ">/dev/null")
-	os.chdir("..")
+	os.chdir(mydir)
 
 def execute(name,mem,types,annotationType):
-	wrapperfile = open("wrapper/querywrapper.cpp","w")
+	wrapperfile = open(os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"),"w")
 	wrapperfile.write(code.wrappertemplate.getCode(name,mem,types,annotationType))
 	wrapperfile.close()
 
@@ -25,7 +25,7 @@ def execute(name,mem,types,annotationType):
 	return (q,q_result)
 
 def compile(name,mem,types,annotationType):
-	wrapperfile = open("wrapper/querywrapper.cpp","w")
+	wrapperfile = open(os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"),"w")
 	wrapperfile.write(code.wrappertemplate.getCode(name,mem,types,annotationType))
 	wrapperfile.close()
 	compileQuery(name)
