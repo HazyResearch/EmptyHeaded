@@ -7,8 +7,9 @@ Table of Contents
 -----------------
 
   * [Overview](#overview)  
-  * [Dependencies](#dependencies)  
+  * [Dependencies](#dependencies)
   * [Installing from Source](#installing-from-source)
+  * [Running Queries](#running-queries)
   * [Contact](#contact)
 
 Overview
@@ -87,8 +88,8 @@ Installing from Source
 
 One all the dependencies above are met one can simply run `source setup.sh.` This script sets up environment variables, adds EmptyHeaded to your LD_LIBRARY_PATH, compiles the storage engine, and compiles query compiler. After executing this script you are ready to run your try your first EmptyHeaded query.
 
-# Running Queries
-
+Running Queries
+-----------------
 We demonstrate using EmptyHeaded in a example iPython notebooks. Please execute `iPython notebook` in the `EMPTYHEADED_HOME` directory and view one of our sample iPython notebooks in the `examples` directory. We are in the process of adding full support to our language but right now can only guarantee that the examples we provide run correctly right now.
 
 Overview
