@@ -27,7 +27,13 @@ endif
 ifdef CLANG
 	CXX = clang++
 else 
-	CXX = g++-4.9
+  	UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+		CXX = g++-4.9
+    endif
+    ifeq ($(UNAME_S),Darwin)
+		CXX = g++
+    endif
 endif
 
 ifdef NUM_THREADS
