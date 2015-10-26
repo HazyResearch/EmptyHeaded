@@ -47,7 +47,7 @@ Dependencies
 * C++11
 * Mac or Linux operating system
 
-The instructions below detail our dependencies and how to install them on a Linux machine with sudo priveledges. We for Mac's try `brew` (homebrew) instead of `apt-get`. A complete list of our dependencies as well as how to install them is in our `.travis.yml` file.
+The instructions below detail our dependencies and how to install them on a Linux machine with sudo privileges. For Macs try `brew` (homebrew) instead of `apt-get`. A complete list of our dependencies as well as how to install them is in our `.travis.yml` file.
 
 **Why AVX?**
 
@@ -71,7 +71,7 @@ sudo apt-get install libjemalloc-dev
 
 **Why TBB?**
 
-Writing an effecient parallel-sort is a challenging task. Why re-invent the wheel? Use TBB.
+Writing an efficient parallel-sort is a challenging task. Why re-invent the wheel? Use TBB.
 
 
 Setting up Environment
@@ -89,7 +89,7 @@ The easiest way to meet all these dependencies is to run `source setup.sh` provi
 
 Running Queries
 -----------------
-We provide demos of  EmptyHeaded in iPython notebooks. 
+We provide demos of EmptyHeaded in iPython notebooks. 
 
 We provide a tutorial of how to get started running your first EmptyHeaded query in the `examples/graph` folder. In this folder is a `Graph Tutorial` iPython notebook which can be loaded after executing `iPython notebook`
 
