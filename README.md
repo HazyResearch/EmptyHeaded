@@ -40,7 +40,7 @@ Dependencies
 -----------------
 
 * AVX
-* GCC 4.9
+* GCC 4.9 (Linux) or Clang (Mac)
 * SBT 0.13.8
 * Clang-format
 * jemalloc
@@ -50,6 +50,8 @@ Dependencies
 * Mac or Linux operating system
 
 The instructions below detail our dependencies and how to install them on a Linux machine with sudo privileges. For Macs try `brew` (homebrew) instead of `apt-get`. A complete list of our dependencies as well as how to install them is in our `.travis.yml` file.
+
+We support Mac and Linux operating systems. If you are running on a Mac you must use the default Clang installation. If you are running on a Linux machine we support GCC v4.9. 
 
 **Why AVX?**
 
