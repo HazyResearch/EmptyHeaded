@@ -12,7 +12,7 @@ def loadQuery(name):
 def compileQuery(name):
 	mydir=os.getcwd()
 	os.chdir(os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper"))
-	os.system("./build.sh Query_" + name) #+ ">/dev/null")
+	os.system("./build.sh Query_" + name + " >/dev/null")
 	os.chdir(mydir)
 
 def execute(name,mem,types,annotationType):
