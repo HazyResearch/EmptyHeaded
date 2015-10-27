@@ -13,7 +13,7 @@ def main():
 	if numRows != 1612010L:
 		raise ResultError("NUMBER OF ROWS INCORRECT: " + str(numRows))
 	row0 = emptyheaded.fetchData("Triangle")[0]
-	if row0 != (0l,0l,0l): #(6l,5l,2l)
+	if row0 != (6l,5l,2l): #(6l,5l,2l)
 		raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 if __name__ == "__main__": main()
