@@ -1,5 +1,5 @@
-#ifndef _QUERY_H_
-#define _QUERY_H_
+#ifndef _QUERY_HASHSTRING_H_
+#define _QUERY_HASHSTRING_H_
 
 #include <vector>
 #include <stdint.h>
@@ -17,17 +17,16 @@ struct ParMMapBuffer;
 struct ParMemoryBuffer;
 
 //template types are the types of the attributes, followed by the type of the annotation
-struct Query : public application {
-  void* result;
+struct Query_HASHSTRING : public application {
+  void* result_HASHSTRING;
 
-	Query();
-	void run();
-  void fetch_result(); //TO DO implement something that iterates over the trie an returns the tuples
+	Query_HASHSTRING(){}
+	void run_HASHSTRING();
 };
 
 #ifdef EXECUTABLE
 application* init_app(){
-  return new Query(); 
+  return new Query_HASHSTRING(); 
 }
 #endif
 

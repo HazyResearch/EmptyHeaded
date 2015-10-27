@@ -3,6 +3,8 @@ EmptyHeaded v. 0.1
 
 <img src="docs/figs/eh_logo.png" height="200" >
 
+[![Build Status](https://magnum.travis-ci.com/HazyResearch/EmptyHeaded.svg?token=yLhGdySP4WB8z4ntVs3S&branch=master)](https://magnum.travis-ci.com/HazyResearch/EmptyHeaded)
+
 Table of Contents
 -----------------
 
@@ -38,7 +40,7 @@ Dependencies
 -----------------
 
 * AVX
-* GCC 4.9
+* GCC 4.9 (Linux) or Clang (Mac)
 * SBT 0.13.8
 * Clang-format
 * jemalloc
@@ -48,6 +50,8 @@ Dependencies
 * Mac or Linux operating system
 
 The instructions below detail our dependencies and how to install them on a Linux machine with sudo privileges. For Macs try `brew` (homebrew) instead of `apt-get`. A complete list of our dependencies as well as how to install them is in our `.travis.yml` file.
+
+We support Mac and Linux operating systems. If you are running on a Mac you must use the default Clang installation. If you are running on a Linux machine we support GCC v4.9. 
 
 **Why AVX?**
 
@@ -77,15 +81,13 @@ Writing an efficient parallel-sort is a challenging task. Why re-invent the whee
 Setting up Environment
 -----------------
 
-EmptyHeaded relies on several environment variables being set.
+EmptyHeaded relies on two environment variables being set.
 
 -`EMPTYHEADED_HOME` the root directory for the EmptyHeaded project
 
--`EMPTYHEADED_HOME/libs` must be in the library search path
-
 -`EMPTYHEADED_HOME/runtime` must be in the python search path
 
-The easiest way to meet all these dependencies is to run `source setup.sh` provided in the root of this repository. Note: This script will set add paths to your `LD_LIBRARY_PATH` and `PYTHON_PATH`.
+The easiest way to meet these dependencies is to run `source setup.sh` provided in the root of this repository. Note: This script will set the `PYTHON_PATH` variable.
 
 Running Queries
 -----------------

@@ -37,14 +37,16 @@ void Trie<A,M>::save(){
 
 template<class A,class M>
 Trie<A,M>* Trie<A,M>::load(std::string path){
-  Trie<A,M>* ret = new Trie<A,M>();
+  bool annotated_in;
+  size_t num_rows;
+  size_t num_columns;
 
   std::ifstream *infile = new std::ifstream();
   std::string file = path+M::folder+std::string("trieinfo.bin");
   infile->open(file, std::ios::binary | std::ios::in);
-  infile->read((char *)&ret->annotated, sizeof(ret->annotated));
-  infile->read((char *)&ret->num_rows, sizeof(ret->num_rows));
-  infile->read((char *)&ret->num_columns, sizeof(ret->num_columns));
+  infile->read((char *)&annotated_in, sizeof(annotated_in));
+  infile->read((char *)&num_rows, sizeof(num_rows));
+  infile->read((char *)&num_columns, sizeof(num_columns));
 
   size_t w_n_threads;
   infile->read((char *)&w_n_threads, sizeof(w_n_threads));
@@ -61,9 +63,9 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
   infile->close();
 
   //init memory buffers
-  ret->memoryBuffers = M::load(path,w_n_threads,&buf_sizes);
+  M* memoryBuffers_in = M::load(path,w_n_threads,&buf_sizes);
 
-  return ret;
+  return new Trie<A,M>(annotated_in,num_rows,num_columns,memoryBuffers_in);
 }
 
 

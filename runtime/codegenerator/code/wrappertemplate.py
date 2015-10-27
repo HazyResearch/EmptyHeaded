@@ -1,4 +1,4 @@
-def getCode(name,mem,types,annotationType):
+def getCode(hashstring,mem,types,annotationType):
 	t_len = len(types)
 	code = """
 #include "querywrapper.hpp"
@@ -6,47 +6,47 @@ def getCode(name,mem,types,annotationType):
 
 //this is what is code generated
 
-static void free_my_struct(void * p)
+static void free_my_struct_%(hashstring)s(void * p)
 {
-  free((Query*)p);
+  free((Query_%(hashstring)s*)p);
 }
 
-static PyObject * run(PyObject * self, PyObject * args)
+static PyObject * run_%(hashstring)s(PyObject * self, PyObject * args)
 {
   if (!PyArg_ParseTuple(args, "")) {
     return NULL;
   }
 
-  Query* q = new Query();
-  q->run();
+  Query_%(hashstring)s* q = new Query_%(hashstring)s();
+  q->run_%(hashstring)s();
 
-  return PyCObject_FromVoidPtr(q, free_my_struct);
+  return PyCObject_FromVoidPtr(q, free_my_struct_%(hashstring)s);
 }
 
-static PyObject * num_rows(PyObject * self, PyObject * args){
+static PyObject * num_rows_%(hashstring)s(PyObject * self, PyObject * args){
   PyObject * p;
 
   if (!PyArg_ParseTuple(args, "O", &p)) {
     return NULL;
   }
 
-  Query* q = (Query*)PyCObject_AsVoidPtr(p); 
-  Trie<%(annotationType)s,%(mem)s>* result = (Trie<%(annotationType)s,%(mem)s>*) q->result;
+  Query_%(hashstring)s* q = (Query_%(hashstring)s*)PyCObject_AsVoidPtr(p); 
+  Trie<%(annotationType)s,%(mem)s>* result = (Trie<%(annotationType)s,%(mem)s>*) q->result_%(hashstring)s;
   PyObject * key_1_o = PyLong_FromLong(result->num_rows);
 
   Py_INCREF(key_1_o);
   return key_1_o;
 }
 
-static PyObject * fetch_data(PyObject * self, PyObject * args){
+static PyObject * fetch_data_%(hashstring)s(PyObject * self, PyObject * args){
   PyObject * p;
 
   if (!PyArg_ParseTuple(args, "O", &p)) {
     return NULL;
   }
 
-  Query* q = (Query*)PyCObject_AsVoidPtr(p);
-  Trie<%(annotationType)s,%(mem)s>* result = (Trie<%(annotationType)s,%(mem)s>*) q->result;
+  Query_%(hashstring)s* q = (Query_%(hashstring)s*)PyCObject_AsVoidPtr(p);
+  Trie<%(annotationType)s,%(mem)s>* result = (Trie<%(annotationType)s,%(mem)s>*) q->result_%(hashstring)s;
   std::vector<void*> encodings = result->encodings;
   PyObject *retTable = PyList_New(0);
   (void) encodings;
@@ -71,8 +71,8 @@ static PyObject * fetch_data(PyObject * self, PyObject * args){
   return retTable;
 }
 
-PyMODINIT_FUNC init%(name)s(void)
+PyMODINIT_FUNC initQuery_%(hashstring)s(void)
 {
-  Py_InitModule("%(name)s", EmptyHeadedQueryMethods);
+  Py_InitModule("Query_%(hashstring)s", EmptyHeadedQueryMethods);
 }"""% locals()
 	return code

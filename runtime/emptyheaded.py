@@ -7,22 +7,30 @@ import codegenerator.cppgenerator as cppgenerator
 import codegenerator.cppexecutor as cppexecutor
 import os
 
+hashindex = 0
 environment = codegenerator.env.Environment()
 
 QUERY_COMPILER_JAR = "target/scala-2.11/query_compiler-assembly-0.1-SNAPSHOT.jar"
 
 def query(datalog_string):
+  global hashindex
   qcpath = os.path.expandvars("$EMPTYHEADED_HOME")+"/query_compiler/"
   mydir=os.getcwd()
   os.chdir(qcpath)
   subprocess.Popen("java -jar %s  -c %s/config.json \"%s\"" % (QUERY_COMPILER_JAR, environment.config["database"],datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
   os.chdir(mydir)
   environment.fromJSON(environment.config["database"]+"/config.json")
-  cppgenerator.compileC("Query")
+  
+  cppgenerator.compileC(str(hashindex))
   schema = environment.schemas[environment.config["resultName"]]
   eTypes = map(lambda i:str(schema["attributes"][i]["attrType"]),environment.config["resultOrdering"])
-  result = cppexecutor.execute("Query",environment.config["memory"],eTypes,schema["annotation"])
-  environment.liverelations[environment.config["resultName"]] = result
+  result = cppexecutor.execute(str(hashindex),environment.config["memory"],eTypes,schema["annotation"])
+  relationResult = {}
+  relationResult["query"] = result[0]
+  relationResult["trie"] = result[1]
+  relationResult["hash"] = hashindex
+  environment.liverelations[environment.config["resultName"]] = relationResult
+  hashindex += 1
 
 def compileQuery(datalog_string):
   print subprocess.Popen("target/start DunceCap.QueryPlanner %s \"%s\"" % (QUERY_COMPILER_CONFIG_DIR, datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
@@ -34,13 +42,15 @@ def createDB(name):
 
 def fetchData(relation):
 	if relation in environment.liverelations:
-		return environment.liverelations[relation][0].fetch_data(environment.liverelations[relation][1])
+		query = environment.liverelations[relation]
+		return eval("""query["query"].fetch_data_"""+str(query["hash"])+"""(query["trie"])""")	
 	else:
   		return codegenerator.fetchRelation.fetch(relation,environment)
 
 def numRows(relation):
 	if relation in environment.liverelations:
-		return environment.liverelations[relation][0].num_rows(environment.liverelations[relation][1])
+		query = environment.liverelations[relation]
+		return eval("""query["query"].num_rows_"""+str(query["hash"])+"""(query["trie"])""")
 	else:
   		return codegenerator.fetchRelation.numRows(relation,environment)
 

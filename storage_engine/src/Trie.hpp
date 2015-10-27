@@ -28,7 +28,13 @@ struct Trie{
   std::vector<void*> encodings;
   //A annotation = (A)0;
 
-  Trie<A,M>(){};
+  Trie<A,M>(){}
+  Trie<A,M>(bool annotated_in, size_t num_rows_in, size_t num_columns_in, M* buf_in){
+    annotated = annotated_in;
+    num_rows = num_rows_in;
+    num_columns = num_columns_in;
+    memoryBuffers = buf_in;
+  };
 
   Trie<A,M>(std::string path, size_t num_columns_in, bool annotated_in){
     annotated = annotated_in;
@@ -42,9 +48,7 @@ struct Trie{
     std::vector<std::vector<uint32_t> >* attr_in, 
     std::vector<A>* annotation);
 
-  ~Trie<A,M>(){
-    delete memoryBuffers;
-  };
+  ~Trie<A,M>(){};
 
   void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
   void save();
