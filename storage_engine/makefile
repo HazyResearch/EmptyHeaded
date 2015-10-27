@@ -30,7 +30,7 @@ ifeq ($(UNAME_S),Linux)
 CXX = g++-4.9
 endif
 ifeq ($(UNAME_S),Darwin)
-CXX = clang
+CXX = clang++
 override LINKERARGS=
 endif
 
