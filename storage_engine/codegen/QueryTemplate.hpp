@@ -22,7 +22,6 @@ struct Query_HASHSTRING : public application {
 
 	Query_HASHSTRING(){}
 	void run_HASHSTRING();
-  void fetch_result_HASHSTRING(); //TO DO implement something that iterates over the trie an returns the tuples
 };
 
 #ifdef EXECUTABLE

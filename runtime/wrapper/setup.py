@@ -8,10 +8,9 @@ lib = sys.argv.pop(len(sys.argv)-1)
 if platform.uname()[0] == "Darwin":
 	clibs = ["-arch","x86_64","-std=c++0x"]
 	largs = ["-arch","x86_64"]
-	largs += ["-L"+EH_PATH+"/runtime/queries/","-L"+EH_PATH+"/storage_engine/libs/"]
 else:
 	clibs = ["-std=c++0x"]
-	largs = ["-Wl,-rpath="+EH_PATH+"/runtime/queries"]
+	largs = ["-Wl,-rpath="+EH_PATH+"/runtime/queries","-Wl,--Bshareable"]
 
 # the c++ extension module
 extension_mod = Extension("emptyheaded",["querywrapper.cpp"],

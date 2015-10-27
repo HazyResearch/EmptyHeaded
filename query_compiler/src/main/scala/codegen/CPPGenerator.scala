@@ -43,7 +43,7 @@ object CPPGenerator {
     Environment.config.resultOrdering = ghd.output.ordering
     Environment.toJSON()
 
-    val cppFilepath = sys.env("EMPTYHEADED_HOME")+"/storage_engine/generated/Query.cpp"
+    val cppFilepath = sys.env("EMPTYHEADED_HOME")+"/storage_engine/codegen/Query.cpp"
     val file = new File(cppFilepath)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(cpp.toString)
@@ -59,7 +59,7 @@ object CPPGenerator {
 
   def getCode(includes:StringBuilder,run:StringBuilder) : String ={
     return s"""
-      #include "../codegen/Query.hpp"
+      #include "Query_HASHSTRING.hpp"
       #include "utils/thread_pool.hpp"
       #include "utils/parallel.hpp"
       #include "Trie.hpp"
@@ -70,11 +70,8 @@ object CPPGenerator {
       #include "Encoding.hpp"
       ${includes.toString}
 
-      Query::Query(){
+      void Query_HASHSTRING::run_HASHSTRING(){
         thread_pool::initializeThreadPool();
-      }
-
-      void Query::run(){
         ${run.toString}
         thread_pool::deleteThreadPool();
       }
@@ -142,7 +139,7 @@ object CPPGenerator {
     val code = new StringBuilder()
 
     code.append(s"""
-      result = (void*) Trie_${output.name};
+      result_HASHSTRING = (void*) Trie_${output.name};
       std::cout << "NUMBER OF ROWS: " << Trie_${output.name}->num_rows << std::endl;
       timer::stop_clock("QUERY TIME", query_timer);
     """)
