@@ -46,7 +46,9 @@ class DatabaseConfigExtractorTest extends FunSuite {
       |      ],
       |      "annotation": "void*"
       |    }
-      |  }
+      |  },
+      |  "resultName" : "blah",
+      |  "resultOrdering": [0,1,2]
       |}
     """.stripMargin
 
@@ -61,7 +63,9 @@ class DatabaseConfigExtractorTest extends FunSuite {
         ("R",
           new Schema(List[Attribute](
             new Attribute("long","node"),
-            new Attribute("long","node")), List[List[Int]](List[Int](0,1), List[Int](1,0)), "void*")))
+            new Attribute("long","node")), List[List[Int]](List[Int](0,1), List[Int](1,0)), "void*"))),
+      "blah",
+      List[Int](0,1,2)
     ))(config)
   }
 }

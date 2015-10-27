@@ -9,7 +9,7 @@ import java.io.{FileOutputStream, PrintStream, File}
 
 case class Config(directory: Option[String] = None,
                   dbConfig:String = "",
-                  useGHD:Boolean = true,
+                  nprrOnly:Boolean = false,
                   readQueryFromFile:Boolean = false,
                   query:String = "",
                   explain:Boolean = false)
@@ -29,8 +29,8 @@ object QueryCompiler {
         c.copy(directory = Some(x))} text("directory within EMPTYHEADED_HOME to write json output, by default prints to stdout when running just planner")
       opt[String]('c', "db-config") required() valueName("<file>") action { (x, c) =>
         c.copy(dbConfig = x)} text("database config file")
-      opt[Boolean]('g', "use-ghd") action { (x, c) =>
-        c.copy(useGHD = x)} text("whether to use GHD, defaults to true (TODO)")
+      opt[Unit]('n', "nprr-only") action { (_, c) =>
+        c.copy(nprrOnly = true)} text("whether to use only NPRR (single bag GHD), defaults to false")
       opt[Unit]('f', "read-query-from-file") action { (_, c) =>
         c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
       arg[String]("<query>") action { (x, c) =>
@@ -46,7 +46,7 @@ object QueryCompiler {
           config.query
         }
         
-      val queryPlan = DCParser.run(queryString)
+      val queryPlan = DCParser.run(queryString, config.nprrOnly)
 
       val output = config.directory.map(dir => {
         Some(new PrintStream(new FileOutputStream(

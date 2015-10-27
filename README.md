@@ -3,6 +3,8 @@ EmptyHeaded v. 0.1
 
 <img src="docs/figs/eh_logo.png" height="200" >
 
+[![Build Status](https://magnum.travis-ci.com/HazyResearch/EmptyHeaded.svg?token=yLhGdySP4WB8z4ntVs3S&branch=master)](https://magnum.travis-ci.com/HazyResearch/EmptyHeaded)
+
 Table of Contents
 -----------------
 
@@ -77,15 +79,13 @@ Writing an efficient parallel-sort is a challenging task. Why re-invent the whee
 Setting up Environment
 -----------------
 
-EmptyHeaded relies on several environment variables being set.
+EmptyHeaded relies on two environment variables being set.
 
 -`EMPTYHEADED_HOME` the root directory for the EmptyHeaded project
 
--`EMPTYHEADED_HOME/libs` must be in the library search path
-
 -`EMPTYHEADED_HOME/runtime` must be in the python search path
 
-The easiest way to meet all these dependencies is to run `source setup.sh` provided in the root of this repository. Note: This script will set add paths to your `LD_LIBRARY_PATH` and `PYTHON_PATH`.
+The easiest way to meet these dependencies is to run `source setup.sh` provided in the root of this repository. Note: This script will set the `PYTHON_PATH` variable.
 
 Running Queries
 -----------------
