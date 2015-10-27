@@ -24,16 +24,14 @@ ifdef NUM_THREADS
 	override CXXFLAGS += -DNUM_THREADS_IN=$(NUM_THREADS)
 endif
 
-ifdef CLANG
-	CXX = clang++
-else 
-  	UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Linux)
-		CXX = g++-4.9
-    endif
-    ifeq ($(UNAME_S),Darwin)
-		CXX = g++
-    endif
+LINKERARGS=-Wl,-rpath=$(EMPTYHEADED_HOME)/storage_engine/libs
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+CXX = g++-4.9
+endif
+ifeq ($(UNAME_S),Darwin)
+CXX = clang
+override LINKERARGS=
 endif
 
 ifdef NUM_THREADS
@@ -74,7 +72,7 @@ $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
 
 $(CODEGEN):
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(OBJDIR)/$(@).o -c generated/$(@).cpp -Isrc
-	$(CXX) -shared -o $(EMPTYHEADED_HOME)/runtime/queries/lib$(@).so $(OBJDIR)/$(@).o -L$(EMPTYHEADED_HOME)/storage_engine/libs -lemptyheaded $(LIBS)
+	$(CXX) -shared $(LINKERARGS) -o $(EMPTYHEADED_HOME)/runtime/queries/lib$(@).so $(OBJDIR)/$(@).o -L$(EMPTYHEADED_HOME)/storage_engine/libs/ -lemptyheaded $(LIBS)
 
 emptyheaded: $(OBJDIR) $(OBJECTS) libdir
 	$(CXX) -shared -o $(EMPTYHEADED_HOME)/storage_engine/libs/lib$(@).so $(OBJECTS) $(LIBS)

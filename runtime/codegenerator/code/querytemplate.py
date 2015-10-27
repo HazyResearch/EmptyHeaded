@@ -1,15 +1,12 @@
-def getCode(includes,run):
+def getCode(includes,run,hashstring):
 	return """
-#include "../codegen/Query.hpp"
+#include "Query_%(hashstring)s.hpp"
 #include <iostream>
 
 %(includes)s
 
-Query::Query(){
+void Query_%(hashstring)s::run_%(hashstring)s(){
   thread_pool::initializeThreadPool();
-}
-
-void Query::run(){
   %(run)s
   thread_pool::deleteThreadPool();
 }

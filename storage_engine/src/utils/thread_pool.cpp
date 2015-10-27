@@ -135,14 +135,8 @@ void* killThread(void *args_in){
 
 void thread_pool::deleteThreadPool() {
   for(size_t k = 0; k < NUM_THREADS; k++) { 
-    //submitWork(k,killThread,(void *)NULL);
+    submitWork(k,killThread,(void *)NULL);
   }
-  delete[] threadPool;
-  delete[] locks;
-  delete[] readyConds;
-  delete[] doneConds;
-  delete[] workPool;
-  delete[] argPool;
 }
 
 template void* thread_pool::general_body<par::staticParFor>(void*);

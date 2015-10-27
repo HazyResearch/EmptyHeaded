@@ -29,7 +29,7 @@ def fromJSON(path,env):
 	libname = "loadDB"
 	os.system("cd $EMPTYHEADED_HOME/storage_engine && make clean && make emptyheaded NUM_THREADS=" + str(env.config["numThreads"]) + "&& cd -")
 	a = cppgenerator.compileAndRun(
-		lambda: loadRelations(relations,env),
+		lambda: loadRelations(relations,env,libname),
 		libname,env.config["memory"],[],"void*")
 	del a
 	envRelations = {}
@@ -39,7 +39,7 @@ def fromJSON(path,env):
 		orderings = relation["orderings"]
 		if len(orderings) == 1 and orderings[0] == "all":
 			orderings = generateAllOrderings(len(attributes))
-		r = cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env),
+		r = cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env,"build_"+relation["name"]),
 			"build_"+relation["name"],env.config["memory"],[],"void*")
 		del r
 		envRelations[relation["name"]] = { \
@@ -93,12 +93,12 @@ def loadRelationCode(relations,env):
 			relation["annotation"])
 	return codeString
 
-def loadRelations(relations,env):
+def loadRelations(relations,env,hashstring):
 	include = """#include "emptyheaded.hpp" """
 	runCode = loadRelationCode(relations,env)
-	return code.querytemplate.getCode(include,runCode)
+	return code.querytemplate.getCode(include,runCode,hashstring)
 
-def buildTrie(orderings,relation,env):
+def buildTrie(orderings,relation,env,hashstring):
 	include = """#include "emptyheaded.hpp" """
 	codeString = code.build.loadEncodedRelation(env.config["database"],relation["name"])
 
@@ -118,4 +118,4 @@ def buildTrie(orderings,relation,env):
 			relation["annotation"],
 			env.config["memory"])
 	env.setRelations(envRelations)
-	return code.querytemplate.getCode(include,codeString)
+	return code.querytemplate.getCode(include,codeString,hashstring)
