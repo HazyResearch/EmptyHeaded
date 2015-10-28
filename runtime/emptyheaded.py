@@ -10,7 +10,7 @@ import os
 hashindex = 0
 environment = codegenerator.env.Environment()
 
-QUERY_COMPILER_RUN_SCRIPT = "target/pack/bin/query-compiler""
+QUERY_COMPILER_RUN_SCRIPT = "target/pack/bin/query-compiler"
 
 def query(datalog_string):
   global hashindex
