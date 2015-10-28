@@ -1,7 +1,3 @@
-import com.typesafe.sbt.SbtStartScript
-
-seq(SbtStartScript.startScriptForClassesSettings: _*)
-
 resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 
 name := "query_compiler"
@@ -12,6 +8,8 @@ scalaVersion := "2.11.2"
 mainClass := Some("DunceCap.QueryCompiler")
 
 publishTo := Some(Resolver.file("file",  new File( "exec" )) )
+
+packAutoSettings
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-compiler" % "2.11.2",

@@ -2,7 +2,6 @@ package DunceCap
 
 import scala.util.parsing.json._
 import scala.io._
-import java.nio.file.{Paths, Files}
 import java.io.{FileWriter, File, BufferedWriter}
 import sys.process._
 import scala.collection.mutable
