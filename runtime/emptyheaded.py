@@ -6,19 +6,23 @@ import subprocess
 import codegenerator.cppgenerator as cppgenerator
 import codegenerator.cppexecutor as cppexecutor
 import os
+import re
 
 hashindex = 0
 environment = codegenerator.env.Environment()
+
 
 def query(datalog_string):
   global hashindex
   qcpath = os.path.expandvars("$EMPTYHEADED_HOME")+"/query_compiler/"
   mydir=os.getcwd()
   os.chdir(qcpath)
-  subprocess.Popen("target/start -c %s/config.json \"%s\"" % (environment.config["database"],datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
+  QUERY_COMPILER_RUN_SCRIPT = os.path.expandvars("$EMPTYHEADED_HOME")+"/query_compiler/target/pack/bin/query-compiler"
+  command = QUERY_COMPILER_RUN_SCRIPT+" -c "+environment.config["database"]+"/config.json \""+ re.escape(datalog_string) + "\""
+  print command
+  os.system(command)  
   os.chdir(mydir)
   environment.fromJSON(environment.config["database"]+"/config.json")
-  
   cppgenerator.compileC(str(hashindex))
   schema = environment.schemas[environment.config["resultName"]]
   eTypes = map(lambda i:str(schema["attributes"][i]["attrType"]),environment.config["resultOrdering"])
