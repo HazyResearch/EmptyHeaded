@@ -1,7 +1,8 @@
 package DunceCap
 
+import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
+
 import scala.collection.mutable
-import java.io.{FileWriter, BufferedWriter, File}
 
 object GHDSolver {
   def getAttrSet(rels: List[QueryRelation]): Set[String] = {
@@ -24,9 +25,22 @@ object GHDSolver {
     bottom_up(mutable.LinkedHashSet[GHDNode](curr), curr, curr, fn)
   }
 
-  private def get_attribute_ordering(seen: mutable.Set[GHDNode], f_in:mutable.Set[GHDNode],resultAttrs:List[String]): List[String] = {
-    //Runs a BFS, adds attributes in that order with the special condition that those attributes
-    //that also exist in the children are added first, we also sort by the frequency of the attribute
+  /**
+   * Partition attrNames into attrs with equality selection, then attrs without
+   * keeping the ordering between attrs with equality selection,
+   * keeping the ordering and between attrs without
+   */
+  def partition_equality_selected(attrNames:List[Attr],
+                                  attrInfo:List[(Attr, SelectionOp, SelectionVal)]): List[Attr] = {
+    val attrsWithEqualitySelection = attrInfo.filter(info => info._2 == "=").unzip3._1.toSet
+    val (attrsWithEqSelect, attrsWithoutEqSelect) = attrNames.partition(
+      attrName => attrsWithEqualitySelection.contains(attrName))
+    attrsWithEqSelect:::attrsWithoutEqSelect
+  }
+
+  def get_attribute_ordering(seen: mutable.Set[GHDNode],
+                                     f_in:mutable.Set[GHDNode],
+                                     resultAttrs:List[String]): List[String] = {
     var depth = 0
     var frontier = f_in
     var next_frontier = mutable.Set[GHDNode]()
@@ -53,7 +67,8 @@ object GHDSolver {
         }
       }
 
-      //put those in the result first 
+      //put those in the result first
+      // materialized attrs first, in the order that they're in the materialized result
       val cur_attrs_sorted = level_attr.sortBy(e => if(resultAttrs.contains(e)) resultAttrs.indexOf(e) else resultAttrs.size+1).sorted
       cur_attrs_sorted.foreach{ a =>
         if(!attr.contains(a)){
@@ -94,8 +109,9 @@ object GHDSolver {
     return (depth,seen.size)
   }
 
-  def getAttributeOrdering(myghd:GHDNode, resultAttrs:List[String]) : List[String] ={
-    return get_attribute_ordering(mutable.LinkedHashSet[GHDNode](myghd),mutable.LinkedHashSet[GHDNode](myghd),resultAttrs)
+  def getAttributeOrdering(myghd:GHDNode, queryRelations: List[QueryRelation], resultAttrs:List[String]) : List[String] ={
+    val ordering = get_attribute_ordering(mutable.LinkedHashSet[GHDNode](myghd),mutable.LinkedHashSet[GHDNode](myghd),resultAttrs)
+    partition_equality_selected(ordering, queryRelations.flatMap(queryRelation => queryRelation.attrs))
   }
 
   private def getConnectedComponents(rels: mutable.Set[QueryRelation], comps: List[List[QueryRelation]], ignoreAttrs: Set[String]): List[List[QueryRelation]] = {

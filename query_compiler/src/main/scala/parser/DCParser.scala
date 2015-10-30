@@ -1,7 +1,5 @@
 package DunceCap
 
-import java.io.{PrintStream, FileWriter, BufferedWriter, File}
-
 import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
 
 import scala.collection.immutable.List
