@@ -19,7 +19,23 @@ class AttributeOrderingTest extends FunSuite {
     assertResult(List[Attr]("x", "y", "z", "a", "b", "c"))(partitioned)
   }
 
-  test("Can order attributes, taking into account GHD structure, what's materialized, and what's equality-selected") {
-    // TODO
+  test("Can order attributes, taking into account GHD structure and what's equality-selected") {
+    val rootBag = new GHDNode(List(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List[Attr]("a", "b")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List[Attr]("b", "c")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List[Attr]("c", "a"))))
+    val child1 = new GHDNode(List(
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List[Attr]("a"), List[Attr]("x"))))
+    val child2 = new GHDNode(List(
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List[Attr]("b"), List[Attr]("y"))))
+    val child3 = new GHDNode(List(
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List[Attr]("c"), List[Attr]("z"))))
+    rootBag.children = List(child1, child2, child3)
+
+    val ordering = GHDSolver.getAttributeOrdering(
+      rootBag,
+      rootBag.rels:::child1.rels:::child2.rels:::child3.rels)
+
+    assertResult(List[Attr]("x", "y", "z", "a", "b", "c"))(ordering)
   }
 }

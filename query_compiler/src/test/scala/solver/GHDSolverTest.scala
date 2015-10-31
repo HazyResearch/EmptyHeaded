@@ -4,15 +4,26 @@ import org.scalatest.FunSuite
 
 import DunceCap.attr.Attr
 
-class GHDSolverTest extends FunSuite {
-  object QueryRelationFactory {
-    def createQueryRelationWithNoSelects(attrs:List[Attr]): QueryRelation = {
-      val attrInfo = attrs.map(attr => {
-        (attr, "", "")
-      })
-      new QueryRelation("", attrInfo)
-    }
+object QueryRelationFactory {
+  def createQueryRelationWithNoSelects(attrs:List[Attr]): QueryRelation = {
+    val attrInfo = attrs.map(attr => {
+      (attr, "", "")
+    })
+    new QueryRelation("", attrInfo)
   }
+  def createQueryRelationWithEqualitySelect(attrsWithoutSelect:List[Attr],
+                                            attrsWithSelect:List[Attr]): QueryRelation = {
+    val attrInfo = attrsWithoutSelect.map(attr => {
+      (attr, "", "")
+    }):::attrsWithSelect.map(attr => {
+      (attr, "=", "b")
+    })
+    new QueryRelation("", attrInfo)
+  }
+}
+
+class GHDSolverTest extends FunSuite {
+
   final val RELATIONS: List[QueryRelation] = List(
     QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b", "c")),
     QueryRelationFactory.createQueryRelationWithNoSelects(List("g", "a")),
