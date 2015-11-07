@@ -1,1 +1,1 @@
-addSbtPlugin("com.typesafe.sbt" % "sbt-start-script" % "0.10.0")
+addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.7.5") 

@@ -21,7 +21,7 @@ class GHD(val root:GHDNode,
           val queryRelations: List[QueryRelation],
           val joinAggregates:Map[String,ParsedAggregate],
           val outputRelation: QueryRelation) {
-  val attributeOrdering: List[Attr] = GHDSolver.getAttributeOrdering(root, outputRelation.attrNames)
+  val attributeOrdering: List[Attr] = GHDSolver.getAttributeOrdering(root, queryRelations)
   var depth: Int = -1
   var numBags: Int = -1
 
