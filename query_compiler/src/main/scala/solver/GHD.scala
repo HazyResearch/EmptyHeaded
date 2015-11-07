@@ -70,7 +70,7 @@ class GHD(val root:GHDNode,
     root.setBagName(outputRelation.name)
     root.setDescendantNames(1)
     root.setAttributeOrdering(attributeOrdering)
-    root.computeProjectedOutAttrsAndOutputRelation(outputRelation.attrNames.toSet, Set())
+    root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
     root.createAttrToRelsMapping
   }
 }
@@ -278,14 +278,14 @@ class GHDNode(var rels: List[QueryRelation]) {
   /**
    * Compute what is projected out in this bag, and what this bag's output relation is
    */
-  def computeProjectedOutAttrsAndOutputRelation(outputAttrs:Set[Attr], attrsFromAbove:Set[Attr]): QueryRelation = {
+  def computeProjectedOutAttrsAndOutputRelation(annotationType:String,outputAttrs:Set[Attr], attrsFromAbove:Set[Attr]): QueryRelation = {
     projectedOutAttrs = attrSet -- (outputAttrs ++ attrsFromAbove)
     val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
     // Right now we only allow a query to have one type of annotation, so
     // we take the annotation type from an arbitrary relation that was joined in this bag
-    outputRelation = new QueryRelation(bagName, keptAttrs.map(attr =>(attr, "", "")).toList, rels.head.annotationType)
+    outputRelation = new QueryRelation(bagName, keptAttrs.map(attr =>(attr, "", "")).toList, annotationType)
     val childrensOutputRelations = children.map(child => {
-      child.computeProjectedOutAttrsAndOutputRelation(outputAttrs, attrsFromAbove ++ attrSet)
+      child.computeProjectedOutAttrsAndOutputRelation(annotationType,outputAttrs, attrsFromAbove ++ attrSet)
     })
     subtreeRels ++= childrensOutputRelations
     return outputRelation
