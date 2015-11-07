@@ -7,7 +7,7 @@ import codegenerator.cppgenerator as cppgenerator
 import codegenerator.cppexecutor as cppexecutor
 import os
 
-hashindex = 7843984
+hashindex = 0
 environment = codegenerator.env.Environment()
 
 def query(datalog_string):
