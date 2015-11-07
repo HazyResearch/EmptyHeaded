@@ -99,10 +99,33 @@ class GHDNode(var rels: List[QueryRelation]) {
     case _ => false
   }
 
+  def attrNameAgnosticEquals(otherNode: GHDNode): Boolean = {
+    return matchRelations(this.rels, otherNode.rels, this, otherNode) ;
+  }
+
+  def attrNameAgnosticRelationEquals(rel1: QueryRelation,
+                                     rel2: QueryRelation,
+                                     attrMap: Map[Attr, Attr]): (Boolean, Map[Attr, Attr]) = {
+    val possibleMatch = rel1.name.equals(rel2.name) && rel1.attrNames.map(
+      attrName => attrMap(attrName)).zip(rel2.attrNames).filter((maybeAttrName, attrName) => maybeAttrName.isDefined && !maybeAttrName.get.equals(attrName)).isEmpty
+    return 
+  }
+
+  def matchRelations(rels:List[QueryRelation],
+                     otherRels:List[QueryRelation],
+                     thisNode:GHDNode,
+                     otherNode:GHDNode): Boolean = {
+    val matchableFromOtherRels = otherRels.filter(otherRel => attrNameAgnosticEquals(otherRel, rels.head))
+  }
+
   override def hashCode = 41 * rels.hashCode() + children.hashCode()
 
   def setBagName(name:String): Unit = {
     bagName = name
+  }
+
+  def eliminateDuplicateBagWork(seen:List[GHDNode]): Unit = {
+
   }
 
   def getBagInfo(joinAggregates:Map[String,ParsedAggregate]): QueryPlanBagInfo = {
