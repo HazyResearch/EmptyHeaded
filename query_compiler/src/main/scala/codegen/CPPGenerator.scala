@@ -19,27 +19,31 @@ object CPPGenerator {
     return ghd
   }
 
-  def run(ghd:QueryPlan) = {
+  def run(qp:QueryPlan) = {
+    println("RUNNING")
     var outputAttributes:List[Attribute] = List()
+    val intermediateRelations:mutable.Map[String,List[Attribute]] = mutable.Map()
     val cpp = new StringBuilder()
-    val includeCode = getIncludes(ghd)
-    val cppCode = emitLoadRelations(ghd.relations)
-    cppCode.append(emitInitializeOutput(ghd.output))
-    ghd.ghd.foreach(bag => {
-      val (bagCode,bagOutput) = emitNPRR(bag.name==ghd.output.name,bag)
+    val includeCode = getIncludes(qp)
+    val cppCode = emitLoadRelations(qp.relations)
+    cppCode.append(emitInitializeOutput(qp.output))
+    qp.ghd.reverse.foreach(bag => {
+      val (bagCode,bagOutput) = emitNPRR(bag.name==qp.output.name,bag,intermediateRelations.toMap)
+      intermediateRelations += ((bag.name -> bagOutput))
+      println("BAG OUTPUT: " + bagOutput + " " + bag.name)
       outputAttributes = bagOutput
       cppCode.append(bagCode)
     })
-    cppCode.append(emitEndQuery(ghd.output))
+    cppCode.append(emitEndQuery(qp.output))
 
     cpp.append(getCode(includeCode,cppCode))
 
-    val newSchema = ((ghd.output.name -> Schema(outputAttributes,List(ghd.output.ordering),ghd.output.annotation)))
-    val newRelation = ((ghd.output.name+"_"+ghd.output.ordering.mkString("_"))->"disk")
+    val newSchema = ((qp.output.name -> Schema(outputAttributes,List(qp.output.ordering),qp.output.annotation)))
+    val newRelation = ((qp.output.name+"_"+qp.output.ordering.mkString("_"))->"disk")
     Environment.config.schemas = Environment.config.schemas+newSchema
     Environment.config.relations = Environment.config.relations+newRelation
-    Environment.config.resultName = ghd.output.name
-    Environment.config.resultOrdering = ghd.output.ordering
+    Environment.config.resultName = qp.output.name
+    Environment.config.resultOrdering = qp.output.ordering
     Environment.toJSON()
 
     val cppFilepath = sys.env("EMPTYHEADED_HOME")+"/storage_engine/codegen/Query.cpp"
@@ -167,19 +171,23 @@ object CPPGenerator {
     return code
   }
 
-  def emitParallelIterators(relations:List[QueryPlanRelationInfo]) : (StringBuilder,IteratorAccessors,Encodings) = {
+  def emitParallelIterators(relations:List[QueryPlanRelationInfo],intermediateRelations:Map[String,List[Attribute]]) : (StringBuilder,IteratorAccessors,Encodings) = {
     val code = new StringBuilder()
     val dependers = mutable.ListBuffer[(String,(String,Int,Int))]()
     val encodings = mutable.ListBuffer[(String,Attribute)]()
     relations.foreach(r => {
       val name = r.name + "_" + r.ordering.mkString("_")
 
-    val schema = Environment.config.schemas.get(r.name)
-      val enc = schema match {
-        case Some(s) => {
+      val relSchema = Environment.config.schemas.get(r.name)
+      val interSchema = intermediateRelations.get(r.name)
+
+      println("SCHEMAS: " + relSchema + " " + interSchema)
+      val enc = (relSchema,interSchema) match {
+        case (Some(s),None) => {
           s.attributes
-        }
-        case _ => 
+        } case (None,Some(a)) => {
+          a
+        } case _ => 
           throw new IllegalArgumentException("Schema not found.");
       }
 
@@ -398,7 +406,7 @@ object CPPGenerator {
     return code
   }
 
-  def emitNPRR(output:Boolean,bag:QueryPlanBagInfo) : (StringBuilder,List[Attribute]) = {
+  def emitNPRR(output:Boolean,bag:QueryPlanBagInfo,intermediateRelations:Map[String,List[Attribute]]) : (StringBuilder,List[Attribute]) = {
     val code = new StringBuilder()
 
     //Emit the output trie for the bag.
@@ -412,7 +420,7 @@ object CPPGenerator {
     code.append("{")
  
     //fixme Susan should add this to the query compiler.
-    val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations)
+    val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
     code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings))
     code.append(parItCode)
     code.append(emitHeadBuildCode(bag.nprr.headOption))
