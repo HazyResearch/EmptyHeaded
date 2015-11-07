@@ -62,10 +62,13 @@ $(EXEDIR):
 	mkdir -p $(EXEDIR)
 
 $(APPS_EXES): $(EXEDIR) emptyheaded
-	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -L../libs -lemptyheaded -o $@ -Isrc
+	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -Llibs -lemptyheaded -o $@ -Isrc
+
+query: $(EXEDIR) emptyheaded
+	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 codegen/query.cpp $(LIBS) -Llibs -lemptyheaded -o bin/query -Isrc
 
 $(CODEGEN_EXES): $(EXEDIR) emptyheaded
-	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -L../libs -lemptyheaded -o $@ -Isrc
+	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -Llibs -lemptyheaded -o $@ -Isrc
 
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(@) -c $(@:build%.o=src%.cpp)
