@@ -20,7 +20,6 @@ object CPPGenerator {
   }
 
   def run(qp:QueryPlan) = {
-    println("RUNNING")
     var outputAttributes:List[Attribute] = List()
     val intermediateRelations:mutable.Map[String,List[Attribute]] = mutable.Map()
     val cpp = new StringBuilder()
@@ -30,7 +29,6 @@ object CPPGenerator {
     qp.ghd.reverse.foreach(bag => {
       val (bagCode,bagOutput) = emitNPRR(bag.name==qp.output.name,bag,intermediateRelations.toMap)
       intermediateRelations += ((bag.name -> bagOutput))
-      println("BAG OUTPUT: " + bagOutput + " " + bag.name)
       outputAttributes = bagOutput
       cppCode.append(bagCode)
     })
@@ -183,7 +181,6 @@ object CPPGenerator {
       val relSchema = Environment.config.schemas.get(r.name)
       val interSchema = intermediateRelations.get(r.name)
 
-      println("SCHEMAS: " + relSchema + " " + interSchema)
       val enc = (relSchema,interSchema) match {
         case (Some(s),None) => {
           s.attributes
@@ -273,7 +270,6 @@ object CPPGenerator {
         code.append(s"""Builders.trie->annotation = annotation_${head.name}.evaluate(0);""")
       case _ =>
     }
-    println("HEAD: " + head)
     code
   }
 
@@ -407,18 +403,42 @@ object CPPGenerator {
     code
   }
 
-  def emitInitializeAnnotationCode(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+  def emitAnnotationAccessors(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
-    print("HEAD: " + head)
-    (head.materialize,head.aggregation) match {
-      case (false,Some(a)) => {
-        code.append(s"""${annotationType} annotation_${head.name} = (${annotationType})0;""")
-        //fixme
-        //probably something for each annoted accessor as well?
+    val relationIndices = iteratorAccessors(head.name).map(_._2)
+    val relationNames = iteratorAccessors(head.name).map(_._1)
+
+    val joinType = "*" //fixme
+    (head.aggregation) match {
+      case Some(a) => {
+        code.append(s"""const ${annotationType} intermediate_${head.name} = """)
+        //starter that has no effect on join operation
+        joinType match {
+          case "*" => code.append(s"""(${annotationType})1""")
+          case "+" => code.append(s"""(${annotationType})0""")
+        }
+        //now actually get annotated values (if they exist)
+        head.accessors.foreach(acc => {
+          if(acc.annotated){
+            val index1 = relationIndices(relationNames.indexOf( acc.name + "_" + acc.attrs.mkString("_") ) )
+            code.append(s"""${joinType} Iterator_${acc.name}_${acc.attrs.mkString("_")}->get_annotation(${index1},${head.name}_d)""")
+          }
+        })
+        code.append(";")
       }
-      case _ => 
+      case _ => //do nothing 
     }
-    
+    code
+  }
+
+  def emitInitializeAnnotation(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+    val code = new StringBuilder()
+    (head.aggregation) match {
+      case Some(a) => {
+        code.append(s"""${annotationType} annotation_${head.name} = (${annotationType})0;""")
+      }
+      case _ => //do nothing 
+    }
     code
   }
 
@@ -428,6 +448,9 @@ object CPPGenerator {
       case (Some(a),List()) => {
         code.append(emitBuildCode(a,iteratorAccessors))
         code.append(s"""num_rows_reducer.update(tid,count_${a.name});""")
+        //init annotation
+        code.append(emitInitializeAnnotation(a,annotationType))
+        //emit compute annotation (might have to contain a foreach)
       }
       case (Some(a),_) => {
         //build 
@@ -435,9 +458,11 @@ object CPPGenerator {
         //allocate
         code.append(emitAllocateCode(a))
         //init annotation
-        code.append(emitInitializeAnnotationCode(a,annotationType))
+        code.append(emitInitializeAnnotation(a,annotationType))
         //foreach
         code.append(emitForeach(a,iteratorAccessors))
+        //get annnotation accessors
+        code.append(emitAnnotationAccessors(a,annotationType,iteratorAccessors))
         //recurse
         code.append(nprrRecursiveCall(tail.headOption,tail.tail,iteratorAccessors,annotationType))
         //set
@@ -478,6 +503,7 @@ object CPPGenerator {
       code.append(emitHeadAllocations(bag.nprr.head))
       code.append(emitInitHeadAnnotations(bag.nprr.head,bag.annotation))
       code.append(emitHeadParForeach(bag.nprr.head,bag.annotation,bag.relations,iteratorAccessors))
+      code.append(emitAnnotationAccessors(bag.nprr.head,bag.annotation,iteratorAccessors))
       code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors,bag.annotation))
       code.append(emitSetValues(bag.nprr.head))
       code.append("});")

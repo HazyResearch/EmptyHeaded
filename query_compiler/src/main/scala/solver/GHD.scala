@@ -210,7 +210,7 @@ class GHDNode(var rels: List[QueryRelation]) {
 
   private def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
     attrToRels.get(attr).getOrElse(List()).map(rel => {
-      new QueryPlanAccessor(rel.name, rel.attrNames,(rel.attrNames.tail == attr && rel.annotationType != "void*"))
+      new QueryPlanAccessor(rel.name, rel.attrNames,(rel.attrNames.last == attr && rel.annotationType != "void*"))
     })
   }
 
