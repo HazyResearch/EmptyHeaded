@@ -33,6 +33,9 @@ struct TrieBuilder{
   uint32_t tmp_level;
 
   size_t build_aggregated_set(
+    const TrieBlock<hybrid,M> *s1);
+
+  size_t build_aggregated_set(
     const TrieBlock<hybrid,M> *s1, 
     const TrieBlock<hybrid,M> *s2);
 

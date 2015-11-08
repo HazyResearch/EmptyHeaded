@@ -132,7 +132,7 @@ object CPPGenerator {
 
     code.append(s"""
       auto query_timer = timer::start_clock();
-      Trie<${output.annotation},${Environment.config.memory}> *Trie_${output.name} = new Trie<${output.annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}",${output.ordering.length},${output.annotation != "void*"});
+      Trie<${output.annotation},${Environment.config.memory}> *Trie_${output.name}_${output.ordering.mkString("_")} = new Trie<${output.annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}",${output.ordering.length},${output.annotation != "void*"});
       par::reducer<size_t> num_rows_reducer(0,[](size_t a, size_t b) { return a + b; });
     """)
     return code
@@ -142,8 +142,8 @@ object CPPGenerator {
     val code = new StringBuilder()
 
     code.append(s"""
-      result_HASHSTRING = (void*) Trie_${output.name};
-      std::cout << "NUMBER OF ROWS: " << Trie_${output.name}->num_rows << std::endl;
+      result_HASHSTRING = (void*) Trie_${output.name}_${output.ordering.mkString("_")};
+      std::cout << "NUMBER OF ROWS: " << Trie_${output.name}_${output.ordering.mkString("_")}->num_rows << std::endl;
       timer::stop_clock("QUERY TIME", query_timer);
     """)
 
@@ -156,15 +156,17 @@ object CPPGenerator {
   def emitIntermediateTrie(name:String,annotation:String,num:Int) : StringBuilder = {
     val code = new StringBuilder()
     assert(Environment.config.memory != "ParMMapBuffer")
+    val ordering = (0 until num).toList.mkString("_")
     code.append(s""" 
-      Trie<${annotation},${Environment.config.memory}> *Trie_${name} = new Trie<${annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${name}",${num},${annotation != "void*"});
+      Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = new Trie<${annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${name}",${num},${annotation != "void*"});
     """)
     return code
   }
 
   def emitParallelBuilder(name:String,attributes:List[String],annotation:String,encodings:Encodings) : StringBuilder = {
     val code = new StringBuilder()
-    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name});""")
+    val ordering = (0 until attributes.length).toList.mkString("_")
+    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name}_${ordering});""")
     attributes.foreach(attr => {
       code.append(s"""Builders.trie->encodings.push_back((void*)Encoding_${encodings(attr).encoding});""")
     })
@@ -247,6 +249,32 @@ object CPPGenerator {
        throw new IllegalArgumentException("This probably not be occuring.")
     }
     return code
+  }
+
+  def emitInitHeadAnnotations(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+    val code = new StringBuilder()
+    (head.aggregation,head.materialize) match {
+      case (Some(a),false) =>
+        a.operation match {
+          case "SUM" =>
+            code.append(s"""par::reducer<${annotationType}> annotation_${head.name}(0,[](${annotationType} a, ${annotationType} b) { return a + b; });""")
+          case _ =>
+            throw new IllegalArgumentException("AGGREGATION NOT YET SUPPORTED.")
+        }
+      case _ =>
+    }
+    code
+  }
+
+  def emitSetHeadAnnotations(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+    val code = new StringBuilder()
+    (head.aggregation,head.materialize) match {
+      case (Some(a),false) =>
+        code.append(s"""Builders.trie->annotation = annotation_${head.name}.evaluate(0);""")
+      case _ =>
+    }
+    println("HEAD: " + head)
+    code
   }
 
   def emitHeadAllocations(head:QueryPlanNPRRInfo) : StringBuilder = {
@@ -379,7 +407,22 @@ object CPPGenerator {
     code
   }
 
-  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitInitializeAnnotationCode(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+    val code = new StringBuilder()
+    print("HEAD: " + head)
+    (head.materialize,head.aggregation) match {
+      case (false,Some(a)) => {
+        code.append(s"""${annotationType} annotation_${head.name} = (${annotationType})0;""")
+        //fixme
+        //probably something for each annoted accessor as well?
+      }
+      case _ => 
+    }
+    
+    code
+  }
+
+  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:IteratorAccessors,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head,tail) match {
       case (Some(a),List()) => {
@@ -391,10 +434,12 @@ object CPPGenerator {
         code.append(emitBuildCode(a,iteratorAccessors))
         //allocate
         code.append(emitAllocateCode(a))
+        //init annotation
+        code.append(emitInitializeAnnotationCode(a,annotationType))
         //foreach
         code.append(emitForeach(a,iteratorAccessors))
         //recurse
-        code.append(nprrRecursiveCall(tail.headOption,tail.tail,iteratorAccessors))
+        code.append(nprrRecursiveCall(tail.headOption,tail.tail,iteratorAccessors,annotationType))
         //set
         code.append(emitSetValues(a))
         //close out foreach
@@ -419,7 +464,6 @@ object CPPGenerator {
 
     code.append("{")
  
-    //fixme Susan should add this to the query compiler.
     val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
     code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings))
     code.append(parItCode)
@@ -432,10 +476,12 @@ object CPPGenerator {
     val remainingAttrs = bag.nprr.tail
     if(remainingAttrs.length > 0){
       code.append(emitHeadAllocations(bag.nprr.head))
+      code.append(emitInitHeadAnnotations(bag.nprr.head,bag.annotation))
       code.append(emitHeadParForeach(bag.nprr.head,bag.annotation,bag.relations,iteratorAccessors))
-      code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors))
+      code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors,bag.annotation))
       code.append(emitSetValues(bag.nprr.head))
       code.append("});")
+      code.append(emitSetHeadAnnotations(bag.nprr.head,bag.annotation))
       code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
     }
     code.append("}")

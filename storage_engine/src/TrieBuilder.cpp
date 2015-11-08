@@ -78,6 +78,21 @@ size_t TrieBuilder<A,M>::build_set(
 }
 
 
+//Build a aggregated set for one sets
+template<class A,class M>
+size_t TrieBuilder<A,M>::build_aggregated_set(
+  const TrieBlock<hybrid,M> *tb1){
+
+  //fixme
+  assert(tb1 != NULL);
+  if(tb1 == NULL){
+    return 0;
+  }
+
+  const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));
+  return s1->cardinality;
+}
+
 //Build a aggregated set for two sets
 template<class A,class M>
 size_t TrieBuilder<A,M>::build_aggregated_set(
