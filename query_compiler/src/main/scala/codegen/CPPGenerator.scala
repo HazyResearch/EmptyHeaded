@@ -409,7 +409,7 @@ object CPPGenerator {
     val relationNames = iteratorAccessors(head.name).map(_._1)
 
     val joinType = "*" //fixme
-    (head.aggregation) match {
+    (head.aggregation) match { //you always check for annotations
       case Some(a) => {
         code.append(s"""const ${annotationType} intermediate_${head.name} = """)
         //starter that has no effect on join operation
