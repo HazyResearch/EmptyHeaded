@@ -15,6 +15,33 @@ object GHD {
       pos != -1
     })
   }
+
+  def attrNameAgnosticRelationEquals(rel1: QueryRelation,
+                                     rel2: QueryRelation,
+                                     attrMap: Map[Attr, Attr]): Option[Map[Attr, Attr]] = {
+    if (!rel1.name.equals(rel2.name)) {
+      return None
+    }
+    val zippedAttrNames = (
+      rel1.attrNames,
+      rel1.attrNames.map(attrName => attrMap.get(attrName)),
+      rel2.attrNames).zipped.toList
+    if (zippedAttrNames
+      .exists({case (_, mappedToName, rel2AttrName) => mappedToName.isDefined && !mappedToName.get.equals(rel2AttrName)})) {
+      return None
+    } else if (zippedAttrNames.
+      exists({case (rel1AttrName, mappedToName, rel2AttrName) => mappedToName.isEmpty && attrMap.values.exists(_.equals(rel2AttrName))})) {
+      return None
+    } else {
+      Some(zippedAttrNames.foldLeft(attrMap)((m, attrNameTriple) => {
+        if (attrNameTriple._2.isDefined) {
+          m
+        } else {
+          m + (attrNameTriple._1 -> attrNameTriple._3)
+        }
+      }))
+    }
+  }
 }
 
 class GHD(val root:GHDNode,
@@ -72,6 +99,7 @@ class GHD(val root:GHDNode,
     root.setAttributeOrdering(attributeOrdering)
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.attrNames.toSet, Set())
     root.createAttrToRelsMapping
+    root.eliminateDuplicateBagWork(List[GHDNode]())
   }
 }
 
@@ -81,6 +109,7 @@ class GHDNode(var rels: List[QueryRelation]) {
     (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
   var subtreeRels = rels
   var bagName: String = null
+  var isDuplicateOf: Option[String] = None
   var attrToRels:Map[Attr,List[QueryRelation]] = null
   var attributeOrdering: List[Attr] = null
   var children: List[GHDNode] = List()
@@ -100,38 +129,46 @@ class GHDNode(var rels: List[QueryRelation]) {
   }
 
   def attrNameAgnosticEquals(otherNode: GHDNode): Boolean = {
-    return matchRelations(this.rels, otherNode.rels, this, otherNode) ;
+    if (this.rels.size != otherNode.rels.size || !(attrSet & otherNode.attrSet).isEmpty) return false
+    return matchRelations(this.rels.toSet, otherNode.rels.toSet, this, otherNode, Map[Attr, Attr]()) ;
   }
 
-  def attrNameAgnosticRelationEquals(rel1: QueryRelation,
-                                     rel2: QueryRelation,
-                                     attrMap: Map[Attr, Attr]): (Boolean, Map[Attr, Attr]) = {
-    val possibleMatch = rel1.name.equals(rel2.name) && rel1.attrNames.map(
-      attrName => attrMap(attrName)).zip(rel2.attrNames).filter((maybeAttrName, attrName) => maybeAttrName.isDefined && !maybeAttrName.get.equals(attrName)).isEmpty
-    return 
-  }
-
-  def matchRelations(rels:List[QueryRelation],
-                     otherRels:List[QueryRelation],
+  private def matchRelations(rels:Set[QueryRelation],
+                     otherRels:Set[QueryRelation],
                      thisNode:GHDNode,
-                     otherNode:GHDNode): Boolean = {
-    val matchableFromOtherRels = otherRels.filter(otherRel => attrNameAgnosticEquals(otherRel, rels.head))
+                     otherNode:GHDNode,
+                     attrMap: Map[Attr, Attr]): Boolean = {
+    if (rels.isEmpty && otherRels.isEmpty) return true
+
+    val matches = otherRels.map(otherRel => (otherRels-otherRel, GHD.attrNameAgnosticRelationEquals(otherRel, rels.head, attrMap))).filter(m => {
+      m._2.isDefined
+    })
+    return matches.exists(m => {
+      matchRelations(rels.tail, m._1, this, otherNode, m._2.get)
+    })
   }
 
   override def hashCode = 41 * rels.hashCode() + children.hashCode()
 
-  def setBagName(name:String): Unit = {
-    bagName = name
-  }
+  def setBagName(name:String): Unit = { bagName = name }
 
-  def eliminateDuplicateBagWork(seen:List[GHDNode]): Unit = {
-
+  def eliminateDuplicateBagWork(seen:List[GHDNode]): List[GHDNode] = {
+    val prevSeenDuplicate = seen.find(bag => bag.attrNameAgnosticEquals(this))
+    prevSeenDuplicate.map(p => {
+      isDuplicateOf = Some(p.bagName)
+    })
+    var newSeen = if (prevSeenDuplicate.isEmpty) this::seen else seen
+    children.foreach(c => {
+      newSeen = c.eliminateDuplicateBagWork(newSeen)
+    })
+    return newSeen
   }
 
   def getBagInfo(joinAggregates:Map[String,ParsedAggregate]): QueryPlanBagInfo = {
     val jsonRelInfo = getRelationInfo()
     new QueryPlanBagInfo(
       bagName,
+      isDuplicateOf,
       outputRelation.attrNames,
       outputRelation.annotationType,
       jsonRelInfo,

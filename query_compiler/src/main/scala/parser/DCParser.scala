@@ -28,7 +28,7 @@ class RecursionStatement(val functionName:String, val inputArgument:QueryRelatio
 
 class TransitiveClosureStatement(val join:List[QueryRelation])
 
-class ParsedAggregate(val op:String, val expression:String, val init:String)
+case class ParsedAggregate(val op:String, val expression:String, val init:String)
 
 class ConverganceCriteria(val converganceType:String, val converganceOp:String, val converganceCondition:String)
 
