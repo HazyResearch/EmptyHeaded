@@ -1,6 +1,6 @@
 package DunceCap
 
-import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
+import DunceCap.attr.{AttrInfo, Attr, SelectionVal, SelectionOp}
 
 import scala.collection.immutable.List
 import scala.util.parsing.combinator.RegexParsers
@@ -9,9 +9,10 @@ package object attr {
   type Attr = String
   type SelectionOp = String
   type SelectionVal = String
+  type AttrInfo = (Attr, SelectionOp, SelectionVal)
 }
 
-class QueryRelation(val name:String, val attrs:List[(Attr, SelectionOp, SelectionVal)],  var annotationType:String = "void*") {
+class QueryRelation(val name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*") {
   val attrNames = attrs.map(x => x._1)
   override def equals(that: Any): Boolean =
     that match {

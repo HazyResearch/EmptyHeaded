@@ -2,7 +2,7 @@ package DunceCap
 
 import java.util
 
-import DunceCap.attr.Attr
+import DunceCap.attr.{AttrInfo, Attr}
 import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
@@ -16,28 +16,33 @@ object GHD {
     })
   }
 
+  /**
+   * Try to match rel1 and rel2; in order for this to work, the attribute mappings such a map would imply must not contradict the
+   * mappings we already know about. If this does work, return the new attribute mapping (which potentially has some new entries),
+   * otherwise return None
+   */
   def attrNameAgnosticRelationEquals(rel1: QueryRelation,
                                      rel2: QueryRelation,
-                                     attrMap: Map[Attr, Attr]): Option[Map[Attr, Attr]] = {
+                                     attrMap: Map[AttrInfo, AttrInfo]): Option[Map[AttrInfo, AttrInfo]] = {
     if (!rel1.name.equals(rel2.name)) {
       return None
     }
-    val zippedAttrNames = (
-      rel1.attrNames,
-      rel1.attrNames.map(attrName => attrMap.get(attrName)),
-      rel2.attrNames).zipped.toList
-    if (zippedAttrNames
-      .exists({case (_, mappedToName, rel2AttrName) => mappedToName.isDefined && !mappedToName.get.equals(rel2AttrName)})) {
+    val zippedAttrs = (
+      rel1.attrs,
+      rel1.attrs.map(attrs => attrMap.get(attrs)),
+      rel2.attrs).zipped.toList
+    if (zippedAttrs
+      .exists({case (_, mappedToAttr, rel2Attr) => mappedToAttr.isDefined && !mappedToAttr.get.equals(rel2Attr)})) {
       return None
-    } else if (zippedAttrNames.
-      exists({case (rel1AttrName, mappedToName, rel2AttrName) => mappedToName.isEmpty && attrMap.values.exists(_.equals(rel2AttrName))})) {
+    } else if (zippedAttrs.
+      exists({case (rel1Attr, mappedToAttr, rel2Attr) => mappedToAttr.isEmpty && attrMap.values.exists(_.equals(rel2Attr))})) {
       return None
     } else {
-      Some(zippedAttrNames.foldLeft(attrMap)((m, attrNameTriple) => {
-        if (attrNameTriple._2.isDefined) {
+      Some(zippedAttrs.foldLeft(attrMap)((m, attrsTriple) => {
+        if (attrsTriple._2.isDefined) {
           m
         } else {
-          m + (attrNameTriple._1 -> attrNameTriple._3)
+          m + (attrsTriple._1 -> attrsTriple._3)
         }
       }))
     }
