@@ -129,7 +129,7 @@ class GHDNode(var rels: List[QueryRelation]) {
       ((attr:Attr) => outputRelation.attrNames.contains(attr)))
     val prevAndNextAttrAggregated = getPrevAndNextAttrMaterialized(
       attrsWithAccessor,
-      ((attr:Attr) => joinAggregates.get(attr).isDefined))
+      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr))) /* TODO: the two parts of the && are actually redundant, they should always be the same */
 
     attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
       val (attr, prevNextInfo) = attrAndPrevNextInfo
@@ -182,7 +182,9 @@ class GHDNode(var rels: List[QueryRelation]) {
     }
   }
 
-  private def getAggregation(joinAggregates:Map[String,ParsedAggregate], attr:Attr, prevNextInfo:(Option[Attr], Option[Attr])): Option[QueryPlanAggregation] = {
+  private def getAggregation(joinAggregates:Map[String,ParsedAggregate],
+                             attr:Attr,
+                             prevNextInfo:(Option[Attr], Option[Attr])): Option[QueryPlanAggregation] = {
    joinAggregates.get(attr).map(parsedAggregate => {
       new QueryPlanAggregation(parsedAggregate.op, parsedAggregate.init, parsedAggregate.expression, prevNextInfo._1, prevNextInfo._2)
     })
