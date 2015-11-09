@@ -13,9 +13,9 @@ struct triangleAgg: public application {
       // buildTrie
       Trie_R_0_1 = Trie<void *,mem>::load( 
         //"/afs/cs.stanford.edu/u/caberger/db/relations/R/R_0_1"
-        //"/dfs/scratch0/caberger/datasets/higgs/db_python_48t/relations/R/R_0_1"
+        //"/dfs/scratch0/caberger/datasets/simple/db_python_48t/relations/R/R_0_1"
         //"/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1"
-        "/Users/caberger/Documents/Research/data/databases/higgs/db/relations/R/R_0_1"
+        "/Users/caberger/Documents/Research/data/databases/simple/db/relations/Edge/Edge_0_1"
         );
         //"/dfs/scratch0/caberger/datasets/g_plus/db_python/relations/R/R_0_1");
       timer::stop_clock("LOADING TRIE R_0_1", start_time);
@@ -32,7 +32,7 @@ struct triangleAgg: public application {
         const ParTrieIterator<void*,mem> Iterators_R_b_c(Trie_R_0_1);
         const ParTrieIterator<void*,mem> Iterators_R_a_c(Trie_R_0_1);
 
-        ParTrieBuilder<long,mem> Builders_Triangle(Trie_Triangle_);
+        ParTrieBuilder<long,mem> Builders_Triangle(Trie_Triangle_,3);
 
         Builders_Triangle.build_set(Iterators_R_a_b.head);
         Builders_Triangle.allocate_annotation();
@@ -86,7 +86,7 @@ struct triangleAgg: public application {
         par::reducer<long> annotation_lolli(0,
           [](size_t a, size_t b) { return a + b; });
       
-      ParTrieBuilder<long,mem> Builders_Lolli(Lolli);
+      ParTrieBuilder<long,mem> Builders_Lolli(Lolli,2);
       const ParTrieIterator<void*,mem> Iterators_R_a_b(Trie_R_0_1);
       const ParTrieIterator<long,mem> Iterators_triangle(Trie_Triangle_);
 
@@ -110,6 +110,8 @@ struct triangleAgg: public application {
 
         long annotation_a = Iterator_triangle->get_annotation(0,a_d)*1;
         annotation_lolli.update(tid,count*annotation_a);
+        std::cout << "annotation value: " << annotation_a << " " << count << std::endl;
+
       });
       std::cout << "RESULT: " << annotation_lolli.evaluate(0) << std::endl;
       timer::stop_clock("Bag bag_R_ax", start_time);

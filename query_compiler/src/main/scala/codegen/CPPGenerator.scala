@@ -161,10 +161,10 @@ object CPPGenerator {
     return code
   }
 
-  def emitParallelBuilder(name:String,attributes:List[String],annotation:String,encodings:Encodings) : StringBuilder = {
+  def emitParallelBuilder(name:String,attributes:List[String],annotation:String,encodings:Encodings,numAttributes:Int) : StringBuilder = {
     val code = new StringBuilder()
     val ordering = (0 until attributes.length).toList.mkString("_")
-    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name}_${ordering});""")
+    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name}_${ordering},${numAttributes});""")
     attributes.foreach(attr => {
       code.append(s"""Builders.trie->encodings.push_back((void*)Encoding_${encodings(attr).encoding});""")
     })
@@ -404,7 +404,6 @@ object CPPGenerator {
   }
 
   def emitAnnotationAccessors(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors,extra:String="") : StringBuilder = {
-    println("ACCESSORS: " + head)
     val code = new StringBuilder()
     val relationIndices = iteratorAccessors(head.name).map(_._2)
     val relationNames = iteratorAccessors(head.name).map(_._1)
@@ -556,9 +555,9 @@ object CPPGenerator {
     }
 
     code.append("{")
- 
+    code.append("auto bag_timer = timer::start_clock();")
     val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
-    code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings))
+    code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings,bag.nprr.length))
     code.append(parItCode)
     code.append(emitHeadBuildCode(bag.nprr.headOption))
 
@@ -579,6 +578,8 @@ object CPPGenerator {
       code.append(emitSetHeadAnnotations(bag.nprr.head,bag.annotation))
       code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
     }
+    code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
+    code.append(s"""timer::stop_clock("BAG ${bag.name} TIME", bag_timer);""")
     code.append("}")
     
     return (code,outputAttributes)
