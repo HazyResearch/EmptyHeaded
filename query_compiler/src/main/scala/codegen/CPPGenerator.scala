@@ -403,14 +403,15 @@ object CPPGenerator {
     code
   }
 
-  def emitAnnotationAccessors(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitAnnotationAccessors(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors,extra:String="") : StringBuilder = {
+    println("ACCESSORS: " + head)
     val code = new StringBuilder()
     val relationIndices = iteratorAccessors(head.name).map(_._2)
     val relationNames = iteratorAccessors(head.name).map(_._1)
 
     val joinType = "*" //fixme
-    (head.aggregation) match { //you always check for annotations
-      case Some(a) => {
+    (head.aggregation,head.materialize) match { //you always check for annotations
+      case (Some(a),false) => {
         code.append(s"""const ${annotationType} intermediate_${head.name} = """)
         //starter that has no effect on join operation
         joinType match {
@@ -422,11 +423,73 @@ object CPPGenerator {
           if(acc.annotated){
             val index1 = relationIndices(relationNames.indexOf( acc.name + "_" + acc.attrs.mkString("_") ) )
             code.append(s"""${joinType} Iterator_${acc.name}_${acc.attrs.mkString("_")}->get_annotation(${index1},${head.name}_d)""")
+          } else if(head.name == acc.attrs.last) {
+            code.append(s"""${joinType} ${a.init}""")
           }
         })
-        code.append(";")
+        a.prev match {
+          case Some(p) =>
+            code.append(s"""${joinType} intermediate_${p}""")
+          case _ =>
+        }
+        code.append(s"""${extra};""")
       }
       case _ => //do nothing 
+    }
+    code
+  }
+
+  def emitFinalAnnotation(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+    val code = new StringBuilder()
+    val joinType = "*" //fixme
+    (head.aggregation,head.materialize) match { //you always check for annotations
+      case (Some(a),false) => {
+        val loopOverSet = head.accessors.map(_.annotated).reduce((a,b) => {a || b})
+        val extra = if(loopOverSet){
+          code.append(emitForeach(head,iteratorAccessors))
+          ""
+        } else {
+          s"""${joinType} count_${head.name}"""
+        }
+        code.append(emitAnnotationAccessors(head,annotationType,iteratorAccessors,extra))
+      } 
+      case _ => 
+    }
+    code
+  }
+  def emitAnnotationComputation(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+    val code = new StringBuilder()
+    (head.aggregation,head.materialize) match { //you always check for annotations
+      case (Some(a),false) => {
+        val rhs = a.next match {
+          case Some(n) =>
+            s"""annotation_${n}"""
+          case _ =>
+            s"""intermediate_${head.name}"""
+        }
+        a.operation match {
+          case "SUM" => code.append(s"""annotation_${head.name} += ${rhs};""")
+          case _ => throw new IllegalArgumentException("OPERATION NOT YET SUPPORTED")
+        } 
+      } 
+      case _ => 
+    }
+    code
+  }
+
+  def emitParallelAnnotationComputation(head:QueryPlanNPRRInfo) : StringBuilder = {
+    val code = new StringBuilder()
+    (head.aggregation,head.materialize) match { //you always check for annotations
+      case (Some(a),false) => {
+        val rhs = a.next match {
+          case Some(n) =>
+            s"""annotation_${n}"""
+          case _ =>
+            s"""intermediate_${head.name}"""
+        }
+        code.append(s"""annotation_${head.name}.update(tid,${rhs});""")
+      } 
+      case _ => 
     }
     code
   }
@@ -451,6 +514,9 @@ object CPPGenerator {
         //init annotation
         code.append(emitInitializeAnnotation(a,annotationType))
         //emit compute annotation (might have to contain a foreach)
+        code.append(emitFinalAnnotation(a,annotationType,iteratorAccessors))
+        //the actual aggregation
+        code.append(emitAnnotationComputation(a,annotationType,iteratorAccessors))
       }
       case (Some(a),_) => {
         //build 
@@ -465,6 +531,8 @@ object CPPGenerator {
         code.append(emitAnnotationAccessors(a,annotationType,iteratorAccessors))
         //recurse
         code.append(nprrRecursiveCall(tail.headOption,tail.tail,iteratorAccessors,annotationType))
+        //the actual aggregation
+        code.append(emitAnnotationComputation(a,annotationType,iteratorAccessors))
         //set
         code.append(emitSetValues(a))
         //close out foreach
@@ -506,6 +574,7 @@ object CPPGenerator {
       code.append(emitAnnotationAccessors(bag.nprr.head,bag.annotation,iteratorAccessors))
       code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors,bag.annotation))
       code.append(emitSetValues(bag.nprr.head))
+      code.append(emitParallelAnnotationComputation(bag.nprr.head))
       code.append("});")
       code.append(emitSetHeadAnnotations(bag.nprr.head,bag.annotation))
       code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
