@@ -254,7 +254,7 @@ object CPPGenerator {
       case (Some(a),false) =>
         a.operation match {
           case "SUM" =>
-            code.append(s"""par::reducer<${annotationType}> annotation_${head.name}(0,[](${annotationType} a, ${annotationType} b) { return a + b; });""")
+            code.append(s"""par::reducer<${annotationType}> annotation_${head.name}(0,[&](${annotationType} a, ${annotationType} b) { return a + b; });""")
           case _ =>
             throw new IllegalArgumentException("AGGREGATION NOT YET SUPPORTED.")
         }
@@ -292,9 +292,9 @@ object CPPGenerator {
 
     head.materialize match {
       case true =>
-        code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t a_i, const uint32_t a_d) {""")
+        code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t ${head.name}_i, const uint32_t ${head.name}_d) {""")
       case false =>
-        code.append(s"""Builders.par_foreach_aggregate([&](const size_t tid, const uint32_t a_d) {""")
+        code.append(s"""Builders.par_foreach_aggregate([&](const size_t tid, const uint32_t ${head.name}_d) {""")
     }
 
     //get iterator and builder for each thread
@@ -451,6 +451,10 @@ object CPPGenerator {
           s"""${joinType} count_${head.name}"""
         }
         code.append(emitAnnotationAccessors(head,annotationType,iteratorAccessors,extra))
+        code.append(emitAnnotationComputation(head,annotationType,iteratorAccessors))
+        if(loopOverSet){
+          code.append("});")
+        }
       } 
       case _ => 
     }
@@ -514,8 +518,6 @@ object CPPGenerator {
         code.append(emitInitializeAnnotation(a,annotationType))
         //emit compute annotation (might have to contain a foreach)
         code.append(emitFinalAnnotation(a,annotationType,iteratorAccessors))
-        //the actual aggregation
-        code.append(emitAnnotationComputation(a,annotationType,iteratorAccessors))
       }
       case (Some(a),_) => {
         //build 
