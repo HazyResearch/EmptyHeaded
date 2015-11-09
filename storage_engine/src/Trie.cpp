@@ -346,9 +346,10 @@ Trie<A,M>::Trie(
   std::string path,
   std::vector<uint32_t>* max_set_sizes, 
   std::vector<std::vector<uint32_t>> *attr_in,
-  std::vector<A>* annotation){
+  std::vector<A>* annotations){
 
-  annotated = annotation->size() > 0;
+  annotation = (A)0;
+  annotated = annotations->size() > 0;
   num_rows = attr_in->at(0).size();
   num_columns = attr_in->size();
   //fixme: add estimate
@@ -441,9 +442,9 @@ Trie<A,M>::Trie(
         ranges_buffer,
         set_data_buffer,
         indicies,
-        annotation);
+        annotations);
     });
-  } else if(annotation->size() > 0){
+  } else if(annotations->size() > 0){
     /*
     new_head->alloc_data(0,data_allocator);
     for(size_t i = 0; i < head_size; i++){

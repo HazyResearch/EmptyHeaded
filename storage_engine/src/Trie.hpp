@@ -26,7 +26,7 @@ struct Trie{
   size_t num_columns;
   M *memoryBuffers;
   std::vector<void*> encodings;
-  A annotation = (A)0;
+  A annotation;
 
   Trie<A,M>(){}
   Trie<A,M>(bool annotated_in, size_t num_rows_in, size_t num_columns_in, M* buf_in){
@@ -34,6 +34,7 @@ struct Trie{
     num_rows = num_rows_in;
     num_columns = num_columns_in;
     memoryBuffers = buf_in;
+    annotation = (A)0;
   };
 
   Trie<A,M>(std::string path, size_t num_columns_in, bool annotated_in){
