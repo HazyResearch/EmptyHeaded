@@ -39,6 +39,9 @@ struct TrieBuilder{
     const TrieBlock<hybrid,M> *s1, 
     const TrieBlock<hybrid,M> *s2);
 
+  size_t build_aggregated_set(
+    std::vector<const TrieBlock<hybrid,M> *>* isets);
+
   size_t count_set(
     const TrieBlock<hybrid,M> *s1);
 
@@ -91,6 +94,9 @@ struct ParTrieBuilder{
   size_t build_aggregated_set(
     const TrieBlock<hybrid,M> *s1,
     const TrieBlock<hybrid,M> *s2);
+
+  size_t build_aggregated_set(
+    std::vector<const TrieBlock<hybrid,M> *>* isets);
 
   size_t build_set(
     const TrieBlock<hybrid,M> *s1);
