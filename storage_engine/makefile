@@ -62,7 +62,7 @@ $(APPS_EXES): $(EXEDIR) emptyheaded
 
 query: $(EXEDIR) emptyheaded
 	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 codegen/Query.cpp $(LIBS) -Llibs -lemptyheaded -o bin/query -Isrc
-
+	
 $(CODEGEN_EXES): $(EXEDIR) emptyheaded
 	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -Llibs -lemptyheaded -o $@ -Isrc
 

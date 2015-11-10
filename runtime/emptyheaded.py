@@ -69,8 +69,8 @@ def main():
   #db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config.json"
   
   #createDB(db_config)
-  #loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
-  loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
+  loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
+  #loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
 
   #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
   #query("Triangle(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c);m=<<COUNT(*)>>.")
