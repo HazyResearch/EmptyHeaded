@@ -69,7 +69,7 @@ def main():
   #createDB(db_config)
   loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db")
   #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
-  query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<COUNT(*)>.")
+  query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
 
   #print numRows("Triangle")
   a= fetchData("Lollipop")[0]

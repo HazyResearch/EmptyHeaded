@@ -4,11 +4,11 @@ class ResultError(Exception):
     pass
 
 def main():
-	emptyheaded.loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
-	emptyheaded.query("Barbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<COUNT(*)>.")
+	emptyheaded.loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db")
+	emptyheaded.query("Barbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
 
-	numRows = emptyheaded.numRows("Barbell")
-	if numRows != 113389128L:
-		raise ResultError("NUMBER OF ROWS INCORRECT: " + str(numRows))
+	data = emptyheaded.fetchData("Barbell")
+	if data[0][0] != 20371831447136L:
+		raise ResultError("NUMBER OF ROWS INCORRECT: " + str(data))
 
 if __name__ == "__main__": main()
