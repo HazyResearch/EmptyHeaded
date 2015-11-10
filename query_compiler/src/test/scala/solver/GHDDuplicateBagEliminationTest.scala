@@ -1,7 +1,5 @@
 package DunceCap
 
-import java.util.Calendar
-
 import DunceCap.attr.{AttrInfo, Attr}
 import org.scalatest.FunSuite
 
@@ -37,6 +35,8 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   test("attrNameAgnosticRelationEquals returns mapping of attrs that would have to be true if these two rels are going to considered equal") {
     val result = GHD.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("d", "f")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("d", "f")),
       Map[Attr, Attr](),
       Map[String, ParsedAggregate]())
@@ -47,9 +47,11 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
 
   test("attrNameAgnosticRelationEquals can map attrs to each other if they have same selections & aggs") {
     val result = GHD.attrNameAgnosticRelationEquals(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a")),
       new QueryRelation("R", List[AttrInfo](
         ("a", "=", "2"),
         ("b", "", ""))),
+    QueryRelationFactory.createQueryRelationWithNoSelects(List("d")),
       new QueryRelation("R", List[AttrInfo](
         ("d", "=", "2"),
         ("f", "", ""))),
@@ -65,9 +67,11 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
 
   test("attrNameAgnosticRelationEquals doesn't map attrs to each other if they have different selections") {
     val result = GHD.attrNameAgnosticRelationEquals(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a")),
       new QueryRelation("R", List[AttrInfo](
         ("a", "=", "2"),
         ("b", "<", "2"))),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("d")),
       new QueryRelation("R", List[AttrInfo](
         ("d", "=", "2"),
         ("f", "=", "3"))),
@@ -79,7 +83,9 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
 
   test("attrNameAgnosticRelationEquals doesn't map attrs to each other if they have different aggregations") {
     val result = GHD.attrNameAgnosticRelationEquals(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("d")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("d", "f")),
       Map[Attr, Attr](),
       Map[String, ParsedAggregate](
@@ -92,7 +98,9 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
 
   test("attrNameAgnosticEquals detects that these two bags are the same") {
     val triangle1 = new GHDNode(BARBELL.take(3).reverse) // reverse just to check that this still works given a weird ordering
+    triangle1.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b"), Set())
     val triangle2 = new GHDNode(BARBELL.drop(3).take(3))
+    triangle2.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("e"), Set())
     assert(triangle1.attrNameAgnosticEquals(triangle2, Map[String, ParsedAggregate]()))
     assert(triangle2.attrNameAgnosticEquals(triangle1, Map[String, ParsedAggregate]()))
   }
@@ -161,9 +169,6 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
     val agg = ParsedAggregate("+", "COUNT", "1")
     val joinAggs =  Map[String, ParsedAggregate]("e" -> agg, "n" -> agg)
 
-    assert(child1.attrNameAgnosticEquals(child2, joinAggs))
-    assert(child2.attrNameAgnosticEquals(child1, joinAggs))
-
     val root = new GHDNode(List[QueryRelation](QueryRelationFactory.createQueryRelationWithNoSelects(List[String]("b", "y"))))
     root.children = List[GHDNode](child1, child2)
     val ghd = new GHD(
@@ -203,9 +208,10 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
         ("z", "", "")))))
     val agg = ParsedAggregate("+", "COUNT", "1")
     val joinAggs =  Map[String, ParsedAggregate]("e" -> agg, "n" -> agg)
+    child1.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b", "y"), Set())
+    child2.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b", "y"), Set())
 
     assert(!child1.attrNameAgnosticEquals(child2, joinAggs))
     assert(!child2.attrNameAgnosticEquals(child1, joinAggs))
   }
-
 }
