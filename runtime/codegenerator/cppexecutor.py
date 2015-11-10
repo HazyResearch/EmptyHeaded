@@ -23,7 +23,7 @@ def execute(name,mem,types,annotationType):
   wrapperfile.close()
 
   compileQuery(name)
-  #os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"))
+  os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"))
 
   q = loadQuery(name)
   q_result = eval("q.run_"+name+"()")

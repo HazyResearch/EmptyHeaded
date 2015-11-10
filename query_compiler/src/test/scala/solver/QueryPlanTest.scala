@@ -67,6 +67,7 @@ class QueryPlanTest extends FunSuite {
     ), List[QueryPlanBagInfo](
       QueryPlanBagInfo(
         "result",
+        None,
         List[Attr]("a"),
         "void*",
         List[QueryPlanRelationInfo](

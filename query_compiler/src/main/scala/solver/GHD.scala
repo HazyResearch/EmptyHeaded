@@ -2,7 +2,7 @@ package DunceCap
 
 import java.util
 
-import DunceCap.attr.Attr
+import DunceCap.attr.{AttrInfo, Attr}
 import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
@@ -14,6 +14,55 @@ object GHD {
     attributeOrdering.map(a => rel.attrNames.indexOf(a)).filter(pos => {
       pos != -1
     })
+  }
+
+  /**
+   * Try to match rel1 and rel2; in order for this to work, the attribute mappings such a map would imply must not contradict the
+   * mappings we already know about. If this does work, return the new attribute mapping (which potentially has some new entries),
+   * otherwise return None
+   */
+  def attrNameAgnosticRelationEquals(output1:QueryRelation,
+                                     rel1: QueryRelation,
+                                     output2:QueryRelation,
+                                     rel2: QueryRelation,
+                                     attrMap: Map[Attr, Attr],
+                                     joinAggregates:Map[String, ParsedAggregate]): Option[Map[Attr, Attr]] = {
+    if (!rel1.name.equals(rel2.name)) {
+      return None
+    }
+    val zippedAttrs = (
+      rel1.attrs,
+      rel1.attrNames.map(attr => attrMap.get(attr)),
+      rel2.attrs).zipped.toList
+    if (zippedAttrs
+      .exists({case (_, mappedToAttr, rel2Attr) => mappedToAttr.isDefined &&
+      (!mappedToAttr.get.equals(rel2Attr._1))})) {
+      // the the attribute mapping implied here violates existing mappings
+      return None
+    } else if (zippedAttrs.
+      exists({case (rel1Attr, mappedToAttr, rel2Attr) => mappedToAttr.isEmpty && attrMap.values.exists(_.equals(rel2Attr._1))})) {
+      // if the attribute mapping implied here maps an attr to another that has already been mapped to
+      return None
+    } else {
+      zippedAttrs.foldLeft(Some(attrMap):Option[Map[Attr, Attr]])((m, attrsTriple) => {
+        if (m.isEmpty) {
+          None
+        } else if (attrsTriple._1._2 != attrsTriple._3._2 || attrsTriple._1._3 != attrsTriple._3._3) {
+          // not a match if the selections aren't the same
+          None
+        } else if (attrsTriple._2.isDefined) {
+          // don't need to check the aggregations again because they must have been checked when we put them in attrMap
+          m
+        } else {
+          if (output1.attrNames.contains(attrsTriple._1._1)!=output2.attrNames.contains(attrsTriple._3._1)
+            || !joinAggregates.get(attrsTriple._1._1).equals(joinAggregates.get(attrsTriple._3._1))) {
+            None
+          } else {
+            Some(m.get + (attrsTriple._1._1 -> attrsTriple._3._1))
+          }
+        }
+      })
+    }
   }
 }
 
@@ -73,6 +122,10 @@ class GHD(val root:GHDNode,
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
     root.createAttrToRelsMapping
   }
+
+  def doBagDedup() = {
+    root.eliminateDuplicateBagWork(List[GHDNode](), joinAggregates)
+  }
 }
 
 
@@ -81,6 +134,7 @@ class GHDNode(var rels: List[QueryRelation]) {
     (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
   var subtreeRels = rels
   var bagName: String = null
+  var isDuplicateOf: Option[String] = None
   var attrToRels:Map[Attr,List[QueryRelation]] = null
   var attributeOrdering: List[Attr] = null
   var children: List[GHDNode] = List()
@@ -95,20 +149,52 @@ class GHDNode(var rels: List[QueryRelation]) {
    * in GHD's post-processing pass
    */
   override def equals(o: Any) = o match {
-    case that: GHDNode => that.rels.equals(rels) && that.children.equals(children)
+    case that: GHDNode => that.rels.equals(rels) && that.children.toSet.equals(children.toSet)
     case _ => false
   }
 
-  override def hashCode = 41 * rels.hashCode() + children.hashCode()
+  def attrNameAgnosticEquals(otherNode: GHDNode, joinAggregates:Map[String, ParsedAggregate]): Boolean = {
+    if (this.subtreeRels.size != otherNode.subtreeRels.size || !(attrSet & otherNode.attrSet).isEmpty) return false
+    return matchRelations(this.subtreeRels.toSet, otherNode.subtreeRels.toSet, this, otherNode, Map[Attr, Attr](), joinAggregates) ;
+  }
 
-  def setBagName(name:String): Unit = {
-    bagName = name
+  private def matchRelations(rels:Set[QueryRelation],
+                     otherRels:Set[QueryRelation],
+                     thisNode:GHDNode,
+                     otherNode:GHDNode,
+                     attrMap: Map[Attr, Attr],
+                     joinAggregates:Map[String, ParsedAggregate]): Boolean = {
+    if (rels.isEmpty && otherRels.isEmpty) return true
+
+    val matches = otherRels.map(otherRel => (otherRels-otherRel, GHD.attrNameAgnosticRelationEquals(otherNode.outputRelation, otherRel, thisNode.outputRelation, rels.head, attrMap, joinAggregates))).filter(m => {
+      m._2.isDefined
+    })
+    return matches.exists(m => {
+      matchRelations(rels.tail, m._1, this, otherNode, m._2.get, joinAggregates)
+    })
+  }
+
+  override def hashCode = 41 * rels.hashCode() + children.toSet.hashCode()
+
+  def setBagName(name:String): Unit = { bagName = name }
+
+  def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, ParsedAggregate]): List[GHDNode] = {
+    val prevSeenDuplicate = seen.find(bag => bag.attrNameAgnosticEquals(this, joinAggregates))
+    prevSeenDuplicate.map(p => {
+      isDuplicateOf = Some(p.bagName)
+    })
+    var newSeen = if (prevSeenDuplicate.isEmpty) this::seen else seen
+    children.foreach(c => {
+      newSeen = c.eliminateDuplicateBagWork(newSeen, joinAggregates)
+    })
+    return newSeen
   }
 
   def getBagInfo(joinAggregates:Map[String,ParsedAggregate]): QueryPlanBagInfo = {
     val jsonRelInfo = getRelationInfo()
     new QueryPlanBagInfo(
       bagName,
+      isDuplicateOf,
       outputRelation.attrNames,
       outputRelation.annotationType,
       jsonRelInfo,
@@ -124,10 +210,10 @@ class GHDNode(var rels: List[QueryRelation]) {
 
   private def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) : List[QueryPlanNPRRInfo] = {
     val attrsWithAccessor = getOrderedAttrsWithAccessor()
-    val prevAndNextAttrMaterialized = getPrevAndNextAttrMaterialized(
+    val prevAndNextAttrMaterialized = getPrevAndNextAttrNames(
       attrsWithAccessor,
       ((attr:Attr) => outputRelation.attrNames.contains(attr)))
-    val prevAndNextAttrAggregated = getPrevAndNextAttrMaterialized(
+    val prevAndNextAttrAggregated = getPrevAndNextAttrNames(
       attrsWithAccessor,
       ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr))) /* TODO: the two parts of the && are actually redundant, they should always be the same */
 
@@ -151,8 +237,8 @@ class GHDNode(var rels: List[QueryRelation]) {
     })
   }
 
-  private def getPrevAndNextAttrMaterialized(attrsWithAccessor: List[Attr],
-                                             filterFn:(Attr => Boolean)): List[(Option[Attr], Option[Attr])] = {
+  private def getPrevAndNextAttrNames(attrsWithAccessor: List[Attr],
+                                      filterFn:(Attr => Boolean)): List[(Option[Attr], Option[Attr])] = {
     val prevAttrsMaterialized = attrsWithAccessor.foldLeft((List[Option[Attr]](), Option.empty[Attr]))((acc, attr) => {
       val prevAttrMaterialized = (
         if (filterFn(attr)) {
