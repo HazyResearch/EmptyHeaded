@@ -98,9 +98,9 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
 
   test("attrNameAgnosticEquals detects that these two bags are the same") {
     val triangle1 = new GHDNode(BARBELL.take(3).reverse) // reverse just to check that this still works given a weird ordering
-    triangle1.computeProjectedOutAttrsAndOutputRelation(Set[Attr]("b"), Set())
+    triangle1.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b"), Set())
     val triangle2 = new GHDNode(BARBELL.drop(3).take(3))
-    triangle2.computeProjectedOutAttrsAndOutputRelation(Set[Attr]("e"), Set())
+    triangle2.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("e"), Set())
     assert(triangle1.attrNameAgnosticEquals(triangle2, Map[String, ParsedAggregate]()))
     assert(triangle2.attrNameAgnosticEquals(triangle1, Map[String, ParsedAggregate]()))
   }
@@ -208,8 +208,8 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
         ("z", "", "")))))
     val agg = ParsedAggregate("+", "COUNT", "1")
     val joinAggs =  Map[String, ParsedAggregate]("e" -> agg, "n" -> agg)
-    child1.computeProjectedOutAttrsAndOutputRelation(Set[Attr]("b", "y"), Set())
-    child2.computeProjectedOutAttrsAndOutputRelation(Set[Attr]("b", "y"), Set())
+    child1.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b", "y"), Set())
+    child2.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b", "y"), Set())
 
     assert(!child1.attrNameAgnosticEquals(child2, joinAggs))
     assert(!child2.attrNameAgnosticEquals(child1, joinAggs))
