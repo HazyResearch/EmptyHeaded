@@ -20,6 +20,7 @@ void Trie<A,M>::save(){
   std::string file = memoryBuffers->path+M::folder+std::string("trieinfo.bin");
   writefile->open(file, std::ios::binary | std::ios::trunc);
   writefile->write((char *)&annotated, sizeof(annotated));
+  writefile->write((char *)&annotation, sizeof(annotation));
   writefile->write((char *)&num_rows, sizeof(num_rows));
   writefile->write((char *)&num_columns, sizeof(num_columns));
   writefile->write((char *)&memoryBuffers->num_buffers, sizeof(memoryBuffers->num_buffers));
@@ -38,6 +39,7 @@ void Trie<A,M>::save(){
 template<class A,class M>
 Trie<A,M>* Trie<A,M>::load(std::string path){
   bool annotated_in;
+  A annotation_in;
   size_t num_rows;
   size_t num_columns;
 
@@ -45,6 +47,7 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
   std::string file = path+M::folder+std::string("trieinfo.bin");
   infile->open(file, std::ios::binary | std::ios::in);
   infile->read((char *)&annotated_in, sizeof(annotated_in));
+  infile->read((char *)&annotation_in, sizeof(annotation_in));
   infile->read((char *)&num_rows, sizeof(num_rows));
   infile->read((char *)&num_columns, sizeof(num_columns));
 
@@ -65,7 +68,12 @@ Trie<A,M>* Trie<A,M>::load(std::string path){
   //init memory buffers
   M* memoryBuffers_in = M::load(path,w_n_threads,&buf_sizes);
 
-  return new Trie<A,M>(annotated_in,num_rows,num_columns,memoryBuffers_in);
+  return new Trie<A,M>(
+    annotated_in,
+    annotation_in,
+    num_rows,
+    num_columns,
+    memoryBuffers_in);
 }
 
 
@@ -123,26 +131,30 @@ void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
   TrieBlock<layout,M>* head = this->getHead();
 
-  head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
-    tuple->push_back(a_d);
-    TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
-    if(num_columns > 1 && next != NULL){
-      recursive_foreach<A,M>(
-        annotated,
-        memoryBuffers,
-        next,
-        1,
-        num_columns,
-        tuple,
-        body);
-    } else if(annotated) {
-      assert(false);
-      //body(tuple,head->get_data(a_i,a_d));
-    } else if(num_columns == 1){
-      body(tuple,(A)0); 
-    }
-    tuple->pop_back(); //delete the last element
-  });
+  if(head->get_set()->cardinality > 0){
+    head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
+      tuple->push_back(a_d);
+      TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
+      if(num_columns > 1 && next != NULL){
+        recursive_foreach<A,M>(
+          annotated,
+          memoryBuffers,
+          next,
+          1,
+          num_columns,
+          tuple,
+          body);
+      } else if(annotated) {
+        assert(false);
+        //body(tuple,head->get_data(a_i,a_d));
+      } else if(num_columns == 1){
+        body(tuple,(A)0); 
+      }
+      tuple->pop_back(); //delete the last element
+    });
+  } else if(annotated){
+    body(tuple,(A)annotation); 
+  }
 }
 
 

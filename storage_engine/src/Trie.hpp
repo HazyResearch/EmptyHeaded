@@ -29,8 +29,14 @@ struct Trie{
   A annotation;
 
   Trie<A,M>(){}
-  Trie<A,M>(bool annotated_in, size_t num_rows_in, size_t num_columns_in, M* buf_in){
+  Trie<A,M>(bool annotated_in, 
+    A annotation_in,
+    size_t num_rows_in, 
+    size_t num_columns_in, 
+    M* buf_in){
+
     annotated = annotated_in;
+    annotation = annotation_in;
     num_rows = num_rows_in;
     num_columns = num_columns_in;
     memoryBuffers = buf_in;
