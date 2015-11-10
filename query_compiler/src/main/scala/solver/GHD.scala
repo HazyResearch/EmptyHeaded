@@ -23,7 +23,8 @@ object GHD {
    */
   def attrNameAgnosticRelationEquals(rel1: QueryRelation,
                                      rel2: QueryRelation,
-                                     attrMap: Map[AttrInfo, AttrInfo]): Option[Map[AttrInfo, AttrInfo]] = {
+                                     attrMap: Map[AttrInfo, AttrInfo],
+                                     joinAggregates:Map[String, ParsedAggregate]): Option[Map[AttrInfo, AttrInfo]] = {
     if (!rel1.name.equals(rel2.name)) {
       return None
     }
@@ -32,19 +33,30 @@ object GHD {
       rel1.attrs.map(attrs => attrMap.get(attrs)),
       rel2.attrs).zipped.toList
     if (zippedAttrs
-      .exists({case (_, mappedToAttr, rel2Attr) => mappedToAttr.isDefined && !mappedToAttr.get.equals(rel2Attr)})) {
+      .exists({case (_, mappedToAttr, rel2Attr) => mappedToAttr.isDefined &&
+      (!mappedToAttr.get.equals(rel2Attr))})) {
+      // the the attribute mapping implied here violates existing mappings
       return None
     } else if (zippedAttrs.
       exists({case (rel1Attr, mappedToAttr, rel2Attr) => mappedToAttr.isEmpty && attrMap.values.exists(_.equals(rel2Attr))})) {
+      // if the attribute mapping implied here maps an attr to another that has already been mapped to
       return None
     } else {
-      Some(zippedAttrs.foldLeft(attrMap)((m, attrsTriple) => {
-        if (attrsTriple._2.isDefined) {
+      zippedAttrs.foldLeft(Some(attrMap):Option[Map[AttrInfo, AttrInfo]])((m, attrsTriple) => {
+        if (m.isEmpty) {
+          None
+        } else if (attrsTriple._2.isDefined) {
           m
         } else {
-          m + (attrsTriple._1 -> attrsTriple._3)
+          if (attrsTriple._1._2 != attrsTriple._3._2 || attrsTriple._1._3 != attrsTriple._3._3) {
+            None
+          } else if (!joinAggregates.get(attrsTriple._1._1).equals(joinAggregates.get(attrsTriple._3._1))) {
+            None
+          } else {
+            Some(m.get + (attrsTriple._1 -> attrsTriple._3))
+          }
         }
-      }))
+      })
     }
   }
 }
@@ -104,7 +116,7 @@ class GHD(val root:GHDNode,
     root.setAttributeOrdering(attributeOrdering)
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.attrNames.toSet, Set())
     root.createAttrToRelsMapping
-    root.eliminateDuplicateBagWork(List[GHDNode]())
+    root.eliminateDuplicateBagWork(List[GHDNode](), joinAggregates)
   }
 }
 
@@ -133,23 +145,29 @@ class GHDNode(var rels: List[QueryRelation]) {
     case _ => false
   }
 
-  def attrNameAgnosticEquals(otherNode: GHDNode): Boolean = {
-    if (this.rels.size != otherNode.rels.size || !(attrSet & otherNode.attrSet).isEmpty) return false
-    return matchRelations(this.rels.toSet, otherNode.rels.toSet, this, otherNode, Map[Attr, Attr]()) ;
+  def attrNameAgnosticEquals(otherNode: GHDNode, joinAggregates:Map[String, ParsedAggregate]): Boolean = {
+    if (this.subtreeRels.size != otherNode.subtreeRels.size || !(attrSet & otherNode.attrSet).isEmpty) return false
+    return matchRelations(this.subtreeRels.toSet, otherNode.subtreeRels.toSet, this, otherNode, Map[AttrInfo, AttrInfo](), joinAggregates) ;
   }
 
   private def matchRelations(rels:Set[QueryRelation],
                      otherRels:Set[QueryRelation],
                      thisNode:GHDNode,
                      otherNode:GHDNode,
-                     attrMap: Map[Attr, Attr]): Boolean = {
+                     attrMap: Map[AttrInfo, AttrInfo],
+                     joinAggregates:Map[String, ParsedAggregate]): Boolean = {
+    println(rels.size)
+    rels.map(r => println(r.attrNames))
+    println(otherRels.size)
+    otherRels.map(r => println(r.attrNames))
     if (rels.isEmpty && otherRels.isEmpty) return true
 
-    val matches = otherRels.map(otherRel => (otherRels-otherRel, GHD.attrNameAgnosticRelationEquals(otherRel, rels.head, attrMap))).filter(m => {
+    val matches = otherRels.map(otherRel => (otherRels-otherRel, GHD.attrNameAgnosticRelationEquals(otherRel, rels.head, attrMap, joinAggregates))).filter(m => {
       m._2.isDefined
     })
+    println(matches)
     return matches.exists(m => {
-      matchRelations(rels.tail, m._1, this, otherNode, m._2.get)
+      matchRelations(rels.tail, m._1, this, otherNode, m._2.get, joinAggregates)
     })
   }
 
@@ -157,14 +175,14 @@ class GHDNode(var rels: List[QueryRelation]) {
 
   def setBagName(name:String): Unit = { bagName = name }
 
-  def eliminateDuplicateBagWork(seen:List[GHDNode]): List[GHDNode] = {
-    val prevSeenDuplicate = seen.find(bag => bag.attrNameAgnosticEquals(this))
+  def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, ParsedAggregate]): List[GHDNode] = {
+    val prevSeenDuplicate = seen.find(bag => bag.attrNameAgnosticEquals(this, joinAggregates))
     prevSeenDuplicate.map(p => {
       isDuplicateOf = Some(p.bagName)
     })
     var newSeen = if (prevSeenDuplicate.isEmpty) this::seen else seen
     children.foreach(c => {
-      newSeen = c.eliminateDuplicateBagWork(newSeen)
+      newSeen = c.eliminateDuplicateBagWork(newSeen, joinAggregates)
     })
     return newSeen
   }
@@ -189,10 +207,10 @@ class GHDNode(var rels: List[QueryRelation]) {
 
   private def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) : List[QueryPlanNPRRInfo] = {
     val attrsWithAccessor = getOrderedAttrsWithAccessor()
-    val prevAndNextAttrMaterialized = getPrevAndNextAttrMaterialized(
+    val prevAndNextAttrMaterialized = getPrevAndNextAttrNames(
       attrsWithAccessor,
       ((attr:Attr) => outputRelation.attrNames.contains(attr)))
-    val prevAndNextAttrAggregated = getPrevAndNextAttrMaterialized(
+    val prevAndNextAttrAggregated = getPrevAndNextAttrNames(
       attrsWithAccessor,
       ((attr:Attr) => joinAggregates.get(attr).isDefined))
 
@@ -216,8 +234,8 @@ class GHDNode(var rels: List[QueryRelation]) {
     })
   }
 
-  private def getPrevAndNextAttrMaterialized(attrsWithAccessor: List[Attr],
-                                             filterFn:(Attr => Boolean)): List[(Option[Attr], Option[Attr])] = {
+  private def getPrevAndNextAttrNames(attrsWithAccessor: List[Attr],
+                                      filterFn:(Attr => Boolean)): List[(Option[Attr], Option[Attr])] = {
     val prevAttrsMaterialized = attrsWithAccessor.foldLeft((List[Option[Attr]](), Option.empty[Attr]))((acc, attr) => {
       val prevAttrMaterialized = (
         if (filterFn(attr)) {
