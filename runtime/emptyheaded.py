@@ -65,12 +65,14 @@ def loadDB(path):
 
 def main():
   #db_config="/Users/caberger/Documents/Research/data/databases/simple/config.json"
-  db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config.json"
-  createDB(db_config)
-  #oadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
-  query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
+  #db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config.json"
+  #createDB(db_config)
+  loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db")
+  #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
+  query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<COUNT(*)>.")
 
-  print numRows("Triangle")
-  print fetchData("Triangle")[0]
+  #print numRows("Triangle")
+  a= fetchData("Lollipop")[0]
+  print a
 
 if __name__ == "__main__": main()

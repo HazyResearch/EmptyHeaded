@@ -296,12 +296,16 @@ size_t ParTrieBuilder<A,M>::build_aggregated_set(
   const TrieBlock<hybrid,M> *tb1,
   const TrieBlock<hybrid,M> *tb2) {
 
+  //clear the memory and move on (will set num bytes and cardinality to 0)
+  uint8_t* place = (uint8_t*)trie->memoryBuffers->head->get_next(sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>));
+  memset(place,(uint8_t)0,sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>));
+
   //fixme
   assert(tb1 != NULL && tb2 != NULL);
   if(tb1 == NULL || tb2 == NULL){
     //clear the memory and move on (will set num bytes and cardinality to 0)
-    uint8_t* place = (uint8_t*)trie->memoryBuffers->head->get_next(sizeof(Set<hybrid>));
-    memset(place,(uint8_t)0,sizeof(Set<hybrid>));
+    place = (uint8_t*)trie->memoryBuffers->head->get_next(sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>));
+    memset(place,(uint8_t)0,sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>));
     return 0;
   }
 
@@ -312,7 +316,7 @@ size_t ParTrieBuilder<A,M>::build_aggregated_set(
     std::max(s1->number_of_bytes,
              s2->number_of_bytes);
 
-  uint8_t* place = (uint8_t*) (trie->memoryBuffers->head->get_next(sizeof(TrieBlock<hybrid,M>)+alloc_size+sizeof(Set<hybrid>)));
+  place = (uint8_t*) (trie->memoryBuffers->head->get_next(sizeof(TrieBlock<hybrid,M>)+alloc_size+sizeof(Set<hybrid>)));
   Set<hybrid> *r = (Set<hybrid>*)(place+sizeof(TrieBlock<hybrid,M>));
   trie->memoryBuffers->head->roll_back(alloc_size+sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>)); 
   

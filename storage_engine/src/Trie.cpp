@@ -131,27 +131,30 @@ void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
   TrieBlock<layout,M>* head = this->getHead();
 
-  std::cout << "HERE: " << head->get_set()->cardinality << std::endl;
-  head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
-    tuple->push_back(a_d);
-    TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
-    if(num_columns > 1 && next != NULL){
-      recursive_foreach<A,M>(
-        annotated,
-        memoryBuffers,
-        next,
-        1,
-        num_columns,
-        tuple,
-        body);
-    } else if(annotated) {
-      assert(false);
-      //body(tuple,head->get_data(a_i,a_d));
-    } else if(num_columns == 1){
-      body(tuple,(A)0); 
-    }
-    tuple->pop_back(); //delete the last element
-  });
+  if(head->get_set()->cardinality > 0){
+    head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
+      tuple->push_back(a_d);
+      TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
+      if(num_columns > 1 && next != NULL){
+        recursive_foreach<A,M>(
+          annotated,
+          memoryBuffers,
+          next,
+          1,
+          num_columns,
+          tuple,
+          body);
+      } else if(annotated) {
+        assert(false);
+        //body(tuple,head->get_data(a_i,a_d));
+      } else if(num_columns == 1){
+        body(tuple,(A)0); 
+      }
+      tuple->pop_back(); //delete the last element
+    });
+  } else if(annotated){
+    body(tuple,(A)annotation); 
+  }
 }
 
 

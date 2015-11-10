@@ -1,6 +1,6 @@
 def getCode(hashstring,mem,types,annotationType):
-	t_len = len(types)
-	code = """
+  t_len = len(types)
+  code = """
 #include "querywrapper.hpp"
 #include <iostream>
 
@@ -51,23 +51,34 @@ static PyObject * fetch_data_%(hashstring)s(PyObject * self, PyObject * args){
   PyObject *retTable = PyList_New(0);
   (void) encodings;
 	result->foreach([&](std::vector<uint32_t>* tuple,%(annotationType)s value){
-	  assert(tuple->size() == %(t_len)s);
-  	  PyObject *retRow = PyTuple_New(tuple->size());"""% locals()
-  	i = 0
-	for t in types:
-		if t == "long":
-			code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(((Encoding<%(t)s>*)encodings.at(%(i)s))->key_to_value.at(tuple->at(%(i)s)));
+	  assert(tuple->size() == %(t_len)s);"""% locals()
+  extra_string=""
+  if annotationType != "void*":
+    extra_string="+1"
+  code+="""PyObject *retRow = PyTuple_New(tuple->size()%(extra_string)s);"""% locals()
+  i = 0
+  for t in types:
+    if t == "long":
+	   code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(((Encoding<%(t)s>*)encodings.at(%(i)s))->key_to_value.at(tuple->at(%(i)s)));
 			PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
-		elif t == "int":
-			print "NOT IMPLEMENTED"
-		elif t == "string":
-			print "NOT IMPLEMENTED"
-		elif t == "float":
-			print "NOT IMPLEMENTED"
-		i += 1
-	code += """if(PyList_Append(retTable,retRow) == -1){
+    elif t == "int":
+      print "NOT IMPLEMENTED"
+    elif t == "string":
+      print "NOT IMPLEMENTED"
+    elif t == "float":
+      print "NOT IMPLEMENTED"
+    i += 1
+  if annotationType == "long":
+    code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(value);
+    PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
+  elif annotationType == "void*":
+    code+=""""""
+  elif t == "float":
+    print "NOT IMPLEMENTED"
+
+  code += """if(PyList_Append(retTable,retRow) == -1){
    	std::cout << "ERROR INSERTING ROW";}"""% locals()
-	code += """});
+  code += """});
   return retTable;
 }
 
@@ -75,4 +86,4 @@ PyMODINIT_FUNC initQuery_%(hashstring)s(void)
 {
   Py_InitModule("Query_%(hashstring)s", EmptyHeadedQueryMethods);
 }"""% locals()
-	return code
+  return code
