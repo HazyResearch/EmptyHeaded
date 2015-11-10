@@ -362,7 +362,7 @@ object CPPGenerator {
               val index1 = relationIndices(relationNames.indexOf( head.accessors(i).name + "_" + head.accessors(i).attrs.mkString("_") ) )
               code.append(s"""${head.name}_sets.push_back(Iterator_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}->get_block(${index1}));""")
             })
-            code.append(s"""const size_t count_${head.name} = Builders.build_aggregated_set(&${head.name}_sets);""")
+            code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(&${head.name}_sets);""")
         } 
       }
     }

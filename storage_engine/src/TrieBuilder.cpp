@@ -159,6 +159,12 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
   Set<hybrid> *operator_set = (Set<hybrid>*)place2;
   tmp_buffers.at(tmp_level)->roll_back(2*(alloc_size+sizeof(Set<hybrid>))); 
 
+  if(isets->size() % 2){
+    Set<hybrid>* tmp = result_set;
+    result_set = operator_set;
+    operator_set = tmp;
+  }
+
   //intersect first two isets
   const TrieBlock<hybrid,M> *tb2 = isets->at(0);
   const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));  
@@ -168,7 +174,7 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
           s2);
 
   //intersect remaining isets
-  for(size_t i = 1; i < isets->size(); i++){
+  for(size_t i = 0; i < isets->size(); i++){
     //swap buffers
     Set<hybrid>* tmp = result_set;
     result_set = operator_set;
