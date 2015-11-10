@@ -4,8 +4,8 @@ class ResultError(Exception):
     pass
 
 def main():
-	emptyheaded.loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
-	emptyheaded.query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
+  emptyheaded.loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
+  emptyheaded.query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
 
 	numRows = emptyheaded.numRows("Triangle")
 	if numRows != 1612010L:

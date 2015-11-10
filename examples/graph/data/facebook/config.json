@@ -1,0 +1,26 @@
+{
+  "numThreads": 1,
+  "numNUMA": 4,
+  "database": "$EMPTYHEADED_HOME/examples/graph/data/facebook/db",
+  "algorithm": "NPRR+",
+  "layout": "hybrid",
+  "memory": "RAM",
+  "relations": [
+    {
+      "name": "Edge",
+      "source": "$EMPTYHEADED_HOME/examples/graph/data/facebook/duplicated.tsv",
+      "annotation":"void*",
+      "attributes":[
+        {
+          "attrType":"long",
+          "encoding":"node"
+        },
+        {
+          "attrType":"long",
+          "encoding":"node"
+        }
+      ],
+      "orderings":["all"]
+    }
+  ]
+}
