@@ -6,7 +6,5 @@ class ResultError(Exception):
 def main():
   db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config.json"
   emptyheaded.createDB(db_config)
-  db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config_pruned.json"
-  emptyheaded.createDB(db_config)
 
 if __name__ == "__main__": main()
