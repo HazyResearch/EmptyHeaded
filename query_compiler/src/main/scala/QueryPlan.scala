@@ -24,10 +24,11 @@ case class QueryPlanOutputInfo(val name:String,
                           val annotation:String)
 
 case class QueryPlanBagInfo(val name:String,
-                       val attributes:List[Attr],
-                       val annotation:String,
-                       val relations:List[QueryPlanRelationInfo],
-                       val nprr:List[QueryPlanNPRRInfo])
+                            val duplicateOf:Option[String],
+                            val attributes:List[Attr],
+                            val annotation:String,
+                            val relations:List[QueryPlanRelationInfo],
+                            val nprr:List[QueryPlanNPRRInfo])
 
 case class QueryPlanNPRRInfo(val name:String,
                         val accessors:List[QueryPlanAccessor],

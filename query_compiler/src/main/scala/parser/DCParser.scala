@@ -1,6 +1,6 @@
 package DunceCap
 
-import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
+import DunceCap.attr.{AttrInfo, Attr, SelectionVal, SelectionOp}
 
 import scala.collection.immutable.List
 import scala.util.parsing.combinator.RegexParsers
@@ -9,9 +9,10 @@ package object attr {
   type Attr = String
   type SelectionOp = String
   type SelectionVal = String
+  type AttrInfo = (Attr, SelectionOp, SelectionVal)
 }
 
-class QueryRelation(val name:String, val attrs:List[(Attr, SelectionOp, SelectionVal)],  var annotationType:String = "void*") {
+class QueryRelation(val name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*") {
   val attrNames = attrs.map(x => x._1)
   override def equals(that: Any): Boolean =
     that match {
@@ -28,7 +29,7 @@ class RecursionStatement(val functionName:String, val inputArgument:QueryRelatio
 
 class TransitiveClosureStatement(val join:List[QueryRelation])
 
-class ParsedAggregate(val op:String, val expression:String, val init:String)
+case class ParsedAggregate(val op:String, val expression:String, val init:String)
 
 class ConverganceCriteria(val converganceType:String, val converganceOp:String, val converganceCondition:String)
 
@@ -55,10 +56,10 @@ class AnnotationExpression( val boundVariable:String,
 }
 
 object DCParser extends RegexParsers {
-  def run(line:String, nprrOnly:Boolean = false) : QueryPlan = {
+  def run(line:String, config:Config) : QueryPlan = {
     this.parseAll(this.statement, line) match {
       case DCParser.Success(parsedStatement, _) => {
-        parsedStatement.computePlan(nprrOnly)
+        parsedStatement.computePlan(config)
       }
     }
   }

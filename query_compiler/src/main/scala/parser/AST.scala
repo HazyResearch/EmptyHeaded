@@ -22,7 +22,7 @@ case class ASTQueryStatement(
                               joinAggregates:Map[String,ParsedAggregate]) extends ASTStatement {
   // TODO (sctu) : ignoring everything except for join, joinAggregates for now
 
-  def computePlan(nprrOnly:Boolean): QueryPlan = {
+  def computePlan(config:Config): QueryPlan = {
     // get the annotations
     val missingRelations = join.filter(rel => !Environment.isLoaded(rel))
     if (!missingRelations.isEmpty) {
@@ -30,12 +30,15 @@ case class ASTQueryStatement(
     }
     val joinQueryWithAnnotations = join.map(rel => Environment.setAnnotationAccordingToConfig(rel))
 
-    if (!nprrOnly) {
+    if (!config.nprrOnly) {
       val rootNodes = GHDSolver.getMinFHWDecompositions(join);
       val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs));
       candidates.map(c => c.doPostProcessingPass())
       val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(
         HeuristicUtils.getGHDsWithMinBags(candidates))
+      if (config.bagDedup) {
+        chosen.head.doBagDedup
+      }
       chosen.head.getQueryPlan
     } else {
       // since we're only using NPRR, just create a single GHD bag
