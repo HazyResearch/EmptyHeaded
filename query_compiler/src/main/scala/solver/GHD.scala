@@ -166,7 +166,6 @@ class GHDNode(var rels: List[QueryRelation]) {
     val matches = otherRels.map(otherRel => (otherRels-otherRel, GHD.attrNameAgnosticRelationEquals(otherRel, rels.head, attrMap, joinAggregates))).filter(m => {
       m._2.isDefined
     })
-    println(matches)
     return matches.exists(m => {
       matchRelations(rels.tail, m._1, this, otherNode, m._2.get, joinAggregates)
     })
