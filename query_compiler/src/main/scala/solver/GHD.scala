@@ -21,7 +21,9 @@ object GHD {
    * mappings we already know about. If this does work, return the new attribute mapping (which potentially has some new entries),
    * otherwise return None
    */
-  def attrNameAgnosticRelationEquals(rel1: QueryRelation,
+  def attrNameAgnosticRelationEquals(output1:QueryRelation,
+                                     rel1: QueryRelation,
+                                     output2:QueryRelation,
                                      rel2: QueryRelation,
                                      attrMap: Map[Attr, Attr],
                                      joinAggregates:Map[String, ParsedAggregate]): Option[Map[Attr, Attr]] = {
@@ -52,7 +54,8 @@ object GHD {
           // don't need to check the aggregations again because they must have been checked when we put them in attrMap
           m
         } else {
-          if (!joinAggregates.get(attrsTriple._1._1).equals(joinAggregates.get(attrsTriple._3._1))) {
+          if (output1.attrNames.contains(attrsTriple._1._1)!=output2.attrNames.contains(attrsTriple._3._1)
+            || !joinAggregates.get(attrsTriple._1._1).equals(joinAggregates.get(attrsTriple._3._1))) {
             None
           } else {
             Some(m.get + (attrsTriple._1._1 -> attrsTriple._3._1))
@@ -163,7 +166,7 @@ class GHDNode(var rels: List[QueryRelation]) {
                      joinAggregates:Map[String, ParsedAggregate]): Boolean = {
     if (rels.isEmpty && otherRels.isEmpty) return true
 
-    val matches = otherRels.map(otherRel => (otherRels-otherRel, GHD.attrNameAgnosticRelationEquals(otherRel, rels.head, attrMap, joinAggregates))).filter(m => {
+    val matches = otherRels.map(otherRel => (otherRels-otherRel, GHD.attrNameAgnosticRelationEquals(otherNode.outputRelation, otherRel, thisNode.outputRelation, rels.head, attrMap, joinAggregates))).filter(m => {
       m._2.isDefined
     })
     return matches.exists(m => {
