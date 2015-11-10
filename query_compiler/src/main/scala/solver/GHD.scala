@@ -119,7 +119,7 @@ class GHD(val root:GHDNode,
     root.setBagName(outputRelation.name)
     root.setDescendantNames(1)
     root.setAttributeOrdering(attributeOrdering)
-    root.computeProjectedOutAttrsAndOutputRelation(outputRelation.attrNames.toSet, Set())
+    root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
     root.createAttrToRelsMapping
   }
 
@@ -215,7 +215,7 @@ class GHDNode(var rels: List[QueryRelation]) {
       ((attr:Attr) => outputRelation.attrNames.contains(attr)))
     val prevAndNextAttrAggregated = getPrevAndNextAttrNames(
       attrsWithAccessor,
-      ((attr:Attr) => joinAggregates.get(attr).isDefined))
+      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr))) /* TODO: the two parts of the && are actually redundant, they should always be the same */
 
     attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
       val (attr, prevNextInfo) = attrAndPrevNextInfo
@@ -268,7 +268,9 @@ class GHDNode(var rels: List[QueryRelation]) {
     }
   }
 
-  private def getAggregation(joinAggregates:Map[String,ParsedAggregate], attr:Attr, prevNextInfo:(Option[Attr], Option[Attr])): Option[QueryPlanAggregation] = {
+  private def getAggregation(joinAggregates:Map[String,ParsedAggregate],
+                             attr:Attr,
+                             prevNextInfo:(Option[Attr], Option[Attr])): Option[QueryPlanAggregation] = {
    joinAggregates.get(attr).map(parsedAggregate => {
       new QueryPlanAggregation(parsedAggregate.op, parsedAggregate.init, parsedAggregate.expression, prevNextInfo._1, prevNextInfo._2)
     })
@@ -296,7 +298,7 @@ class GHDNode(var rels: List[QueryRelation]) {
 
   private def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
     attrToRels.get(attr).getOrElse(List()).map(rel => {
-      new QueryPlanAccessor(rel.name, rel.attrNames,(rel.attrNames.tail == attr && rel.annotationType != "void*"))
+      new QueryPlanAccessor(rel.name, rel.attrNames,(rel.attrNames.last == attr && rel.annotationType != "void*"))
     })
   }
 
@@ -364,14 +366,14 @@ class GHDNode(var rels: List[QueryRelation]) {
   /**
    * Compute what is projected out in this bag, and what this bag's output relation is
    */
-  def computeProjectedOutAttrsAndOutputRelation(outputAttrs:Set[Attr], attrsFromAbove:Set[Attr]): QueryRelation = {
+  def computeProjectedOutAttrsAndOutputRelation(annotationType:String,outputAttrs:Set[Attr], attrsFromAbove:Set[Attr]): QueryRelation = {
     projectedOutAttrs = attrSet -- (outputAttrs ++ attrsFromAbove)
     val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
     // Right now we only allow a query to have one type of annotation, so
     // we take the annotation type from an arbitrary relation that was joined in this bag
-    outputRelation = new QueryRelation(bagName, keptAttrs.map(attr =>(attr, "", "")).toList, rels.head.annotationType)
+    outputRelation = new QueryRelation(bagName, keptAttrs.map(attr =>(attr, "", "")).toList, annotationType)
     val childrensOutputRelations = children.map(child => {
-      child.computeProjectedOutAttrsAndOutputRelation(outputAttrs, attrsFromAbove ++ attrSet)
+      child.computeProjectedOutAttrsAndOutputRelation(annotationType,outputAttrs, attrsFromAbove ++ attrSet)
     })
     subtreeRels ++= childrensOutputRelations
     return outputRelation

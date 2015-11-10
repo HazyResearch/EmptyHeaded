@@ -28,9 +28,12 @@ struct TrieBuilder{
   Trie<A,M>* trie;
   std::vector<MemoryBuffer*> tmp_buffers;
   std::vector<NextLevel> next;
-  TrieBuilder<A,M>(Trie<A,M>* t_in);
+  TrieBuilder<A,M>(Trie<A,M>* t_in,const size_t num_attributes);
   uint32_t cur_level;
   uint32_t tmp_level;
+
+  size_t build_aggregated_set(
+    const TrieBlock<hybrid,M> *s1);
 
   size_t build_aggregated_set(
     const TrieBlock<hybrid,M> *s1, 
@@ -79,7 +82,7 @@ template<class A, class M>
 struct ParTrieBuilder{
   Trie<A,M>* trie;
   std::vector<TrieBuilder<A,M>*> builders;
-  ParTrieBuilder<A,M>(Trie<A,M>* t_in);
+  ParTrieBuilder<A,M>(Trie<A,M>* t_in,const size_t num_attributes);
   const TrieBlock<hybrid,M>* tmp_head;
   
   size_t build_aggregated_set(

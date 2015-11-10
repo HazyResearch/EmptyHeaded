@@ -16,19 +16,20 @@ def compileQuery(name):
 	os.chdir(mydir)
 
 def execute(name,mem,types,annotationType):
-	os.system("""sed -e "s/HASHSTRING/"""+name+"""/g" """+os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper_template.hpp > $EMPTYHEADED_HOME/runtime/wrapper/querywrapper.hpp"))
+  os.system("""sed -e "s/HASHSTRING/"""+name+"""/g" """+os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper_template.hpp > $EMPTYHEADED_HOME/runtime/wrapper/querywrapper.hpp"))
 
-	wrapperfile = open(os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"),"w")
-	wrapperfile.write(code.wrappertemplate.getCode(name,mem,types,annotationType))
-	wrapperfile.close()
+  wrapperfile = open(os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"),"w")
+  wrapperfile.write(code.wrappertemplate.getCode(name,mem,types,annotationType))
+  wrapperfile.close()
 
-	compileQuery(name)
+  compileQuery(name)
+  os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"))
 
-	q = loadQuery(name)
-	q_result = eval("q.run_"+name+"()")
-	#q_result = eval("q.run_"+name+"()")
+  q = loadQuery(name)
+  q_result = eval("q.run_"+name+"()")
+  #q_result = eval("q.run_"+name+"()")
 
-	return (q,q_result)
+  return (q,q_result)
 
 def compile(name,mem,types,annotationType):
 	wrapperfile = open(os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"),"w")

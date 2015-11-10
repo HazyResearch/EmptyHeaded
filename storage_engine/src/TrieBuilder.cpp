@@ -11,17 +11,18 @@
 #include "emptyheaded.hpp"
 
 template<class A,class M>
-TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in){
+TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in, const size_t num_attributes){
   trie = t_in;
   next.resize(t_in->num_columns);
-  tmp_buffers.resize(t_in->num_columns);
   if(t_in->num_columns > 0){
     next.at(0).index = NUM_THREADS; //head always lives here
     next.at(0).offset = 0;
   }
   cur_level = 1;
+
   tmp_level = 0;
-  for(size_t i = 0; i < t_in->num_columns; i++){
+  tmp_buffers.resize(num_attributes);
+  for(size_t i = 0; i < num_attributes; i++){
     tmp_buffers.at(i) = new MemoryBuffer(2);
   }
 }
@@ -77,6 +78,21 @@ size_t TrieBuilder<A,M>::build_set(
   //return the set
 }
 
+
+//Build a aggregated set for one sets
+template<class A,class M>
+size_t TrieBuilder<A,M>::build_aggregated_set(
+  const TrieBlock<hybrid,M> *tb1){
+
+  //fixme
+  assert(tb1 != NULL);
+  if(tb1 == NULL){
+    return 0;
+  }
+
+  const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));
+  return s1->cardinality;
+}
 
 //Build a aggregated set for two sets
 template<class A,class M>
@@ -202,7 +218,7 @@ void TrieBuilder<A,M>::set_annotation(
     next.at(cur_level-1).offset,
     trie->memoryBuffers);
 
-  assert(next.at(cur_level).index <= (int)NUM_THREADS);
+  assert(next.at(cur_level-1).index <= (int)NUM_THREADS);
   A* annotation = (A*)(((uint8_t*)prev_block)+(
     sizeof(TrieBlock<hybrid,M>)+
     sizeof(Set<hybrid>)+
@@ -258,11 +274,11 @@ void TrieBuilder<A,M>::foreach_builder(
 ////////////////////////////parallel wrapper
 //////////////////////////////////////////////////////////////////////
 template<class A, class M>
-ParTrieBuilder<A,M>::ParTrieBuilder(Trie<A,M> *t_in){
+ParTrieBuilder<A,M>::ParTrieBuilder(Trie<A,M> *t_in, const size_t num_attributes){
   trie = t_in;
   builders.resize(NUM_THREADS);
   for(size_t i = 0; i < NUM_THREADS; i++){
-    builders.at(i) = new TrieBuilder<A,M>(t_in);
+    builders.at(i) = new TrieBuilder<A,M>(t_in,num_attributes);
   }
 }
 

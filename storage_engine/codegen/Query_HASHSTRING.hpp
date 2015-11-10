@@ -8,7 +8,10 @@
 #include "Encoding.hpp"
 
 #ifdef EXECUTABLE
-#include "main.hpp"
+struct application{
+  public:
+    virtual void run_HASHSTRING() = 0;
+};
 #else
 struct application{};
 #endif
@@ -27,6 +30,16 @@ struct Query_HASHSTRING : public application {
 #ifdef EXECUTABLE
 application* init_app(){
   return new Query_HASHSTRING(); 
+}
+int main () {
+  application* q = init_app();
+  q->run_HASHSTRING();
+}
+#endif
+#ifdef GOOGLE_TEST
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 #endif
 
