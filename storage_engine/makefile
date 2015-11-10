@@ -34,10 +34,6 @@ CXX = clang++
 override LINKERARGS=
 endif
 
-ifdef NUM_THREADS
-	override CXXFLAGS += -DNUM_THREADS_IN=$(NUM_THREADS)
-endif
-
 APPS_SOURCES=$(shell ls apps)
 APPS=$(APPS_SOURCES:.cpp=)
 APPS_EXES=$(APPS:%=$(EXEDIR)/%)
