@@ -10,6 +10,7 @@ import java.io.{FileOutputStream, PrintStream, File}
 case class Config(directory: Option[String] = None,
                   dbConfig:String = "",
                   nprrOnly:Boolean = false,
+                  bagDedup:Boolean = true,
                   readQueryFromFile:Boolean = false,
                   query:String = "",
                   explain:Boolean = false)
@@ -31,6 +32,8 @@ object QueryCompiler {
         c.copy(dbConfig = x)} text("database config file")
       opt[Unit]('n', "nprr-only") action { (_, c) =>
         c.copy(nprrOnly = true)} text("whether to use only NPRR (single bag GHD), defaults to false")
+      opt[Unit]("no-bag-dedup") action { (_, c) =>
+        c.copy(bagDedup = false)} text("whether to deduplicate bags in the GHD")
       opt[Unit]('f', "read-query-from-file") action { (_, c) =>
         c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
       arg[String]("<query>") action { (x, c) =>
@@ -46,7 +49,7 @@ object QueryCompiler {
           config.query
         }
         
-      val queryPlan = DCParser.run(queryString, config.nprrOnly)
+      val queryPlan = DCParser.run(queryString, config)
 
       val output = config.directory.map(dir => {
         Some(new PrintStream(new FileOutputStream(

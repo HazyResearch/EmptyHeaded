@@ -23,37 +23,39 @@ object GHD {
    */
   def attrNameAgnosticRelationEquals(rel1: QueryRelation,
                                      rel2: QueryRelation,
-                                     attrMap: Map[AttrInfo, AttrInfo],
-                                     joinAggregates:Map[String, ParsedAggregate]): Option[Map[AttrInfo, AttrInfo]] = {
+                                     attrMap: Map[Attr, Attr],
+                                     joinAggregates:Map[String, ParsedAggregate]): Option[Map[Attr, Attr]] = {
     if (!rel1.name.equals(rel2.name)) {
       return None
     }
     val zippedAttrs = (
       rel1.attrs,
-      rel1.attrs.map(attrs => attrMap.get(attrs)),
+      rel1.attrNames.map(attr => attrMap.get(attr)),
       rel2.attrs).zipped.toList
     if (zippedAttrs
       .exists({case (_, mappedToAttr, rel2Attr) => mappedToAttr.isDefined &&
-      (!mappedToAttr.get.equals(rel2Attr))})) {
+      (!mappedToAttr.get.equals(rel2Attr._1))})) {
       // the the attribute mapping implied here violates existing mappings
       return None
     } else if (zippedAttrs.
-      exists({case (rel1Attr, mappedToAttr, rel2Attr) => mappedToAttr.isEmpty && attrMap.values.exists(_.equals(rel2Attr))})) {
+      exists({case (rel1Attr, mappedToAttr, rel2Attr) => mappedToAttr.isEmpty && attrMap.values.exists(_.equals(rel2Attr._1))})) {
       // if the attribute mapping implied here maps an attr to another that has already been mapped to
       return None
     } else {
-      zippedAttrs.foldLeft(Some(attrMap):Option[Map[AttrInfo, AttrInfo]])((m, attrsTriple) => {
+      zippedAttrs.foldLeft(Some(attrMap):Option[Map[Attr, Attr]])((m, attrsTriple) => {
         if (m.isEmpty) {
           None
+        } else if (attrsTriple._1._2 != attrsTriple._3._2 || attrsTriple._1._3 != attrsTriple._3._3) {
+          // not a match if the selections aren't the same
+          None
         } else if (attrsTriple._2.isDefined) {
+          // don't need to check the aggregations again because they must have been checked when we put them in attrMap
           m
         } else {
-          if (attrsTriple._1._2 != attrsTriple._3._2 || attrsTriple._1._3 != attrsTriple._3._3) {
-            None
-          } else if (!joinAggregates.get(attrsTriple._1._1).equals(joinAggregates.get(attrsTriple._3._1))) {
+          if (!joinAggregates.get(attrsTriple._1._1).equals(joinAggregates.get(attrsTriple._3._1))) {
             None
           } else {
-            Some(m.get + (attrsTriple._1 -> attrsTriple._3))
+            Some(m.get + (attrsTriple._1._1 -> attrsTriple._3._1))
           }
         }
       })
@@ -116,6 +118,9 @@ class GHD(val root:GHDNode,
     root.setAttributeOrdering(attributeOrdering)
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.attrNames.toSet, Set())
     root.createAttrToRelsMapping
+  }
+
+  def doBagDedup() = {
     root.eliminateDuplicateBagWork(List[GHDNode](), joinAggregates)
   }
 }
@@ -141,25 +146,21 @@ class GHDNode(var rels: List[QueryRelation]) {
    * in GHD's post-processing pass
    */
   override def equals(o: Any) = o match {
-    case that: GHDNode => that.rels.equals(rels) && that.children.equals(children)
+    case that: GHDNode => that.rels.equals(rels) && that.children.toSet.equals(children.toSet)
     case _ => false
   }
 
   def attrNameAgnosticEquals(otherNode: GHDNode, joinAggregates:Map[String, ParsedAggregate]): Boolean = {
     if (this.subtreeRels.size != otherNode.subtreeRels.size || !(attrSet & otherNode.attrSet).isEmpty) return false
-    return matchRelations(this.subtreeRels.toSet, otherNode.subtreeRels.toSet, this, otherNode, Map[AttrInfo, AttrInfo](), joinAggregates) ;
+    return matchRelations(this.subtreeRels.toSet, otherNode.subtreeRels.toSet, this, otherNode, Map[Attr, Attr](), joinAggregates) ;
   }
 
   private def matchRelations(rels:Set[QueryRelation],
                      otherRels:Set[QueryRelation],
                      thisNode:GHDNode,
                      otherNode:GHDNode,
-                     attrMap: Map[AttrInfo, AttrInfo],
+                     attrMap: Map[Attr, Attr],
                      joinAggregates:Map[String, ParsedAggregate]): Boolean = {
-    println(rels.size)
-    rels.map(r => println(r.attrNames))
-    println(otherRels.size)
-    otherRels.map(r => println(r.attrNames))
     if (rels.isEmpty && otherRels.isEmpty) return true
 
     val matches = otherRels.map(otherRel => (otherRels-otherRel, GHD.attrNameAgnosticRelationEquals(otherRel, rels.head, attrMap, joinAggregates))).filter(m => {
@@ -171,7 +172,7 @@ class GHDNode(var rels: List[QueryRelation]) {
     })
   }
 
-  override def hashCode = 41 * rels.hashCode() + children.hashCode()
+  override def hashCode = 41 * rels.hashCode() + children.toSet.hashCode()
 
   def setBagName(name:String): Unit = { bagName = name }
 

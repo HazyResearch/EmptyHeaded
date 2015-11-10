@@ -56,10 +56,10 @@ class AnnotationExpression( val boundVariable:String,
 }
 
 object DCParser extends RegexParsers {
-  def run(line:String, nprrOnly:Boolean = false) : QueryPlan = {
+  def run(line:String, config:Config) : QueryPlan = {
     this.parseAll(this.statement, line) match {
       case DCParser.Success(parsedStatement, _) => {
-        parsedStatement.computePlan(nprrOnly)
+        parsedStatement.computePlan(config)
       }
     }
   }
