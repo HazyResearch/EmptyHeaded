@@ -27,7 +27,7 @@ object CPPGenerator {
     val cppCode = emitLoadRelations(qp.relations)
     cppCode.append(emitInitializeOutput(qp.output))
     qp.ghd.foreach(bag => {
-      val (bagCode,bagOutput) = emitNPRR(bag.name==qp.output.name,bag,intermediateRelations.toMap)
+      val (bagCode,bagOutput) = emitNPRR(bag.name==qp.output.name,bag,intermediateRelations.toMap,outputAttributes)
       intermediateRelations += ((bag.name -> bagOutput))
       outputAttributes = bagOutput
       cppCode.append(bagCode)
@@ -151,13 +151,18 @@ object CPPGenerator {
   /////////////////////////////////////////////////////////////////////////////
   //Emit NPRR code
   /////////////////////////////////////////////////////////////////////////////
-  def emitIntermediateTrie(name:String,annotation:String,num:Int) : StringBuilder = {
+  def emitIntermediateTrie(name:String,annotation:String,num:Int,bagDuplicate:Option[String]) : StringBuilder = {
     val code = new StringBuilder()
     assert(Environment.config.memory != "ParMMapBuffer")
     val ordering = (0 until num).toList.mkString("_")
-    code.append(s""" 
-      Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = new Trie<${annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${name}",${num},${annotation != "void*"});
-    """)
+
+    bagDuplicate match {
+      case Some(bd) => {
+        code.append(s"""Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = Trie_${bd}_${ordering};""")
+      } case None => {
+        code.append(s"""Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = new Trie<${annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${name}",${num},${annotation != "void*"});""")
+      }
+    }
     return code
   }
 
@@ -554,46 +559,56 @@ object CPPGenerator {
     return code
   }
 
-  def emitNPRR(output:Boolean,bag:QueryPlanBagInfo,intermediateRelations:Map[String,List[Attribute]]) : (StringBuilder,List[Attribute]) = {
+  def emitNPRR(
+    output:Boolean,
+    bag:QueryPlanBagInfo,
+    intermediateRelations:Map[String,List[Attribute]],
+    outputAttributes:List[Attribute]) : (StringBuilder,List[Attribute]) = {
+    
     val code = new StringBuilder()
-
+    var oa = outputAttributes
     //Emit the output trie for the bag.
     output match {
       case false => {
         println("BAG: " + bag.duplicateOf)
-        code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.length))
+        code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.length,bag.duplicateOf))
       }
       case _ =>
     }
 
-    code.append("{")
-    code.append("auto bag_timer = timer::start_clock();")
-    val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
-    code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings,bag.nprr.length))
-    code.append(parItCode)
-    code.append(emitHeadBuildCode(bag.nprr.headOption))
+    bag.duplicateOf match {
+      case None => {
+        code.append("{")
+        code.append("auto bag_timer = timer::start_clock();")
+        val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
+        code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings,bag.nprr.length))
+        code.append(parItCode)
+        code.append(emitHeadBuildCode(bag.nprr.headOption))
 
-    println("ENCODINGS: " + encodings)
-    println("ITERATOR ACCESSORS: " + iteratorAccessors)
+        println("ENCODINGS: " + encodings)
+        println("ITERATOR ACCESSORS: " + iteratorAccessors)
 
-    val outputAttributes:List[Attribute] = bag.attributes.map(a => encodings(a))
-    val remainingAttrs = bag.nprr.tail
-    if(remainingAttrs.length > 0){
-      code.append(emitHeadAllocations(bag.nprr.head))
-      code.append(emitInitHeadAnnotations(bag.nprr.head,bag.annotation))
-      code.append(emitHeadParForeach(bag.nprr.head,bag.annotation,bag.relations,iteratorAccessors))
-      code.append(emitAnnotationAccessors(bag.nprr.head,bag.annotation,iteratorAccessors))
-      code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors,bag.annotation))
-      code.append(emitSetValues(bag.nprr.head))
-      code.append(emitParallelAnnotationComputation(bag.nprr.head))
-      code.append("});")
-      code.append(emitSetHeadAnnotations(bag.nprr.head,bag.annotation))
-      code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
+        val remainingAttrs = bag.nprr.tail
+        oa = bag.attributes.map(a => encodings(a))
+
+        if(remainingAttrs.length > 0){
+          code.append(emitHeadAllocations(bag.nprr.head))
+          code.append(emitInitHeadAnnotations(bag.nprr.head,bag.annotation))
+          code.append(emitHeadParForeach(bag.nprr.head,bag.annotation,bag.relations,iteratorAccessors))
+          code.append(emitAnnotationAccessors(bag.nprr.head,bag.annotation,iteratorAccessors))
+          code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors,bag.annotation))
+          code.append(emitSetValues(bag.nprr.head))
+          code.append(emitParallelAnnotationComputation(bag.nprr.head))
+          code.append("});")
+          code.append(emitSetHeadAnnotations(bag.nprr.head,bag.annotation))
+          code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
+        }
+        code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
+        code.append(s"""timer::stop_clock("BAG ${bag.name} TIME", bag_timer);""")
+        code.append("}")
+      }
+      case _ =>
     }
-    code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
-    code.append(s"""timer::stop_clock("BAG ${bag.name} TIME", bag_timer);""")
-    code.append("}")
-    
-    return (code,outputAttributes)
+    return (code,oa)
   }
 }
