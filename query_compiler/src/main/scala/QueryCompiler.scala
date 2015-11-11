@@ -2,11 +2,6 @@ package DunceCap
 
 import java.io.{FileOutputStream, PrintStream, File}
 
-/*
-  Susans file. Standalone executable runs from parsing through GHD gen.
-  Should spill JSON GHD to disk.
-*/
-
 case class Config(directory: Option[String] = None,
                   dbConfig:String = "",
                   nprrOnly:Boolean = false,
@@ -38,6 +33,7 @@ object QueryCompiler {
         c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
       arg[String]("<query>") action { (x, c) =>
         c.copy(query = x)} text("query")
+      help("help") text("prints this usage text")
     }
 
     parser.parse(args, Config()) map { config =>

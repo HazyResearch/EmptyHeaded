@@ -108,7 +108,7 @@ object GHDSolver {
     return (depth,seen.size)
   }
 
-  def getAttributeOrdering(myghd:GHDNode, queryRelations: List[QueryRelation]) : List[String] ={
+  def getAttributeOrdering(myghd:GHDNode, queryRelations: List[QueryRelation]) : List[String] = {
     val ordering = get_attribute_ordering(
       mutable.LinkedHashSet[GHDNode](myghd),
       mutable.LinkedHashSet[GHDNode](myghd))
