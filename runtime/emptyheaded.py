@@ -64,12 +64,13 @@ def loadDB(path):
   environment.fromJSON(path)
 
 def main():
-  #db_config="/afs/cs.stanford.edu/u/caberger/config.json"
-  #db_config="/Users/caberger/Documents/Research/data/databases/simple/config.json"
+  db_config="/afs/cs.stanford.edu/u/caberger/config.json"
+  #db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
   #db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config.json"
   
-  #createDB(db_config)
-  loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
+  createDB(db_config)
+  
+  #loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
   #loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
 
   #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")

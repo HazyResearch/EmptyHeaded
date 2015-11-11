@@ -61,10 +61,10 @@ $(APPS_EXES): $(EXEDIR) emptyheaded
 	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -Llibs -lemptyheaded -o $@ -Isrc
 
 query: $(EXEDIR) emptyheaded
-	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 codegen/Query.cpp $(LIBS) -Llibs -lemptyheaded -o bin/query -Isrc
-	
+	$(CXX) $(LINKERARGS) $(CXXFLAGS) -DEXECUTABLE=1 codegen/Query.cpp $(LIBS) -Llibs -lemptyheaded -o bin/query -Isrc
+
 $(CODEGEN_EXES): $(EXEDIR) emptyheaded
-	$(CXX) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -Llibs -lemptyheaded -o $@ -Isrc
+	$(CXX) $(LINKERARGS) $(CXXFLAGS) -DEXECUTABLE=1 $(@:bin%=generated%.cpp) $(LIBS) -Llibs -lemptyheaded -o $@ -Isrc
 
 $(OBJECTS): $(SOURCES) $(HEADERS) $(OBJDIR)
 	$(CXX) -fPIC $(CXXFLAGS) $(LIB_INCS) -o $(@) -c $(@:build%.o=src%.cpp)

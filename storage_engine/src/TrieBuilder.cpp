@@ -153,10 +153,9 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
   isets->erase(isets->begin()+min_index);
 
   //allocate buffers
-  uint8_t* place1 = (uint8_t*) (tmp_buffers.at(tmp_level)->get_next(alloc_size+sizeof(Set<hybrid>)));
-  Set<hybrid> *result_set = (Set<hybrid>*)place1;
-  uint8_t* place2 = (uint8_t*) (tmp_buffers.at(tmp_level)->get_next(alloc_size+sizeof(Set<hybrid>)));
-  Set<hybrid> *operator_set = (Set<hybrid>*)place2;
+  uint8_t* place = (uint8_t*) (tmp_buffers.at(tmp_level)->get_next(2*(alloc_size+sizeof(Set<hybrid>))));
+  Set<hybrid> *result_set = (Set<hybrid>*)place;
+  Set<hybrid> *operator_set = (Set<hybrid>*)((uint8_t*)place+alloc_size+sizeof(Set<hybrid>));
   tmp_buffers.at(tmp_level)->roll_back(2*(alloc_size+sizeof(Set<hybrid>))); 
 
   if(isets->size() % 2){
@@ -174,7 +173,7 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
           s2);
 
   //intersect remaining isets
-  for(size_t i = 0; i < isets->size(); i++){
+  for(size_t i = 1; i < isets->size(); i++){
     //swap buffers
     Set<hybrid>* tmp = result_set;
     result_set = operator_set;
@@ -397,6 +396,10 @@ size_t ParTrieBuilder<A,M>::build_aggregated_set(
 template<class A,class M>
 size_t ParTrieBuilder<A,M>::build_aggregated_set(
   std::vector<const TrieBlock<hybrid,M>*> * isets){
+
+  //clear the memory and move on (will set num bytes and cardinality to 0)
+  uint8_t* place = (uint8_t*)trie->memoryBuffers->head->get_next(sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>));
+  memset(place,(uint8_t)0,sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>));
 
   //make a pass over the sets, find the minimum set
   //find the allocation size
