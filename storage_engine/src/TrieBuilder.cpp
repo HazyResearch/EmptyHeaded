@@ -136,12 +136,16 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
   //make a pass over the sets, find the minimum set
   //find the allocation size
   const TrieBlock<hybrid,M> *head = isets->at(0);
+  if(head == NULL)
+    return 0;
   Set<hybrid>* s1 = (Set<hybrid>*)((uint8_t*)head+sizeof(TrieBlock<hybrid,M>));
   size_t min_set = s1->cardinality;
   size_t alloc_size = s1->number_of_bytes;
   size_t min_index = 0;
   for(size_t i = 1; i < isets->size(); i++){
     const TrieBlock<hybrid,M> *tmp_head_set = isets->at(i);
+    if(tmp_head_set == NULL)
+      return 0;
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
     alloc_size = std::max(alloc_size,tmp_set->number_of_bytes);
     min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
@@ -404,12 +408,16 @@ size_t ParTrieBuilder<A,M>::build_aggregated_set(
   //make a pass over the sets, find the minimum set
   //find the allocation size
   const TrieBlock<hybrid,M> *head = isets->at(0);
+  if(head == NULL)
+    return 0;
   Set<hybrid>* s1 = (Set<hybrid>*)((uint8_t*)head+sizeof(TrieBlock<hybrid,M>));
   size_t min_set = s1->cardinality;
   size_t alloc_size = s1->number_of_bytes;
   size_t min_index = 0;
   for(size_t i = 1; i < isets->size(); i++){
     const TrieBlock<hybrid,M> *tmp_head_set = isets->at(i);
+    if(tmp_head_set == NULL)
+      return 0;
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
     alloc_size = std::max(alloc_size,tmp_set->number_of_bytes);
     min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
@@ -421,10 +429,9 @@ size_t ParTrieBuilder<A,M>::build_aggregated_set(
   isets->erase(isets->begin()+min_index);
 
   //allocate buffers
-  uint8_t* place1 = (uint8_t*) (trie->memoryBuffers->head->get_next(alloc_size+sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>)));
+  uint8_t* place1 = (uint8_t*) (trie->memoryBuffers->head->get_next(2*(alloc_size+sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>))));
   Set<hybrid> *result_set = (Set<hybrid>*)(place1+sizeof(TrieBlock<hybrid,M>));
-  uint8_t* place2 = (uint8_t*) (trie->memoryBuffers->head->get_next(alloc_size+sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>)));
-  Set<hybrid> *operator_set = (Set<hybrid>*)(place2+sizeof(TrieBlock<hybrid,M>));
+  Set<hybrid> *operator_set = (Set<hybrid>*)(place1+alloc_size+sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>)+sizeof(TrieBlock<hybrid,M>));
   trie->memoryBuffers->head->roll_back(2*(alloc_size+sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>))); 
 
   //intersect first two isets
@@ -444,7 +451,6 @@ size_t ParTrieBuilder<A,M>::build_aggregated_set(
 
     const TrieBlock<hybrid,M> *tbn = isets->at(i);
     const Set<hybrid>* sn = (const Set<hybrid>*)((uint8_t*)tbn+sizeof(TrieBlock<hybrid,M>));
-
     result_set = ops::set_intersect(
             result_set, 
             sn,
