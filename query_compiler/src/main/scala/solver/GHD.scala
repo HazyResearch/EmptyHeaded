@@ -75,7 +75,11 @@ class GHD(val root:GHDNode,
   var numBags: Int = -1
 
   def getQueryPlan(): QueryPlan = {
-    new QueryPlan("join", getRelationsSummary(), getOutputInfo(), getPlanFromPreorderTraversal(root))
+    new QueryPlan(
+      "join",
+      getRelationsSummary(),
+      getOutputInfo(),
+      getPlanFromPostorderTraversal(root).toList)
   }
 
   /**
@@ -104,8 +108,8 @@ class GHD(val root:GHDNode,
       outputRelation.annotationType)
   }
 
-  private def getPlanFromPreorderTraversal(node:GHDNode): List[QueryPlanBagInfo] = {
-    node.getBagInfo(joinAggregates)::node.children.flatMap(c => getPlanFromPreorderTraversal(c))
+  private def getPlanFromPostorderTraversal(node:GHDNode): Vector[QueryPlanBagInfo] = {
+    node.children.toVector.flatMap(c => getPlanFromPostorderTraversal(c)):+node.getBagInfo(joinAggregates)
   }
 
   /**
@@ -179,14 +183,15 @@ class GHDNode(var rels: List[QueryRelation]) {
   def setBagName(name:String): Unit = { bagName = name }
 
   def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, ParsedAggregate]): List[GHDNode] = {
-    val prevSeenDuplicate = seen.find(bag => bag.attrNameAgnosticEquals(this, joinAggregates))
-    prevSeenDuplicate.map(p => {
-      isDuplicateOf = Some(p.bagName)
-    })
-    var newSeen = if (prevSeenDuplicate.isEmpty) this::seen else seen
+    var newSeen = seen
     children.foreach(c => {
       newSeen = c.eliminateDuplicateBagWork(newSeen, joinAggregates)
     })
+    val prevSeenDuplicate = newSeen.find(bag => bag.attrNameAgnosticEquals(this, joinAggregates))
+    prevSeenDuplicate.map(p => {
+      isDuplicateOf = Some(p.bagName)
+    })
+    newSeen = if (prevSeenDuplicate.isEmpty) this::newSeen else newSeen
     return newSeen
   }
 

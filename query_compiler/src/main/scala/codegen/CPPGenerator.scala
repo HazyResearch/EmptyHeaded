@@ -26,7 +26,7 @@ object CPPGenerator {
     val includeCode = getIncludes(qp)
     val cppCode = emitLoadRelations(qp.relations)
     cppCode.append(emitInitializeOutput(qp.output))
-    qp.ghd.reverse.foreach(bag => {
+    qp.ghd.foreach(bag => {
       val (bagCode,bagOutput) = emitNPRR(bag.name==qp.output.name,bag,intermediateRelations.toMap)
       intermediateRelations += ((bag.name -> bagOutput))
       outputAttributes = bagOutput

@@ -117,7 +117,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
     val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(
       HeuristicUtils.getGHDsWithMinBags(candidates))
     chosen.head.doBagDedup
-    val secondTriangleBag = chosen.head.getQueryPlan.ghd.last
+    val secondTriangleBag = chosen.head.getQueryPlan.ghd(1)
 
     assert(secondTriangleBag.duplicateOf.isDefined)
     assertResult("bag_1_0")(secondTriangleBag.duplicateOf.get)
@@ -137,7 +137,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
     val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(
       HeuristicUtils.getGHDsWithMinBags(candidates))
     chosen.head.doBagDedup
-    val secondTriangleBag = chosen.head.getQueryPlan.ghd.last
+    val secondTriangleBag = chosen.head.getQueryPlan.ghd(1)
 
     assert(secondTriangleBag.duplicateOf.isDefined)
     assertResult("bag_1_0")(secondTriangleBag.duplicateOf.get)
@@ -179,8 +179,8 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
     ghd.doPostProcessingPass
     ghd.doBagDedup
 
-    assert(ghd.getQueryPlan.ghd.last.duplicateOf.isDefined)
-    assertResult("bag_1_0")(ghd.getQueryPlan.ghd.last.duplicateOf.get)
+    assert(ghd.getQueryPlan.ghd(1).duplicateOf.isDefined)
+    assertResult("bag_1_0")(ghd.getQueryPlan.ghd(1).duplicateOf.get)
   }
 
   test("more than 2 attrs negative test case, with aggregations, projections, selects") {
