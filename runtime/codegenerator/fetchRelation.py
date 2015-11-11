@@ -41,7 +41,7 @@ def fetch(relation,env):
 				#get encodings
 				result = cppgenerator.compileAndRun(lambda: 
 					fetchData(relation,trieName,schema["annotation"],schema["attributes"],env),
-					"fetchData_"+relation,env.config["memory"],types,schema["annotation"])
+					"fetchData_"+relation,env.config["memory"],types,schema["annotation"],str(env.config["numThreads"]))
 				return result[0].fetch_data(result[1])
 			else:
 				print "Not yet supported. Must be on disk."

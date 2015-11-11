@@ -237,7 +237,11 @@ object CPPGenerator {
               case 2 =>
                 code.append(s"""Builders.build_aggregated_set(Iterators_${h.accessors(0).name}_${h.accessors(0).attrs.mkString("_")}.head,Iterators_${h.accessors(1).name}_${h.accessors(1).attrs.mkString("_")}.head);""")
               case 3 =>
-                throw new IllegalArgumentException("3 arguments not supported yet.")
+                code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${h.name}_sets;""")
+                (0 until h.accessors.length).toList.foreach(i =>{
+                  code.append(s"""${h.name}_sets.push_back(Iterators_${h.accessors(i).name}_${h.accessors(i).attrs.mkString("_")}.head);""")
+                })
+                code.append(s"""Builders.build_aggregated_set(&${h.name}_sets);""")
             } 
           }
         } 
@@ -353,7 +357,12 @@ object CPPGenerator {
             code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}),Iterator_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}->get_block(${index2}));""")
           }
           case 3 =>
-            throw new IllegalArgumentException("3 arguments not supported yet.")
+            code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${head.name}_sets;""")
+            (0 until head.accessors.length).toList.foreach(i =>{
+              val index1 = relationIndices(relationNames.indexOf( head.accessors(i).name + "_" + head.accessors(i).attrs.mkString("_") ) )
+              code.append(s"""${head.name}_sets.push_back(Iterator_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}->get_block(${index1}));""")
+            })
+            code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(&${head.name}_sets);""")
         } 
       }
     }
@@ -551,6 +560,7 @@ object CPPGenerator {
     //Emit the output trie for the bag.
     output match {
       case false => {
+        println("BAG: " + bag.duplicateOf)
         code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.length))
       }
       case _ =>

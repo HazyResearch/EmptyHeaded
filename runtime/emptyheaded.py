@@ -23,7 +23,7 @@ def query(datalog_string):
   os.system(command)  
   os.chdir(mydir)
   environment.fromJSON(environment.config["database"]+"/config.json")
-  cppgenerator.compileC(str(hashindex))
+  cppgenerator.compileC(str(hashindex),str(environment.config["numThreads"]))
   schema = environment.schemas[environment.config["resultName"]]
   eTypes = map(lambda i:str(schema["attributes"][i]["attrType"]),environment.config["resultOrdering"])
   result = cppexecutor.execute(str(hashindex),environment.config["memory"],eTypes,schema["annotation"])
@@ -64,15 +64,21 @@ def loadDB(path):
   environment.fromJSON(path)
 
 def main():
-  #db_config="/Users/caberger/Documents/Research/data/databases/simple/config.json"
+  db_config="/afs/cs.stanford.edu/u/caberger/config.json"
+  #db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
   #db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config.json"
-  #createDB(db_config)
-  loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db")
-  #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
-  query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
+  
+  createDB(db_config)
+  
+  #loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
+  #loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
 
-  #print numRows("Triangle")
-  a= fetchData("Lollipop")[0]
+  #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
+  #query("Triangle(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c);m=<<COUNT(*)>>.")
+  #query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
+  #query("Barbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
+  query("Flique(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);m=<<COUNT(*)>>.")
+  a= fetchData("Flique")[0]
   print a
 
 if __name__ == "__main__": main()
