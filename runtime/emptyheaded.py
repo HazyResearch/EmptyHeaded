@@ -19,7 +19,6 @@ def query(datalog_string):
   os.chdir(qcpath)
   QUERY_COMPILER_RUN_SCRIPT = os.path.expandvars("$EMPTYHEADED_HOME")+"/query_compiler/target/pack/bin/query-compiler"
   command = QUERY_COMPILER_RUN_SCRIPT+" -c "+environment.config["database"]+"/config.json \""+ re.escape(datalog_string) + "\""
-  print command
   os.system(command)  
   os.chdir(mydir)
   environment.fromJSON(environment.config["database"]+"/config.json")
