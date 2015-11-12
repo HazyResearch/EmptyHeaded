@@ -1,5 +1,5 @@
 {
-  "numThreads": 4,
+  "numThreads": 1,
   "numNUMA": 4,
   "database": "$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned",
   "algorithm": "NPRR+",
