@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 import json
 import codegenerator.createDB
 import codegenerator.env
@@ -42,18 +45,24 @@ def createDB(name):
   #environment.dump()
 
 def fetchData(relation):
-	if relation in environment.liverelations:
-		query = environment.liverelations[relation]
-		return eval("""query["query"].fetch_data_"""+str(query["hash"])+"""(query["trie"])""")	
-	else:
-  		return codegenerator.fetchRelation.fetch(relation,environment)
+  if relation in environment.liverelations:
+    query = environment.liverelations[relation]
+    schema = environment.schemas[relation]
+    annotation = str(schema["annotation"])
+    cols = map(str, schema["orderings"][0])
+    if annotation != "void*":
+      cols.append("annotation")
+    tuples = eval("""query["query"].fetch_data_"""+str(query["hash"])+"""(query["trie"])""")
+    return pd.DataFrame.from_records(data=tuples,columns=cols)
+  else:
+    return pd.DataFrame.from_records(data=codegenerator.fetchRelation.fetch(relation,environment))
 
 def numRows(relation):
-	if relation in environment.liverelations:
-		query = environment.liverelations[relation]
-		return eval("""query["query"].num_rows_"""+str(query["hash"])+"""(query["trie"])""")
-	else:
-  		return codegenerator.fetchRelation.numRows(relation,environment)
+  if relation in environment.liverelations:
+    query = environment.liverelations[relation]
+    return eval("""query["query"].num_rows_"""+str(query["hash"])+"""(query["trie"])""")
+  else:
+    return codegenerator.fetchRelation.numRows(relation,environment)
 
 def saveDB():
   environment.toJSON(environment.config["database"]+"/config.json")
@@ -63,21 +72,22 @@ def loadDB(path):
   environment.fromJSON(path)
 
 def main():
-  db_config="/afs/cs.stanford.edu/u/caberger/config.json"
+  #db_config="/afs/cs.stanford.edu/u/caberger/config.json"
   #db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
-  #db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config.json"
+  db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config_pruned.json"
   
-  createDB(db_config)
+  #createDB(db_config)
   
   #loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
-  #loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
+  loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
 
-  #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
+  query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
+  a=fetchData("Triangle")
   #query("Triangle(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c);m=<<COUNT(*)>>.")
   #query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
   #query("Barbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
   query("Flique(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);m=<<COUNT(*)>>.")
-  a= fetchData("Flique")[0]
+  a= fetchData("Flique")
   print a
 
 if __name__ == "__main__": main()

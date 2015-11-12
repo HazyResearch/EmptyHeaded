@@ -54,6 +54,10 @@ struct TrieBuilder{
     const TrieBlock<hybrid,M> *s1,
     const TrieBlock<hybrid,M> *s2);
 
+  size_t build_set(
+    const size_t tid,
+    std::vector<const TrieBlock<hybrid,M> *>* isets);
+
   void set_level(
     const uint32_t index,
     const uint32_t data);
@@ -104,6 +108,9 @@ struct ParTrieBuilder{
   size_t build_set(
     const TrieBlock<hybrid,M> *tb1,
     const TrieBlock<hybrid,M> *tb2);
+
+  size_t build_set(
+    std::vector<const TrieBlock<hybrid,M> *>* isets);
 
   void allocate_next();
 
