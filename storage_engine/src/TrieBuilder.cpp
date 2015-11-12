@@ -239,8 +239,7 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
   Set<hybrid> *result_set = (Set<hybrid>*)place;
   Set<hybrid> *operator_set = (Set<hybrid>*)((uint8_t*)place+alloc_size+sizeof(Set<hybrid>));
   tmp_buffers.at(tmp_level)->roll_back(2*(alloc_size+sizeof(Set<hybrid>))); 
-
-  if(isets->size() % 2){
+  if( !(isets->size() % 2) ){
     Set<hybrid>* tmp = result_set;
     result_set = operator_set;
     operator_set = tmp;
@@ -269,6 +268,7 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
             sn,
             (const Set<hybrid>*)operator_set);
   }
+  std::cout << result_set << std::endl;
   return result_set->cardinality;
 }
 
@@ -658,8 +658,7 @@ size_t ParTrieBuilder<A,M>::build_set(
           r, 
           s1,
           s2);  
-  trie->memoryBuffers->head->roll_back(r->number_of_bytes-sizeof(alloc_size));
-
+  trie->memoryBuffers->head->roll_back(r->number_of_bytes-alloc_size);
   return r->cardinality;
 }
 
@@ -691,7 +690,7 @@ void ParTrieBuilder<A,M>::par_foreach_builder(
 
     const TrieBlock<hybrid,M>* block = trie->getHead();
     Set<hybrid>* s = (Set<hybrid>*)((uint8_t*)block+sizeof(TrieBlock<hybrid,M>));
-    std::cout << s << " " << s->cardinality << std::endl;
+    std::cout << s << " par foreach " << s->cardinality << std::endl;
     s->par_foreach_index(f);
 }
 
