@@ -19,8 +19,6 @@ object HeuristicUtils {
 
   def getGHDsOfMinHeight(candidates:List[GHD]) : List[GHD] = {
     val minHeight = candidates.map(_.depth).min
-    println(minHeight)
-    println("==========================")
     candidates.filter(_.depth == minHeight)
   }
 }

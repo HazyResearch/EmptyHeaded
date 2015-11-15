@@ -4,8 +4,6 @@ import net.liftweb.json._
 
 import scala.io._
 
-import java.io.{FileOutputStream, PrintWriter, File}
-
 import net.liftweb.json.Serialization.{read, write}
 /*
   Stores information about what is in the database and 
@@ -26,14 +24,7 @@ object Environment {
   def toJSON() = {
     val filename = config.database+"/config.json"
     implicit val formats = Serialization.formats(NoTypeHints)
-    scala.tools.nsc.io.File(filename).writeAll(write(config))    
-    
-    /*
-    val file = "tmp.json"
-    val output = new PrintStream(new FileOutputStream(
-        new File(file)))
-    output.println(config)
-    */
+    scala.tools.nsc.io.File(filename).writeAll(write(config))
   }
 
   /**

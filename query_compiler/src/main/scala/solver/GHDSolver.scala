@@ -38,8 +38,14 @@ object GHDSolver {
     attrsWithEqSelect:::attrsWithoutEqSelect
   }
 
+  def partition_materialized(attrNames:List[Attr], outputRelation:QueryRelation): List[Attr] = {
+    val (materialized, notMaterialized) = attrNames.partition(outputRelation.attrNames.contains(_))
+    materialized:::notMaterialized
+  }
+
   def get_attribute_ordering(seen: mutable.Set[GHDNode],
-                                     f_in:mutable.Set[GHDNode]): List[String] = {
+                             f_in:mutable.Set[GHDNode],
+                             outputRelation:QueryRelation): List[String] = {
     var depth = 0
     var frontier = f_in
     var next_frontier = mutable.Set[GHDNode]()
@@ -49,7 +55,7 @@ object GHDSolver {
       next_frontier.clear
       val level_attr = scala.collection.mutable.ListBuffer.empty[String]
       frontier.foreach{ cur:GHDNode =>
-        val cur_attrs = cur.rels.flatMap{r => r.attrNames}.sorted.distinct
+        val cur_attrs = partition_materialized(cur.rels.flatMap{r => r.attrNames}.sorted, outputRelation).distinct
 
         //collect others
         cur_attrs.foreach{ a =>
@@ -108,10 +114,12 @@ object GHDSolver {
     return (depth,seen.size)
   }
 
-  def getAttributeOrdering(myghd:GHDNode, queryRelations: List[QueryRelation]) : List[String] ={
+  def getAttributeOrdering(myghd:GHDNode, queryRelations: List[QueryRelation], outputRelation:QueryRelation) : List[String] ={
     val ordering = get_attribute_ordering(
       mutable.LinkedHashSet[GHDNode](myghd),
-      mutable.LinkedHashSet[GHDNode](myghd))
+      mutable.LinkedHashSet[GHDNode](myghd),
+      outputRelation
+    )
     partition_equality_selected(ordering, queryRelations.flatMap(queryRelation => queryRelation.attrs))
   }
 
