@@ -26,11 +26,18 @@ object CPPGenerator {
     val includeCode = getIncludes(qp)
     val cppCode = emitLoadRelations(qp.relations)
     cppCode.append(emitInitializeOutput(qp.output))
+    var i = 1
     qp.ghd.foreach(bag => {
-      val (bagCode,bagOutput) = emitNPRR(bag.name==qp.output.name,bag,intermediateRelations.toMap,outputAttributes)
+      val outputName = 
+        if((i == qp.ghd.length) && (qp.topdown.length == 0))
+          Some(qp.output.name)
+        else 
+          None
+      val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
       intermediateRelations += ((bag.name -> bagOutput))
       outputAttributes = bagOutput
       cppCode.append(bagCode)
+      i += 1
     })
     cppCode.append(emitEndQuery(qp.output))
 
@@ -569,7 +576,7 @@ object CPPGenerator {
   }
 
   def emitNPRR(
-    output:Boolean,
+    output:Option[String],
     bag:QueryPlanBagInfo,
     intermediateRelations:Map[String,List[Attribute]],
     outputAttributes:List[Attribute]) : (StringBuilder,List[Attribute]) = {
@@ -578,11 +585,10 @@ object CPPGenerator {
     var oa = outputAttributes
     //Emit the output trie for the bag.
     output match {
-      case false => {
-        println("BAG: " + bag.duplicateOf)
+      case None => 
         code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.length,bag.duplicateOf))
-      }
       case _ =>
+        code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.length,output))
     }
 
     bag.duplicateOf match {

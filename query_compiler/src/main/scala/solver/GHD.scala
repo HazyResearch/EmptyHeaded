@@ -263,9 +263,12 @@ class GHD(val root:GHDNode,
     root.computeDepth
     depth = root.depth
     numBags = root.getNumBags()
-    root.setBagName(outputRelation.name)
-    root.setDescendantNames(1)
     root.setAttributeOrdering(attributeOrdering)
+
+    val attrNames = root.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
+    root.setBagName("bag_0_"+attrNames)
+    root.setDescendantNames(1)
+
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
     root.createAttrToRelsMapping
     bagOutputs = getBagOutputRelations(root)
@@ -351,8 +354,9 @@ class GHDNode(var rels: List[QueryRelation]) {
   }
 
   def setDescendantNames(depth:Int): Unit = {
-    children.zipWithIndex.map(childAndIndex => {
-      childAndIndex._1.setBagName(s"bag_${depth}_${childAndIndex._2}")
+    children.map(childAndIndex => {
+      val attrNames = childAndIndex.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
+      childAndIndex.setBagName(s"bag_${depth}_${attrNames}")
     })
     children.map(child => {child.setDescendantNames(depth+1)})
   }

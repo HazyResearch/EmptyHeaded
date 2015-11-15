@@ -51,6 +51,10 @@ struct TrieBuilder{
 
   size_t build_set(
     const size_t tid,
+    const TrieBlock<hybrid,M> *s1);
+
+  size_t build_set(
+    const size_t tid,
     const TrieBlock<hybrid,M> *s1,
     const TrieBlock<hybrid,M> *s2);
 
