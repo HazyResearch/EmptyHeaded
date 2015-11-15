@@ -34,8 +34,8 @@ case class ASTQueryStatement(
       val rootNodes = GHDSolver.getMinFHWDecompositions(join);
       val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs));
       candidates.map(c => c.doPostProcessingPass())
-      val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(
-        HeuristicUtils.getGHDsWithMinBags(candidates))
+      val chosen = HeuristicUtils.getGHDsOfMinHeight(
+        HeuristicUtils.getGHDsWithMaxCoveringRoot(HeuristicUtils.getGHDsWithMinBags(candidates)))
       if (config.bagDedup) {
         chosen.head.doBagDedup
       }
