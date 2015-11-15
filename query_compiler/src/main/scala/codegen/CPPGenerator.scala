@@ -581,23 +581,25 @@ object CPPGenerator {
     return code
   }
 
-  def emitTopDownIterators(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo]) : StringBuilder = {
+  def emitTopDownIterators(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],level:Int) : StringBuilder = {
     val code = new StringBuilder()
     if(iterators.length == 0)
       return code
-    code.append(emitTopDownAttributes(iterators,attrs))
+    code.append(emitTopDownAttributes(iterators,attrs,level))
     return code
   }
 
-  def emitTopDownAttributes(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo]) : StringBuilder = {
+  def emitTopDownAttributes(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],level:Int) : StringBuilder = {
     val code = new StringBuilder()
     if(attrs.length == 0 && iterators.length == 1) //done quit
-      return code.append(emitTopDownIterators(List(),List()))
+      return code.append(emitTopDownIterators(List(),List(),0))
     else if(attrs.length == 0) //done with cur iterator
-      return code.append(emitTopDownIterators(iterators.tail,iterators.tail.head.attributeInfo))
+      return code.append(emitTopDownIterators(iterators.tail,iterators.tail.head.attributeInfo,0))
 
     val attrInfo = attrs.head
     val iteratorName = iterators.head.iterator
+    code.append(s"""Builder->build_set(tid,Iterator_${iteratorName}->get_block(${level}));""")
+    code.append("Builder->allocate_next(tid);")
     code.append(s"""Builder->foreach_builder([&](const uint32_t ${attrInfo.name}_i, const uint32_t ${attrInfo.name}_d) {""")
     attrInfo.accessors.foreach(acc => {
       val index = acc.attrs.indexOf(attrInfo.name)
@@ -609,7 +611,9 @@ object CPPGenerator {
         }
       }
     })
-    code.append(emitTopDownIterators(iterators,attrs.tail))
+    code.append(emitTopDownIterators(iterators,attrs.tail,level+1))
+    if(iterators.length != 1)
+      code.append(s"""Builder->set_level(${attrInfo.name}_i,${attrInfo.name}_d);""")
     code.append("});")
 
     return code
@@ -647,6 +651,8 @@ object CPPGenerator {
 
     val firstIterator = td.head
     val firstAttr = firstIterator.attributeInfo.head
+    code.append(s"""Builders.build_set(Iterators_${firstIterator.iterator}.head);""")
+    code.append("Builders.allocate_next();")
     code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t ${firstAttr.name}_i, const uint32_t ${firstAttr.name}_d) {""")
     //get iterator and builder for each thread
     code.append(s"""TrieBuilder<${annotation},${Environment.config.memory}>* Builder = Builders.builders.at(tid);""")
@@ -664,8 +670,10 @@ object CPPGenerator {
       }
     })
 
-    code.append(emitTopDownIterators(td,firstIterator.attributeInfo.tail))
+    code.append(emitTopDownIterators(td,firstIterator.attributeInfo.tail,1))
+    code.append(s"""Builder->set_level(${firstAttr.name}_i,${firstAttr.name}_d);""")
     code.append("});")
+    code.append("}")
 
     (code,List())
   }
