@@ -8,7 +8,8 @@ def main():
   emptyheaded.query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
 
   data = emptyheaded.fetchData("Lollipop")
-  if data[0][0] != 1426911480L:
+  print data.iloc[0][0]
+  if data.iloc[0][0] != 1426911480L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(data[0]))
 
 if __name__ == "__main__": main()
