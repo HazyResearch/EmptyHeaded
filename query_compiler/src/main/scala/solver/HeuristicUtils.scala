@@ -16,4 +16,9 @@ object HeuristicUtils {
     val maxNumCovered = candidateAndCovering.unzip._2.max
     candidateAndCovering.filter(c => {c._2 == maxNumCovered}).unzip._1
   }
+
+  def getGHDsOfMinHeight(candidates:List[GHD]) : List[GHD] = {
+    val minHeight = candidates.map(_.depth).min
+    candidates.filter(_.depth == minHeight)
+  }
 }

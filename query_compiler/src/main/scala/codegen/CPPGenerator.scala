@@ -216,7 +216,7 @@ object CPPGenerator {
     return (code,iteratorAccessors,retEncodings)
   }
   
-  def emitHeadBuildCode(head:Option[QueryPlanNPRRInfo]) : StringBuilder = {
+  def emitHeadBuildCode(head:Option[QueryPlanAttrInfo]) : StringBuilder = {
     val code = new StringBuilder()
     head match {
       case Some(h) => {
@@ -261,7 +261,7 @@ object CPPGenerator {
     return code
   }
 
-  def emitInitHeadAnnotations(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+  def emitInitHeadAnnotations(head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match {
       case (Some(a),false) =>
@@ -276,7 +276,7 @@ object CPPGenerator {
     code
   }
 
-  def emitSetHeadAnnotations(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+  def emitSetHeadAnnotations(head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match {
       case (Some(a),false) =>
@@ -286,7 +286,7 @@ object CPPGenerator {
     code
   }
 
-  def emitHeadAllocations(head:QueryPlanNPRRInfo) : StringBuilder = {
+  def emitHeadAllocations(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
@@ -300,7 +300,7 @@ object CPPGenerator {
     code
   }
 
-  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitHeadParForeach(head:QueryPlanAttrInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
 
     head.materialize match {
@@ -329,7 +329,7 @@ object CPPGenerator {
     code
   }
 
-  def emitBuildCode(head:QueryPlanNPRRInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitBuildCode(head:QueryPlanAttrInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
 
     val relationNames = iteratorAccessors(head.name).map(_._1)
@@ -383,7 +383,7 @@ object CPPGenerator {
     code
   }
 
-  def emitAllocateCode(head:QueryPlanNPRRInfo) : StringBuilder = {
+  def emitAllocateCode(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
@@ -397,7 +397,7 @@ object CPPGenerator {
     code
   }
 
-  def emitSetValues(head:QueryPlanNPRRInfo) : StringBuilder = {
+  def emitSetValues(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
@@ -411,7 +411,7 @@ object CPPGenerator {
     code
   }
 
-  def emitForeach(head:QueryPlanNPRRInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitForeach(head:QueryPlanAttrInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
     head.materialize match {
       case true =>
@@ -426,7 +426,7 @@ object CPPGenerator {
     code
   }
 
-  def emitAnnotationAccessors(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors,extra:String="") : StringBuilder = {
+  def emitAnnotationAccessors(head:QueryPlanAttrInfo,annotationType:String,iteratorAccessors:IteratorAccessors,extra:String="") : StringBuilder = {
     val code = new StringBuilder()
     val relationIndices = iteratorAccessors(head.name).map(_._2)
     val relationNames = iteratorAccessors(head.name).map(_._1)
@@ -461,7 +461,7 @@ object CPPGenerator {
     code
   }
 
-  def emitFinalAnnotation(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitFinalAnnotation(head:QueryPlanAttrInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
     val joinType = "*" //fixme
     (head.aggregation,head.materialize) match { //you always check for annotations
@@ -483,7 +483,7 @@ object CPPGenerator {
     }
     code
   }
-  def emitAnnotationComputation(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitAnnotationComputation(head:QueryPlanAttrInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match { //you always check for annotations
       case (Some(a),false) => {
@@ -503,7 +503,7 @@ object CPPGenerator {
     code
   }
 
-  def emitParallelAnnotationComputation(head:QueryPlanNPRRInfo) : StringBuilder = {
+  def emitParallelAnnotationComputation(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match { //you always check for annotations
       case (Some(a),false) => {
@@ -520,7 +520,7 @@ object CPPGenerator {
     code
   }
 
-  def emitInitializeAnnotation(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+  def emitInitializeAnnotation(head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation) match {
       case Some(a) => {
@@ -531,7 +531,7 @@ object CPPGenerator {
     code
   }
 
-  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:IteratorAccessors,annotationType:String) : StringBuilder = {
+  def nprrRecursiveCall(head:Option[QueryPlanAttrInfo],tail:List[QueryPlanAttrInfo],iteratorAccessors:IteratorAccessors,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head,tail) match {
       case (Some(a),List()) => {
