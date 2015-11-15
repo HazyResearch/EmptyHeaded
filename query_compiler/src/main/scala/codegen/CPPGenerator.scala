@@ -25,11 +25,12 @@ object CPPGenerator {
     val cpp = new StringBuilder()
     val includeCode = getIncludes(qp)
     val cppCode = emitLoadRelations(qp.relations)
+    val topDown = qp.topdown.length > 0
     cppCode.append(emitInitializeOutput(qp.output))
     var i = 1
     qp.ghd.foreach(bag => {
       val outputName = 
-        if((i == qp.ghd.length) && (qp.topdown.length == 0))
+        if((i == qp.ghd.length) && (!topDown))
           Some(qp.output.name)
         else 
           None
@@ -39,6 +40,11 @@ object CPPGenerator {
       cppCode.append(bagCode)
       i += 1
     })
+    if(topDown){
+      val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
+      cppCode.append(bagCode)
+      outputAttributes = bagOutput
+    }
     cppCode.append(emitEndQuery(qp.output))
 
     cpp.append(getCode(includeCode,cppCode))
@@ -573,6 +579,95 @@ object CPPGenerator {
         throw new IllegalArgumentException("Should not reach this state.")
     }
     return code
+  }
+
+  def emitTopDownIterators(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo]) : StringBuilder = {
+    val code = new StringBuilder()
+    if(iterators.length == 0)
+      return code
+    code.append(emitTopDownAttributes(iterators,attrs))
+    return code
+  }
+
+  def emitTopDownAttributes(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo]) : StringBuilder = {
+    val code = new StringBuilder()
+    if(attrs.length == 0 && iterators.length == 1) //done quit
+      return code.append(emitTopDownIterators(List(),List()))
+    else if(attrs.length == 0) //done with cur iterator
+      return code.append(emitTopDownIterators(iterators.tail,iterators.tail.head.attributeInfo))
+
+    val attrInfo = attrs.head
+    val iteratorName = iterators.head.iterator
+    code.append(s"""Builder->foreach_builder([&](const uint32_t ${attrInfo.name}_i, const uint32_t ${attrInfo.name}_d) {""")
+    attrInfo.accessors.foreach(acc => {
+      val index = acc.attrs.indexOf(attrInfo.name)
+      if(index != (acc.attrs.length-1)){
+        if(iteratorName == acc.name){
+          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_i,${attrInfo.name}_d);""")
+        } else {
+          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_d);""")
+        }
+      }
+    })
+    code.append(emitTopDownIterators(iterators,attrs.tail))
+    code.append("});")
+
+    return code
+  }
+
+  def emitTopDown(
+    output:String,
+    annotation:String,
+    td:List[TopDownPassIterator],
+    intermediateRelations:Map[String,List[Attribute]]) 
+      : (StringBuilder,List[Attribute]) = {
+    
+    //val outputAttributes = bag.attributeInfo.map(a => encodings(a.name))
+    val code = new StringBuilder()
+    println("EMIT TOP DOWN: " + intermediateRelations)
+    
+    code.append("{")
+
+    //emit iterators for top down pass (build encodings)
+    val eBuffers = mutable.ListBuffer[(String,Attribute)]()
+    td.foreach(tdi => {
+      val ordering = (0 until intermediateRelations(tdi.iterator).length).toList.mkString("_")
+      code.append(s"""const ParTrieIterator<${annotation},${Environment.config.memory}> Iterators_${tdi.iterator}(Trie_${tdi.iterator}_${ordering});""")
+      tdi.attributeInfo.foreach(ai => {
+        val acc = ai.accessors.head
+        val index = acc.attrs.indexOf(ai.name)
+        eBuffers += ((ai.name,intermediateRelations(acc.name)(index)))
+      })
+    })
+    val encodings = eBuffers.toList.groupBy(eb => eb._1).map(eb => (eb._1 -> eb._2.head._2))
+    val attrs = eBuffers.toList.map(eb => eb._1)
+
+    //emit builder
+    code.append(emitParallelBuilder(output,attrs,annotation,encodings,attrs.length))
+
+    val firstIterator = td.head
+    val firstAttr = firstIterator.attributeInfo.head
+    code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t ${firstAttr.name}_i, const uint32_t ${firstAttr.name}_d) {""")
+    //get iterator and builder for each thread
+    code.append(s"""TrieBuilder<${annotation},${Environment.config.memory}>* Builder = Builders.builders.at(tid);""")
+    td.foreach(tdi => {
+      val name = tdi.iterator
+      code.append(s"""TrieIterator<${annotation},${Environment.config.memory}>* Iterator_${name} = Iterators_${name}.iterators.at(tid);""")
+    })
+
+    firstAttr.accessors.foreach(acc => {
+      val index = acc.attrs.indexOf(firstAttr.name)
+      if(firstIterator.iterator == acc.name){
+        code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_i,${firstAttr.name}_d);""")
+      } else {
+        code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_d);""")
+      }
+    })
+
+    code.append(emitTopDownIterators(td,firstIterator.attributeInfo.tail))
+    code.append("});")
+
+    (code,List())
   }
 
   def emitNPRR(
