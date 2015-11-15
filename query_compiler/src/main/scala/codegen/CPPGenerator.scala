@@ -581,40 +581,48 @@ object CPPGenerator {
     return code
   }
 
-  def emitTopDownIterators(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],level:Int) : StringBuilder = {
+  def emitTopDownIterators(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],iteratorLevels:mutable.Map[String,Int]) : StringBuilder = {
     val code = new StringBuilder()
     if(iterators.length == 0)
       return code
-    code.append(emitTopDownAttributes(iterators,attrs,level))
+    code.append(emitTopDownAttributes(iterators,attrs,iteratorLevels))
     return code
   }
 
-  def emitTopDownAttributes(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],level:Int) : StringBuilder = {
+  def emitTopDownAttributes(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],iteratorLevels:mutable.Map[String,Int]) : StringBuilder = {
     val code = new StringBuilder()
     if(attrs.length == 0 && iterators.length == 1) //done quit
-      return code.append(emitTopDownIterators(List(),List(),0))
+      return code.append(emitTopDownIterators(List(),List(),iteratorLevels))
     else if(attrs.length == 0) //done with cur iterator
-      return code.append(emitTopDownIterators(iterators.tail,iterators.tail.head.attributeInfo,0))
+      return code.append(emitTopDownIterators(iterators.tail,iterators.tail.head.attributeInfo,iteratorLevels))
 
     val attrInfo = attrs.head
     val iteratorName = iterators.head.iterator
-    code.append(s"""Builder->build_set(tid,Iterator_${iteratorName}->get_block(${level}));""")
-    code.append("Builder->allocate_next(tid);")
-    code.append(s"""Builder->foreach_builder([&](const uint32_t ${attrInfo.name}_i, const uint32_t ${attrInfo.name}_d) {""")
-    attrInfo.accessors.foreach(acc => {
-      val index = acc.attrs.indexOf(attrInfo.name)
-      if(index != (acc.attrs.length-1)){
-        if(iteratorName == acc.name){
-          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_i,${attrInfo.name}_d);""")
-        } else {
-          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_d);""")
+    if(iterators.length != 1){
+      code.append(s"""Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
+      code.append("Builder->allocate_next(tid);")
+      code.append(s"""Builder->foreach_builder([&](const uint32_t ${attrInfo.name}_i, const uint32_t ${attrInfo.name}_d) {""")
+      attrInfo.accessors.foreach(acc => {
+        iteratorLevels(acc.name) += 1
+        val index = acc.attrs.indexOf(attrInfo.name)
+        if(index != (acc.attrs.length-1)){
+          if(iteratorName == acc.name){
+            code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_i,${attrInfo.name}_d);""")
+          } else {
+            code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_d);""")
+          }
         }
-      }
-    })
-    code.append(emitTopDownIterators(iterators,attrs.tail,level+1))
-    if(iterators.length != 1)
+      })  
+    } else {
+      code.append(s"""const size_t count_${attrInfo.name} = Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
+      code.append(s"""num_rows_reducer.update(tid,count_${attrInfo.name});""")
+    }
+
+    code.append(emitTopDownIterators(iterators,attrs.tail,iteratorLevels))
+    if(iterators.length != 1){
       code.append(s"""Builder->set_level(${attrInfo.name}_i,${attrInfo.name}_d);""")
-    code.append("});")
+      code.append("});")
+    }
 
     return code
   }
@@ -631,10 +639,14 @@ object CPPGenerator {
     println("EMIT TOP DOWN: " + intermediateRelations)
     
     code.append("{")
+    code.append("auto bag_timer = timer::start_clock();")
+    code.append("num_rows_reducer.clear();")
 
     //emit iterators for top down pass (build encodings)
     val eBuffers = mutable.ListBuffer[(String,Attribute)]()
+    val iteratorLevels = mutable.Map[String,Int]()
     td.foreach(tdi => {
+      iteratorLevels += ((tdi.iterator -> 0))
       val ordering = (0 until intermediateRelations(tdi.iterator).length).toList.mkString("_")
       code.append(s"""const ParTrieIterator<${annotation},${Environment.config.memory}> Iterators_${tdi.iterator}(Trie_${tdi.iterator}_${ordering});""")
       tdi.attributeInfo.foreach(ai => {
@@ -663,6 +675,7 @@ object CPPGenerator {
 
     firstAttr.accessors.foreach(acc => {
       val index = acc.attrs.indexOf(firstAttr.name)
+      iteratorLevels(acc.name) += 1
       if(firstIterator.iterator == acc.name){
         code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_i,${firstAttr.name}_d);""")
       } else {
@@ -670,9 +683,11 @@ object CPPGenerator {
       }
     })
 
-    code.append(emitTopDownIterators(td,firstIterator.attributeInfo.tail,1))
+    code.append(emitTopDownIterators(td,firstIterator.attributeInfo.tail,iteratorLevels))
     code.append(s"""Builder->set_level(${firstAttr.name}_i,${firstAttr.name}_d);""")
     code.append("});")
+    code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
+    code.append(s"""timer::stop_clock("TOP DOWN TIME", bag_timer);""")
     code.append("}")
 
     (code,List())
@@ -698,6 +713,7 @@ object CPPGenerator {
       case None => {
         code.append("{")
         code.append("auto bag_timer = timer::start_clock();")
+        code.append("num_rows_reducer.clear();")
         val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
         code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)
