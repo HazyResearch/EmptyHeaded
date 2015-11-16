@@ -30,6 +30,39 @@ TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in, const size_t num_attributes){
 template<class A,class M>
 size_t TrieBuilder<A,M>::build_set(
   const size_t tid,
+  const TrieBlock<hybrid,M> *tb1){
+
+    M* data_allocator = trie->memoryBuffers;
+    if(tb1 == NULL){
+      next.at(cur_level).index = -1;
+
+      //clear the memory and move on (will set num bytes and cardinality to 0)
+      const size_t alloc_size = sizeof(Set<hybrid>)+sizeof(TrieBlock<hybrid,M>);
+      uint8_t* place = (uint8_t*)data_allocator->get_next(tid,alloc_size);
+      const size_t offset = place-data_allocator->get_address(tid);
+      next.at(cur_level).offset = offset;
+      memset(place,(uint8_t)0,sizeof(alloc_size));
+      return 0;
+    }
+
+
+    const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>)); 
+    const size_t block_size = s1->number_of_bytes+
+      sizeof(TrieBlock<hybrid,M>)+
+      sizeof(Set<hybrid>);
+
+    uint8_t * const start_block = (uint8_t*)data_allocator->get_next(tid,block_size);
+    const size_t offset = start_block-data_allocator->get_address(tid);
+    memcpy((uint8_t*)start_block,(uint8_t*)tb1,block_size);
+
+    next.at(cur_level).index = (s1->cardinality > 0) ? tid: -1;
+    next.at(cur_level).offset = offset;
+    return s1->cardinality;
+}
+
+template<class A,class M>
+size_t TrieBuilder<A,M>::build_set(
+  const size_t tid,
   const TrieBlock<hybrid,M>* tb1,
   const TrieBlock<hybrid,M>* tb2){
 

@@ -53,7 +53,8 @@ class QueryPlanTest extends FunSuite {
         |      "materialize":true,
         |      "selection":false
         |    }]
-        |  }]
+        |  }],
+        |  "topdown":[]
         |}
       """.stripMargin
     implicit val formats = DefaultFormats
@@ -74,10 +75,10 @@ class QueryPlanTest extends FunSuite {
           QueryPlanRelationInfo("takesCourse", List[Int](0,1), Some(List[List[Attr]](List[Attr]("a", "b"))), "void*"),
           QueryPlanRelationInfo("bag_1_0", List[Int](0), Some(List[List[Attr]](List[Attr]("a"))), "void*")
         ),
-        List[QueryPlanNPRRInfo](QueryPlanNPRRInfo("a", List[QueryPlanAccessor](
+        List[QueryPlanAttrInfo](QueryPlanAttrInfo("a", List[QueryPlanAccessor](
           QueryPlanAccessor("takesCourse", List[Attr]("a", "b"), false),
           QueryPlanAccessor("bag_1_0", List[Attr]("a"), false)
         ), true, false, None, None, None, None)))
-    )))(plan)
+    ), List[TopDownPassIterator]()))(plan)
   }
 }

@@ -25,13 +25,26 @@ object CPPGenerator {
     val cpp = new StringBuilder()
     val includeCode = getIncludes(qp)
     val cppCode = emitLoadRelations(qp.relations)
+    val topDown = qp.topdown.length > 0
     cppCode.append(emitInitializeOutput(qp.output))
+    var i = 1
     qp.ghd.foreach(bag => {
-      val (bagCode,bagOutput) = emitNPRR(bag.name==qp.output.name,bag,intermediateRelations.toMap,outputAttributes)
+      val outputName = 
+        if((i == qp.ghd.length) && (!topDown))
+          Some(qp.output.name)
+        else 
+          None
+      val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
       intermediateRelations += ((bag.name -> bagOutput))
       outputAttributes = bagOutput
       cppCode.append(bagCode)
+      i += 1
     })
+    if(topDown){
+      val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
+      cppCode.append(bagCode)
+      outputAttributes = bagOutput
+    }
     cppCode.append(emitEndQuery(qp.output))
 
     cpp.append(getCode(includeCode,cppCode))
@@ -168,8 +181,7 @@ object CPPGenerator {
 
   def emitParallelBuilder(name:String,attributes:List[String],annotation:String,encodings:Encodings,numAttributes:Int) : StringBuilder = {
     val code = new StringBuilder()
-    val ordering = (0 until attributes.length).toList.mkString("_")
-    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name}_${ordering},${numAttributes});""")
+    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name},${numAttributes});""")
     attributes.foreach(attr => {
       code.append(s"""Builders.trie->encodings.push_back((void*)Encoding_${encodings(attr).encoding});""")
     })
@@ -216,7 +228,7 @@ object CPPGenerator {
     return (code,iteratorAccessors,retEncodings)
   }
   
-  def emitHeadBuildCode(head:Option[QueryPlanNPRRInfo]) : StringBuilder = {
+  def emitHeadBuildCode(head:Option[QueryPlanAttrInfo]) : StringBuilder = {
     val code = new StringBuilder()
     head match {
       case Some(h) => {
@@ -261,7 +273,7 @@ object CPPGenerator {
     return code
   }
 
-  def emitInitHeadAnnotations(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+  def emitInitHeadAnnotations(head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match {
       case (Some(a),false) =>
@@ -276,7 +288,7 @@ object CPPGenerator {
     code
   }
 
-  def emitSetHeadAnnotations(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+  def emitSetHeadAnnotations(head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match {
       case (Some(a),false) =>
@@ -286,7 +298,7 @@ object CPPGenerator {
     code
   }
 
-  def emitHeadAllocations(head:QueryPlanNPRRInfo) : StringBuilder = {
+  def emitHeadAllocations(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
@@ -300,7 +312,7 @@ object CPPGenerator {
     code
   }
 
-  def emitHeadParForeach(head:QueryPlanNPRRInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitHeadParForeach(head:QueryPlanAttrInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
 
     head.materialize match {
@@ -329,7 +341,7 @@ object CPPGenerator {
     code
   }
 
-  def emitBuildCode(head:QueryPlanNPRRInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitBuildCode(head:QueryPlanAttrInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
 
     val relationNames = iteratorAccessors(head.name).map(_._1)
@@ -383,7 +395,7 @@ object CPPGenerator {
     code
   }
 
-  def emitAllocateCode(head:QueryPlanNPRRInfo) : StringBuilder = {
+  def emitAllocateCode(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
@@ -397,7 +409,7 @@ object CPPGenerator {
     code
   }
 
-  def emitSetValues(head:QueryPlanNPRRInfo) : StringBuilder = {
+  def emitSetValues(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
@@ -411,7 +423,7 @@ object CPPGenerator {
     code
   }
 
-  def emitForeach(head:QueryPlanNPRRInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitForeach(head:QueryPlanAttrInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
     head.materialize match {
       case true =>
@@ -426,7 +438,7 @@ object CPPGenerator {
     code
   }
 
-  def emitAnnotationAccessors(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors,extra:String="") : StringBuilder = {
+  def emitAnnotationAccessors(head:QueryPlanAttrInfo,annotationType:String,iteratorAccessors:IteratorAccessors,extra:String="") : StringBuilder = {
     val code = new StringBuilder()
     val relationIndices = iteratorAccessors(head.name).map(_._2)
     val relationNames = iteratorAccessors(head.name).map(_._1)
@@ -461,7 +473,7 @@ object CPPGenerator {
     code
   }
 
-  def emitFinalAnnotation(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitFinalAnnotation(head:QueryPlanAttrInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
     val joinType = "*" //fixme
     (head.aggregation,head.materialize) match { //you always check for annotations
@@ -483,7 +495,7 @@ object CPPGenerator {
     }
     code
   }
-  def emitAnnotationComputation(head:QueryPlanNPRRInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitAnnotationComputation(head:QueryPlanAttrInfo,annotationType:String,iteratorAccessors:IteratorAccessors) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match { //you always check for annotations
       case (Some(a),false) => {
@@ -503,7 +515,7 @@ object CPPGenerator {
     code
   }
 
-  def emitParallelAnnotationComputation(head:QueryPlanNPRRInfo) : StringBuilder = {
+  def emitParallelAnnotationComputation(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match { //you always check for annotations
       case (Some(a),false) => {
@@ -520,7 +532,7 @@ object CPPGenerator {
     code
   }
 
-  def emitInitializeAnnotation(head:QueryPlanNPRRInfo,annotationType:String) : StringBuilder = {
+  def emitInitializeAnnotation(head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation) match {
       case Some(a) => {
@@ -531,7 +543,7 @@ object CPPGenerator {
     code
   }
 
-  def nprrRecursiveCall(head:Option[QueryPlanNPRRInfo],tail:List[QueryPlanNPRRInfo],iteratorAccessors:IteratorAccessors,annotationType:String) : StringBuilder = {
+  def nprrRecursiveCall(head:Option[QueryPlanAttrInfo],tail:List[QueryPlanAttrInfo],iteratorAccessors:IteratorAccessors,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
     (head,tail) match {
       case (Some(a),List()) => {
@@ -568,8 +580,119 @@ object CPPGenerator {
     return code
   }
 
+  def emitTopDownIterators(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],iteratorLevels:mutable.Map[String,Int]) : StringBuilder = {
+    val code = new StringBuilder()
+    if(iterators.length == 0)
+      return code
+    code.append(emitTopDownAttributes(iterators,attrs,iteratorLevels))
+    return code
+  }
+
+  def emitTopDownAttributes(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],iteratorLevels:mutable.Map[String,Int]) : StringBuilder = {
+    val code = new StringBuilder()
+    if(attrs.length == 0 && iterators.length == 1) //done quit
+      return code.append(emitTopDownIterators(List(),List(),iteratorLevels))
+    else if(attrs.length == 0) //done with cur iterator
+      return code.append(emitTopDownIterators(iterators.tail,iterators.tail.head.attributeInfo,iteratorLevels))
+
+    val attrInfo = attrs.head
+    val iteratorName = iterators.head.iterator
+    if(iterators.length == 1 && attrs.length == 1){
+      code.append(s"""const size_t count_${attrInfo.name} = Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
+      code.append(s"""num_rows_reducer.update(tid,count_${attrInfo.name});""")
+    } else {
+      code.append(s"""Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
+      code.append("Builder->allocate_next(tid);")
+      code.append(s"""Builder->foreach_builder([&](const uint32_t ${attrInfo.name}_i, const uint32_t ${attrInfo.name}_d) {""")
+      attrInfo.accessors.foreach(acc => {
+        iteratorLevels(acc.name) += 1
+        val index = acc.attrs.indexOf(attrInfo.name)
+        if(index != (acc.attrs.length-1)){
+          if(iteratorName == acc.name){
+            code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_i,${attrInfo.name}_d);""")
+          } else {
+            code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_d);""")
+          }
+        }
+      })
+    }
+
+    code.append(emitTopDownIterators(iterators,attrs.tail,iteratorLevels))
+    if(!(iterators.length == 1 && attrs.length == 1)){
+      code.append(s"""Builder->set_level(${attrInfo.name}_i,${attrInfo.name}_d);""")
+      code.append("});")
+    }
+
+    return code
+  }
+
+  def emitTopDown(
+    output:String,
+    ordering:List[Int],
+    annotation:String,
+    td:List[TopDownPassIterator],
+    intermediateRelations:Map[String,List[Attribute]]) 
+      : (StringBuilder,List[Attribute]) = {
+    
+    val code = new StringBuilder()
+    
+    code.append("{")
+    code.append("auto bag_timer = timer::start_clock();")
+    code.append("num_rows_reducer.clear();")
+
+    //emit iterators for top down pass (build encodings)
+    val eBuffers = mutable.ListBuffer[(String,Attribute)]()
+    val iteratorLevels = mutable.Map[String,Int]()
+    td.foreach(tdi => {
+      iteratorLevels += ((tdi.iterator -> 0))
+      val ordering = (0 until intermediateRelations(tdi.iterator).length).toList.mkString("_")
+      code.append(s"""const ParTrieIterator<${annotation},${Environment.config.memory}> Iterators_${tdi.iterator}(Trie_${tdi.iterator}_${ordering});""")
+      tdi.attributeInfo.foreach(ai => {
+        val acc = ai.accessors.head
+        val index = acc.attrs.indexOf(ai.name)
+        eBuffers += ((ai.name,intermediateRelations(acc.name)(index)))
+      })
+    })
+    val encodings = eBuffers.toList.groupBy(eb => eb._1).map(eb => (eb._1 -> eb._2.head._2))
+    val attrs = eBuffers.toList.map(eb => eb._1)
+    val outputAttributes = attrs.map(encodings(_))
+    //emit builder
+    code.append(emitParallelBuilder(output+"_"+ordering.mkString("_"),attrs,annotation,encodings,attrs.length))
+
+    val firstIterator = td.head
+    val firstAttr = firstIterator.attributeInfo.head
+    code.append(s"""Builders.build_set(Iterators_${firstIterator.iterator}.head);""")
+    code.append("Builders.allocate_next();")
+    code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t ${firstAttr.name}_i, const uint32_t ${firstAttr.name}_d) {""")
+    //get iterator and builder for each thread
+    code.append(s"""TrieBuilder<${annotation},${Environment.config.memory}>* Builder = Builders.builders.at(tid);""")
+    td.foreach(tdi => {
+      val name = tdi.iterator
+      code.append(s"""TrieIterator<${annotation},${Environment.config.memory}>* Iterator_${name} = Iterators_${name}.iterators.at(tid);""")
+    })
+
+    firstAttr.accessors.foreach(acc => {
+      val index = acc.attrs.indexOf(firstAttr.name)
+      iteratorLevels(acc.name) += 1
+      if(firstIterator.iterator == acc.name){
+        code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_i,${firstAttr.name}_d);""")
+      } else {
+        code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_d);""")
+      }
+    })
+
+    code.append(emitTopDownIterators(td,firstIterator.attributeInfo.tail,iteratorLevels))
+    code.append(s"""Builder->set_level(${firstAttr.name}_i,${firstAttr.name}_d);""")
+    code.append("});")
+    code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
+    code.append(s"""timer::stop_clock("TOP DOWN TIME", bag_timer);""")
+    code.append("}")
+
+    (code,outputAttributes)
+  }
+
   def emitNPRR(
-    output:Boolean,
+    output:Option[String],
     bag:QueryPlanBagInfo,
     intermediateRelations:Map[String,List[Attribute]],
     outputAttributes:List[Attribute]) : (StringBuilder,List[Attribute]) = {
@@ -578,19 +701,20 @@ object CPPGenerator {
     var oa = outputAttributes
     //Emit the output trie for the bag.
     output match {
-      case false => {
-        println("BAG: " + bag.duplicateOf)
+      case None => 
         code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.length,bag.duplicateOf))
-      }
       case _ =>
+        code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.length,output))
     }
 
     bag.duplicateOf match {
       case None => {
         code.append("{")
         code.append("auto bag_timer = timer::start_clock();")
+        code.append("num_rows_reducer.clear();")
         val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
-        code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings,bag.nprr.length))
+        val pbname = bag.name+"_"+(0 until bag.attributes.length).toList.mkString("_")
+        code.append(emitParallelBuilder(pbname,bag.attributes,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)
         code.append(emitHeadBuildCode(bag.nprr.headOption))
 
