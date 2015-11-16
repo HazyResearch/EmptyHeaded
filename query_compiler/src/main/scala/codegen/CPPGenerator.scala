@@ -597,7 +597,10 @@ object CPPGenerator {
 
     val attrInfo = attrs.head
     val iteratorName = iterators.head.iterator
-    if(iterators.length != 1){
+    if(iterators.length == 1 && attrs.length == 1){
+      code.append(s"""const size_t count_${attrInfo.name} = Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
+      code.append(s"""num_rows_reducer.update(tid,count_${attrInfo.name});""")
+    } else {
       code.append(s"""Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
       code.append("Builder->allocate_next(tid);")
       code.append(s"""Builder->foreach_builder([&](const uint32_t ${attrInfo.name}_i, const uint32_t ${attrInfo.name}_d) {""")
@@ -611,14 +614,11 @@ object CPPGenerator {
             code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_d);""")
           }
         }
-      })  
-    } else {
-      code.append(s"""const size_t count_${attrInfo.name} = Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
-      code.append(s"""num_rows_reducer.update(tid,count_${attrInfo.name});""")
+      })
     }
 
     code.append(emitTopDownIterators(iterators,attrs.tail,iteratorLevels))
-    if(iterators.length != 1){
+    if(!(iterators.length == 1 && attrs.length == 1)){
       code.append(s"""Builder->set_level(${attrInfo.name}_i,${attrInfo.name}_d);""")
       code.append("});")
     }
@@ -713,8 +713,8 @@ object CPPGenerator {
         code.append("auto bag_timer = timer::start_clock();")
         code.append("num_rows_reducer.clear();")
         val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
-        val pbname = bag.name+"_"+(0 until bag.nprr.length).toList.mkString("_")
-        code.append(emitParallelBuilder(pbname,bag.attributes,bag.annotation,encodings,bag.attributes.length))
+        val pbname = bag.name+"_"+(0 until bag.attributes.length).toList.mkString("_")
+        code.append(emitParallelBuilder(pbname,bag.attributes,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)
         code.append(emitHeadBuildCode(bag.nprr.headOption))
 

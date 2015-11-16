@@ -120,7 +120,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
     val secondTriangleBag = chosen.head.getQueryPlan.ghd(1)
 
     assert(secondTriangleBag.duplicateOf.isDefined)
-    assertResult("bag_1_0")(secondTriangleBag.duplicateOf.get)
+    assertResult("bag_1_b_a_c")(secondTriangleBag.duplicateOf.get)
   }
 
   test("Can eliminate duplicate bags correctly in undirected barbell query") {
@@ -140,7 +140,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
     val secondTriangleBag = chosen.head.getQueryPlan.ghd(1)
 
     assert(secondTriangleBag.duplicateOf.isDefined)
-    assertResult("bag_1_0")(secondTriangleBag.duplicateOf.get)
+    assertResult("bag_1_b_a_c")(secondTriangleBag.duplicateOf.get)
     //println(Calendar.getInstance().getTime())
   }
   test("more than 2 attrs test case, with aggregations, projections, selects") {
@@ -180,7 +180,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
     ghd.doBagDedup
 
     assert(ghd.getQueryPlan.ghd(1).duplicateOf.isDefined)
-    assertResult("bag_1_0")(ghd.getQueryPlan.ghd(1).duplicateOf.get)
+    assertResult("bag_1_a_b_c_d_e")(ghd.getQueryPlan.ghd(1).duplicateOf.get)
   }
 
   test("more than 2 attrs negative test case, with aggregations, projections, selects") {

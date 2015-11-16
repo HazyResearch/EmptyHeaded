@@ -76,7 +76,7 @@ def main():
   #db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
 
   db_config="$EMPTYHEADED_HOME/examples/graph/data/simple/config.json"
-  #createDB(db_config)
+  createDB(db_config)
   
   #loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
   loadDB("$EMPTYHEADED_HOME/examples/graph/data/simple/db")
