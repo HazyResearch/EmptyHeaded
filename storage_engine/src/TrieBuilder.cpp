@@ -52,7 +52,11 @@ size_t TrieBuilder<A,M>::build_set(
       sizeof(Set<hybrid>);
 
     uint8_t * const start_block = (uint8_t*)data_allocator->get_next(tid,block_size);
+    const size_t offset = start_block-data_allocator->get_address(tid);
     memcpy((uint8_t*)start_block,(uint8_t*)tb1,block_size);
+
+    next.at(cur_level).index = (s1->cardinality > 0) ? tid: -1;
+    next.at(cur_level).offset = offset;
     return s1->cardinality;
 }
 
