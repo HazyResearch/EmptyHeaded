@@ -51,7 +51,7 @@ class QueryPlanTest extends FunSuite {
         |        "annotated":false
         |      }],
         |      "materialize":true,
-        |      "selection":{ "operation": "=", "expression": 5}
+        |      "selection":[{ "operation": "=", "expression": 5}]
         |    }]
         |  }],
         |  "topdown":[]
@@ -78,7 +78,7 @@ class QueryPlanTest extends FunSuite {
         List[QueryPlanAttrInfo](QueryPlanAttrInfo("a", List[QueryPlanAccessor](
           QueryPlanAccessor("takesCourse", List[Attr]("a", "b"), false),
           QueryPlanAccessor("bag_1_0", List[Attr]("a"), false)
-        ), true, Some(QueryPlanSelection("=", "5")), None, None, None, None)))
+        ), true, List[QueryPlanSelection](QueryPlanSelection("=", "5")), None, None, None, None)))
     ), List[TopDownPassIterator]()))(plan)
   }
 }
