@@ -22,37 +22,38 @@ def printLoadedRelation(relation):
 	print ")"
 
 def fromJSON(path,env):
-	data = json.load(open(path))
-	relations = data.pop("relations",0)
-	env.setup(data)
+  data = json.load(open(path))
+  relations = data.pop("relations",0)
+  env.setup(data)
 
-	libname = "loadDB"
-	os.system("cd $EMPTYHEADED_HOME/storage_engine && make clean && make emptyheaded NUM_THREADS=" + str(env.config["numThreads"]) + "&& cd -")
-	a = cppgenerator.compileAndRun(
+  libname = "loadDB"
+  os.system("rm -rf "+env.config["database"])
+  os.system("cd $EMPTYHEADED_HOME/storage_engine && make clean && make emptyheaded NUM_THREADS=" + str(env.config["numThreads"]) + "&& cd -")
+  a = cppgenerator.compileAndRun(
 		lambda: loadRelations(relations,env,libname),
 		libname,env.config["memory"],[],"void*",str(env.config["numThreads"]))
-	del a
-	envRelations = {}
-	for relation in relations:
-		attributes = relation["attributes"]
-		#grab the orderings (create them if all is specified)
-		orderings = relation["orderings"]
-		if len(orderings) == 1 and orderings[0] == "all":
-			orderings = generateAllOrderings(len(attributes))
-		r = cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env,"build_"+relation["name"]),
+  del a
+  envRelations = {}
+  for relation in relations:
+    attributes = relation["attributes"]
+    #grab the orderings (create them if all is specified)
+    orderings = relation["orderings"]
+    if len(orderings) == 1 and orderings[0] == "all":
+      orderings = generateAllOrderings(len(attributes))
+    r = cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env,"build_"+relation["name"]),
 			"build_"+relation["name"],env.config["memory"],[],"void*",str(env.config["numThreads"]))
-		del r
-		envRelations[relation["name"]] = { \
+    del r
+    envRelations[relation["name"]] = { \
 			"orderings":orderings,\
 			"annotation":relation["annotation"],\
 			"attributes":relation["attributes"]}
-	env.setSchemas(envRelations)
+  env.setSchemas(envRelations)
 
-	env.toJSON(env.config["database"]+"/config.json")
+  env.toJSON(env.config["database"]+"/config.json")
 
-	print "Created database with the following relations: "
-	for relation in relations:
-		printLoadedRelation(relation)
+  print "Created database with the following relations: "
+  for relation in relations:
+    printLoadedRelation(relation)
 
 ##########
 #Code generation methods

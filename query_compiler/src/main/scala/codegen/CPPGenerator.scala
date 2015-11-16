@@ -41,7 +41,7 @@ object CPPGenerator {
       i += 1
     })
     if(topDown){
-      val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
+      val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
       cppCode.append(bagCode)
       outputAttributes = bagOutput
     }
@@ -181,8 +181,7 @@ object CPPGenerator {
 
   def emitParallelBuilder(name:String,attributes:List[String],annotation:String,encodings:Encodings,numAttributes:Int) : StringBuilder = {
     val code = new StringBuilder()
-    val ordering = (0 until attributes.length).toList.mkString("_")
-    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name}_${ordering},${numAttributes});""")
+    code.append(s"""ParTrieBuilder<${annotation},${Environment.config.memory}> Builders(Trie_${name},${numAttributes});""")
     attributes.foreach(attr => {
       code.append(s"""Builders.trie->encodings.push_back((void*)Encoding_${encodings(attr).encoding});""")
     })
@@ -629,14 +628,13 @@ object CPPGenerator {
 
   def emitTopDown(
     output:String,
+    ordering:List[Int],
     annotation:String,
     td:List[TopDownPassIterator],
     intermediateRelations:Map[String,List[Attribute]]) 
       : (StringBuilder,List[Attribute]) = {
     
-    //val outputAttributes = bag.attributeInfo.map(a => encodings(a.name))
     val code = new StringBuilder()
-    println("EMIT TOP DOWN: " + intermediateRelations)
     
     code.append("{")
     code.append("auto bag_timer = timer::start_clock();")
@@ -657,9 +655,9 @@ object CPPGenerator {
     })
     val encodings = eBuffers.toList.groupBy(eb => eb._1).map(eb => (eb._1 -> eb._2.head._2))
     val attrs = eBuffers.toList.map(eb => eb._1)
-
+    val outputAttributes = attrs.map(encodings(_))
     //emit builder
-    code.append(emitParallelBuilder(output,attrs,annotation,encodings,attrs.length))
+    code.append(emitParallelBuilder(output+"_"+ordering.mkString("_"),attrs,annotation,encodings,attrs.length))
 
     val firstIterator = td.head
     val firstAttr = firstIterator.attributeInfo.head
@@ -690,7 +688,7 @@ object CPPGenerator {
     code.append(s"""timer::stop_clock("TOP DOWN TIME", bag_timer);""")
     code.append("}")
 
-    (code,List())
+    (code,outputAttributes)
   }
 
   def emitNPRR(
@@ -715,7 +713,8 @@ object CPPGenerator {
         code.append("auto bag_timer = timer::start_clock();")
         code.append("num_rows_reducer.clear();")
         val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
-        code.append(emitParallelBuilder(bag.name,bag.attributes,bag.annotation,encodings,bag.nprr.length))
+        val pbname = bag.name+"_"+(0 until bag.nprr.length).toList.mkString("_")
+        code.append(emitParallelBuilder(pbname,bag.attributes,bag.annotation,encodings,bag.attributes.length))
         code.append(parItCode)
         code.append(emitHeadBuildCode(bag.nprr.headOption))
 
