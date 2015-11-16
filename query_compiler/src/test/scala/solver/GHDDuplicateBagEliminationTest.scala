@@ -118,10 +118,9 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
       HeuristicUtils.getGHDsWithMinBags(candidates))
     chosen.head.doBagDedup
     val secondTriangleBag = chosen.head.getQueryPlan.ghd(1)
-    /*
+
     assert(secondTriangleBag.duplicateOf.isDefined)
-    assertResult("bag_1_f_d_e")(secondTriangleBag.duplicateOf.get)
-    */
+    assertResult(chosen.head.getQueryPlan.ghd(0).name)(secondTriangleBag.duplicateOf.get)
   } 
 
   test("Can eliminate duplicate bags correctly in undirected barbell query") {
@@ -140,11 +139,10 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
     chosen.head.doBagDedup
     val secondTriangleBag = chosen.head.getQueryPlan.ghd(1)
 
-    /*
-    assert(secondTriangleBag.duplicateOf.isDefined)
-    assertResult("bag_1_f_d_e")(secondTriangleBag.duplicateOf.get)
-    */
+   assert(secondTriangleBag.duplicateOf.isDefined)
+   assertResult(chosen.head.getQueryPlan.ghd(0).name)(secondTriangleBag.duplicateOf.get)
   }
+
   test("more than 2 attrs test case, with aggregations, projections, selects") {
     val child1 = new GHDNode(List[QueryRelation](
       new QueryRelation("R", List[AttrInfo](

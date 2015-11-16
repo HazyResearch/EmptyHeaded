@@ -35,7 +35,7 @@ case class QueryPlanBagInfo(val name:String,
 case class QueryPlanAttrInfo(val name:String,
                         val accessors:List[QueryPlanAccessor],
                         val materialize:Boolean,
-                        val selection:Boolean,
+                        val selection:List[QueryPlanSelection],
                         val annotation:Option[Attr],
                         val aggregation:Option[QueryPlanAggregation],
                         /* The last two here are never filled out in the top down pass*/
@@ -47,6 +47,9 @@ case class QueryPlanAggregation(val operation:String,
                            val expression:String,
                            val prev:Option[Attr],
                            val next:Option[Attr])
+
+case class QueryPlanSelection(val operation:String,
+                              val expression:String)
 
 case class QueryPlanAccessor(val name:String,
                         val attrs:List[Attr],

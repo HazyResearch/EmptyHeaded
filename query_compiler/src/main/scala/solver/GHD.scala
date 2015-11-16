@@ -42,6 +42,12 @@ object GHD {
     })
   }
 
+  def getSelection(attr:Attr, attrToRels:Map[Attr, List[QueryRelation]]): List[QueryPlanSelection] = {
+    attrToRels.get(attr).getOrElse(List())
+      .flatMap(rel => rel.attrs.filter(attrInfo => attrInfo._1 == attr &&  !attrInfo._2.isEmpty))
+      .map(attrInfo => QueryPlanSelection(attrInfo._1, attrInfo._3))
+  }
+
   def createAttrToRelsMapping(attrs:Set[Attr], rels:List[QueryRelation]): Map[Attr, List[QueryRelation]] = {
     attrs.map(attr =>{
       val relevantRels = rels.filter(rel => {
@@ -197,7 +203,7 @@ class GHD(val root:GHDNode,
           newAttr,
           GHD.getAccessor(newAttr, attrToRels),
           outputRelation.attrNames.contains(newAttr),
-          outputRelation.attrs.find(attrInfo => attrInfo._1 == newAttr && attrInfo._2 != "").isDefined,
+          List[QueryPlanSelection](),
           lastMaterializedAttr.flatMap(at => {
             if (newAttr == at) {
               nextAggregatedAttr
@@ -381,7 +387,7 @@ class GHDNode(var rels: List[QueryRelation]) {
           attr,
           accessor,
           outputRelation.attrNames.contains(attr),
-          hasSelection(attr),
+          getSelection(attr),
           getNextAnnotatedForLastMaterialized(attr, joinAggregates),
           GHD.getAggregation(joinAggregates, attr, aggregatedInfo),
           materializedInfo._1,
@@ -402,9 +408,8 @@ class GHDNode(var rels: List[QueryRelation]) {
    * @param attr, an attribute that definitely exists in this bag
    * @return Boolean for whether this attribute has a selection on it or not
    */
-  private def hasSelection(attr:Attr): Boolean = {
-    !attrToRels.get(attr).getOrElse(List())
-      .filter(rel => !rel.attrs.filter(attrInfo => attrInfo._1 == attr).head._2.isEmpty).isEmpty
+  private def getSelection(attr:Attr): List[QueryPlanSelection] = {
+    GHD.getSelection(attr, attrToRels)
   }
 
   def getOrderedAttrsWithAccessor(): List[Attr] = {
