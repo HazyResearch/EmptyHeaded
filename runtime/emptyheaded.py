@@ -1,6 +1,4 @@
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import json
 import codegenerator.createDB
 import codegenerator.env
@@ -74,20 +72,24 @@ def loadDB(path):
 def main():
   #db_config="/afs/cs.stanford.edu/u/caberger/config.json"
   #db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
-  db_config="$EMPTYHEADED_HOME/examples/graph/data/facebook/config_pruned.json"
-  
-  #createDB(db_config)
+
+  db_config="$EMPTYHEADED_HOME/examples/graph/data/simple/config.json"
+  createDB(db_config)
   
   #loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
-  loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db_pruned")
+  loadDB("$EMPTYHEADED_HOME/examples/graph/data/simple/db")
 
-  query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
-  a=fetchData("Triangle")
+  #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
+  #a=fetchData("Triangle")
   #query("Triangle(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c);m=<<COUNT(*)>>.")
-  #query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
-  #query("Barbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
-  query("Flique(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);m=<<COUNT(*)>>.")
-  a= fetchData("Flique")
+  #query("Flique(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);m=<<COUNT(*)>>.")
+
+  query("Lollipop(a,b,c,x) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x).")
+  a= fetchData("Lollipop")
+  print a
+
+  query("Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z).")
+  a= fetchData("Barbell")
   print a
 
 if __name__ == "__main__": main()

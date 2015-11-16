@@ -34,7 +34,8 @@ class AttributeOrderingTest extends FunSuite {
 
     val ordering = GHDSolver.getAttributeOrdering(
       rootBag,
-      rootBag.rels:::child1.rels:::child2.rels:::child3.rels)
+      rootBag.rels:::child1.rels:::child2.rels:::child3.rels,
+      QueryRelationFactory.createQueryRelationWithNoSelects(List[Attr]("a", "b", "c")))
 
     assertResult(List[Attr]("x", "y", "z", "a", "b", "c"))(ordering)
   }

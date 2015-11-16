@@ -26,6 +26,12 @@ void TrieIterator<A,M>::get_next_block(const size_t level, const uint32_t data){
 }
 
 template<class A,class M>
+void TrieIterator<A,M>::get_next_block(const size_t level, const uint32_t index, const uint32_t data){
+  levels.at(level+1) = (const TrieBlock<hybrid,M>*)
+    levels.at(level)->get_next_block(index,data,trie.memoryBuffers);
+}
+
+template<class A,class M>
 const TrieBlock<hybrid,M>* TrieIterator<A,M>::get_block(const size_t level) const {
   return levels.at(level);
 }

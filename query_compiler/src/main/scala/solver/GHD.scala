@@ -7,6 +7,7 @@ import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
 import scala.collection.immutable.TreeSet
+import scala.collection.mutable
 
 
 object GHD {
@@ -14,6 +15,63 @@ object GHD {
     attributeOrdering.map(a => rel.attrNames.indexOf(a)).filter(pos => {
       pos != -1
     })
+  }
+
+  def getOrderedAttrsWithAccessor(attributeOrdering:List[Attr], attrToRels:Map[Attr, List[QueryRelation]]): List[Attr] = {
+    attributeOrdering.flatMap(attr => {
+      val accessor = getAccessor(attr, attrToRels)
+      if (accessor.isEmpty) {
+        None
+      } else {
+        Some(attr)
+      }
+    })
+  }
+
+  def getAccessor(attr:Attr, attrToRels:Map[Attr, List[QueryRelation]]): List[QueryPlanAccessor] = {
+    attrToRels.get(attr).getOrElse(List()).map(rel => {
+      new QueryPlanAccessor(rel.name, rel.attrNames,(rel.attrNames.last == attr && rel.annotationType != "void*"))
+    })
+  }
+
+  def getAggregation(joinAggregates:Map[String,ParsedAggregate],
+                             attr:Attr,
+                             prevNextInfo:(Option[Attr], Option[Attr])): Option[QueryPlanAggregation] = {
+    joinAggregates.get(attr).map(parsedAggregate => {
+      new QueryPlanAggregation(parsedAggregate.op, parsedAggregate.init, parsedAggregate.expression, prevNextInfo._1, prevNextInfo._2)
+    })
+  }
+
+  def createAttrToRelsMapping(attrs:Set[Attr], rels:List[QueryRelation]): Map[Attr, List[QueryRelation]] = {
+    attrs.map(attr =>{
+      val relevantRels = rels.filter(rel => {
+        rel.attrNames.contains(attr)
+      })
+      (attr, relevantRels)
+    }).toMap
+  }
+
+  def getPrevAndNextAttrNames(attrsWithAccessor: List[Attr],
+                              filterFn:(Attr => Boolean)): List[(Option[Attr], Option[Attr])] = {
+    val prevAttrsMaterialized = attrsWithAccessor.foldLeft((List[Option[Attr]](), Option.empty[Attr]))((acc, attr) => {
+      val prevAttrMaterialized = (
+        if (filterFn(attr)) {
+          Some(attr)
+        } else {
+          acc._2
+        })
+      (acc._2::acc._1, prevAttrMaterialized)
+    })._1.reverse
+    val nextAttrsMaterialized = attrsWithAccessor.foldRight((List[Option[Attr]](), Option.empty[Attr]))((attr, acc) => {
+      val nextAttrMaterialized = (
+        if (filterFn(attr)) {
+          Some(attr)
+        } else {
+          acc._2
+        })
+      (acc._2::acc._1, nextAttrMaterialized)
+    })._1
+    prevAttrsMaterialized.zip(nextAttrsMaterialized)
   }
 
   /**
@@ -70,16 +128,101 @@ class GHD(val root:GHDNode,
           val queryRelations: List[QueryRelation],
           val joinAggregates:Map[String,ParsedAggregate],
           val outputRelation: QueryRelation) {
-  val attributeOrdering: List[Attr] = GHDSolver.getAttributeOrdering(root, queryRelations)
+  val attributeOrdering: List[Attr] = GHDSolver.getAttributeOrdering(root, queryRelations, outputRelation)
   var depth: Int = -1
   var numBags: Int = -1
+  var bagOutputs:List[QueryRelation] = null
+  var attrToRels: Map[Attr, List[QueryRelation]] = null
+  var attrToAnnotation:Map[Attr, String] = null
+  var lastMaterializedAttr:Option[Attr] = None
+  var nextAggregatedAttr:Option[Attr] = None
 
   def getQueryPlan(): QueryPlan = {
     new QueryPlan(
       "join",
       getRelationsSummary(),
       getOutputInfo(),
-      getPlanFromPostorderTraversal(root).toList)
+      getPlanFromPostorderTraversal(root).toList,
+      getTopDownPassIterators())
+  }
+
+  private def getAttrsToRelationsMap(): Map[Attr, List[QueryRelation]] = {
+    GHD.createAttrToRelsMapping(attributeOrdering.toSet, bagOutputs)
+  }
+
+  private def getTopDownPassIterators(): List[TopDownPassIterator] = {
+    if (outputRelation.attrNames.find(!root.attrSet.contains(_)).isEmpty) {
+      // no need to do the top down pass since the root has all the materialized attrs
+      return List[TopDownPassIterator]()
+    }
+    attrToRels = GHD.createAttrToRelsMapping(attributeOrdering.toSet, bagOutputs)
+    lastMaterializedAttr = if (outputRelation.attrNames.isEmpty) {
+      None
+    } else {
+      Some(outputRelation.attrNames.last)
+    }
+    if (lastMaterializedAttr.isDefined) {
+      nextAggregatedAttr = attributeOrdering
+        .dropWhile(at => at != lastMaterializedAttr.get)
+        .find(at => joinAggregates.contains(at))
+    }
+    val aggregatedPrevNextInfo = GHD.getPrevAndNextAttrNames(
+      GHD.getOrderedAttrsWithAccessor(attributeOrdering, attrToRels),
+      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr)))
+    return getTopDownPassIterators(mutable.Set[Attr](), mutable.Set[GHDNode](root), aggregatedPrevNextInfo)
+  }
+
+  private def getTopDownPassIterators(seen: mutable.Set[Attr],
+                                      f_in:mutable.Set[GHDNode],
+                                      prevNextAgg:List[(Option[Attr], Option[Attr])]): List[TopDownPassIterator] = {
+    val newFrontier = mutable.Set[GHDNode]()
+    var prevNextAggLeft = prevNextAgg
+    val iterators = f_in.map(node => {
+      val newAttrs = node.outputRelation.attrNames.filter(attrName => !seen.contains(attrName))
+      newAttrs.map(newAttr => seen.add(newAttr))
+      val prevNextAggThisBag = prevNextAggLeft.take(newAttrs.size)
+      prevNextAggLeft = prevNextAgg.drop(newAttrs.size)
+      val attrInfo = newAttrs.zip(prevNextAggThisBag).map({case (newAttr, prevNextAggEntry) => {
+        val agg = if (joinAggregates.contains(newAttr)) {
+          Some(QueryPlanAggregation(
+            joinAggregates.get(newAttr).get.op,
+            joinAggregates.get(newAttr).get.init,
+            joinAggregates.get(newAttr).get.expression,
+            prevNextAggEntry._1,
+            prevNextAggEntry._2))
+        } else {
+          None
+        }
+        QueryPlanAttrInfo(
+          newAttr,
+          GHD.getAccessor(newAttr, attrToRels),
+          outputRelation.attrNames.contains(newAttr),
+          outputRelation.attrs.find(attrInfo => attrInfo._1 == newAttr && attrInfo._2 != "").isDefined,
+          lastMaterializedAttr.flatMap(at => {
+            if (newAttr == at) {
+              nextAggregatedAttr
+            } else {
+              None
+            }
+          }),
+          agg,
+          None,
+          None
+        )
+      }})
+      node.children.map(child => newFrontier.add(child))
+      TopDownPassIterator(node.bagName, attrInfo)
+    }).toList
+
+    if (newFrontier.isEmpty) {
+      return iterators
+    } else {
+      return iterators ::: getTopDownPassIterators(seen, newFrontier, prevNextAggLeft)
+    }
+  }
+
+  def getBagOutputRelations(node:GHDNode) : List[QueryRelation] = {
+    node.outputRelation::node.children.flatMap(child => getBagOutputRelations(child))
   }
 
   /**
@@ -120,11 +263,15 @@ class GHD(val root:GHDNode,
     root.computeDepth
     depth = root.depth
     numBags = root.getNumBags()
-    root.setBagName(outputRelation.name)
-    root.setDescendantNames(1)
     root.setAttributeOrdering(attributeOrdering)
+
+    val attrNames = root.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
+    root.setBagName("bag_0_"+attrNames)
+    root.setDescendantNames(1)
+
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
     root.createAttrToRelsMapping
+    bagOutputs = getBagOutputRelations(root)
   }
 
   def doBagDedup() = {
@@ -207,20 +354,21 @@ class GHDNode(var rels: List[QueryRelation]) {
   }
 
   def setDescendantNames(depth:Int): Unit = {
-    children.zipWithIndex.map(childAndIndex => {
-      childAndIndex._1.setBagName(s"bag_${depth}_${childAndIndex._2}")
+    children.map(childAndIndex => {
+      val attrNames = childAndIndex.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
+      childAndIndex.setBagName(s"bag_${depth}_${attrNames}")
     })
     children.map(child => {child.setDescendantNames(depth+1)})
   }
 
-  private def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) : List[QueryPlanNPRRInfo] = {
+  private def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) : List[QueryPlanAttrInfo] = {
     val attrsWithAccessor = getOrderedAttrsWithAccessor()
-    val prevAndNextAttrMaterialized = getPrevAndNextAttrNames(
+    val prevAndNextAttrMaterialized = GHD.getPrevAndNextAttrNames(
       attrsWithAccessor,
       ((attr:Attr) => outputRelation.attrNames.contains(attr)))
-    val prevAndNextAttrAggregated = getPrevAndNextAttrNames(
+    val prevAndNextAttrAggregated = GHD.getPrevAndNextAttrNames(
       attrsWithAccessor,
-      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr))) /* TODO: the two parts of the && are actually redundant, they should always be the same */
+      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr)))
 
     attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
       val (attr, prevNextInfo) = attrAndPrevNextInfo
@@ -229,40 +377,17 @@ class GHDNode(var rels: List[QueryRelation]) {
       if (accessor.isEmpty) {
         None // this should not happen
       } else {
-        Some(new QueryPlanNPRRInfo(
+        Some(new QueryPlanAttrInfo(
           attr,
           accessor,
           outputRelation.attrNames.contains(attr),
           hasSelection(attr),
           getNextAnnotatedForLastMaterialized(attr, joinAggregates),
-          getAggregation(joinAggregates, attr, aggregatedInfo),
+          GHD.getAggregation(joinAggregates, attr, aggregatedInfo),
           materializedInfo._1,
           materializedInfo._2))
       }
     })
-  }
-
-  private def getPrevAndNextAttrNames(attrsWithAccessor: List[Attr],
-                                      filterFn:(Attr => Boolean)): List[(Option[Attr], Option[Attr])] = {
-    val prevAttrsMaterialized = attrsWithAccessor.foldLeft((List[Option[Attr]](), Option.empty[Attr]))((acc, attr) => {
-      val prevAttrMaterialized = (
-        if (filterFn(attr)) {
-          Some(attr)
-        } else {
-          acc._2
-        })
-      (acc._2::acc._1, prevAttrMaterialized)
-    })._1.reverse
-    val nextAttrsMaterialized = attrsWithAccessor.foldRight((List[Option[Attr]](), Option.empty[Attr]))((attr, acc) => {
-      val nextAttrMaterialized = (
-        if (filterFn(attr)) {
-          Some(attr)
-        } else {
-          acc._2
-        })
-      (acc._2::acc._1, nextAttrMaterialized)
-    })._1
-    prevAttrsMaterialized.zip(nextAttrsMaterialized)
   }
 
   private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,ParsedAggregate]): Option[Attr] = {
@@ -271,14 +396,6 @@ class GHDNode(var rels: List[QueryRelation]) {
     } else {
       None
     }
-  }
-
-  private def getAggregation(joinAggregates:Map[String,ParsedAggregate],
-                             attr:Attr,
-                             prevNextInfo:(Option[Attr], Option[Attr])): Option[QueryPlanAggregation] = {
-   joinAggregates.get(attr).map(parsedAggregate => {
-      new QueryPlanAggregation(parsedAggregate.op, parsedAggregate.init, parsedAggregate.expression, prevNextInfo._1, prevNextInfo._2)
-    })
   }
 
   /**
@@ -290,21 +407,14 @@ class GHDNode(var rels: List[QueryRelation]) {
       .filter(rel => !rel.attrs.filter(attrInfo => attrInfo._1 == attr).head._2.isEmpty).isEmpty
   }
 
-  private def getOrderedAttrsWithAccessor(): List[Attr] = {
-    attributeOrdering.flatMap(attr => {
-      val accessor = getAccessor(attr)
-      if (accessor.isEmpty) {
-        None
-      } else {
-        Some(attr)
-      }
-    })
+  def getOrderedAttrsWithAccessor(): List[Attr] = {
+    GHD.getOrderedAttrsWithAccessor(attributeOrdering, attrToRels)
   }
 
-  private def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
-    attrToRels.get(attr).getOrElse(List()).map(rel => {
-      new QueryPlanAccessor(rel.name, rel.attrNames,(rel.attrNames.last == attr && rel.annotationType != "void*"))
-    })
+
+
+  def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
+    GHD.getAccessor(attr, attrToRels)
   }
 
   /**
@@ -348,13 +458,8 @@ class GHDNode(var rels: List[QueryRelation]) {
     })
   }
 
-  def createAttrToRelsMapping : Unit = {
-    attrToRels = attrSet.map(attr =>{
-      val relevantRels = subtreeRels.filter(rel => {
-        rel.attrNames.contains(attr)
-      })
-      (attr, relevantRels)
-    }).toMap
+  def createAttrToRelsMapping: Unit = {
+    attrToRels = GHD.createAttrToRelsMapping(attrSet, subtreeRels)
     children.map(child => child.createAttrToRelsMapping)
   }
 
@@ -386,15 +491,13 @@ class GHDNode(var rels: List[QueryRelation]) {
 
   def computeDepth : Unit = {
     if (children.isEmpty) {
-      depth = 0
+      depth = 1
     } else {
       val childrenDepths = children.map(x => {
         x.computeDepth
         x.depth
       })
-      depth = childrenDepths.foldLeft(0)((acc:Int, x:Int) => {
-        if (x > acc) x else acc
-      })
+      depth = childrenDepths.max + 1
     }
   }
 

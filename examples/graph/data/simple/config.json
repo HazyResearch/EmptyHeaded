@@ -1,0 +1,26 @@
+{
+  "numThreads": 4,
+  "numNUMA": 4,
+  "database": "$EMPTYHEADED_HOME/examples/graph/data/simple/db",
+  "algorithm": "NPRR+",
+  "layout": "hybrid",
+  "memory": "RAM",
+  "relations": [
+    {
+      "name": "Edge",
+      "source": "$EMPTYHEADED_HOME/examples/graph/data/simple/duplicated.tsv",
+      "annotation":"void*",
+      "attributes":[
+        {
+          "attrType":"long",
+          "encoding":"node"
+        },
+        {
+          "attrType":"long",
+          "encoding":"node"
+        }
+      ],
+      "orderings":["all"]
+    }
+  ]
+}

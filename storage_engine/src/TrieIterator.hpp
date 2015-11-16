@@ -36,6 +36,11 @@ struct TrieIterator{
     const size_t level, 
     const uint32_t data);
 
+  void get_next_block(
+    const size_t level,
+    const uint32_t index, 
+    const uint32_t data);
+
   A get_annotation(
     const size_t level,
     const uint32_t data);

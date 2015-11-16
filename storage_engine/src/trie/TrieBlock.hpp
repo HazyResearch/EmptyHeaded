@@ -29,10 +29,9 @@ struct TrieBlock{
     return is_sparse ? set->cardinality:(set->range+1);
   }
 
-  inline size_t getNextIndex(const uint32_t index, const uint32_t data) {
+  inline size_t getNextIndex(const uint32_t index, const uint32_t data) const {
    const Set<hybrid>* const set = this->get_const_set();
-    is_sparse = common::is_sparse(set->cardinality,set->range);
-    return is_sparse ? index:data;
+    return common::is_sparse(set->cardinality,set->range) ? index:data;
   }
   
   inline size_t get_index(const size_t index, const size_t data) const {
@@ -114,7 +113,7 @@ struct TrieBlock{
   inline TrieBlock<T,M>* get_next_block(
     const uint32_t index, 
     const uint32_t data,
-    M* buffer) {
+    M* buffer) const {
     //we must 
     TrieBlock<T,M>* result = NULL;
     const uint32_t nextIndex = this->getNextIndex(index,data);
