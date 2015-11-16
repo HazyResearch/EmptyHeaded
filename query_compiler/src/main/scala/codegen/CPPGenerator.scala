@@ -718,8 +718,8 @@ object CPPGenerator {
         code.append(parItCode)
         code.append(emitHeadBuildCode(bag.nprr.headOption))
 
-        println("ENCODINGS: " + encodings)
-        println("ITERATOR ACCESSORS: " + iteratorAccessors)
+        //println("ENCODINGS: " + encodings)
+        //println("ITERATOR ACCESSORS: " + iteratorAccessors)
 
         val remainingAttrs = bag.nprr.tail
         oa = bag.attributes.map(a => encodings(a))

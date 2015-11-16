@@ -52,6 +52,7 @@ static PyObject * fetch_data_%(hashstring)s(PyObject * self, PyObject * args){
   (void) encodings;
 	result->foreach([&](std::vector<uint32_t>* tuple,%(annotationType)s value){
 	  assert(tuple->size() == %(t_len)s);"""% locals()
+  #FIXME: ADD TYPES HERE
   extra_string=""
   if annotationType != "void*":
     extra_string="+1"
@@ -62,11 +63,12 @@ static PyObject * fetch_data_%(hashstring)s(PyObject * self, PyObject * args){
 	   code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(((Encoding<%(t)s>*)encodings.at(%(i)s))->key_to_value.at(tuple->at(%(i)s)));
 			PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
     elif t == "int":
-      print "NOT IMPLEMENTED"
-    elif t == "string":
-      print "NOT IMPLEMENTED"
+      print "INT NOT IMPLEMENTED"
+    elif t == "std::string":
+     code+="""PyObject * rowelem_%(i)s = PyString_FromString(((Encoding<%(t)s>*)encodings.at(%(i)s))->key_to_value.at(tuple->at(%(i)s)));
+      PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
     elif t == "float":
-      print "NOT IMPLEMENTED"
+      print "FLOAT NOT IMPLEMENTED"
     i += 1
   if annotationType == "long":
     code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(value);

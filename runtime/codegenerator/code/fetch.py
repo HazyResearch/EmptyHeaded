@@ -11,7 +11,7 @@ def loadRelation(path,name,annotationType,memType):
 
 def loadEncoding(path,name,type):
 	code = """
-	Encoding<long> *Encoding_%(name)s = NULL;
+	Encoding<%(type)s> *Encoding_%(name)s = NULL;
 	{
     auto start_time = timer::start_clock();
     Encoding_%(name)s = Encoding<%(type)s>::from_binary(
