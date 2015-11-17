@@ -308,13 +308,22 @@ object CPPGenerator {
 
   def emitContainsSelection(name:String,materialize:Boolean,selections:QueryPlanSelection) : StringBuilder = {
     val code = new StringBuilder()
-    code.append("\n//uint32_t selection_{name}_{selectionIndex} = get the value from encoding;\n")
     code.append("//accessors contains\n")
     code.append("//if(contains){\n")
     code.append("//update iterators\n")
     code
   }
 
+  def emitSelectionValues(head:List[QueryPlanAttrInfo],encodings:Map[String,Attribute]) : StringBuilder = {
+    val code = new StringBuilder()
+    head.foreach(attr => {
+      attr.selection.foreach(s => {
+        code.append(s"""const uint32_t selection_${attr.name}_${attr.selection.indexOf(s)} = 
+          Encoding_${encodings(attr.name).encoding}->value_to_key.at(${s.expression});""")
+      })
+    })
+    code
+  }
   def emitHeadContainsSelections(head:List[QueryPlanAttrInfo]) : (StringBuilder,List[QueryPlanAttrInfo]) = {
     val code = new StringBuilder()
     if(head.length == 0)
@@ -739,6 +748,7 @@ object CPPGenerator {
         oa = bag.attributes.map(a => encodings(a))
 
         if(bag.nprr.length > 0){
+          code.append(emitSelectionValues(bag.nprr,encodings))
           val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr)
           val numHeadContains = bag.nprr.length-remainingAttrs.length
           code.append(hsCode)
