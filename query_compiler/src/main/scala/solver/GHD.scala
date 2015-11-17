@@ -45,7 +45,7 @@ object GHD {
   def getSelection(attr:Attr, attrToRels:Map[Attr, List[QueryRelation]]): List[QueryPlanSelection] = {
     attrToRels.get(attr).getOrElse(List())
       .flatMap(rel => rel.attrs.filter(attrInfo => attrInfo._1 == attr &&  !attrInfo._2.isEmpty))
-      .map(attrInfo => QueryPlanSelection(attrInfo._1, attrInfo._3))
+      .map(attrInfo => QueryPlanSelection(attrInfo._2, attrInfo._3))
   }
 
   def createAttrToRelsMapping(attrs:Set[Attr], rels:List[QueryRelation]): Map[Attr, List[QueryRelation]] = {
