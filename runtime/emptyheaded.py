@@ -54,7 +54,6 @@ def fetchData(relation):
     return pd.DataFrame.from_records(data=tuples,columns=cols)
   else:
     fetchedData = codegenerator.fetchRelation.fetch(relation,environment)
-    print fetchedData
     return pd.DataFrame.from_records(data=fetchedData)
 
 def numRows(relation):
