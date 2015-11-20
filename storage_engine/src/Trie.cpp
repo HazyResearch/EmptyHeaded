@@ -91,11 +91,12 @@ void recursive_foreach(
     current->get_set()->foreach_index([&](const uint32_t a_i, const uint32_t a_d){
       tuple->push_back(a_d);
       (void) a_i;
-      if(annotated)
-        assert(false);
-        //body(tuple,current->get_data(a_i,a_d));
-      else 
+      if(annotated){
+        const A annotation = current->template get_annotation<A>(a_i,a_d);
+        body(tuple,annotation);
+      } else{
         body(tuple,(A)0);
+      } 
       tuple->pop_back();
     });
   } else {
@@ -130,23 +131,24 @@ template<class A,class M>
 void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body){
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
   TrieBlock<layout,M>* head = this->getHead();
-
   if(head->get_set()->cardinality > 0){
     head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
       tuple->push_back(a_d);
-      TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
-      if(num_columns > 1 && next != NULL){
-        recursive_foreach<A,M>(
-          annotated,
-          memoryBuffers,
-          next,
-          1,
-          num_columns,
-          tuple,
-          body);
+      if(num_columns > 1){
+        TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
+        if(next != NULL){
+          recursive_foreach<A,M>(
+            annotated,
+            memoryBuffers,
+            next,
+            1,
+            num_columns,
+            tuple,
+            body);
+        }
       } else if(annotated) {
-        assert(false);
-        //body(tuple,head->get_data(a_i,a_d));
+        const A annotationValue = head->template get_annotation<A>(a_i,a_d);
+        body(tuple,annotationValue);
       } else if(num_columns == 1){
         body(tuple,(A)0); 
       }
@@ -341,14 +343,18 @@ void recursive_build(
         annotation);
     }
   } else if(annotation->size() != 0){
-    /*
-    tail->alloc_data(tid,data_allocator);
+    B* tail = (B*)data_allocator->get_address(tid,next_offset);
+    //perform allocation for annotation (0 = tid)
+    //nextSize should gets the size of pointers or annotations (should be renamed?)
+    data_allocator->get_next(tid,sizeof(A)*(tail->nextSize()));
+    //could of realloced, get the head again
+    tail = (B*)data_allocator->get_address(tid,next_offset);
+
     for(size_t i = start; i < end; i++){
       uint32_t data_value = attr_in->at(level).at(indicies[i]);
-      R annotationValue = annotation->at(indicies[i]);
-      tail->set_data(i-start,data_value,annotationValue);
+      A annotationValue = annotation->at(indicies[i]);
+      tail->template set_annotation(annotationValue,i-start,data_value);
     }
-    */
   }
 }
 
@@ -457,20 +463,20 @@ Trie<A,M>::Trie(
         annotations);
     });
   } else if(annotations->size() > 0){
-    /*
-    new_head->alloc_data(0,data_allocator);
+    TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
+    //perform allocation for annotation (0 = tid)
+    //nextSize should gets the size of pointers or annotations (should be renamed?)
+    memoryBuffers->head->get_next(sizeof(A)*(new_head->nextSize()));
+    //could of realloced, get the head again
+    new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
+
     for(size_t i = 0; i < head_size; i++){
       const uint32_t data = set_data_buffer->at(0)[i]; 
-      R annotationValue = annotation->at(indicies[i]);
-      new_head->set_data(i,data,annotationValue);
+      A annotationValue = annotations->at(indicies[i]);
+      new_head->template set_annotation<A>(annotationValue,i,data);
     }
-    */
   }
 
-  for(size_t i = 0; i < num_columns; i++){
-    //delete ranges_buffer->at(i);
-    //delete set_data_buffer->at(i);
-  }
   delete ranges_buffer;
   delete set_data_buffer;
 }

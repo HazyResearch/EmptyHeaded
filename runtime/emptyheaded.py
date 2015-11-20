@@ -53,7 +53,13 @@ def fetchData(relation):
     tuples = eval("""query["query"].fetch_data_"""+str(query["hash"])+"""(query["trie"])""")
     return pd.DataFrame.from_records(data=tuples,columns=cols)
   else:
-    return pd.DataFrame.from_records(data=codegenerator.fetchRelation.fetch(relation,environment))
+    schema = environment.schemas[relation]
+    annotation = str(schema["annotation"])
+    cols = map(str, schema["orderings"][0])
+    if annotation != "void*":
+      cols.append("annotation")
+    fetchedData = codegenerator.fetchRelation.fetch(relation,environment)
+    return pd.DataFrame.from_records(data=fetchedData,columns=cols)
 
 def numRows(relation):
   if relation in environment.liverelations:
@@ -73,23 +79,23 @@ def main():
   #db_config="/afs/cs.stanford.edu/u/caberger/config.json"
   #db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
 
-  db_config="$EMPTYHEADED_HOME/examples/graph/data/simple/config.json"
-  createDB(db_config)
+  db_config="/Users/caberger/Documents/Research/data/lubm1000/config.json"
+  #createDB(db_config)
+  loadDB("/Users/caberger/Documents/Research/data/lubm1000/db")
   
-  #loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
-  loadDB("$EMPTYHEADED_HOME/examples/graph/data/simple/db")
+  #loadDB("$EMPTYHEADED_HOME/examples/graph/data/simple/db")
 
   #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
   #a=fetchData("Triangle")
   #query("Triangle(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c);m=<<COUNT(*)>>.")
   #query("Flique(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);m=<<COUNT(*)>>.")
 
-  query("Lollipop(a,b,c,x) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x).")
-  a= fetchData("Lollipop")
-  print a
+  #query("Lollipop(a,b,c,x) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x).")
+  #a= fetchData("Lollipop")
+  #print a
 
-  query("Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z).")
-  a= fetchData("Barbell")
-  print a
+  #query("Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z).")
+  #a= fetchData("Barbell")
+  #print a
 
 if __name__ == "__main__": main()

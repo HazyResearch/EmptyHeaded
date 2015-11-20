@@ -8,48 +8,52 @@ import code.fetch
 from pprint import pprint
 
 def numRows(relation,env):
-	notFound = "Relation " + relation + " does not exist in database."
-	if relation in env.schemas:
-		schema = env.schemas[relation]
-		ordering = schema["orderings"][0]
-		trieName = relation + "_" + "_".join(map(str,ordering))
-		types = map(lambda x : str(x["attrType"]),schema["attributes"])
-		if trieName in env.relations:
-			if env.relations[trieName] == "disk":
-				#get encodings
-				result = cppgenerator.compileAndRun(lambda: 
+  notFound = "Relation " + relation + " does not exist in database."
+  if relation in env.schemas:
+    schema = env.schemas[relation]
+    ordering = schema["orderings"][0]
+    trieName = relation + "_" + "_".join(map(str,ordering))
+    types = map(lambda x : str(x["attrType"]),schema["attributes"])
+    if trieName in env.relations:
+      if env.relations[trieName] == "disk":
+        #get encodings
+        result = cppgenerator.compileAndRun(lambda: 
 					fetchData(relation,trieName,schema["annotation"],schema["attributes"],env),
 					"fetchData_"+relation,env.config["memory"],types,schema["annotation"])
-				return result[0].num_rows(result[1])
-			else:
-				print "Not yet supported. Must be on disk."
-		else:
-			print notFound
-	else:
-		print notFound
-	return -1
+        return result[0].num_rows(result[1])
+      else:
+        print "Not yet supported. Must be on disk."
+    else:
+      print "NO trie name"
+      print notFound
+  else:
+    print "NOT in schemas"
+    print notFound
+  return -1
 
 def fetch(relation,env):
-	notFound = "Relation " + relation + " does not exist in database."
-	if relation in env.schemas:
-		schema = env.schemas[relation]
-		ordering = schema["orderings"][0]
-		trieName = relation + "_" + "_".join(map(str,ordering))
-		types = map(lambda x : str(x["attrType"]),schema["attributes"])
-		if trieName in env.relations:
-			if env.relations[trieName] == "disk":
-				#get encodings
-				result = cppgenerator.compileAndRun(lambda: 
+  notFound = "Relation " + relation + " does not exist in database."
+  if relation in env.schemas:
+    schema = env.schemas[relation]
+    ordering = schema["orderings"][0]
+    trieName = relation + "_" + "_".join(map(str,ordering))
+    types = map(lambda x : str(x["attrType"]),schema["attributes"])
+    if trieName in env.relations:
+      if env.relations[trieName] == "disk":
+        #get encodings
+        result = cppgenerator.compileAndRun(lambda: 
 					fetchData(relation,trieName,schema["annotation"],schema["attributes"],env),
 					"fetchData_"+relation,env.config["memory"],types,schema["annotation"],str(env.config["numThreads"]))
-				return result[0].fetch_data(result[1])
-			else:
-				print "Not yet supported. Must be on disk."
-		else:
-			print notFound
-	else:
-		print notFound
-	return -1
+        tuples = eval("""result[0].fetch_data_"""+"fetchData_"+relation+"""(result[1])""")
+        return tuples
+      else:
+        print "Not yet supported. Must be on disk."
+    else:
+      print "NO trie name"
+      print notFound
+  else:
+    print notFound
+  return -1
 
 def fetchData(relation,trieName,annotationType,attributes,env):
 	memType = env.config["memory"]
@@ -67,8 +71,8 @@ def fetchData(relation,trieName,annotationType,attributes,env):
 			runCode += code.fetch.loadEncoding(env.config["database"],a["encoding"],a["attrType"])
 			s.add(a["encoding"])
 	encodings = map(lambda i:i["encoding"],attributes)
-	runCode += code.fetch.setResult(trieName,encodings)
-	return code.querytemplate.getCode(include,runCode)
+	runCode += code.fetch.setResult(trieName,encodings,"fetchData_"+relation)
+	return code.querytemplate.getCode(include,runCode,"fetchData_"+relation)
 	#cppgenerator.compileAndRun(
 	#lambda: cppgenerator.loadRelations(relations,env),
 	#libname)

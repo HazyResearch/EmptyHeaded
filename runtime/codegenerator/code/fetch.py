@@ -11,7 +11,7 @@ def loadRelation(path,name,annotationType,memType):
 
 def loadEncoding(path,name,type):
 	code = """
-	Encoding<long> *Encoding_%(name)s = NULL;
+	Encoding<%(type)s> *Encoding_%(name)s = NULL;
 	{
     auto start_time = timer::start_clock();
     Encoding_%(name)s = Encoding<%(type)s>::from_binary(
@@ -21,9 +21,9 @@ def loadEncoding(path,name,type):
 	"""% locals()
 	return code
 
-def setResult(name,encodings):
+def setResult(name,encodings,hashString):
 	code = ""
 	for e in encodings:
 		code += """Trie_%(name)s->encodings.push_back((void*)Encoding_%(e)s);"""% locals()
-	code+="""result = (void*)Trie_%(name)s;"""% locals()
+	code+="""result_%(hashString)s = (void*)Trie_%(name)s;"""% locals()
 	return code
