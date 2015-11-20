@@ -13,26 +13,30 @@ def declareEncoding(e):
   		Encoding<%(types)s> *Encoding_%(name)s = new Encoding<%(types)s>();
 	"""% locals()
 
-def readRelationFromTSV(name,encodings,path):
-	path = os.path.expandvars(path)
-	code = """{
+def readRelationFromTSV(name,encodings,path,annotation):
+  print "ANNOTATION: " + annotation
+  path = os.path.expandvars(path)
+  code = """{
 	    auto start_time = timer::start_clock();
 	    tsv_reader f_reader(
 	        "%(path)s");
 	    char *next = f_reader.tsv_get_first();
 	    while (next != NULL) {"""% locals()
-	i = 0
-	for ename,types in encodings:
-		code += \
+  i = 0
+  for ename,types in encodings:
+    code += \
 		"""EncodingMap_%(ename)s->update(ColumnStore_%(name)s->append_from_string<%(i)s>(next));
 		   next = f_reader.tsv_get_next();"""% locals()
-		i+=1
-	code += \
+    i+=1
+  if annotation != "void*":
+    code+="""annotation_%(name)s->push_back(utils::from_string<%(annotation)s>(next));
+    next = f_reader.tsv_get_next();"""% locals()
+  code += \
 	"""ColumnStore_%(name)s->num_rows++;
 	   }
        timer::stop_clock("READING %(name)s from disk",start_time);
     }"""% locals()
-	return code
+  return code
 
 def buildAndDumpEncoding(path,encoding):
 	name,types = encoding

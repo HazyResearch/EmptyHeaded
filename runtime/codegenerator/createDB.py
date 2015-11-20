@@ -75,7 +75,7 @@ def loadRelationCode(relations,env):
 		for e in set(relencodings):
 			encodings.add(e)
 			codeString += code.build.declareEncoding(e)
-		codeString += code.build.readRelationFromTSV(relation["name"],relencodings,relation["source"])
+		codeString += code.build.readRelationFromTSV(relation["name"],relencodings,relation["source"],relation["annotation"])
 
 	envEncodings = {}
 	for encoding in encodings:
