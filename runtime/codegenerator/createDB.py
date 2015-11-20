@@ -102,7 +102,7 @@ def loadRelations(relations,env,hashstring):
 
 def buildTrie(orderings,relation,env,hashstring):
 	include = """#include "emptyheaded.hpp" """
-	codeString = code.build.loadEncodedRelation(env.config["database"],relation["name"])
+	codeString = code.build.loadEncodedRelation(env.config["database"],relation["name"],relation["annotation"])
 
 	envRelations = {}
 	for ordering in orderings:

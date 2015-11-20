@@ -80,13 +80,13 @@ timer::stop_clock("ENCODING %(name)s", start_time);
 """% locals()
 	return code
 
-def loadEncodedRelation(path,name):
+def loadEncodedRelation(path,name,annotationType):
 	return \
 """
-    EncodedColumnStore<void *> *Encoded_%(name)s = NULL;
+    EncodedColumnStore<%(annotationType)s> *Encoded_%(name)s = NULL;
     {
       auto start_time = timer::start_clock();
-      Encoded_%(name)s = EncodedColumnStore<void *>::from_binary(
+      Encoded_%(name)s = EncodedColumnStore<%(annotationType)s>::from_binary(
           "%(path)s/relations/%(name)s/");
       timer::stop_clock("LOADING ENCODED RELATION %(name)s", start_time);
     }
@@ -95,8 +95,8 @@ def loadEncodedRelation(path,name):
 def buildOrder(path,name,ordering,annotationType,memType):
 	rname = name
 	name += "_"+"_".join(map(str,ordering))
-	code = """ EncodedColumnStore<void *> *Encoded_%(name)s =
-        new EncodedColumnStore<void *>(&Encoded_%(rname)s->annotation);
+	code = """ EncodedColumnStore<%(annotationType)s> *Encoded_%(name)s =
+        new EncodedColumnStore<%(annotationType)s>(&Encoded_%(rname)s->annotation);
     {
       auto start_time = timer::start_clock();"""% locals()
 	for i in ordering:
