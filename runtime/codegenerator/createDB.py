@@ -58,41 +58,42 @@ def fromJSON(path,env):
 ##########
 #Code generation methods
 def loadRelationCode(relations,env):
-	encodings = Set()
-	codeString = ""
-	os.system("mkdir -p " + env.config["database"])
-	os.system("mkdir -p " + env.config["database"] + "/encodings")
-	os.system("mkdir -p " + env.config["database"] + "/relations")
+  encodings = Set()
+  codeString = ""
+  os.system("mkdir -p " + env.config["database"])
+  os.system("mkdir -p " + env.config["database"] + "/encodings")
+  os.system("mkdir -p " + env.config["database"] + "/relations")
 
-	for relation in relations:
-		os.system("mkdir -p " + env.config["database"] + "/relations/"+relation["name"])
+  for relation in relations:
+    os.system("mkdir -p " + env.config["database"] + "/relations/"+relation["name"])
 
-		types = ",".join(list(map(lambda x: str(x["attrType"]),relation["attributes"])))
-		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["attrType"])),relation["attributes"]))
+    types = ",".join(list(map(lambda x: str(x["attrType"]),relation["attributes"])))
+    relencodings = list(map(lambda x: (str(x["encoding"]),str(x["attrType"])),relation["attributes"]))
 
-		codeString += code.build.declareColumnStore(relation["name"],types)
-		codeString += code.build.declareAnnotationStore(relation["name"],relation["annotation"])
-		for e in set(relencodings):
-			encodings.add(e)
-			codeString += code.build.declareEncoding(e)
-		codeString += code.build.readRelationFromTSV(relation["name"],relencodings,relation["source"],relation["annotation"])
+    codeString += code.build.declareColumnStore(relation["name"],types)
+    codeString += code.build.declareAnnotationStore(relation["name"],relation["annotation"])
+    for e in set(relencodings):
+      if e not in encodings:
+        encodings.add(e)
+        codeString += code.build.declareEncoding(e)
+    codeString += code.build.readRelationFromTSV(relation["name"],relencodings,relation["source"],relation["annotation"])
 
-	envEncodings = {}
-	for encoding in encodings:
-		name,types = encoding
-		os.system("mkdir -p " + env.config["database"] + "/encodings/"+name)
-		codeString += code.build.buildAndDumpEncoding(env.config["database"],encoding)
-		envEncodings[name] = types
-	env.setEncodings(envEncodings)
+  envEncodings = {}
+  for encoding in encodings:
+    name,types = encoding
+    os.system("mkdir -p " + env.config["database"] + "/encodings/"+name)
+    codeString += code.build.buildAndDumpEncoding(env.config["database"],encoding)
+    envEncodings[name] = types
+  env.setEncodings(envEncodings)
 
-	for relation in relations:
-		relencodings = list(map(lambda x: (str(x["encoding"]),str(x["attrType"])),relation["attributes"]))
-		codeString += code.build.encodeRelation(
-			env.config["database"],
-			relation["name"],
-			relencodings,
-			relation["annotation"])
-	return codeString
+  for relation in relations:
+    relencodings = list(map(lambda x: (str(x["encoding"]),str(x["attrType"])),relation["attributes"]))
+    codeString += code.build.encodeRelation(
+      env.config["database"],
+      relation["name"],
+      relencodings,
+      relation["annotation"])
+  return codeString
 
 def loadRelations(relations,env,hashstring):
 	include = """#include "emptyheaded.hpp" """

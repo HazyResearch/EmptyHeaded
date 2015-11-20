@@ -4,7 +4,7 @@ import net.liftweb.json._
 
 import scala.io._
 
-import net.liftweb.json.Serialization.{read, write}
+import net.liftweb.json.Serialization.{read, write, writePretty}
 /*
   Stores information about what is in the database and 
   current configuration of the database. This is necessary
@@ -24,7 +24,7 @@ object Environment {
   def toJSON() = {
     val filename = config.database+"/config.json"
     implicit val formats = Serialization.formats(NoTypeHints)
-    scala.tools.nsc.io.File(filename).writeAll(write(config))
+    scala.tools.nsc.io.File(filename).writeAll(writePretty(config))
   }
 
   /**

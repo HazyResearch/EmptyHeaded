@@ -228,47 +228,41 @@ object CPPGenerator {
     return (code,iteratorAccessors,retEncodings)
   }
   
-  def emitHeadBuildCode(head:Option[QueryPlanAttrInfo]) : StringBuilder = {
+  def emitHeadBuildCode(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
-    head match {
-      case Some(h) => {
-        h.materialize match {
-          case true => {
-            h.accessors.length match {
-              case 0 =>
-                throw new IllegalArgumentException("This probably not be occuring.")
-              case 1 =>
-                code.append(s"""Builders.build_set(Iterators_${h.accessors(0).name}_${h.accessors(0).attrs.mkString("_")}.head);""")
-              case 2 =>
-                code.append(s"""Builders.build_set(Iterators_${h.accessors(0).name}_${h.accessors(0).attrs.mkString("_")}.head,Iterators_${h.accessors(1).name}_${h.accessors(1).attrs.mkString("_")}.head);""")
-              case 3 =>
-               code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${h.name}_sets;""")
-                (0 until h.accessors.length).toList.foreach(i =>{
-                  code.append(s"""${h.name}_sets.push_back(Iterators_${h.accessors(i).name}_${h.accessors(i).attrs.mkString("_")}.head);""")
-                })
-                code.append(s"""Builders.build_set(&${h.name}_sets);""")
-            } 
-          }
-          case false => {
-            h.accessors.length match {
-              case 0 =>
-                throw new IllegalArgumentException("This probably not be occuring.")
-              case 1 =>
-                code.append(s"""Builders.build_aggregated_set(Iterators_${h.accessors(0).name}_${h.accessors(0).attrs.mkString("_")}.head);""")
-              case 2 =>
-                code.append(s"""Builders.build_aggregated_set(Iterators_${h.accessors(0).name}_${h.accessors(0).attrs.mkString("_")}.head,Iterators_${h.accessors(1).name}_${h.accessors(1).attrs.mkString("_")}.head);""")
-              case 3 =>
-                code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${h.name}_sets;""")
-                (0 until h.accessors.length).toList.foreach(i =>{
-                  code.append(s"""${h.name}_sets.push_back(Iterators_${h.accessors(i).name}_${h.accessors(i).attrs.mkString("_")}.head);""")
-                })
-                code.append(s"""Builders.build_aggregated_set(&${h.name}_sets);""")
-            } 
-          }
+    head.materialize match {
+      case true => {
+        head.accessors.length match {
+          case 0 =>
+            throw new IllegalArgumentException("This probably not be occuring.")
+          case 1 =>
+            code.append(s"""Builders.build_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
+          case 2 =>
+            code.append(s"""Builders.build_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head,Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
+          case 3 =>
+           code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${head.name}_sets;""")
+            (0 until head.accessors.length).toList.foreach(i =>{
+              code.append(s"""${head.name}_sets.push_back(Iterators_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}.head);""")
+            })
+            code.append(s"""Builders.build_set(&${head.name}_sets);""")
         } 
       }
-      case _ =>
-       throw new IllegalArgumentException("This probably not be occuring.")
+      case false => {
+        head.accessors.length match {
+          case 0 =>
+            throw new IllegalArgumentException("This probably not be occuring.")
+          case 1 =>
+            code.append(s"""Builders.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
+          case 2 =>
+            code.append(s"""Builders.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head,Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
+          case 3 =>
+            code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${head.name}_sets;""")
+            (0 until head.accessors.length).toList.foreach(i =>{
+              code.append(s"""${head.name}_sets.push_back(Iterators_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}.head);""")
+            })
+            code.append(s"""Builders.build_aggregated_set(&${head.name}_sets);""")
+        } 
+      }
     }
     return code
   }
@@ -310,6 +304,40 @@ object CPPGenerator {
       case _ =>
     }
     code
+  }
+
+  def emitContainsSelection(name:String,materialize:Boolean,selections:QueryPlanSelection) : StringBuilder = {
+    val code = new StringBuilder()
+    code.append("//accessors contains\n")
+    code.append("//if(contains){\n")
+    code.append("//update iterators\n")
+    code
+  }
+
+  def emitSelectionValues(head:List[QueryPlanAttrInfo],encodings:Map[String,Attribute]) : StringBuilder = {
+    val code = new StringBuilder()
+    head.foreach(attr => {
+      attr.selection.foreach(s => {
+        code.append(s"""const uint32_t selection_${attr.name}_${attr.selection.indexOf(s)} = 
+          Encoding_${encodings(attr.name).encoding}->value_to_key.at(${s.expression});""")
+      })
+    })
+    code
+  }
+  def emitHeadContainsSelections(head:List[QueryPlanAttrInfo]) : (StringBuilder,List[QueryPlanAttrInfo]) = {
+    val code = new StringBuilder()
+    if(head.length == 0)
+      (code,head)
+    val cur = head.head
+    val containsSelection = (cur.selection.length == 1) && !cur.materialize && cur.selection.head.operation == "="
+    if(containsSelection){
+      code.append(emitContainsSelection(cur.name,cur.materialize,cur.selection.head))
+      val (newcode,newhead) = emitHeadContainsSelections(head.tail)
+      code.append(newcode)
+      (code,newhead)
+    } else {
+      (code,head)
+    }
   }
 
   def emitHeadParForeach(head:QueryPlanAttrInfo,outputAnnotation:String,relations:List[QueryPlanRelationInfo],iteratorAccessors:IteratorAccessors) : StringBuilder = {
@@ -716,24 +744,29 @@ object CPPGenerator {
         val pbname = bag.name+"_"+(0 until bag.attributes.length).toList.mkString("_")
         code.append(emitParallelBuilder(pbname,bag.attributes,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)
-        code.append(emitHeadBuildCode(bag.nprr.headOption))
 
-        println("ENCODINGS: " + encodings)
-        println("ITERATOR ACCESSORS: " + iteratorAccessors)
-
-        val remainingAttrs = bag.nprr.tail
         oa = bag.attributes.map(a => encodings(a))
 
-        if(remainingAttrs.length > 0){
-          code.append(emitHeadAllocations(bag.nprr.head))
-          code.append(emitInitHeadAnnotations(bag.nprr.head,bag.annotation))
-          code.append(emitHeadParForeach(bag.nprr.head,bag.annotation,bag.relations,iteratorAccessors))
-          code.append(emitAnnotationAccessors(bag.nprr.head,bag.annotation,iteratorAccessors))
-          code.append(nprrRecursiveCall(remainingAttrs.headOption,remainingAttrs.tail,iteratorAccessors,bag.annotation))
-          code.append(emitSetValues(bag.nprr.head))
-          code.append(emitParallelAnnotationComputation(bag.nprr.head))
-          code.append("});")
-          code.append(emitSetHeadAnnotations(bag.nprr.head,bag.annotation))
+        if(bag.nprr.length > 0){
+          code.append(emitSelectionValues(bag.nprr,encodings))
+          val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr)
+          val numHeadContains = bag.nprr.length-remainingAttrs.length
+          code.append(hsCode)
+          if(remainingAttrs.length > 0){
+            code.append(emitHeadBuildCode(remainingAttrs.head))
+            code.append(emitHeadAllocations(remainingAttrs.head))
+            code.append(emitInitHeadAnnotations(remainingAttrs.head,bag.annotation))
+            if(remainingAttrs.length > 1){  
+              code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
+              code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors))
+              code.append(nprrRecursiveCall(remainingAttrs.tail.headOption,remainingAttrs.tail.tail,iteratorAccessors,bag.annotation))
+              code.append(emitSetValues(remainingAttrs.head))
+              code.append(emitParallelAnnotationComputation(remainingAttrs.head))
+              code.append("});")
+            }
+            code.append(emitSetHeadAnnotations(remainingAttrs.head,bag.annotation))
+          }
+          (0 until numHeadContains).toList.foreach(code.append("\n//}\n"))
           code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
         }
         code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")

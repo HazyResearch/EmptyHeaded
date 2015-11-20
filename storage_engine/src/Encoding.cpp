@@ -132,7 +132,10 @@ void Encoding<T>::to_binary(const std::string path){
     writefile->close();
 }
 
-
+//FIXME: Add types here
+template struct Encoding<int>;
+template struct Encoding<float>;
 template struct Encoding<long>;
+template struct Encoding<std::string>;
 //template void Encoding<SortableEncodingMap<long>>;
 //template void Encoding<FrequencyEncodingMap<long>>;
