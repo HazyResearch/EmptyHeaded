@@ -73,6 +73,9 @@ static PyObject * fetch_data_%(hashstring)s(PyObject * self, PyObject * args){
   if annotationType == "long":
     code+="""PyObject * rowelem_%(i)s = PyLong_FromLong(value);
     PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
+  elif annotationType == "float":
+    code+="""PyObject * rowelem_%(i)s = PyFloat_FromDouble((double)value);
+    PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
   elif annotationType == "void*":
     code+=""""""
   elif t == "float":

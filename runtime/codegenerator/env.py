@@ -14,7 +14,7 @@ class Environment:
     self.schemas = scheme
 
   def setRelations(self,relations):
-    self.relations = relations
+    self.relations.update(relations)
 
   def setEncodings(self,encodings):
     self.encodings = encodings

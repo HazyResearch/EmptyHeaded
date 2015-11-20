@@ -126,6 +126,34 @@ struct TrieBlock{
     }
     return result;
   }
+
+  template<class A>
+  inline void set_annotation(
+    A annotationValue,
+    const uint32_t index, 
+    const uint32_t data) {
+
+    const Set<hybrid>* s1 = this->get_const_set();
+    const uint32_t annotationIndex = this->getNextIndex(index,data);
+    A* annotation = (A*)( ((uint8_t*)s1)+
+        sizeof(Set<hybrid>) +
+        s1->number_of_bytes);
+    annotation[annotationIndex] = annotationValue;
+  }
+
+  template<class A>
+  inline A get_annotation(
+    const uint32_t index, 
+    const uint32_t data){
+
+    const Set<hybrid>* s1 = this->get_const_set();
+    const uint32_t annotationIndex = this->getNextIndex(index,data);
+    A* annotation = (A*)( ((uint8_t*)s1)+
+        sizeof(Set<hybrid>) +
+        s1->number_of_bytes);
+    return annotation[annotationIndex];
+  }
+
 };
 
 #endif

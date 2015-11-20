@@ -53,7 +53,9 @@ def fetchData(relation):
     tuples = eval("""query["query"].fetch_data_"""+str(query["hash"])+"""(query["trie"])""")
     return pd.DataFrame.from_records(data=tuples,columns=cols)
   else:
-    return pd.DataFrame.from_records(data=codegenerator.fetchRelation.fetch(relation,environment))
+    fetchedData = codegenerator.fetchRelation.fetch(relation,environment)
+    print fetchedData
+    return pd.DataFrame.from_records(data=fetchedData)
 
 def numRows(relation):
   if relation in environment.liverelations:

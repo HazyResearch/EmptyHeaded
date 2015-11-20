@@ -14,7 +14,6 @@ def declareEncoding(e):
 	"""% locals()
 
 def readRelationFromTSV(name,encodings,path,annotation):
-  print "ANNOTATION: " + annotation
   path = os.path.expandvars(path)
   code = """{
 	    auto start_time = timer::start_clock();
