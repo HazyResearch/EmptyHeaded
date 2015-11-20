@@ -53,8 +53,13 @@ def fetchData(relation):
     tuples = eval("""query["query"].fetch_data_"""+str(query["hash"])+"""(query["trie"])""")
     return pd.DataFrame.from_records(data=tuples,columns=cols)
   else:
+    schema = environment.schemas[relation]
+    annotation = str(schema["annotation"])
+    cols = map(str, schema["orderings"][0])
+    if annotation != "void*":
+      cols.append("annotation")
     fetchedData = codegenerator.fetchRelation.fetch(relation,environment)
-    return pd.DataFrame.from_records(data=fetchedData)
+    return pd.DataFrame.from_records(data=fetchedData,columns=cols)
 
 def numRows(relation):
   if relation in environment.liverelations:
