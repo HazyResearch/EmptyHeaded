@@ -661,10 +661,11 @@ object CPPGenerator {
     output:String,
     ordering:List[Int],
     annotation:String,
-    td:List[TopDownPassIterator],
+    td_inter:List[TopDownPassIterator],
     intermediateRelations:Map[String,List[Attribute]]) 
       : (StringBuilder,List[Attribute]) = {
     
+    val td = td_inter.filter(_.attributeInfo.length != 0) //fixme
     val code = new StringBuilder()
     
     code.append("{")
@@ -674,7 +675,7 @@ object CPPGenerator {
     //emit iterators for top down pass (build encodings)
     val eBuffers = mutable.ListBuffer[(String,Attribute)]()
     val iteratorLevels = mutable.Map[String,Int]()
-    td.foreach(tdi => {
+    td_inter.foreach(tdi => {
       iteratorLevels += ((tdi.iterator -> 0))
       val ordering = (0 until intermediateRelations(tdi.iterator).length).toList.mkString("_")
       code.append(s"""ParTrieIterator<${annotation},${Environment.config.memory}> Iterators_${tdi.iterator}(Trie_${tdi.iterator}_${ordering});""")
@@ -697,7 +698,7 @@ object CPPGenerator {
     code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t ${firstAttr.name}_i, const uint32_t ${firstAttr.name}_d) {""")
     //get iterator and builder for each thread
     code.append(s"""TrieBuilder<${annotation},${Environment.config.memory}>* Builder = Builders.builders.at(tid);""")
-    td.foreach(tdi => {
+    td_inter.foreach(tdi => {
       val name = tdi.iterator
       code.append(s"""TrieIterator<${annotation},${Environment.config.memory}>* Iterator_${name} = Iterators_${name}.iterators.at(tid);""")
     })
@@ -705,10 +706,12 @@ object CPPGenerator {
     firstAttr.accessors.foreach(acc => {
       val index = acc.attrs.indexOf(firstAttr.name)
       iteratorLevels(acc.name) += 1
-      if(firstIterator.iterator == acc.name){
-        code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_i,${firstAttr.name}_d);""")
-      } else {
-        code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_d);""")
+      if(index != (acc.attrs.length-1)){
+        if(firstIterator.iterator == acc.name){
+          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_i,${firstAttr.name}_d);""")
+        } else {
+          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_d);""")
+        }
       }
     })
 

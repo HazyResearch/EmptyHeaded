@@ -625,7 +625,6 @@ size_t ParTrieBuilder<A,M>::build_set(
       min_index = i;
     }
   }
-  std::cout << min_set << std::endl;
   isets->erase(isets->begin()+min_index);
 
   //allocate buffers
@@ -658,7 +657,6 @@ size_t ParTrieBuilder<A,M>::build_set(
           (const Set<hybrid>*)s1,
           s2);
 
-  std::cout << "result set card: " << result_set->cardinality << std::endl;
   //intersect remaining isets
   for(size_t i = 1; i < isets->size(); i++){
     //swap buffers
@@ -672,7 +670,6 @@ size_t ParTrieBuilder<A,M>::build_set(
             result_set, 
             sn,
             (const Set<hybrid>*)operator_set);
-    std::cout << "result set card: " << result_set->cardinality << std::endl;
   }
   return result_set->cardinality;
 }
