@@ -12,23 +12,27 @@
 
 template<class A,class M>
 TrieIterator<A,M>::TrieIterator(Trie<A,M>* t_in){
-  trie = *t_in;
-  levels.resize(trie.num_columns);
-  assert(trie.num_columns > 0);
+  trie = t_in;
+  levels.resize(trie->num_columns);
+  assert(trie->num_columns > 0);
   num_rows = 0;
-  levels.at(0) = trie.getHead();
+  levels.at(0) = trie->getHead();
 }
 
 template<class A,class M>
 void TrieIterator<A,M>::get_next_block(const size_t level, const uint32_t data){
   levels.at(level+1) = (const TrieBlock<hybrid,M>*)
-    levels.at(level)->get_next_block(data,trie.memoryBuffers);
+    levels.at(level)->get_next_block(data,trie->memoryBuffers);
 }
 
 template<class A,class M>
-void TrieIterator<A,M>::get_next_block(const size_t level, const uint32_t index, const uint32_t data){
+void TrieIterator<A,M>::get_next_block(
+  const size_t level, 
+  const uint32_t index, 
+  const uint32_t data){
+  
   levels.at(level+1) = (const TrieBlock<hybrid,M>*)
-    levels.at(level)->get_next_block(index,data,trie.memoryBuffers);
+    levels.at(level)->get_next_block(index,data,trie->memoryBuffers);
 }
 
 template<class A,class M>
@@ -57,8 +61,17 @@ template<class A, class M>
 ParTrieIterator<A,M>::ParTrieIterator(Trie<A,M> *t_in){
   head = t_in->getHead();
   iterators.resize(NUM_THREADS);
+  trie = t_in;
   for(size_t i = 0; i < NUM_THREADS; i++){
     iterators.at(i) = new TrieIterator<A,M>(t_in);
+  }
+}
+
+template<class A,class M>
+void ParTrieIterator<A,M>::get_next_block(const uint32_t data){
+  head =  head->get_next_block(data,trie->memoryBuffers);
+  for(size_t i = 0; i < NUM_THREADS; i++){
+    iterators.at(i)->levels.at(0) = head;
   }
 }
 

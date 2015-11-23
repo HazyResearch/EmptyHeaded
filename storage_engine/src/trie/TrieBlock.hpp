@@ -127,6 +127,11 @@ struct TrieBlock{
     return result;
   }
 
+  inline bool contains(const uint32_t data) const {
+    const Set<hybrid> * const set = this->get_const_set();
+    return set->find(data) != -1;
+  }
+
   template<class A>
   inline void set_annotation(
     A annotationValue,

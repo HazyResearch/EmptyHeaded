@@ -144,12 +144,16 @@ class GHD(val root:GHDNode,
   var nextAggregatedAttr:Option[Attr] = None
 
   def getQueryPlan(): QueryPlan = {
+    val a = getRelationsSummary()
+    val b = getOutputInfo()
+    val c = getPlanFromPostorderTraversal(root).toList
+    val d = getTopDownPassIterators()
     new QueryPlan(
       "join",
-      getRelationsSummary(),
-      getOutputInfo(),
-      getPlanFromPostorderTraversal(root).toList,
-      getTopDownPassIterators())
+      a,
+      b,
+      c,
+      d)
   }
 
   private def getAttrsToRelationsMap(): Map[Attr, List[QueryRelation]] = {
@@ -236,7 +240,8 @@ class GHD(val root:GHDNode,
    * @return Json for the relation summary
    */
   private def getRelationsSummary(): List[QueryPlanRelationInfo] = {
-    getRelationSummaryFromPreOrderTraversal(root).distinct
+    val a = getRelationSummaryFromPreOrderTraversal(root)
+    a.distinct
   }
 
   private def getRelationSummaryFromPreOrderTraversal(node:GHDNode): List[QueryPlanRelationInfo] = {
@@ -437,21 +442,20 @@ class GHDNode(var rels: List[QueryRelation]) {
   def getRelationInfo(forTopLevelSummary:Boolean = false): List[QueryPlanRelationInfo] = {
     val relsToUse =
       if (forTopLevelSummary) {
-        rels }
-      else {
+        rels.map(r => subtreeRels.find(_.name == r.name).get)  //SUSAN FIXME
+      } else {
         subtreeRels
       }
 
     val distinctRelationNames = relsToUse.map(r => r.name).distinct
-    distinctRelationNames.flatMap(n => {
+    val retValue = distinctRelationNames.flatMap(n => {
       val relationsWithName = relsToUse.filter(r => {r.name == n})
       val orderingsAndRels: List[(List[Int], List[QueryRelation])] = relationsWithName.map(rn => {
         (GHD.getNumericalOrdering(attributeOrdering, rn), rn)
       }).groupBy(p => p._1).toList.map(elem => {
         (elem._1, elem._2.unzip._2)
       })
-
-      orderingsAndRels.map(orderingAndRels => {
+      val or = orderingsAndRels.map(orderingAndRels => {
         val ordering = orderingAndRels._1
         val rels = orderingAndRels._2
         if (forTopLevelSummary) {
@@ -460,7 +464,9 @@ class GHDNode(var rels: List[QueryRelation]) {
           new QueryPlanRelationInfo(rels.head.name, ordering, Some(rels.map(rel => rel.attrNames)), rels.head.annotationType)
         }
       })
+      or
     })
+    retValue
   }
 
   def createAttrToRelsMapping: Unit = {

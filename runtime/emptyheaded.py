@@ -82,7 +82,7 @@ def main():
   db_config="/Users/caberger/Documents/Research/data/lubm1000/config.json"
   #createDB(db_config)
   loadDB("/Users/caberger/Documents/Research/data/lubm1000/db")
-  
+  query("""result(a) :- type(a,b="http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent").""")
   #loadDB("$EMPTYHEADED_HOME/examples/graph/data/simple/db")
 
   #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")

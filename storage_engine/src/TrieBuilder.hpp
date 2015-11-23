@@ -32,6 +32,9 @@ struct TrieBuilder{
   uint32_t cur_level;
   uint32_t tmp_level;
 
+  size_t build_aggregated_equality_selection_set(
+    const TrieBlock<hybrid,M> *s1);
+
   size_t build_aggregated_set(
     const TrieBlock<hybrid,M> *s1);
 
@@ -96,6 +99,10 @@ struct ParTrieBuilder{
   ParTrieBuilder<A,M>(Trie<A,M>* t_in,const size_t num_attributes);
   const TrieBlock<hybrid,M>* tmp_head;
   
+  size_t build_aggregated_equality_selection_set(
+    const uint32_t data,
+    const TrieBlock<hybrid,M> *s1);
+
   size_t build_aggregated_set(
     const TrieBlock<hybrid,M> *s1);
 

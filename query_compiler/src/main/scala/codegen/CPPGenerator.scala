@@ -123,7 +123,7 @@ object CPPGenerator {
     code.append(encodings.map(attr => {
       s"""
       auto e_loading_${attr.encoding} = timer::start_clock();
-      Encoding<long> *Encoding_${attr.encoding} = Encoding<${attr.attrType}>::from_binary(
+      Encoding<${attr.attrType}> *Encoding_${attr.encoding} = Encoding<${attr.attrType}>::from_binary(
           "${Environment.config.database}/encodings/${attr.encoding}/");
       (void)Encoding_${attr.encoding};
       timer::stop_clock("LOADING ENCODINGS ${attr.encoding}", e_loading_${attr.encoding});
@@ -213,7 +213,7 @@ object CPPGenerator {
             encodings += ((i,enc(a.indexOf(i))))
             dependers += ((i,(r.name + "_" + a.mkString("_"),a.indexOf(i),a.length)))
           })
-          code.append(s"""const ParTrieIterator<${r.annotation},${Environment.config.memory}> Iterators_${r.name}_${a.mkString("_")}(Trie_${name});""")
+          code.append(s"""ParTrieIterator<${r.annotation},${Environment.config.memory}> Iterators_${r.name}_${a.mkString("_")}(Trie_${name});""")
         })
       })
     })
@@ -236,15 +236,15 @@ object CPPGenerator {
           case 0 =>
             throw new IllegalArgumentException("This probably not be occuring.")
           case 1 =>
-            code.append(s"""Builders.build_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
+            code.append(s"""const size_t count_${head.name} = Builders.build_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
           case 2 =>
-            code.append(s"""Builders.build_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head,Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
-          case 3 =>
+            code.append(s"""const size_t count_${head.name} = Builders.build_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head,Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
+          case _ =>
            code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${head.name}_sets;""")
             (0 until head.accessors.length).toList.foreach(i =>{
               code.append(s"""${head.name}_sets.push_back(Iterators_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}.head);""")
             })
-            code.append(s"""Builders.build_set(&${head.name}_sets);""")
+            code.append(s"""const size_t count_${head.name} = Builders.build_set(&${head.name}_sets);""")
         } 
       }
       case false => {
@@ -252,15 +252,15 @@ object CPPGenerator {
           case 0 =>
             throw new IllegalArgumentException("This probably not be occuring.")
           case 1 =>
-            code.append(s"""Builders.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
+            code.append(s"""const size_t count_${head.name} = Builders.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
           case 2 =>
-            code.append(s"""Builders.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head,Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
-          case 3 =>
+            code.append(s"""const size_t count_${head.name} = Builders.build_aggregated_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head,Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
+          case _ =>
             code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${head.name}_sets;""")
             (0 until head.accessors.length).toList.foreach(i =>{
               code.append(s"""${head.name}_sets.push_back(Iterators_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}.head);""")
             })
-            code.append(s"""Builders.build_aggregated_set(&${head.name}_sets);""")
+            code.append(s"""const size_t count_${head.name} = Builders.build_aggregated_set(&${head.name}_sets);""")
         } 
       }
     }
@@ -306,11 +306,14 @@ object CPPGenerator {
     code
   }
 
-  def emitContainsSelection(name:String,materialize:Boolean,selections:QueryPlanSelection) : StringBuilder = {
+  def emitContainsSelection(
+    name:String,
+    materialize:Boolean,
+    selections:QueryPlanSelection,
+    accessor:QueryPlanAccessor) : StringBuilder = {
+    val accname = accessor.name + "_" + accessor.attrs.mkString("_")
     val code = new StringBuilder()
-    code.append("//accessors contains\n")
-    code.append("//if(contains){\n")
-    code.append("//update iterators\n")
+    code.append(s"""Iterators_${accname}.get_next_block(selection_${name}_0);""")
     code
   }
 
@@ -329,9 +332,9 @@ object CPPGenerator {
     if(head.length == 0)
       (code,head)
     val cur = head.head
-    val containsSelection = (cur.selection.length == 1) && !cur.materialize && cur.selection.head.operation == "="
+    val containsSelection = (cur.accessors.length == 1) && (cur.selection.length == 1) && !cur.materialize && cur.selection.head.operation == "="
     if(containsSelection){
-      code.append(emitContainsSelection(cur.name,cur.materialize,cur.selection.head))
+      code.append(emitContainsSelection(cur.name,cur.materialize,cur.selection.head,cur.accessors.head))
       val (newcode,newhead) = emitHeadContainsSelections(head.tail)
       code.append(newcode)
       (code,newhead)
@@ -674,7 +677,7 @@ object CPPGenerator {
     td.foreach(tdi => {
       iteratorLevels += ((tdi.iterator -> 0))
       val ordering = (0 until intermediateRelations(tdi.iterator).length).toList.mkString("_")
-      code.append(s"""const ParTrieIterator<${annotation},${Environment.config.memory}> Iterators_${tdi.iterator}(Trie_${tdi.iterator}_${ordering});""")
+      code.append(s"""ParTrieIterator<${annotation},${Environment.config.memory}> Iterators_${tdi.iterator}(Trie_${tdi.iterator}_${ordering});""")
       tdi.attributeInfo.foreach(ai => {
         val acc = ai.accessors.head
         val index = acc.attrs.indexOf(ai.name)
@@ -763,6 +766,8 @@ object CPPGenerator {
               code.append(emitSetValues(remainingAttrs.head))
               code.append(emitParallelAnnotationComputation(remainingAttrs.head))
               code.append("});")
+            } else {
+              code.append(s"""num_rows_reducer.update(0,count_${remainingAttrs.head.name});""")
             }
             code.append(emitSetHeadAnnotations(remainingAttrs.head,bag.annotation))
           }

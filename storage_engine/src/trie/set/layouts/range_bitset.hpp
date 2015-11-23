@@ -445,8 +445,13 @@ inline size_t range_bitset::get_num_set(const uint32_t key, const uint64_t data,
   return _mm_popcnt_u64(masked_word) + offset;
 }
 
-inline long range_bitset::find(uint32_t key, const uint8_t *A, const size_t number_of_bytes, const type::layout t){
+inline long range_bitset::find(
+  const uint32_t key, 
+  const uint8_t *A, 
+  const size_t number_of_bytes, 
+  const type::layout t){
   (void) t;
+
   if(number_of_bytes > 0){
     const size_t num_data_words = get_number_of_words(number_of_bytes);
     const uint64_t offset = ((uint64_t*)A)[0];
@@ -464,8 +469,9 @@ inline long range_bitset::find(uint32_t key, const uint8_t *A, const size_t numb
   return -1;
 }
 
-inline std::tuple<size_t,bool> range_bitset::find(uint32_t start_index,
-  uint32_t key, 
+inline std::tuple<size_t,bool> range_bitset::find(
+  const uint32_t start_index,
+  const uint32_t key, 
   const uint8_t *data_in, 
   const size_t number_of_bytes,
   const type::layout t){
