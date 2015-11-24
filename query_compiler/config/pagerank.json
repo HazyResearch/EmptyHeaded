@@ -93,6 +93,7 @@
 	    "attributes":["a"],
 	    "annotation":"float",
 	    "recursion": [{
+	    	"input":"bag_0_a_b",
 	    	"criteria":"iterations",
 	    	"converganceValue":"5"
 	    }],
@@ -105,7 +106,7 @@
 	    "nprr":[{
 	      "name":"a",
 	      "accessors":[{
-	        "name":"bag_0_a_b",
+	        "name":"recursion",
 	        "attrs":["a","b"],
 	        "annotated":true
 	      },{
