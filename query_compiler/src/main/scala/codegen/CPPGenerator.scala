@@ -38,7 +38,7 @@ object CPPGenerator {
       })
     })
     cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList))
-    val includeCode = getIncludes(qp)
+    val includeCode = getIncludes(qps)
 
     qps.queryPlans.foreach(qp => {
       cppCode.append("\n//\n//query plan\n//\n")
@@ -86,7 +86,7 @@ object CPPGenerator {
     s"""clang-format -style=llvm -i ${cppFilepath}""" !
   } 
 
-  def getIncludes(ghd:QueryPlan) : StringBuilder = {
+  def getIncludes(ghd:QueryPlans) : StringBuilder = {
     val code = new StringBuilder()
     code.append("")
     return code
