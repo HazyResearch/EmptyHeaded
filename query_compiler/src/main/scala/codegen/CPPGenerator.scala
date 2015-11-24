@@ -22,7 +22,6 @@ object CPPGenerator {
   def run(qps:QueryPlans) = {
     //get distinct relations we need to load
     //dump output at the end, rest just in a loop
-    val qp = qps.queryPlans.head
     var outputAttributes:List[Attribute] = List()
     val intermediateRelations:mutable.Map[String,List[Attribute]] = mutable.Map()
     val distinctLoadRelations:mutable.Map[String,QueryPlanRelationInfo] = mutable.Map()
@@ -65,17 +64,18 @@ object CPPGenerator {
       }
       cppCode.append(emitEndQuery(qp.output))
       cppCode.append("}")
+
+      val newSchema = ((qp.output.name -> Schema(outputAttributes,List(qp.output.ordering),qp.output.annotation)))
+      val newRelation = ((qp.output.name+"_"+qp.output.ordering.mkString("_"))->"disk")
+      Environment.config.schemas = Environment.config.schemas+newSchema
+      Environment.config.relations = Environment.config.relations+newRelation
+      Environment.config.resultName = qp.output.name
+      Environment.config.resultOrdering = qp.output.ordering
     })
 
     val cpp = new StringBuilder()
     cpp.append(getCode(includeCode,cppCode))
 
-    val newSchema = ((qp.output.name -> Schema(outputAttributes,List(qp.output.ordering),qp.output.annotation)))
-    val newRelation = ((qp.output.name+"_"+qp.output.ordering.mkString("_"))->"disk")
-    Environment.config.schemas = Environment.config.schemas+newSchema
-    Environment.config.relations = Environment.config.relations+newRelation
-    Environment.config.resultName = qp.output.name
-    Environment.config.resultOrdering = qp.output.ordering
     Environment.toJSON()
 
     val cppFilepath = sys.env("EMPTYHEADED_HOME")+"/storage_engine/codegen/Query.cpp"
