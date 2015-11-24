@@ -57,7 +57,7 @@ object QueryCompiler {
       val output = config.directory match {
         case Some(d) => {
           new PrintStream(new FileOutputStream(
-            new File(d + "/"+queryString.hashCode+".json"),false))
+            new File(d + "/q"+queryString.hashCode+".json"),false))
         } 
         case _ => { 
           System.out
