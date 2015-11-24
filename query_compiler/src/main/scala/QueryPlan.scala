@@ -2,7 +2,9 @@ package scala
 
 import DunceCap.attr.Attr
 import net.liftweb.json.DefaultFormats
-import net.liftweb.json.Serialization._
+import net.liftweb.json._
+import scala.io._
+import net.liftweb.json.Serialization.{read, write, writePretty}
 
 case class QueryPlan(val query_type:String,
                 val relations:List[QueryPlanRelationInfo],
@@ -13,6 +15,19 @@ case class QueryPlan(val query_type:String,
   override def toString(): String = {
     implicit val formats = DefaultFormats
     writePretty(this)
+  }
+  def toJSON(): Unit = {
+    val filename = "query.json"
+    implicit val formats = Serialization.formats(NoTypeHints)
+    scala.tools.nsc.io.File(filename).writeAll(writePretty(this))
+  }
+}
+
+object QP {
+  def fromJSON(filename:String) : QueryPlan = {
+    val fileContents = Source.fromFile(filename).getLines.mkString
+    implicit val formats = DefaultFormats
+    parse(fileContents).extract[QueryPlan]
   }
 }
 

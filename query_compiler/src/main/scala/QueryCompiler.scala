@@ -6,6 +6,7 @@ case class Config(directory: Option[String] = None,
                   dbConfig:String = "",
                   nprrOnly:Boolean = false,
                   bagDedup:Boolean = true,
+                  codeGen:Option[String] = None,
                   readQueryFromFile:Boolean = false,
                   query:String = "",
                   explain:Boolean = false)
@@ -23,6 +24,8 @@ object QueryCompiler {
         c.copy(explain = true) } text("show the query plan instead of running the query")
       opt[String]('d', "directory") action { (x, c) =>
         c.copy(directory = Some(x))} text("directory within EMPTYHEADED_HOME to write json output, by default prints to stdout when running just planner")
+      opt[String]('g', "codegen") action { (x, c) =>
+        c.copy(codeGen = Some(x))} text("File to JSON query plan, runs only code generation with this argument.")
       opt[String]('c', "db-config") required() valueName("<file>") action { (x, c) =>
         c.copy(dbConfig = x)} text("database config file")
       opt[Unit]('n', "nprr-only") action { (_, c) =>
@@ -45,23 +48,28 @@ object QueryCompiler {
           config.query
         }
         
-      val queryPlan = DCParser.run(queryString, config)
 
-      val output = config.directory.map(dir => {
-        Some(new PrintStream(new FileOutputStream(
-          new File(new File(sys.env("EMPTYHEADED_HOME"), dir).getPath(), queryString.hashCode + ".json"))))
-      }).getOrElse(
-          if (config.explain) {
-            Some(System.out)
-          } else {
-            None
-          }
-        )
+      val queryPlan = config.codeGen match {
+        case None => DCParser.run(queryString, config)
+        case Some(g) => QP.fromJSON(g)
+      }
+
+      val output = config.directory match {
+        case Some(d) => {
+          new PrintStream(new FileOutputStream(
+            new File(d + "/"+queryString.hashCode+".json"),false))
+        } 
+        case _ => { 
+          System.out
+        }
+      }
+
       if (!config.explain) {
         CPPGenerator.run(queryPlan)
+      } else {
+        output.print(queryPlan)
       }
-      output.map(o => o.print(queryPlan))
-      output.map(_.close)
+      output.close
     } getOrElse {
       // arguments are bad, usage message will have been displayed
     }
