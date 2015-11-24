@@ -205,7 +205,6 @@ size_t TrieBuilder<A,M>::build_set(
   return result_set->cardinality;
 }
 
-
 //Build a aggregated set for one sets
 template<class A,class M>
 size_t TrieBuilder<A,M>::build_aggregated_set(
@@ -473,6 +472,15 @@ ParTrieBuilder<A,M>::ParTrieBuilder(Trie<A,M> *t_in, const size_t num_attributes
 //When we have just a single trie accessor 
 //and it is aggregated just return it
 template<class A,class M>
+size_t ParTrieBuilder<A,M>::build_aggregated_equality_selection_set(
+  const uint32_t data,
+  const TrieBlock<hybrid,M> *s1) {
+  return s1->get_set()->find(data);
+}
+
+//When we have just a single trie accessor 
+//and it is aggregated just return it
+template<class A,class M>
 size_t ParTrieBuilder<A,M>::build_aggregated_set(
   const TrieBlock<hybrid,M> *s1) {
   tmp_head = s1;
@@ -634,6 +642,16 @@ size_t ParTrieBuilder<A,M>::build_set(
   //intersect first two isets
   const TrieBlock<hybrid,M> *tb2 = isets->at(0);
   const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));  
+  
+  /*
+  std::cout << "s: " << s1->cardinality << " " << s2->cardinality << std::endl;
+  s1->foreach([&](uint32_t data){
+    std::cout << "s1 data: " << data << std::endl;
+  });
+  s2->foreach([&](uint32_t data){
+    std::cout << "s2 data: " << data << std::endl;
+  });
+  */
   result_set = ops::set_intersect(
           result_set, 
           (const Set<hybrid>*)s1,
@@ -694,11 +712,12 @@ size_t ParTrieBuilder<A,M>::build_set(
 
   uint8_t* place = (uint8_t*) (trie->memoryBuffers->head->get_next(sizeof(TrieBlock<hybrid,M>)+alloc_size+sizeof(Set<hybrid>)));
   Set<hybrid> *r = (Set<hybrid>*)(place+sizeof(TrieBlock<hybrid,M>));  
+  
   r = ops::set_intersect(
           r, 
           s1,
           s2);  
-  trie->memoryBuffers->head->roll_back(r->number_of_bytes-alloc_size);
+  trie->memoryBuffers->head->roll_back(alloc_size-r->number_of_bytes);
   return r->cardinality;
 }
 

@@ -65,7 +65,7 @@ static PyObject * fetch_data_%(hashstring)s(PyObject * self, PyObject * args){
     elif t == "int":
       print "INT NOT IMPLEMENTED"
     elif t == "std::string":
-     code+="""PyObject * rowelem_%(i)s = PyString_FromString(((Encoding<%(t)s>*)encodings.at(%(i)s))->key_to_value.at(tuple->at(%(i)s)));
+     code+="""PyObject * rowelem_%(i)s = PyString_FromString(((Encoding<%(t)s>*)encodings.at(%(i)s))->key_to_value.at(tuple->at(%(i)s)).c_str());
       PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
     elif t == "float":
       print "FLOAT NOT IMPLEMENTED"

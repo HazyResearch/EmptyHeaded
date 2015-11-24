@@ -59,14 +59,14 @@ class Set{
       return (uint8_t*)((uint8_t*)this + sizeof(Set<T>));
     }
 
-    std::tuple<size_t,bool> find(size_t index, uint32_t key) const {
+    std::tuple<size_t,bool> find(const size_t index, const uint32_t key) const {
       /*std::cout << number_of_bytes << std::endl;
       std::cout << number_of_bytes << std::endl;*/
       //std::cout << "---" << std::endl;
       return T::find(index,key,this->get_data(),number_of_bytes,type);
     }
 
-    long find(uint32_t key) const {
+    long find(const uint32_t key) const {
       /*std::cout << number_of_bytes << std::endl;
       std::cout << number_of_bytes << std::endl;*/
       //std::cout << "---" << std::endl;
