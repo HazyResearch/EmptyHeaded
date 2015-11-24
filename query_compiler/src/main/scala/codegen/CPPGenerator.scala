@@ -19,34 +19,55 @@ object CPPGenerator {
     return ghd
   }
 
-  def run(qp:QueryPlan) = {
+  def run(qps:QueryPlans) = {
+    //get distinct relations we need to load
+    //dump output at the end, rest just in a loop
+    val qp = qps.queryPlans.head
     var outputAttributes:List[Attribute] = List()
     val intermediateRelations:mutable.Map[String,List[Attribute]] = mutable.Map()
-    val cpp = new StringBuilder()
-    val includeCode = getIncludes(qp)
-    val cppCode = emitLoadRelations(qp.relations)
-    val topDown = qp.topdown.length > 0
-    cppCode.append(emitInitializeOutput(qp.output))
-    var i = 1
-    qp.ghd.foreach(bag => {
-      val outputName = 
-        if((i == qp.ghd.length) && (!topDown))
-          Some(qp.output.name)
-        else 
-          None
-      val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
-      intermediateRelations += ((bag.name -> bagOutput))
-      outputAttributes = bagOutput
-      cppCode.append(bagCode)
-      i += 1
-    })
-    if(topDown){
-      val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
-      cppCode.append(bagCode)
-      outputAttributes = bagOutput
-    }
-    cppCode.append(emitEndQuery(qp.output))
+    val distinctLoadRelations:mutable.Map[String,QueryPlanRelationInfo] = mutable.Map()
 
+    val cppCode = new StringBuilder()
+    qps.queryPlans.foreach(qp => {
+      //spit out output for each query in global vars
+      val topDown = qp.topdown.length > 0
+      cppCode.append(emitInitializeOutput(qp.output))
+      //find all distinct relations
+      qp.relations.foreach( r => {
+        if(!distinctLoadRelations.contains(s"""${r.name}_${r.ordering.mkString("_")}"""))
+          distinctLoadRelations += ((s"""${r.name}_${r.ordering.mkString("_")}""" -> r))
+      })
+    })
+    cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList))
+    val includeCode = getIncludes(qp)
+
+    qps.queryPlans.foreach(qp => {
+      cppCode.append("\n//\n//query plan\n//\n")
+      cppCode.append("{")
+      val topDown = qp.topdown.length > 0
+      var i = 1
+      qp.ghd.foreach(bag => {
+        val outputName = 
+          if((i == qp.ghd.length) && (!topDown))
+            Some(qp.output.name)
+          else 
+            None
+        val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
+        intermediateRelations += ((bag.name -> bagOutput))
+        outputAttributes = bagOutput
+        cppCode.append(bagCode)
+        i += 1
+      })
+      if(topDown){
+        val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
+        cppCode.append(bagCode)
+        outputAttributes = bagOutput
+      }
+      cppCode.append(emitEndQuery(qp.output))
+      cppCode.append("}")
+    })
+
+    val cpp = new StringBuilder()
     cpp.append(getCode(includeCode,cppCode))
 
     val newSchema = ((qp.output.name -> Schema(outputAttributes,List(qp.output.ordering),qp.output.annotation)))
@@ -756,7 +777,6 @@ object CPPGenerator {
         if(bag.nprr.length > 0){
           code.append(emitSelectionValues(bag.nprr,encodings))
           val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr)
-          val numHeadContains = bag.nprr.length-remainingAttrs.length
           code.append(hsCode)
           if(remainingAttrs.length > 0){
             code.append(emitHeadBuildCode(remainingAttrs.head))
@@ -774,7 +794,6 @@ object CPPGenerator {
             }
             code.append(emitSetHeadAnnotations(remainingAttrs.head,bag.annotation))
           }
-          (0 until numHeadContains).toList.foreach(code.append("\n//}\n"))
           code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
         }
         code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
