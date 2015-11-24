@@ -34,7 +34,7 @@ object QueryCompiler {
         c.copy(bagDedup = false)} text("whether to deduplicate bags in the GHD")
       opt[Unit]('f', "read-query-from-file") action { (_, c) =>
         c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
-      arg[String]("<query>") action { (x, c) =>
+      opt[String]("<query>") action { (x, c) =>
         c.copy(query = x)} text("query")
       help("help") text("prints this usage text")
     }
