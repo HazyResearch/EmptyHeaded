@@ -66,7 +66,7 @@ object DCParser extends RegexParsers {
 
   //some basic expressions
   def identifierName:Parser[String] = """[_\p{L}][_\p{L}\p{Nd}]*""".r
-  def selectionElement:Parser[String] = """"[^"]*"|\d+""".r
+  def selectionElement:Parser[String] = """'[^']*'|\d+""".r
   def convergenceCriteria:Parser[String] = """i|c""".r
   def convergenceOp:Parser[String] = """=|<=|<|>|>=""".r
   def convergenceCondition:Parser[String] = """\d+\.?\d*""".r
@@ -108,7 +108,7 @@ object DCParser extends RegexParsers {
   def notLastJoinAttr = selectionStatement ~ ("," ~> joinAttrList) ^^ {case a~rest => a +: rest}
   def lastJoinAttr = selectionStatement ^^ {case a => List(a)}
   def selectionStatement : Parser[(String,String,String)] =  selection | emptySelection
-  def selection: Parser[(String,String,String)] = (identifierName ~ selectionOp ~ selectionElement) ^^ {case a~b~c => (a,b,c) }
+  def selection: Parser[(String,String,String)] = (identifierName ~ selectionOp ~ selectionElement) ^^ {case a~b~c => (a,b,c.replace('\'','\"')) }
   def emptySelection: Parser[(String,String,String)] = identifierName ^^ {case a => (a,"","")}
 
   //returns the bound annotation mapped to the expression with a annotation in the middle
