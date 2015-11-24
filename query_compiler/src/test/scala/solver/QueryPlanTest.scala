@@ -78,7 +78,8 @@ class QueryPlanTest extends FunSuite {
         List[QueryPlanAttrInfo](QueryPlanAttrInfo("a", List[QueryPlanAccessor](
           QueryPlanAccessor("takesCourse", List[Attr]("a", "b"), false),
           QueryPlanAccessor("bag_1_0", List[Attr]("a"), false)
-        ), true, List[QueryPlanSelection](QueryPlanSelection("=", "5")), None, None, None, None)))
+        ), true, List[QueryPlanSelection](QueryPlanSelection("=", "5")), None, None, None, None)),
+        None)
     ), List[TopDownPassIterator]()))(plan)
   }
 }
