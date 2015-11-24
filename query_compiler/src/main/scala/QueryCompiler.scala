@@ -34,7 +34,7 @@ object QueryCompiler {
         c.copy(bagDedup = false)} text("whether to deduplicate bags in the GHD")
       opt[Unit]('f', "read-query-from-file") action { (_, c) =>
         c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
-      opt[String]("<query>") action { (x, c) =>
+      arg[String]("<query>") action { (x, c) =>
         c.copy(query = x)} text("query")
       help("help") text("prints this usage text")
     }
@@ -44,9 +44,9 @@ object QueryCompiler {
       val queryString =
         if (config.readQueryFromFile) {
           readFile(config.query)
-        } else {
+        } else if(!config.codeGen.isDefined){
           config.query
-        }
+        } else ""
         
 
       val queryPlans:QueryPlans = config.codeGen match {
