@@ -98,6 +98,7 @@ struct EncodedColumnStore {
       infile->read((char *)&value, sizeof(value));
       annotation_in->at(j) = value;
     }
+    infile->close();
     return new EncodedColumnStore<R>(data_in,max_set_size_in,*annotation_in);
   }
 

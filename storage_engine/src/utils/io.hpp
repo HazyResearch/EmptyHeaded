@@ -25,6 +25,10 @@ public:
     size_t result = fread (buffer,1,file_size,pFile);
     if (result != file_size) {fputs ("Reading error",stderr); exit (3);}
     buffer[result] = '\0';
+    fclose(pFile);
+  }
+  ~tsv_reader() {
+    delete[] buffer;
   }
   inline char* tsv_get_first(){
     return strtok(buffer," \t\n");
