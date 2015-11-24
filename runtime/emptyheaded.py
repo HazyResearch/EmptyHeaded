@@ -79,15 +79,15 @@ def main():
   #db_config="/afs/cs.stanford.edu/u/caberger/config.json"
   #db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
 
-  db_config="/Users/caberger/Documents/Research/data/lubm1000/config.json"
-  #createDB(db_config)
-  loadDB("/Users/caberger/Documents/Research/data/lubm1000/db")
-  query("lubm6(a) :- type(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
+  db_config="$EMPTYHEADED_HOME/examples/rdf/data/lubm1/config.json"
+  createDB(db_config)
+  #loadDB("/Users/caberger/Documents/Research/data/lubm1000/db")
+  #query("lubm6(a) :- type(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
   #loadDB("$EMPTYHEADED_HOME/examples/graph/data/simple/db")
 
   #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
-  a=fetchData("lubm6")
-  print a
+  #a=fetchData("lubm6")
+  #print a
   #query("Triangle(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c);m=<<COUNT(*)>>.")
   #query("Flique(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);m=<<COUNT(*)>>.")
 

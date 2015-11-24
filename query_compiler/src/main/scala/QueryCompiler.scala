@@ -32,7 +32,6 @@ object QueryCompiler {
       opt[Unit]('f', "read-query-from-file") action { (_, c) =>
         c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
       arg[String]("<query>") action { (x, c) =>
-        println(x + " " + c)
         c.copy(query = x)} text("query")
       help("help") text("prints this usage text")
     }
