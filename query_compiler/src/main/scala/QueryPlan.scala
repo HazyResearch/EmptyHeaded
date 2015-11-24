@@ -6,6 +6,8 @@ import net.liftweb.json._
 import scala.io._
 import net.liftweb.json.Serialization.{read, write, writePretty}
 
+case class QueryPlans(val queryPlans:List[QueryPlan])
+
 case class QueryPlan(val query_type:String,
                 val relations:List[QueryPlanRelationInfo],
                 val output:QueryPlanOutputInfo,
@@ -24,10 +26,10 @@ case class QueryPlan(val query_type:String,
 }
 
 object QP {
-  def fromJSON(filename:String) : QueryPlan = {
+  def fromJSON(filename:String) : QueryPlans = {
     val fileContents = Source.fromFile(filename).getLines.mkString
     implicit val formats = DefaultFormats
-    parse(fileContents).extract[QueryPlan]
+    parse(fileContents).extract[QueryPlans]
   }
 }
 
@@ -45,7 +47,8 @@ case class QueryPlanBagInfo(val name:String,
                             val attributes:List[Attr],
                             val annotation:String,
                             val relations:List[QueryPlanRelationInfo],
-                            val nprr:List[QueryPlanAttrInfo])
+                            val nprr:List[QueryPlanAttrInfo],
+                            val recursion:Option[QueryPlanRecursion])
 
 case class QueryPlanAttrInfo(val name:String,
                         val accessors:List[QueryPlanAccessor],
@@ -56,6 +59,10 @@ case class QueryPlanAttrInfo(val name:String,
                         /* The last two here are never filled out in the top down pass*/
                         val prevMaterialized:Option[Attr],
                         val nextMaterialized:Option[Attr])
+
+case class QueryPlanRecursion(
+                val criteria:String,
+                val converganceValue:String)
 
 case class QueryPlanAggregation(val operation:String,
                            val init:String,

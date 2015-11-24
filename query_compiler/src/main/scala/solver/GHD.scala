@@ -361,7 +361,8 @@ class GHDNode(var rels: List[QueryRelation]) {
       outputRelation.attrNames,
       outputRelation.annotationType,
       jsonRelInfo,
-      getNPRRInfo(joinAggregates))
+      getNPRRInfo(joinAggregates),
+      None) //SUSAN FIXME
   }
 
   def setDescendantNames(depth:Int): Unit = {
