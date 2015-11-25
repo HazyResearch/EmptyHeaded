@@ -507,27 +507,29 @@ object CPPGenerator {
     val joinType = "*" //fixme
     (head.aggregation,head.materialize) match { //you always check for annotations
       case (Some(a),false) => {
-        code.append(s"""const ${annotationType} intermediate_${head.name} = """)
-        //starter that has no effect on join operation
-        joinType match {
-          case "*" => code.append(s"""(${annotationType})1""")
-          case "+" => code.append(s"""(${annotationType})0""")
-        }
-        //now actually get annotated values (if they exist)
-        head.accessors.foreach(acc => {
-          if(acc.annotated){
-            val index1 = relationIndices(relationNames.indexOf( acc.name + "_" + acc.attrs.mkString("_") ) )
-            code.append(s"""${joinType} Iterator_${acc.name}_${acc.attrs.mkString("_")}->get_annotation(${index1},${head.name}_d)""")
-          } else if(head.name == acc.attrs.last) {
-            code.append(s"""${joinType} ${a.init}""")
+        if(a.operation != "CONST"){
+          code.append(s"""const ${annotationType} intermediate_${head.name} = """)
+          //starter that has no effect on join operation
+          joinType match {
+            case "*" => code.append(s"""(${annotationType})1""")
+            case "+" => code.append(s"""(${annotationType})0""")
           }
-        })
-        a.prev match {
-          case Some(p) =>
-            code.append(s"""${joinType} intermediate_${p}""")
-          case _ =>
+          //now actually get annotated values (if they exist)
+          head.accessors.foreach(acc => {
+            if(acc.annotated){
+              val index1 = relationIndices(relationNames.indexOf( acc.name + "_" + acc.attrs.mkString("_") ) )
+              code.append(s"""${joinType} Iterator_${acc.name}_${acc.attrs.mkString("_")}->get_annotation(${index1},${head.name}_d)""")
+            } else if(head.name == acc.attrs.last) {
+              code.append(s"""${joinType} ${a.init}""")
+            }
+          })
+          a.prev match {
+            case Some(p) =>
+              code.append(s"""${joinType} intermediate_${p}""")
+            case _ =>
+          }
+          code.append(s"""${extra};""")
         }
-        code.append(s"""${extra};""")
       }
       case _ => //do nothing 
     }
@@ -612,7 +614,11 @@ object CPPGenerator {
     (head,tail) match {
       case (Some(a),List()) => {
         code.append(emitBuildCode(a,iteratorAccessors))
-        code.append(s"""num_rows_reducer.update(tid,count_${a.name});""")
+        if(a.materialize)
+          code.append(s"""num_rows_reducer.update(tid,count_${a.name});""")
+        else 
+          code.append(s"""num_rows_reducer.update(tid,1);""")
+
         //init annotation
         code.append(emitInitializeAnnotation(a,annotationType))
         //emit compute annotation (might have to contain a foreach)
