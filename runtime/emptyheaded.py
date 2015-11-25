@@ -34,6 +34,27 @@ def query(datalog_string):
   environment.liverelations[environment.config["resultName"]] = relationResult
   hashindex += 1
 
+def runQueryPlan(config):
+  global hashindex
+  qcpath = os.path.expandvars("$EMPTYHEADED_HOME")+"/query_compiler/"
+  mydir=os.getcwd()
+  os.chdir(qcpath)
+  QUERY_COMPILER_RUN_SCRIPT = os.path.expandvars("$EMPTYHEADED_HOME")+"/query_compiler/target/pack/bin/query-compiler"
+  command = QUERY_COMPILER_RUN_SCRIPT+" -c "+environment.config["database"]+"/config.json -g " + config
+  os.system(command)  
+  os.chdir(mydir)
+  environment.fromJSON(environment.config["database"]+"/config.json")
+  cppgenerator.compileC(str(hashindex),str(environment.config["numThreads"]))
+  schema = environment.schemas[environment.config["resultName"]]
+  eTypes = map(lambda i:str(schema["attributes"][i]["attrType"]),environment.config["resultOrdering"])
+  result = cppexecutor.execute(str(hashindex),environment.config["memory"],eTypes,schema["annotation"])
+  relationResult = {}
+  relationResult["query"] = result[0]
+  relationResult["trie"] = result[1]
+  relationResult["hash"] = hashindex
+  environment.liverelations[environment.config["resultName"]] = relationResult
+  hashindex += 1
+
 def compileQuery(datalog_string):
   print subprocess.Popen("target/start DunceCap.QueryPlanner %s \"%s\"" % (QUERY_COMPILER_CONFIG_DIR, datalog_string), cwd='../query_compiler' ,shell=True, stdout=subprocess.PIPE).stdout.read()
 
@@ -80,8 +101,12 @@ def main():
   db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
 
   #db_config="$EMPTYHEADED_HOME/examples/rdf/data/lubm1/config.json"
-  createDB(db_config)
-  #loadDB("/Users/caberger/Documents/Research/data/lubm1000/db")
+  #createDB(db_config)
+  loadDB("/Users/caberger/Documents/Research/data/databases/higgs/db")
+
+  runQueryPlan("$EMPTYHEADED_HOME/query_compiler/config/pagerank.json")
+  a=fetchData("PageRank")
+  print a
   #query("lubm6(a) :- type(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
   #loadDB("$EMPTYHEADED_HOME/examples/graph/data/simple/db")
 

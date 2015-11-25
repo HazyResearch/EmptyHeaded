@@ -870,6 +870,7 @@ object CPPGenerator {
           case Some(s) => {
             code.append(s"""Trie_${s}_${recordering}->memoryBuffers = Builders.trie->memoryBuffers;""")
             code.append(s"""Trie_${s}_${recordering}->num_rows = Builders.trie->num_rows;""")
+            code.append(s"""Trie_${s}_${recordering}->encodings = Builders.trie->encodings;""")
           }
         }
 
