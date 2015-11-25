@@ -77,9 +77,9 @@ def loadDB(path):
 
 def main():
   #db_config="/afs/cs.stanford.edu/u/caberger/config.json"
-  #db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
+  db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
 
-  db_config="$EMPTYHEADED_HOME/examples/rdf/data/lubm1/config.json"
+  #db_config="$EMPTYHEADED_HOME/examples/rdf/data/lubm1/config.json"
   createDB(db_config)
   #loadDB("/Users/caberger/Documents/Research/data/lubm1000/db")
   #query("lubm6(a) :- type(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")

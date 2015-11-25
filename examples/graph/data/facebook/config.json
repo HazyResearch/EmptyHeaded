@@ -1,5 +1,5 @@
 {
-  "numThreads": 4,
+  "numThreads": 1,
   "numNUMA": 4,
   "database": "$EMPTYHEADED_HOME/examples/graph/data/facebook/db",
   "algorithm": "NPRR+",
@@ -15,6 +15,18 @@
           "attrType":"long",
           "encoding":"node"
         },
+        {
+          "attrType":"long",
+          "encoding":"node"
+        }
+      ],
+      "orderings":["all"]
+    },
+     {
+      "name": "InvDegree",
+      "source": "$EMPTYHEADED_HOME/examples/graph/data/facebook/duplicated.tsv",
+      "annotation":"float",
+      "attributes":[
         {
           "attrType":"long",
           "encoding":"node"

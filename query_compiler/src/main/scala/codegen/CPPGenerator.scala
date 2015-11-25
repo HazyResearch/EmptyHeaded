@@ -812,6 +812,20 @@ object CPPGenerator {
     bag.duplicateOf match {
       case None => {
         code.append("{")
+        
+        bag.recursion match {
+          case Some(rec) => {
+            if(rec.criteria == "iterations"){
+              code.append(s""" 
+                size_t num_iterations = 0;
+                while(num_iterations < ${rec.converganceValue}){
+                """)
+            }else 
+              throw new IllegalArgumentException("CONVERGANCE CRITERIA NOT SUPPORTED")
+            code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.length,bag.duplicateOf))
+          }
+          case _ =>
+        }
         code.append("auto bag_timer = timer::start_clock();")
         code.append("num_rows_reducer.clear();")
         val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
@@ -848,6 +862,27 @@ object CPPGenerator {
         }
         code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
         code.append(s"""timer::stop_clock("BAG ${bag.name} TIME", bag_timer);""")
+        
+        //copy the buffers, needed if recursive
+        val recordering = (0 until bag.attributes.length).toList.mkString("_")
+        output match {
+          case None => 
+          case Some(s) => {
+            code.append(s"""Trie_${s}_${recordering}->memoryBuffers = Builders.trie->memoryBuffers;""")
+            code.append(s"""Trie_${s}_${recordering}->num_rows = Builders.trie->num_rows;""")
+          }
+        }
+
+        bag.recursion match {
+          case Some(rec) => 
+            code.append(s""" 
+              Trie_${rec.input}_${recordering} = Builders.trie;
+              num_iterations++;
+              }
+              """)
+          case _ =>
+        }
+
         code.append("}")
       }
       case _ =>
