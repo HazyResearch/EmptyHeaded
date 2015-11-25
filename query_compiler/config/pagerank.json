@@ -81,9 +81,9 @@
 	      "materialize":false,
 	      "selection":[],
 	      "aggregation":{
-	        "operation":"SUM",
+	        "operation":"CONST",
 	        "init":"1",
-	        "expression":"1/N"
+	        "expression":"1.0/N"
 	      },
 	      "prevMaterialized":"a"
 	    }]
