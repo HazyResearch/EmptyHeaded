@@ -439,6 +439,8 @@ object CPPGenerator {
             code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}));""")
           }
           case 2 =>{
+            println(relationIndices)
+            println(relationNames)
             val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.mkString("_") ) )
             val index2 = relationIndices(relationNames.indexOf(head.accessors(1).name + "_" + head.accessors(1).attrs.mkString("_")))
             code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}->get_block(${index1}),Iterator_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}->get_block(${index2}));""")
@@ -474,7 +476,7 @@ object CPPGenerator {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
-        code.append(s"""Builder->set_annotation(annotation_${annotation},${head.name}_i,${head.name}_d);""")
+        code.append(s"""Builder->set_annotation((annotation_${annotation}),${head.name}_i,${head.name}_d);""")
       case (None,Some(nextMaterialized)) =>
         code.append(s"""Builder->set_level(${head.name}_i,${head.name}_d);""")
       case (Some(a),Some(b)) =>

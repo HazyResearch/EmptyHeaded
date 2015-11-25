@@ -102,16 +102,22 @@
 	      "ordering":[0,1],
 	      "attributes":[["a","b"]],
 	      "annotation":"void*"
+	    },{
+	      "name":"bag_0_a_b",
+	      "ordering":[0],
+	      "attributes":[["b"]],
+	      "annotation":"float"
+	    },{
+	      "name":"InvDegree",
+	      "ordering":[0],
+	      "attributes":[["b"]],
+	      "annotation":"float"
 	    }],
 	    "nprr":[{
 	      "name":"a",
 	      "accessors":[{
-	        "name":"recursion",
+	        "name":"Edge",
 	        "attrs":["a","b"],
-	        "annotated":true
-	      },{
-	        "name":"InvDegree",
-	        "attrs":["b"],
 	        "annotated":true
 	      }],
 	      "materialize":true,
@@ -122,7 +128,15 @@
 	      "accessors":[{
 	        "name":"Edge",
 	        "attrs":["a","b"],
-	        "annotated":false
+	        "annotated":true
+	      },{
+	        "name":"InvDegree",
+	        "attrs":["b"],
+	        "annotated":true
+	      },{
+	      	"name":"bag_0_a_b",
+	        "attrs":["b"],
+	        "annotated":true
 	      }],
 	      "materialize":false,
 	      "selection":[],
