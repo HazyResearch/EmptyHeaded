@@ -5,6 +5,10 @@
 	    "name":"Edge",
 	    "ordering":[0,1],
 	    "annotation":"void*"
+	  },{
+	    "name":"InvDegree",
+	    "ordering":[0],
+	    "annotation":"float"
 	  }],
 	  "output":{
 	    "name":"N",
@@ -118,7 +122,7 @@
 	      "accessors":[{
 	        "name":"Edge",
 	        "attrs":["a","b"],
-	        "annotated":true
+	        "annotated":false
 	      }],
 	      "materialize":true,
 	      "selection":[],
@@ -128,7 +132,7 @@
 	      "accessors":[{
 	        "name":"Edge",
 	        "attrs":["a","b"],
-	        "annotated":true
+	        "annotated":false
 	      },{
 	        "name":"InvDegree",
 	        "attrs":["b"],
@@ -143,7 +147,7 @@
 	      "aggregation":{
 	        "operation":"SUM",
 	        "init":"1",
-	        "expression":""
+	        "expression":"0.15+0.85*"
 	      },
 	      "prevMaterialized":"a"
 	    }]

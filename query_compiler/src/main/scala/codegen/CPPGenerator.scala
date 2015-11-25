@@ -124,7 +124,7 @@ object CPPGenerator {
       s"""Trie<${r.annotation},${Environment.config.memory}>* Trie_${r.name}_${r.ordering.mkString("_")} = NULL;
       {
         auto start_time = timer::start_clock();
-        Trie_${r.name}_${r.ordering.mkString("_")} = Trie<void *,${Environment.config.memory}>::load( 
+        Trie_${r.name}_${r.ordering.mkString("_")} = Trie<${r.annotation},${Environment.config.memory}>::load( 
           "${Environment.config.database}/relations/${r.name}/${r.name}_${r.ordering.mkString("_")}"
         );
         timer::stop_clock("LOADING Trie ${r.name}_${r.ordering.mkString("_")}", start_time);      
@@ -476,7 +476,7 @@ object CPPGenerator {
     val code = new StringBuilder()
     (head.annotation,head.nextMaterialized) match {
       case (Some(annotation),None) =>
-        code.append(s"""Builder->set_annotation((annotation_${annotation}),${head.name}_i,${head.name}_d);""")
+        code.append(s"""Builder->set_annotation(annotation_${annotation},${head.name}_i,${head.name}_d);""")
       case (None,Some(nextMaterialized)) =>
         code.append(s"""Builder->set_level(${head.name}_i,${head.name}_d);""")
       case (Some(a),Some(b)) =>
@@ -571,14 +571,34 @@ object CPPGenerator {
             s"""intermediate_${head.name}"""
         }
         (a.operation,isHead) match {
-          case ("CONST",false) => code.append(s"""annotation_${head.name} = (${a.expression});""")
-          case ("CONST",true) => code.append(s"""annotation_${head.name}.update(0,${a.expression});""")
-          case ("SUM",false) => code.append(s"""annotation_${head.name} += (${a.expression} ${rhs});""")
-          case ("SUM",true) => code.append(s"""annotation_${head.name}.update(0,(${a.expression} ${rhs}) );""")
+          case ("SUM",false) => code.append(s"""annotation_${head.name} += ${rhs};""")
+          case ("SUM",true) => code.append(s"""annotation_${head.name}.update(0,${rhs});""")
+          case ("CONST",_) => //do nothing
           case _ => throw new IllegalArgumentException("OPERATION NOT YET SUPPORTED")
         } 
       } 
       case _ => 
+    }
+    code
+  }
+  def emitAnnotationExpression(head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
+    val code = new StringBuilder()
+    head.aggregation match {
+      case Some(a) => {
+        a.operation match {
+          case "CONST" => {
+            if(a.expression != "")
+              code.append(s"""annotation_${head.name} = ${a.expression};""")
+            else 
+              throw new IllegalArgumentException("CONST annotation must have expression")
+          }
+          case _ => {
+            if(a.expression != "")
+              code.append(s"""annotation_${head.name} = (${a.expression} annotation_${head.name});""")
+          }
+        }
+      }
+      case _ =>
     }
     code
   }
@@ -625,6 +645,8 @@ object CPPGenerator {
         code.append(emitInitializeAnnotation(a,annotationType))
         //emit compute annotation (might have to contain a foreach)
         code.append(emitFinalAnnotation(a,annotationType,iteratorAccessors,false))
+        //the expression for the aggregation
+        code.append(emitAnnotationExpression(a,annotationType))
       }
       case (Some(a),_) => {
         //build 
@@ -645,6 +667,8 @@ object CPPGenerator {
         code.append(emitSetValues(a))
         //close out foreach
         code.append("});")
+        //emit annotation expression
+        code.append(emitAnnotationExpression(a,annotationType))
       }
       case (None,_) =>
         throw new IllegalArgumentException("Should not reach this state.")
