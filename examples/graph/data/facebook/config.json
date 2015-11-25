@@ -21,6 +21,18 @@
         }
       ],
       "orderings":["all"]
+    },
+     {
+      "name": "InvDegree",
+      "source": "$EMPTYHEADED_HOME/examples/graph/data/facebook/duplicated.tsv",
+      "annotation":"float",
+      "attributes":[
+        {
+          "attrType":"long",
+          "encoding":"node"
+        }
+      ],
+      "orderings":["all"]
     }
   ]
 }

@@ -61,6 +61,7 @@ case class QueryPlanAttrInfo(val name:String,
                         val nextMaterialized:Option[Attr])
 
 case class QueryPlanRecursion(
+                val input:String,
                 val criteria:String,
                 val converganceValue:String)
 
