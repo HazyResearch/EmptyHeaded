@@ -50,7 +50,7 @@ def buildAndDumpEncoding(path,encoding):
 	    auto start_time = timer::start_clock();
 	    Encoding_%(name)s->to_binary(
 	        "%(path)s/encodings/%(name)s/");
-	    timer::stop_clock("WRITING ENCODING node", start_time);
+	    timer::stop_clock("WRITING ENCODING %(name)s", start_time);
 	  }
 	"""% locals()
 

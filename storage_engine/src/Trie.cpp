@@ -238,7 +238,7 @@ size_t build_block(
 
   Set<hybrid>* myset = (Set<hybrid>*)(data_allocator->get_next(tid,sizeof(Set<layout>)));
   const size_t set_range = (set_size > 1) ? (set_data_buffer[set_size-1]-set_data_buffer[0]) : 0;
-  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range)+100;
+  const size_t set_alloc_size =  layout::get_number_of_bytes(set_size,set_range)*2+100;
   uint8_t* set_data_in = data_allocator->get_next(tid,set_alloc_size);
   
   TrieBlock<layout,A>* tmp = TrieBlock<layout,A>::get_block(tid,offset,data_allocator);
@@ -439,7 +439,7 @@ Trie<A,M>::Trie(
       (void) tid;
       new_head->getNext(i)->index = -1;
     });
-
+    std::cout << "PAR FOR SIZE: " << head_size << std::endl;
     //reset new_head because a realloc could of occured
     par::for_range(0,head_size,100,[&](size_t tid, size_t i){
       //some sort of recursion here
@@ -462,6 +462,7 @@ Trie<A,M>::Trie(
         indicies,
         annotations);
     });
+    std::cout << "END PAR FOR" << std::endl;
   } else if(annotations->size() > 0){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
     //perform allocation for annotation (0 = tid)
