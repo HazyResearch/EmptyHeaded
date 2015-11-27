@@ -9,11 +9,37 @@
   },
   "relations": {
     "R_1_0": "disk",
-    "R_0_1": "disk"
+    "R_0_1": "disk",
+    "S_1_0": "disk",
+    "S_0_1": "disk"
+
   },
   "memory": "ParMemoryBuffer",
   "schemas": {
     "R": {
+      "attributes": [
+        {
+          "attrType": "long",
+          "encoding": "node"
+        },
+        {
+          "attrType": "long",
+          "encoding": "node"
+        }
+      ],
+      "orderings": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "annotation": "blah"
+    },
+    "S": {
       "attributes": [
         {
           "attrType": "long",
