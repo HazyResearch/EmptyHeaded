@@ -70,14 +70,6 @@ ParTrieIterator<A,M>::ParTrieIterator(Trie<A,M> *t_in){
 template<class A,class M>
 void ParTrieIterator<A,M>::get_next_block(const uint32_t data){
   head =  head->get_next_block(data,trie->memoryBuffers);
-  std::cout << head->get_const_set()->cardinality << std::endl;
-  size_t ui = 0;
-  head->get_const_set()->foreach([&](uint32_t data){
-    if(ui < 10)
-      std::cout << "d2: " << data << std::endl;
-    ui++;
-  });
-  std::cout << ui << std::endl;
   for(size_t i = 0; i < NUM_THREADS; i++){
     iterators.at(i)->levels.at(0) = head;
   }

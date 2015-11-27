@@ -98,13 +98,10 @@ struct TrieBlock{
     } else{
       //first need to see if the data is in the set
       const long index = set->find(data);
-      std::cout << index << std::endl;
-
       if(index != -1){
         NextLevel* next = this->getNext(index);
         const int bufferIndex = next->index;
         const size_t bufferOffset = next->offset;
-        std::cout << bufferIndex << std::endl;
         if(bufferIndex != -1){
           result = (TrieBlock<T,M>*) buffer->get_address(bufferIndex,bufferOffset);
         }

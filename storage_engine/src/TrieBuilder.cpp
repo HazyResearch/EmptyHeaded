@@ -643,15 +643,6 @@ size_t ParTrieBuilder<A,M>::build_set(
   const TrieBlock<hybrid,M> *tb2 = isets->at(0);
   const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));  
   
-  /*
-  std::cout << "s: " << s1->cardinality << " " << s2->cardinality << std::endl;
-  s1->foreach([&](uint32_t data){
-    std::cout << "s1 data: " << data << std::endl;
-  });
-  s2->foreach([&](uint32_t data){
-    std::cout << "s2 data: " << data << std::endl;
-  });
-  */
   result_set = ops::set_intersect(
           result_set, 
           (const Set<hybrid>*)s1,
@@ -705,18 +696,7 @@ size_t ParTrieBuilder<A,M>::build_set(
 
   const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));  
   const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)tb2+sizeof(TrieBlock<hybrid,M>));  
-  std::cout << s1->cardinality << " " << s2->cardinality << std::endl;
-  s1->foreach([&](uint32_t data){
-    std::cout << "d: " << data << std::endl;
-  });
 
-  size_t ui = 0;
-  s2->foreach([&](uint32_t data){
-    if(ui < 10)
-      std::cout << "d2: " << data << std::endl;
-    ui++;
-  });
-  std::cout << ui << std::endl;
   const size_t alloc_size =
     std::max(s1->number_of_bytes,
              s2->number_of_bytes);
@@ -728,7 +708,6 @@ size_t ParTrieBuilder<A,M>::build_set(
           r, 
           s1,
           s2);
-  std::cout << "RESULT CARD: " << r->cardinality << std::endl;
   trie->memoryBuffers->head->roll_back(alloc_size-r->number_of_bytes);
   return r->cardinality;
 }

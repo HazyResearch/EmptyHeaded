@@ -439,7 +439,6 @@ Trie<A,M>::Trie(
       (void) tid;
       new_head->getNext(i)->index = -1;
     });
-    std::cout << "PAR FOR SIZE: " << head_size << std::endl;
     //reset new_head because a realloc could of occured
     par::for_range(0,head_size,100,[&](size_t tid, size_t i){
       //some sort of recursion here
@@ -462,7 +461,6 @@ Trie<A,M>::Trie(
         indicies,
         annotations);
     });
-    std::cout << "END PAR FOR" << std::endl;
   } else if(annotations->size() > 0){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
     //perform allocation for annotation (0 = tid)
