@@ -245,6 +245,16 @@ size_t build_block(
   myset = tmp->get_set();
   myset->from_array(set_data_in,set_data_buffer,set_size);
 
+///some debug code for safety (should be in a debug pragma) FIXME
+  size_t lol = 0;
+  myset->foreach_index([&](uint32_t index, uint32_t data){
+    (void) data; (void) index;
+    assert(data == set_data_buffer[index]);
+    lol++;
+  });
+  assert(lol == set_size);
+//end debug code
+
   assert(set_alloc_size >= myset->number_of_bytes);
   data_allocator->roll_back(tid,set_alloc_size-myset->number_of_bytes);
 
@@ -440,7 +450,8 @@ Trie<A,M>::Trie(
       new_head->getNext(i)->index = -1;
     });
     //reset new_head because a realloc could of occured
-    par::for_range(0,head_size,100,[&](size_t tid, size_t i){
+    //par::for_range(0,head_size,100,[&](size_t tid, size_t i){
+    for(size_t i = 0; i < head_size; i++){ const size_t tid = 0;
       //some sort of recursion here
       const size_t start = ranges_buffer->at(0)[i];
       const size_t end = ranges_buffer->at(0)[i+1];
@@ -460,7 +471,8 @@ Trie<A,M>::Trie(
         set_data_buffer,
         indicies,
         annotations);
-    });
+    }
+    //});
   } else if(annotations->size() > 0){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
     //perform allocation for annotation (0 = tid)
