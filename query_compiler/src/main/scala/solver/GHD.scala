@@ -443,7 +443,7 @@ class GHDNode(var rels: List[QueryRelation]) {
   def getRelationInfo(forTopLevelSummary:Boolean = false): List[QueryPlanRelationInfo] = {
     val relsToUse =
       if (forTopLevelSummary) {
-        rels.map(r => subtreeRels.find(_.name == r.name).get)  //SUSAN FIXME
+        rels
       } else {
         subtreeRels
       }
@@ -477,11 +477,6 @@ class GHDNode(var rels: List[QueryRelation]) {
 
   def setAttributeOrdering(ordering: List[Attr] ): Unit = {
     attributeOrdering = ordering
-    rels = rels.map(rel => {
-      new QueryRelation(rel.name, rel.attrs.sortWith((attrInfo1, attrInfo2) => {
-        ordering.indexOf(attrInfo1._1) < ordering.indexOf(attrInfo2._1)
-      }), rel.annotationType)
-    })
     children.map(child => child.setAttributeOrdering(ordering))
   }
 
