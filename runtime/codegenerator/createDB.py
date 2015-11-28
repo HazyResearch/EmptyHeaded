@@ -8,6 +8,7 @@ import os
 from sets import Set
 import code.build
 import imp
+import time
 
 def printraw(s):
 	sys.stdout.write(s)
@@ -28,11 +29,11 @@ def fromJSON(path,env):
 
   libname = "loadDB"
   os.system("rm -rf "+env.config["database"])
+  time.sleep(1)
   os.system("cd $EMPTYHEADED_HOME/storage_engine && make clean && make emptyheaded NUM_THREADS=" + str(env.config["numThreads"]) + "&& cd -")
-  a = cppgenerator.compileAndRun(
+  cppgenerator.compileAndRun(
 		lambda: loadRelations(relations,env,libname),
 		libname,env.config["memory"],[],"void*",str(env.config["numThreads"]))
-  del a
   envRelations = {}
   for relation in relations:
     attributes = relation["attributes"]
@@ -40,9 +41,9 @@ def fromJSON(path,env):
     orderings = relation["orderings"]
     if len(orderings) == 1 and orderings[0] == "all":
       orderings = generateAllOrderings(len(attributes))
-    r = cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env,"build_"+relation["name"]),
+    time.sleep(1)
+    cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env,"build_"+relation["name"]),
 			"build_"+relation["name"],env.config["memory"],[],"void*",str(env.config["numThreads"]))
-    del r
     envRelations[relation["name"]] = { \
 			"orderings":orderings,\
 			"annotation":relation["annotation"],\
