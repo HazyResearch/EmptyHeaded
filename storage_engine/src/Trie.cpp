@@ -12,6 +12,7 @@
 #include "utils/ParMMapBuffer.hpp"
 #include "utils/ParMemoryBuffer.hpp"
 #include "Annotation.hpp"
+#include <unistd.h>
 
 template<class A,class M>
 void Trie<A,M>::save(){
@@ -313,7 +314,8 @@ void recursive_build(
   uint32_t *indicies,
   std::vector<A>* annotation){
 
-  uint32_t *sb = set_data_buffer->at(tid*NUM_THREADS+level);
+  //NUM_THREADS*NUM_COLUMNS
+  uint32_t *sb = set_data_buffer->at(tid*num_levels+level);
   encode_tail(start,end,sb,&attr_in->at(level),indicies);
 
   const size_t next_offset = build_block<B,M>(tid,data_allocator,(end-start),sb);
@@ -330,12 +332,12 @@ void recursive_build(
   if(level < (num_levels-1)){
     B* tail = (B*)data_allocator->get_address(tid,next_offset);
     tail->init_next(tid,data_allocator);
-    auto tup = produce_ranges(start,end,ranges_buffer->at(tid*NUM_THREADS+level),set_data_buffer->at(tid*NUM_THREADS+level),indicies,&attr_in->at(level));
+    auto tup = produce_ranges(start,end,ranges_buffer->at(tid*num_levels+level),set_data_buffer->at(tid*num_levels+level),indicies,&attr_in->at(level));
     const size_t set_size = std::get<0>(tup);
     for(size_t i = 0; i < set_size; i++){
-      const size_t next_start = ranges_buffer->at(tid*NUM_THREADS+level)[i];
-      const size_t next_end = ranges_buffer->at(tid*NUM_THREADS+level)[i+1];
-      const uint32_t next_data = set_data_buffer->at(tid*NUM_THREADS+level)[i];        
+      const size_t next_start = ranges_buffer->at(tid*num_levels+level)[i];
+      const size_t next_end = ranges_buffer->at(tid*num_levels+level)[i+1];
+      const uint32_t next_data = set_data_buffer->at(tid*num_levels+level)[i];        
       recursive_build<B,M,A>(
         i,
         next_start,
