@@ -9,6 +9,7 @@
 #include "Trie.hpp"
 #include "trie/TrieBlock.hpp"
 #include "utils/common.hpp"
+#include "complex.hpp"
 
 template<class A,class M>
 TrieIterator<A,M>::TrieIterator(Trie<A,M>* t_in){
@@ -80,6 +81,7 @@ template struct ParTrieIterator<long,ParMemoryBuffer>;
 template struct ParTrieIterator<int,ParMemoryBuffer>;
 template struct ParTrieIterator<float,ParMemoryBuffer>;
 template struct ParTrieIterator<double,ParMemoryBuffer>;
+template struct ParTrieIterator<C,ParMemoryBuffer>;
 
 template struct ParTrieIterator<void*,ParMMapBuffer>;
 template struct ParTrieIterator<long,ParMMapBuffer>;
@@ -92,6 +94,7 @@ template struct TrieIterator<long,ParMemoryBuffer>;
 template struct TrieIterator<int,ParMemoryBuffer>;
 template struct TrieIterator<float,ParMemoryBuffer>;
 template struct TrieIterator<double,ParMemoryBuffer>;
+template struct TrieIterator<C,ParMemoryBuffer>;
 
 template struct TrieIterator<void*,ParMMapBuffer>;
 template struct TrieIterator<long,ParMMapBuffer>;

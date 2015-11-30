@@ -12,7 +12,9 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <complex>
 #include "layout.hpp"
+#include "complex.hpp"
 
 /*
 * Very simple tree structure stores the trie. All that is needed is the 
@@ -60,6 +62,9 @@ struct Trie{
   void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
   void save();
   TrieBlock<layout,M>* getHead();
+
+  void print();
+  void printN(int n);
 
   static Trie<A,M>* load(std::string path);
 };

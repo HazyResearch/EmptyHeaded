@@ -9,3 +9,5 @@
 *.so
 .idea
 target
+.DS_Store
+.ipynb_*
