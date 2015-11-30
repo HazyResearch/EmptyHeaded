@@ -450,9 +450,7 @@ Trie<A,M>::Trie(
       new_head->getNext(i)->index = -1;
     });
     //reset new_head because a realloc could of occured
-    //par::for_range(0,head_size,100,[&](size_t tid, size_t i){
-    for(size_t i = 0; i < head_size; i++){ const size_t tid = 0;
-      //some sort of recursion here
+    par::for_range(0,head_size,100,[&](size_t tid, size_t i){
       const size_t start = ranges_buffer->at(0)[i];
       const size_t end = ranges_buffer->at(0)[i+1];
       const uint32_t data = set_data_buffer->at(0)[i];
@@ -471,8 +469,7 @@ Trie<A,M>::Trie(
         set_data_buffer,
         indicies,
         annotations);
-    }
-    //});
+    });
   } else if(annotations->size() > 0){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
     //perform allocation for annotation (0 = tid)
