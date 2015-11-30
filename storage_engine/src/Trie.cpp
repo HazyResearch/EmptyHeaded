@@ -12,6 +12,8 @@
 #include "utils/ParMMapBuffer.hpp"
 #include "utils/ParMemoryBuffer.hpp"
 #include "Annotation.hpp"
+#include "complex.hpp"
+
 
 template<class A,class M>
 void Trie<A,M>::save(){
@@ -123,6 +125,30 @@ TrieBlock<layout,M>* Trie<A,M>::getHead(){
   TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)(memoryBuffers->get_address(NUM_THREADS,0));
   return head; 
 }
+
+template<class A,class M>
+void Trie<A,M>::print() {
+  foreach([](std::vector<uint32_t> *trie_values, A annotation){
+    for(size_t i = 0; i < trie_values->size(); i++){
+      std::cout << trie_values->at(i) << " ";
+    }
+    std::cout << "Annotation: " << annotation << std::endl;
+  });
+};
+
+template<class A,class M>
+void Trie<A,M>::printN(int max) {
+  int count = 0;
+  foreach([max, &count](std::vector<uint32_t> *trie_values, A annotation){
+    if (count < max) {
+      for(size_t i = 0; i < trie_values->size(); i++){
+        std::cout << trie_values->at(i) << " ";
+      }
+      std::cout << "Annotation: " << annotation << std::endl;
+      count++;
+    }
+  });
+};
 
 /*
 * Write the trie to a binary file 
@@ -380,7 +406,7 @@ void recursive_build(
 template<class A, class M>
 Trie<A,M>::Trie(
   std::string path,
-  std::vector<uint32_t>* max_set_sizes, 
+  std::vector<uint32_t> *max_set_sizes,
   std::vector<std::vector<uint32_t>> *attr_in,
   std::vector<A>* annotations){
 
@@ -513,6 +539,8 @@ template struct Trie<long,ParMemoryBuffer>;
 template struct Trie<int,ParMemoryBuffer>;
 template struct Trie<float,ParMemoryBuffer>;
 template struct Trie<double,ParMemoryBuffer>;
+template struct Trie<C,ParMemoryBuffer>;
+
 
 template struct Trie<void*,ParMMapBuffer>;
 template struct Trie<long,ParMMapBuffer>;

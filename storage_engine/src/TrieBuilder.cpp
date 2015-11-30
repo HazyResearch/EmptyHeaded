@@ -9,6 +9,7 @@
 #include "Trie.hpp"
 #include "utils/ParMemoryBuffer.hpp"
 #include "emptyheaded.hpp"
+#include "complex.hpp"
 
 template<class A,class M>
 TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in, const size_t num_attributes){
@@ -433,12 +434,10 @@ void TrieBuilder<A,M>::set_annotation(
   annotation[prev_block->get_index(index,data)] = value;
 }
 
-
+/*
 template<class A,class M>
-void TrieBuilder<A,M>::foreach_aggregate(
-  std::function<void(
-    const uint32_t a_d)> f) {
-
+template <typename F>
+void TrieBuilder<A,M>::foreach_aggregate(const F &f) {
     const Set<hybrid> *s = aggregate_sets.at(tmp_level);
     auto buf = tmp_buffers.at(tmp_level);
     tmp_level++;
@@ -447,11 +446,8 @@ void TrieBuilder<A,M>::foreach_aggregate(
 }
 
 template<class A,class M>
-void TrieBuilder<A,M>::foreach_builder(
-  std::function<void(
-    const uint32_t a_i,
-    const uint32_t a_d)> f) {
-
+template <typename F>
+void TrieBuilder<A,M>::foreach_builder(const F &f) {
     const int cur_index = next.at(cur_level).index;
     if(cur_index == -1){
       return;
@@ -470,6 +466,7 @@ void TrieBuilder<A,M>::foreach_builder(
       f);
     cur_level--;
 }
+ */
 
 //////////////////////////////////////////////////////////////////////
 ////////////////////////////parallel wrapper
@@ -770,6 +767,7 @@ template struct TrieBuilder<long,ParMemoryBuffer>;
 template struct TrieBuilder<int,ParMemoryBuffer>;
 template struct TrieBuilder<float,ParMemoryBuffer>;
 template struct TrieBuilder<double,ParMemoryBuffer>;
+template struct TrieBuilder<C,ParMemoryBuffer>;
 
 template struct TrieBuilder<void*,ParMMapBuffer>;
 template struct TrieBuilder<long,ParMMapBuffer>;
@@ -782,6 +780,7 @@ template struct ParTrieBuilder<long,ParMemoryBuffer>;
 template struct ParTrieBuilder<int,ParMemoryBuffer>;
 template struct ParTrieBuilder<float,ParMemoryBuffer>;
 template struct ParTrieBuilder<double,ParMemoryBuffer>;
+template struct ParTrieBuilder<C,ParMemoryBuffer>;
 
 template struct ParTrieBuilder<void*,ParMMapBuffer>;
 template struct ParTrieBuilder<long,ParMMapBuffer>;

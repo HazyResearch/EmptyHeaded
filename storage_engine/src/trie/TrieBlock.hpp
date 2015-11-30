@@ -149,7 +149,7 @@ struct TrieBlock{
   template<class A>
   inline A get_annotation(
     const uint32_t index, 
-    const uint32_t data){
+    const uint32_t data) const {
 
     const Set<T>* s1 = this->get_const_set();
     const uint32_t annotationIndex = this->getNextIndex(index,data);

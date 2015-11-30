@@ -15,6 +15,7 @@
 #include "layout.hpp"
 #include "utils/MemoryBuffer.hpp"
 #include "trie/NextLevel.hpp"
+#include "trie/TrieBlock.hpp"
 
 template<class A, class M> struct Trie;
 
@@ -81,15 +82,35 @@ struct TrieBuilder{
     const uint32_t index,
     const uint32_t data);
 
-  void foreach_aggregate(
-    std::function<void(
-      const uint32_t a_d)> f
-  );
+  template <typename F>
+  void foreach_aggregate(const F& f) {
+    const Set<hybrid> *s = aggregate_sets.at(tmp_level);
+    auto buf = tmp_buffers.at(tmp_level);
+    tmp_level++;
+    s->foreach(sizeof(Set<hybrid>),buf,f);
+    tmp_level--;
+  }
 
-  void foreach_builder(
-    std::function<void(
-      const uint32_t a_i,
-      const uint32_t a_d)> f);
+  template <typename F>
+  void foreach_builder(const F& f) {
+    const int cur_index = next.at(cur_level).index;
+    if(cur_index == -1){
+      return;
+    }
+    const size_t cur_offset = next.at(cur_level).offset;
+
+    auto buf = trie->memoryBuffers->elements.at(cur_index);
+    uint8_t* place = (uint8_t*)(buf->get_address(cur_offset)+sizeof(TrieBlock<hybrid,M>));
+
+    Set<hybrid> *s = (Set<hybrid>*)place;
+
+    cur_level++;
+    s->foreach_index(
+        (cur_offset+sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>)),
+        buf,
+        f);
+    cur_level--;
+  }
 
 };
 

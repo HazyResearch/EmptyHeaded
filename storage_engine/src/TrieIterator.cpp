@@ -9,6 +9,7 @@
 #include "Trie.hpp"
 #include "trie/TrieBlock.hpp"
 #include "utils/common.hpp"
+#include "complex.hpp"
 
 template<class A,class M>
 TrieIterator<A,M>::TrieIterator(Trie<A,M>* t_in){
@@ -57,6 +58,21 @@ A TrieIterator<A,M>::get_annotation(
   return (A)0;
 }
 
+template<class A,class M>
+A TrieIterator<A,M>::get_annotation(
+    const size_t level,
+    const uint32_t index,
+    const uint32_t data){
+  const TrieBlock<hybrid,M>* block = levels.at(level);
+  const Set<hybrid>* s1 = block->get_const_set();
+
+  size_t annotationIndex = block->getNextIndex(index,data);
+  A* annotation = (A*)( ((uint8_t*)s1)+
+                        sizeof(Set<hybrid>) +
+                        s1->number_of_bytes);
+  return annotation[annotationIndex];
+}
+
 template<class A, class M>
 ParTrieIterator<A,M>::ParTrieIterator(Trie<A,M> *t_in){
   head = t_in->getHead();
@@ -80,6 +96,7 @@ template struct ParTrieIterator<long,ParMemoryBuffer>;
 template struct ParTrieIterator<int,ParMemoryBuffer>;
 template struct ParTrieIterator<float,ParMemoryBuffer>;
 template struct ParTrieIterator<double,ParMemoryBuffer>;
+template struct ParTrieIterator<C,ParMemoryBuffer>;
 
 template struct ParTrieIterator<void*,ParMMapBuffer>;
 template struct ParTrieIterator<long,ParMMapBuffer>;
@@ -92,6 +109,7 @@ template struct TrieIterator<long,ParMemoryBuffer>;
 template struct TrieIterator<int,ParMemoryBuffer>;
 template struct TrieIterator<float,ParMemoryBuffer>;
 template struct TrieIterator<double,ParMemoryBuffer>;
+template struct TrieIterator<C,ParMemoryBuffer>;
 
 template struct TrieIterator<void*,ParMMapBuffer>;
 template struct TrieIterator<long,ParMMapBuffer>;
