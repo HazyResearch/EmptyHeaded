@@ -9,9 +9,9 @@ ParMemoryBuffer::ParMemoryBuffer(
   
   num_buffers = num_buffers_in;
   path = path_in;
-  head = new MemoryBuffer(1);
+  head = new MemoryBuffer(2);
   for(size_t i = 0; i < num_buffers; i++){
-    MemoryBuffer* mbuffer = new MemoryBuffer(1);
+    MemoryBuffer* mbuffer = new MemoryBuffer(2);
     elements.push_back(mbuffer);
   }
   elements.push_back(head);

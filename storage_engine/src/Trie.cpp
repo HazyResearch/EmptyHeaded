@@ -246,13 +246,13 @@ size_t build_block(
   myset->from_array(set_data_in,set_data_buffer,set_size);
 
 ///some debug code for safety (should be in a debug pragma) FIXME
-  size_t lol = 0;
+  size_t check_index = 0;
   myset->foreach_index([&](uint32_t index, uint32_t data){
     (void) data; (void) index;
     assert(data == set_data_buffer[index]);
-    lol++;
+    check_index++;
   });
-  assert(lol == set_size);
+  assert(check_index == set_size);
 //end debug code
 
   assert(set_alloc_size >= myset->number_of_bytes);
@@ -288,10 +288,17 @@ size_t build_head(
   return offset;
 }
 
-void encode_tail(size_t start, size_t end, uint32_t *data, std::vector<uint32_t> *current, uint32_t *indicies){
+size_t encode_tail(size_t start, size_t end, uint32_t *data, std::vector<uint32_t> *current, uint32_t *indicies){
+  long prev_data = -1;
+  size_t data_size = 0;
   for(size_t i = start; i < end; i++){
-    *data++ = current->at(indicies[i]);
+    if(prev_data != (long)current->at(indicies[i])){
+      *data++ = current->at(indicies[i]);
+      prev_data = (long)current->at(indicies[i]);
+      data_size++;
+    }
   }
+  return data_size;
 }
 /*
 * Recursively build the trie. Terminates when we hit the number of levels.
@@ -313,10 +320,11 @@ void recursive_build(
   uint32_t *indicies,
   std::vector<A>* annotation){
 
-  uint32_t *sb = set_data_buffer->at(tid*NUM_THREADS+level);
-  encode_tail(start,end,sb,&attr_in->at(level),indicies);
+  //NUM_THREADS*NUM_COLUMNS
+  uint32_t *sb = set_data_buffer->at(tid*num_levels+level);
+  size_t set_size = encode_tail(start,end,sb,&attr_in->at(level),indicies);
 
-  const size_t next_offset = build_block<B,M>(tid,data_allocator,(end-start),sb);
+  const size_t next_offset = build_block<B,M>(tid,data_allocator,set_size,sb);
 
   if(level == 1){
     //get the head
@@ -330,12 +338,12 @@ void recursive_build(
   if(level < (num_levels-1)){
     B* tail = (B*)data_allocator->get_address(tid,next_offset);
     tail->init_next(tid,data_allocator);
-    auto tup = produce_ranges(start,end,ranges_buffer->at(tid*NUM_THREADS+level),set_data_buffer->at(tid*NUM_THREADS+level),indicies,&attr_in->at(level));
+    auto tup = produce_ranges(start,end,ranges_buffer->at(tid*num_levels+level),set_data_buffer->at(tid*num_levels+level),indicies,&attr_in->at(level));
     const size_t set_size = std::get<0>(tup);
     for(size_t i = 0; i < set_size; i++){
-      const size_t next_start = ranges_buffer->at(tid*NUM_THREADS+level)[i];
-      const size_t next_end = ranges_buffer->at(tid*NUM_THREADS+level)[i+1];
-      const uint32_t next_data = set_data_buffer->at(tid*NUM_THREADS+level)[i];        
+      const size_t next_start = ranges_buffer->at(tid*num_levels+level)[i];
+      const size_t next_end = ranges_buffer->at(tid*num_levels+level)[i+1];
+      const uint32_t next_data = set_data_buffer->at(tid*num_levels+level)[i];        
       recursive_build<B,M,A>(
         i,
         next_start,
@@ -396,8 +404,18 @@ Trie<A,M>::Trie(
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
 
+  /*
+  //DEBUG
+  std::cout << num_columns << std::endl;
+  for(size_t i = 0; i < num_rows; i++){
+    for(size_t j = 0; j < num_columns; j++){
+      std::cout << attr_in->at(j).at(indicies[i]) << "\t";
+    }
+    std::cout << std::endl;
+  }
+  */
+
   //set up temporary buffers needed for the build
-  //fixme: add estimate
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();
 
@@ -450,9 +468,7 @@ Trie<A,M>::Trie(
       new_head->getNext(i)->index = -1;
     });
     //reset new_head because a realloc could of occured
-    //par::for_range(0,head_size,100,[&](size_t tid, size_t i){
-    for(size_t i = 0; i < head_size; i++){ const size_t tid = 0;
-      //some sort of recursion here
+    par::for_range(0,head_size,100,[&](size_t tid, size_t i){
       const size_t start = ranges_buffer->at(0)[i];
       const size_t end = ranges_buffer->at(0)[i+1];
       const uint32_t data = set_data_buffer->at(0)[i];
@@ -471,8 +487,7 @@ Trie<A,M>::Trie(
         set_data_buffer,
         indicies,
         annotations);
-    }
-    //});
+    });
   } else if(annotations->size() > 0){
     TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
     //perform allocation for annotation (0 = tid)
