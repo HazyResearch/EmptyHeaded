@@ -12,7 +12,6 @@
 #include "utils/ParMMapBuffer.hpp"
 #include "utils/ParMemoryBuffer.hpp"
 #include "Annotation.hpp"
-#include <unistd.h>
 
 template<class A,class M>
 void Trie<A,M>::save(){
