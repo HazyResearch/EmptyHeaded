@@ -138,7 +138,7 @@ object DCParser extends RegexParsers {
     case a~b~c~d => new AnnotationExpression(a,b,c,d)
   }
   def aggInit:Parser[String] = (";" ~> numericalValue) | emptyString ^^ { case a => a}
-  def aggOp:Parser[String] = """SUM|COUNT|MIN""".r
+  def aggOp:Parser[String] = """SUM|COUNT|MIN|CONST""".r
   def aggregateStatement = "<<" ~> aggOp ~ ("(" ~> (findStar | attrList)) ~ (aggInit <~ ")") <~ ">>" ^^ {case a~b~c => new AggregateExpression(a,b,c) }
   def findStar = """\*""".r ^^ {case a => List[String](a)}
 
@@ -149,15 +149,12 @@ object DCParser extends RegexParsers {
     val joins = a
     val boundVariable = b.boundVariable
     var aggregatesIn:Map[String, ParsedAggregate] = null
-    if (b.agg.isDefined) {
-      val aggregate = b.agg.get
-      val operation = if (aggregate.op == "COUNT") "SUM" else aggregate.op
-      val init = if (aggregate.op == "COUNT") "1" else aggregate.init
-      val attrs = if (aggregate.attrs == List[String]("*")) a.flatMap(_.attrNames).distinct else aggregate.attrs
-      aggregatesIn = attrs.map(attr => ((attr -> new ParsedAggregate(operation, b.leftHalfOfExpr, init, b.rightHalfOfExpr)))).toMap
-    } else {
-      aggregatesIn = Map[String, ParsedAggregate]((a.head.attrNames.last -> new ParsedAggregate("CONST", b.leftHalfOfExpr, "1", b.rightHalfOfExpr)))
-    }
+    
+    val aggregate = b.agg.get
+    val operation = if (aggregate.op == "COUNT") "SUM" else aggregate.op
+    val init = if (aggregate.op == "COUNT") "1" else aggregate.init
+    val attrs = if (aggregate.attrs == List[String]("*")) a.flatMap(_.attrNames).distinct else aggregate.attrs
+    aggregatesIn = attrs.map(attr => ((attr -> new ParsedAggregate(operation, b.leftHalfOfExpr, init, b.rightHalfOfExpr)))).toMap
 
     (a,aggregatesIn)
   }
