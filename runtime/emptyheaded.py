@@ -97,31 +97,18 @@ def loadDB(path):
   environment.fromJSON(path)
 
 def main():
-  #db_config="/afs/cs.stanford.edu/u/caberger/config.json"
-  db_config="/Users/caberger/Documents/Research/data/databases/higgs/config.json"
+  comm="""
+  db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
+  createDB(db_config)
+  loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python_pruned")
+  query("Triangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=<<COUNT(*)>>.")
+  query("Flique(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);x=<<COUNT(*)>>.")
+  """
+  db_config="/afs/cs.stanford.edu/u/caberger/config.json"
+  createDB(db_config)
+  loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
+  query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
+  query("Barbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
 
-  #db_config="$EMPTYHEADED_HOME/examples/rdf/data/lubm1/config.json"
-  #createDB(db_config)
-  loadDB("/Users/caberger/Documents/Research/data/databases/higgs/db")
-
-  runQueryPlan("$EMPTYHEADED_HOME/query_compiler/config/pagerank.json")
-  a=fetchData("PageRank")
-  print a
-  #query("lubm6(a) :- type(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
-  #loadDB("$EMPTYHEADED_HOME/examples/graph/data/simple/db")
-
-  #query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
-  #a=fetchData("lubm6")
-  #print a
-  #query("Triangle(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c);m=<<COUNT(*)>>.")
-  #query("Flique(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);m=<<COUNT(*)>>.")
-
-  #query("Lollipop(a,b,c,x) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x).")
-  #a= fetchData("Lollipop")
-  #print a
-
-  #query("Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z).")
-  #a= fetchData("Barbell")
-  #print a
 
 if __name__ == "__main__": main()
