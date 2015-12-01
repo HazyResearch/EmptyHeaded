@@ -29,7 +29,6 @@ def fromJSON(path,env):
 
   libname = "loadDB"
   os.system("rm -rf "+env.config["database"])
-  time.sleep(1)
   os.system("cd $EMPTYHEADED_HOME/storage_engine && make clean && make emptyheaded NUM_THREADS=" + str(env.config["numThreads"]) + "&& cd -")
   cppgenerator.compileAndRun(
 		lambda: loadRelations(relations,env,libname),
@@ -41,7 +40,6 @@ def fromJSON(path,env):
     orderings = relation["orderings"]
     if len(orderings) == 1 and orderings[0] == "all":
       orderings = generateAllOrderings(len(attributes))
-    time.sleep(1)
     cppgenerator.compileAndRun(lambda: buildTrie(orderings,relation,env,"build_"+relation["name"]),
 			"build_"+relation["name"],env.config["memory"],[],"void*",str(env.config["numThreads"]))
     envRelations[relation["name"]] = { \

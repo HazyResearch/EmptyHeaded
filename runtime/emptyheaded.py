@@ -8,6 +8,7 @@ import codegenerator.cppgenerator as cppgenerator
 import codegenerator.cppexecutor as cppexecutor
 import os
 import re
+import sys
 
 hashindex = 0
 environment = codegenerator.env.Environment()
@@ -96,28 +97,69 @@ def loadDB(path):
   path = os.path.expandvars(path)+"/config.json"
   environment.fromJSON(path)
 
-def main():
-  comm="""
-  db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
-  #createDB(db_config)
-  loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python_pruned")
-  query("Triangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=<<COUNT(*)>>.")
-  query("Flique(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);x=<<COUNT(*)>>.")
+##methods for regression testing
+def pruned_graph(dataset,create):
+  print "DATASET: " + dataset
+  if create:
+    db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
+    os.system("sed -e 's/$DATASET/"+dataset+"/g' "+db_config+" > tmp.json")
+    createDB("tmp.json")
+  loadDB("/dfs/scratch0/caberger/datasets/"+dataset+"/db_python_pruned")
+  print "RUNNING QUERY: COUNT_Triangle"
+  query("CTriangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=<<COUNT(*)>>.")
+  print "RUNNING QUERY: Triangle"
+  query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
+  print "RUNNING QUERY: COUNT_Flique"
+  query("CFlique(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);x=<<COUNT(*)>>.")
+  #print "RUNNING QUERY: Flique"
+  #query("Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).")
 
-  db_config="/afs/cs.stanford.edu/u/caberger/config.json"
-  #createDB(db_config)
-  loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
-  query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
-  query("Barbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
-  """
+def duplicated_graph(dataset,create):
+  print "DATASET: " + dataset
+  if create:
+    db_config="/afs/cs.stanford.edu/u/caberger/config.json"
+    os.system("sed -e 's/$DATASET/"+dataset+"/g' "+db_config+" > tmp.json")
+    createDB("tmp.json")
+  loadDB("/dfs/scratch0/caberger/datasets/"+dataset+"/db_python")
+  print "RUNNING QUERY: COUNT_Lollipop"
+  query("CLollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
+  #print "RUNNING QUERY: Lollipop"
+  #query("Lollipop(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x).")
+  print "RUNNING QUERY: COUNT_Barbell"
+  query("CBarbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
+  #print "RUNNING QUERY: Barbell"
+  #query("Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z).")
 
-  db_config="/afs/cs.stanford.edu/u/caberger/rdf.json"
-  createDB(db_config)
+def lubm(create):
+  print "DATASET: LUBM10000"
+  if create:
+    db_config="/afs/cs.stanford.edu/u/caberger/rdf.json"
+    createDB(db_config)
   loadDB("/dfs/scratch0/caberger/datasets/lubm10000/db_python")
-  #query("Triangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=<<COUNT(*)>>.")
-  #query("Flique(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);x=<<COUNT(*)>>.")
+  print "RUNNING QUERY: LUBM1"
+  query("lubm1(a) :- takesCourse(a,b='http://www.Department0.University0.edu/GraduateCourse0'),type(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent').")
+  print "RUNNING QUERY: LUBM2"
+  query("lubm2(a,b,c) :- memberOf(a,b),subOrganizationOf(b,c),undegraduateDegreeFrom(a,c),type(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'),type(b,y='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'),type(c,z='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University').")
+  print "RUNNING QUERY: LUBM4"
+  query("lubm4(a,b,c,d) :- worksFor(a,e='http://www.Department0.University0.edu'),name(a,b),emailAddress(a,d),telephone(a,c),type(a,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#AssociateProfessor').")
+  print "RUNNING QUERY: LUBM6"
+  query("lubm6(a) :- type(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
+  print "RUNNING QUERY: LUBM7"
+  query("lubm7(a,b) :- teacherOf(c='http://www.Department0.University0.edu/AssociateProfessor0',b),takesCourse(a,b),type(b,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'),type(a,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
+  print "RUNNING QUERY: LUBM8"
+  query("lubm8(a,b,c) :- memberOf(a,b),emailAddress(a,c),type(a,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'),subOrganizationOf(b,e='http://www.University0.edu'),type(b,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
+  print "RUNNING QUERY: LUBM12"
+  query("lubm12(a,b) :- worksFor(a,b),type(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfessor'),subOrganizationOf(b,d='http://www.University0.edu'),type(b,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
 
+#mainly just used for regression testing
+def main(argv):
+  if argv[0] == "pruned":
+    pruned_graph(argv[1],False)
+  elif argv[0] == "duplicated":
+    duplicated_graph(argv[1],False)
+  elif argv[0] == "lubm":
+    lubm(False)
+  else:
+    print "Running"
 
-
-
-if __name__ == "__main__": main()
+if __name__ == "__main__": main(sys.argv[1:])
