@@ -28,6 +28,7 @@ struct TrieBuilder{
   Trie<A,M>* trie;
   std::vector<MemoryBuffer*> tmp_buffers;
   std::vector<NextLevel> next;
+  std::vector<const Set<hybrid>*> aggregate_sets;
   TrieBuilder<A,M>(Trie<A,M>* t_in,const size_t num_attributes);
   uint32_t cur_level;
   uint32_t tmp_level;
