@@ -99,16 +99,25 @@ def loadDB(path):
 def main():
   comm="""
   db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
-  createDB(db_config)
+  #createDB(db_config)
   loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python_pruned")
   query("Triangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=<<COUNT(*)>>.")
   query("Flique(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);x=<<COUNT(*)>>.")
-  """
+
   db_config="/afs/cs.stanford.edu/u/caberger/config.json"
-  createDB(db_config)
+  #createDB(db_config)
   loadDB("/dfs/scratch0/caberger/datasets/higgs/db_python")
   query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
   query("Barbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
+  """
+
+  db_config="/afs/cs.stanford.edu/u/caberger/rdf.json"
+  createDB(db_config)
+  loadDB("/dfs/scratch0/caberger/datasets/lubm10000/db_python")
+  #query("Triangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=<<COUNT(*)>>.")
+  #query("Flique(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);x=<<COUNT(*)>>.")
+
+
 
 
 if __name__ == "__main__": main()
