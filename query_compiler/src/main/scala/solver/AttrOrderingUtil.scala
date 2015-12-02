@@ -27,7 +27,7 @@ object AttrOrderingUtil {
     materialized:::notMaterialized
   }
 
-  def get_attribute_ordering(f_in:mutable.Set[EHNode],
+  private def get_attribute_ordering(f_in:mutable.Set[EHNode],
                              outputRelation:QueryRelation): List[String] = {
     var frontier = f_in
     var next_frontier = mutable.Set[EHNode]()
@@ -60,9 +60,11 @@ object AttrOrderingUtil {
     return attr.toList
   }
 
-  def getAttributeOrdering(myghd:GHDNode, queryRelations: List[QueryRelation], outputRelation:QueryRelation) : List[String] ={
+  def getAttributeOrdering(node:EHNode,
+                           queryRelations:List[QueryRelation],
+                           outputRelation:QueryRelation) : List[String] = {
     val ordering = get_attribute_ordering(
-      mutable.LinkedHashSet[EHNode](myghd),
+      mutable.LinkedHashSet[EHNode](node),
       outputRelation
     )
     partition_equality_selected(ordering, queryRelations.flatMap(queryRelation => queryRelation.attrs))

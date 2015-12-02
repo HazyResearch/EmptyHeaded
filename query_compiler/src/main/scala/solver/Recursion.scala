@@ -9,10 +9,10 @@ class Recursion(recurse:RecursionNode,
   override def doPostProcessingPass = {
     recurse.outputRelation = recurse.outputRel
     recurse.createAttrToRelsMapping
-    recurse.setAttributeOrdering(AttrOrderingUtil.get_attribute_ordering(mutable.Set[EHNode](recurse), recurse.outputRelation))
+    recurse.setAttributeOrdering(AttrOrderingUtil.getAttributeOrdering(recurse, recurse.join, recurse.outputRelation))
     baseCase.outputRelation = baseCase.outputRel
     baseCase.createAttrToRelsMapping
-    baseCase.setAttributeOrdering(AttrOrderingUtil.get_attribute_ordering(mutable.Set[EHNode](baseCase), baseCase.outputRelation))
+    baseCase.setAttributeOrdering(AttrOrderingUtil.getAttributeOrdering(baseCase, baseCase.join, baseCase.outputRelation))
   }
 
   override def getQueryPlan: QueryPlan = {
