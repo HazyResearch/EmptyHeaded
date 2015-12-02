@@ -439,7 +439,7 @@ void TrieBuilder<A,M>::foreach_aggregate(
   std::function<void(
     const uint32_t a_d)> f) {
 
-    Set<hybrid> *s =   aggregate_sets.at(tmp_level);
+    const Set<hybrid> *s = aggregate_sets.at(tmp_level);
     auto buf = tmp_buffers.at(tmp_level);
 
     tmp_level++;
