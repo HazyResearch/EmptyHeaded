@@ -30,8 +30,8 @@ def get_query_times(filename):
   return -1.0
 
 def main():
-  os.system("mkdir -p " + logdir)  
   os.system("rm -rf " + logdir + "/")
+  os.system("mkdir -p " + logdir)  
 
   datasets = ["g_plus","higgs","socLivejournal","orkut","cid-patents","twitter2010"]
   for dataset in datasets:
