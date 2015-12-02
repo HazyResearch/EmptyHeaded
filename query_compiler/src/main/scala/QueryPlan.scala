@@ -4,26 +4,26 @@ import DunceCap.attr.Attr
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json._
 import scala.io._
-import net.liftweb.json.Serialization.{read, write, writePretty}
+import net.liftweb.json.Serialization.writePretty
 
-case class QueryPlans(val queryPlans:List[QueryPlan])
-
-case class QueryPlan(val query_type:String,
-                val relations:List[QueryPlanRelationInfo],
-                val output:QueryPlanOutputInfo,
-                val ghd:List[QueryPlanBagInfo],
-                val topdown:List[TopDownPassIterator]) {
-
+case class QueryPlans(val queryPlans:List[QueryPlan]) {
   override def toString(): String = {
     implicit val formats = DefaultFormats
     writePretty(this)
   }
+
   def toJSON(): Unit = {
     val filename = "query.json"
     implicit val formats = Serialization.formats(NoTypeHints)
     scala.tools.nsc.io.File(filename).writeAll(writePretty(this))
   }
 }
+
+case class QueryPlan(val query_type:String,
+                val relations:List[QueryPlanRelationInfo],
+                val output:QueryPlanOutputInfo,
+                val ghd:List[QueryPlanBagInfo],
+                val topdown:List[TopDownPassIterator])
 
 object QP {
   def fromJSON(filename:String) : QueryPlans = {

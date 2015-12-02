@@ -33,7 +33,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   )
 
   test("attrNameAgnosticRelationEquals returns mapping of attrs that would have to be true if these two rels are going to considered equal") {
-    val result = GHD.attrNameAgnosticRelationEquals(
+    val result = PlanUtil.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("d", "f")),
@@ -46,7 +46,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   }
 
   test("attrNameAgnosticRelationEquals can map attrs to each other if they have same selections & aggs") {
-    val result = GHD.attrNameAgnosticRelationEquals(
+    val result = PlanUtil.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a")),
       new QueryRelation("R", List[AttrInfo](
         ("a", "=", "2"),
@@ -57,8 +57,8 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
         ("f", "", ""))),
       Map[Attr, Attr](),
       Map[String, ParsedAggregate](
-        "b" -> ParsedAggregate("+", "COUNT", "1"),
-        "f" -> ParsedAggregate("+", "COUNT", "1")
+        "b" -> ParsedAggregate("+", "COUNT", "1", ""),
+        "f" -> ParsedAggregate("+", "COUNT", "1","")
       ))
 
     assert(result.isDefined)
@@ -66,7 +66,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   }
 
   test("attrNameAgnosticRelationEquals doesn't map attrs to each other if they have different selections") {
-    val result = GHD.attrNameAgnosticRelationEquals(
+    val result = PlanUtil.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a")),
       new QueryRelation("R", List[AttrInfo](
         ("a", "=", "2"),
@@ -82,15 +82,15 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   }
 
   test("attrNameAgnosticRelationEquals doesn't map attrs to each other if they have different aggregations") {
-    val result = GHD.attrNameAgnosticRelationEquals(
+    val result = PlanUtil.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("d")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("d", "f")),
       Map[Attr, Attr](),
       Map[String, ParsedAggregate](
-        "a" -> ParsedAggregate("+", "COUNT", "1"),
-        "f" -> ParsedAggregate("+", "COUNT", "1")
+        "a" -> ParsedAggregate("+", "COUNT", "1", ""),
+        "f" -> ParsedAggregate("+", "COUNT", "1", "")
       ))
 
     assert(result.isEmpty)
@@ -107,7 +107,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
 
   test("Can eliminate duplicate bags correctly in directed barbell query") {
     val rootNodes = GHDSolver.getMinFHWDecompositions(BARBELL);
-    val agg = ParsedAggregate("+", "COUNT", "1")
+    val agg = ParsedAggregate("+", "COUNT", "1", "")
     val candidates = rootNodes.map(r => new GHD(
       r,
       BARBELL,
@@ -126,7 +126,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   test("Can eliminate duplicate bags correctly in undirected barbell query") {
     //println(Calendar.getInstance().getTime())
     val rootNodes = GHDSolver.getMinFHWDecompositions(UNDIRECTED_BARBELL);
-    val agg = ParsedAggregate("+", "COUNT", "1")
+    val agg = ParsedAggregate("+", "COUNT", "1", "")
     //println(Calendar.getInstance().getTime())
     val candidates = rootNodes.map(r => new GHD(
       r,
@@ -166,7 +166,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
         ("x", "=", "2"),
         ("m", "", ""),
         ("z", "", "")))))
-    val agg = ParsedAggregate("+", "COUNT", "1")
+    val agg = ParsedAggregate("+", "COUNT", "1", "")
     val joinAggs =  Map[String, ParsedAggregate]("e" -> agg, "n" -> agg)
 
     val root = new GHDNode(List[QueryRelation](QueryRelationFactory.createQueryRelationWithNoSelects(List[String]("b", "y"))))
@@ -206,7 +206,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
         ("k", "=", "2"),
         ("m", "", ""),
         ("z", "", "")))))
-    val agg = ParsedAggregate("+", "COUNT", "1")
+    val agg = ParsedAggregate("+", "COUNT", "1", "")
     val joinAggs =  Map[String, ParsedAggregate]("e" -> agg, "n" -> agg)
     child1.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b", "y"), Set())
     child2.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b", "y"), Set())

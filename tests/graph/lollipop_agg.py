@@ -5,7 +5,7 @@ class ResultError(Exception):
 
 def main():
   emptyheaded.loadDB("$EMPTYHEADED_HOME/examples/graph/data/facebook/db")
-  emptyheaded.query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
+  emptyheaded.query("Lollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=[<<COUNT(*)>>].")
 
   data = emptyheaded.fetchData("Lollipop")
   print data.iloc[0][0]
