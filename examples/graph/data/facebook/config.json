@@ -24,7 +24,7 @@
     },
      {
       "name": "InvDegree",
-      "source": "$EMPTYHEADED_HOME/examples/graph/data/facebook/duplicated.tsv",
+      "source": "$EMPTYHEADED_HOME/examples/graph/data/facebook/inv_degree.tsv",
       "annotation":"float",
       "attributes":[
         {

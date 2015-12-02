@@ -586,7 +586,7 @@ object CPPGenerator {
         a.operation match {
           case "CONST" => {
             if(a.expression != "")
-              code.append(s"""annotation_${head.name} = ${a.expression};""")
+              code.append(s"""annotation_${head.name} = ${a.expression} ${a.init};""")
             else 
               throw new IllegalArgumentException("CONST annotation must have expression")
           }
