@@ -439,10 +439,9 @@ void TrieBuilder<A,M>::foreach_aggregate(
   std::function<void(
     const uint32_t a_d)> f) {
 
-    uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_address(0);
-    Set<hybrid> *s = (Set<hybrid>*)place;
-
+    Set<hybrid> *s =   aggregate_sets.at(tmp_level);
     auto buf = tmp_buffers.at(tmp_level);
+
     tmp_level++;
     s->foreach(sizeof(Set<hybrid>),buf,f);
     tmp_level--;
