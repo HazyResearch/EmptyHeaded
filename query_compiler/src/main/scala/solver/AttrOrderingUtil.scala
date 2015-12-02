@@ -51,14 +51,7 @@ object AttrOrderingUtil {
         }
       }
 
-      //put those in the result first
-      // materialized attrs first, in the order that they're in the materialized results
-      val cur_attrs_sorted = level_attr.sorted // why do we sort his again?
-      cur_attrs_sorted.foreach{ a =>
-        if(!attr.contains(a)){
-          attr += a
-        }
-      }
+      attr ++= level_attr
 
       var tmp = frontier
       frontier = next_frontier
