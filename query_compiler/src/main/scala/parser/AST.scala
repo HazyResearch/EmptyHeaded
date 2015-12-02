@@ -13,16 +13,22 @@ case class ASTQueryStatement(lhs:QueryRelation,
                              join:List[QueryRelation],
                              joinAggregates:Map[String,ParsedAggregate]) extends ASTStatement {
   // TODO (sctu) : ignoring everything except for join, joinAggregates for now
-
+  def dependsOn(statement: ASTQueryStatement): Boolean = {
+    val namesInThisStatement = (join.map(rels => rels.name)
+      :::joinAggregates.values.map(parsedAgg => parsedAgg.expressionLeft+parsedAgg.expressionRight).toList).toSet
+    namesInThisStatement.find(name => name.contains(statement.lhs.name)).isDefined
+  }
   def computePlan(config:Config, isRecursive:Boolean): QueryPlan = {
     val annotationSetSuccess = join.map(rel => Environment.setAnnotationAccordingToConfig(rel))
+    println(join)
+    println(annotationSetSuccess)
     if (annotationSetSuccess.find(b => !b).isDefined) {
       throw RelationNotFoundException("TODO: fill in with a better explanation")
     }
 
     if (!config.nprrOnly) {
-      val rootNodes = GHDSolver.getMinFHWDecompositions(join);
-      val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs));
+      val rootNodes = GHDSolver.getMinFHWDecompositions(join)
+      val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs))
       candidates.map(c => c.doPostProcessingPass())
       val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(
         HeuristicUtils.getGHDsOfMinHeight(HeuristicUtils.getGHDsWithMinBags(candidates)))

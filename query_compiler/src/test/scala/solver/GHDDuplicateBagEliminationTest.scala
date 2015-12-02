@@ -33,7 +33,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   )
 
   test("attrNameAgnosticRelationEquals returns mapping of attrs that would have to be true if these two rels are going to considered equal") {
-    val result = GHD.attrNameAgnosticRelationEquals(
+    val result = PlanUtil.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("d", "f")),
@@ -46,7 +46,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   }
 
   test("attrNameAgnosticRelationEquals can map attrs to each other if they have same selections & aggs") {
-    val result = GHD.attrNameAgnosticRelationEquals(
+    val result = PlanUtil.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a")),
       new QueryRelation("R", List[AttrInfo](
         ("a", "=", "2"),
@@ -66,7 +66,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   }
 
   test("attrNameAgnosticRelationEquals doesn't map attrs to each other if they have different selections") {
-    val result = GHD.attrNameAgnosticRelationEquals(
+    val result = PlanUtil.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a")),
       new QueryRelation("R", List[AttrInfo](
         ("a", "=", "2"),
@@ -82,7 +82,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   }
 
   test("attrNameAgnosticRelationEquals doesn't map attrs to each other if they have different aggregations") {
-    val result = GHD.attrNameAgnosticRelationEquals(
+    val result = PlanUtil.attrNameAgnosticRelationEquals(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
       QueryRelationFactory.createQueryRelationWithNoSelects(List("d")),

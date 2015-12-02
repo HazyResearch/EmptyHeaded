@@ -10,6 +10,7 @@ package object attr {
   type SelectionOp = String
   type SelectionVal = String
   type AttrInfo = (Attr, SelectionOp, SelectionVal)
+  type AggInfo = Map[String, ParsedAggregate]
 }
 
 case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*") {
@@ -36,7 +37,7 @@ case class ParsedAggregate(val op:String,
   val expression = if (expressionRight.isEmpty) expressionLeft  else expressionLeft + "agg" + expressionRight
 }
 
-class ConverganceCriteria(val converganceType:String, val converganceOp:String, val converganceCondition:String)
+case class ConverganceCriteria(val converganceType:String, val converganceOp:String, val converganceCondition:String)
 
 
 class AggregateExpression(val op:String,
@@ -68,10 +69,10 @@ object DCParser extends RegexParsers {
         Environment.startScope()
         parsedStatements.foreach(parsedStatement => Environment.addRelation(parsedStatement.lhs))
         println(parsedStatements)
-        //val graph = EvalGraph(parsedStatements)
-        //val plans = graph.computePlan(config)
+        val graph = EvalGraph(parsedStatements)
+        val plans = graph.computePlan(config)
         Environment.endScope()
-        return List()
+        return plans
       }
     }
   }

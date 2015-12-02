@@ -18,6 +18,7 @@ case class QueryPlan(val query_type:String,
     implicit val formats = DefaultFormats
     writePretty(this)
   }
+
   def toJSON(): Unit = {
     val filename = "query.json"
     implicit val formats = Serialization.formats(NoTypeHints)
