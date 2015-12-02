@@ -47,22 +47,37 @@ object CPPGenerator {
       cppCode.append("auto query_timer = timer::start_clock();")
       val topDown = qp.topdown.length > 0
       var i = 1
-      qp.ghd.foreach(bag => {
-        val outputName = 
-          if((i == qp.ghd.length) && (!topDown))
-            Some(qp.output.name)
-          else 
-            None
-        val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
-        intermediateRelations += ((bag.name -> bagOutput))
-        outputAttributes = bagOutput
-        cppCode.append(bagCode)
-        i += 1
-      })
-      if(topDown){
-        val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
-        cppCode.append(bagCode)
-        outputAttributes = bagOutput
+      val single_source_tc = true
+      if(!single_source_tc){
+        qp.ghd.foreach(bag => {
+          val outputName = 
+            if((i == qp.ghd.length) && (!topDown))
+              Some(qp.output.name)
+            else 
+              None
+          val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
+          intermediateRelations += ((bag.name -> bagOutput))
+          outputAttributes = bagOutput
+          cppCode.append(bagCode)
+          i += 1
+        })
+        if(topDown){
+          val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
+          cppCode.append(bagCode)
+          outputAttributes = bagOutput
+        }
+      } else{
+        println("SHORTEST PATHS")
+        includeCode.append("""#include "TransitiveClosure.hpp" """)
+        cppCode.append(s"""
+          tc::unweighted_single_source<hybrid,ParMemoryBuffer,int>(
+            Encoding_node->value_to_key.at(83222), // from encoding
+            Encoding_node->num_distinct, //from encoding
+            Trie_Edge_0_1, //input graph
+            Trie_SSSP_0, //output vector
+            1,
+            [&](int a, int b){return a+b;});
+          """)
       }
       cppCode.append(emitEndQuery(qp.output))
       cppCode.append("}")

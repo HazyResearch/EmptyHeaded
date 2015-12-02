@@ -265,7 +265,6 @@ inline void range_bitset::foreach(
     const size_t num_data_words = get_number_of_words(number_of_bytes);
     const uint64_t offset = ((uint64_t*)A)[0];
     const uint64_t* A64_data = (uint64_t*)(A+sizeof(uint64_t));
-
     for(size_t i = 0; i < num_data_words; i++){
       const uint64_t cur_word = *A64_data;
       if(cur_word != 0) {
