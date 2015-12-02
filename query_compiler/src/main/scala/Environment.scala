@@ -18,6 +18,8 @@ case class RelationNotFoundException(what:String)  extends Exception(what)
 
 object Environment {
   var config:DatabaseConfig = null
+  /*TODO: (sctu) for now we never update config's schemas */
+  /*TODO: (sctu) for now we only check name and length of schema */
   var schemaStack:Stack[mutable.Map[String, Schema]] = Stack[mutable.Map[String, Schema]]()
 
   def fromJSON(filename:String) = {
@@ -26,6 +28,7 @@ object Environment {
     config = parse(fileContents).extract[DatabaseConfig]
     schemaStack.push(mutable.Map() ++ config.schemas)
   }
+
   def toJSON() = {
     val filename = config.database+"/config.json"
     implicit val formats = Serialization.formats(NoTypeHints)

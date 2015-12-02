@@ -53,7 +53,7 @@ class Recursion(recurse:RecursionNode,
 case class RecursionNode(val join:List[QueryRelation],
                          val joinAggregates:AggInfo,
                          val outputRel:QueryRelation,
-                         val convergenceCriteria:Option[ConverganceCriteria]) extends EHNode(join) {
+                         val convergenceCriteria:Option[ASTConvergenceCondition]) extends EHNode(join) {
   var bagName: String = null
 
   def getBagInfo(joinAggregates:Map[String,ParsedAggregate]): QueryPlanBagInfo = {
@@ -69,12 +69,15 @@ case class RecursionNode(val join:List[QueryRelation],
   }
 
   private def getConvergenceInfo(): Option[QueryPlanRecursion] = {
-    convergenceCriteria.map(cc => QueryPlanRecursion(cc.converganceType, cc.converganceOp, cc.converganceCondition))
+    convergenceCriteria.map(cc => {
+      cc match {
+        case ASTEpsilonCondition(x) => QueryPlanRecursion("epsilon", "=", x.toString)
+        case ASTItersCondition(x) => QueryPlanRecursion("iterations", "=", x.toString)
+      }
+    })
   }
 
   override def setAttributeOrdering(ordering: List[Attr]): Unit = {
-    println("set attribute ordering")
-    println(ordering)
     attributeOrdering = ordering
   }
 }

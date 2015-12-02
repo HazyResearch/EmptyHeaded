@@ -31,8 +31,6 @@ object PlanUtil {
   }
 
   def getNumericalOrdering(attributeOrdering:List[Attr], rel:QueryRelation): List[Int] = {
-    println(attributeOrdering)
-    println(rel)
     attributeOrdering.map(a => rel.attrNames.indexOf(a)).filter(pos => {
       pos != -1
     })

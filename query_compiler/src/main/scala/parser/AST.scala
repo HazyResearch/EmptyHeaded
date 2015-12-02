@@ -20,8 +20,6 @@ case class ASTQueryStatement(lhs:QueryRelation,
   }
   def computePlan(config:Config, isRecursive:Boolean): QueryPlan = {
     val annotationSetSuccess = join.map(rel => Environment.setAnnotationAccordingToConfig(rel))
-    println(join)
-    println(annotationSetSuccess)
     if (annotationSetSuccess.find(b => !b).isDefined) {
       throw RelationNotFoundException("TODO: fill in with a better explanation")
     }

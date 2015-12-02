@@ -26,7 +26,7 @@ case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotat
   }
 }
 
-class RecursionStatement(val functionName:String, val inputArgument:QueryRelation, val convergance:ConverganceCriteria)
+class RecursionStatement(val functionName:String, val inputArgument:QueryRelation, val convergance:ASTConvergenceCondition)
 
 class TransitiveClosureStatement(val join:List[QueryRelation])
 
@@ -36,9 +36,6 @@ case class ParsedAggregate(val op:String,
                            val expressionRight:String) {
   val expression = if (expressionRight.isEmpty) expressionLeft  else expressionLeft + "agg" + expressionRight
 }
-
-case class ConverganceCriteria(val converganceType:String, val converganceOp:String, val converganceCondition:String)
-
 
 class AggregateExpression(val op:String,
                           val attrs:List[String],
@@ -68,7 +65,6 @@ object DCParser extends RegexParsers {
       case DCParser.Success(parsedStatements, _) => {
         Environment.startScope()
         parsedStatements.foreach(parsedStatement => Environment.addRelation(parsedStatement.lhs))
-        println(parsedStatements)
         val graph = EvalGraph(parsedStatements)
         val plans = graph.computePlan(config)
         Environment.endScope()

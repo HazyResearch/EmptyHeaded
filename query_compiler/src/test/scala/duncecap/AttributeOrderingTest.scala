@@ -5,7 +5,7 @@ import org.scalatest.FunSuite
 
 class AttributeOrderingTest extends FunSuite {
   test("Can reorder attributes so that equality selected ones are at the front") {
-    val partitioned = GHDSolver.partition_equality_selected(
+    val partitioned = AttrOrderingUtil.partition_equality_selected(
       List[Attr]("a","b","x","c", "y", "z"),
       List[(Attr, SelectionOp, SelectionVal)](
         ("a", "", ""),
@@ -32,7 +32,7 @@ class AttributeOrderingTest extends FunSuite {
       QueryRelationFactory.createQueryRelationWithEqualitySelect(List[Attr]("c"), List[Attr]("z"))))
     rootBag.children = List(child1, child2, child3)
 
-    val ordering = GHDSolver.getAttributeOrdering(
+    val ordering = AttrOrderingUtil.getAttributeOrdering(
       rootBag,
       rootBag.rels:::child1.rels:::child2.rels:::child3.rels,
       QueryRelationFactory.createQueryRelationWithNoSelects(List[Attr]("a", "b", "c")))

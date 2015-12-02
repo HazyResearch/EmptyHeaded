@@ -57,8 +57,8 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
         ("f", "", ""))),
       Map[Attr, Attr](),
       Map[String, ParsedAggregate](
-        "b" -> ParsedAggregate("+", "COUNT", "1"),
-        "f" -> ParsedAggregate("+", "COUNT", "1")
+        "b" -> ParsedAggregate("+", "COUNT", "1", ""),
+        "f" -> ParsedAggregate("+", "COUNT", "1","")
       ))
 
     assert(result.isDefined)
@@ -89,8 +89,8 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
       QueryRelationFactory.createQueryRelationWithNoSelects(List("d", "f")),
       Map[Attr, Attr](),
       Map[String, ParsedAggregate](
-        "a" -> ParsedAggregate("+", "COUNT", "1"),
-        "f" -> ParsedAggregate("+", "COUNT", "1")
+        "a" -> ParsedAggregate("+", "COUNT", "1", ""),
+        "f" -> ParsedAggregate("+", "COUNT", "1", "")
       ))
 
     assert(result.isEmpty)
@@ -107,7 +107,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
 
   test("Can eliminate duplicate bags correctly in directed barbell query") {
     val rootNodes = GHDSolver.getMinFHWDecompositions(BARBELL);
-    val agg = ParsedAggregate("+", "COUNT", "1")
+    val agg = ParsedAggregate("+", "COUNT", "1", "")
     val candidates = rootNodes.map(r => new GHD(
       r,
       BARBELL,
@@ -126,7 +126,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
   test("Can eliminate duplicate bags correctly in undirected barbell query") {
     //println(Calendar.getInstance().getTime())
     val rootNodes = GHDSolver.getMinFHWDecompositions(UNDIRECTED_BARBELL);
-    val agg = ParsedAggregate("+", "COUNT", "1")
+    val agg = ParsedAggregate("+", "COUNT", "1", "")
     //println(Calendar.getInstance().getTime())
     val candidates = rootNodes.map(r => new GHD(
       r,
@@ -166,7 +166,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
         ("x", "=", "2"),
         ("m", "", ""),
         ("z", "", "")))))
-    val agg = ParsedAggregate("+", "COUNT", "1")
+    val agg = ParsedAggregate("+", "COUNT", "1", "")
     val joinAggs =  Map[String, ParsedAggregate]("e" -> agg, "n" -> agg)
 
     val root = new GHDNode(List[QueryRelation](QueryRelationFactory.createQueryRelationWithNoSelects(List[String]("b", "y"))))
@@ -206,7 +206,7 @@ class GHDDuplicateBagEliminationTest extends FunSuite {
         ("k", "=", "2"),
         ("m", "", ""),
         ("z", "", "")))))
-    val agg = ParsedAggregate("+", "COUNT", "1")
+    val agg = ParsedAggregate("+", "COUNT", "1", "")
     val joinAggs =  Map[String, ParsedAggregate]("e" -> agg, "n" -> agg)
     child1.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b", "y"), Set())
     child2.computeProjectedOutAttrsAndOutputRelation("int", Set[Attr]("b", "y"), Set())

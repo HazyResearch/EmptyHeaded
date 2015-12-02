@@ -46,11 +46,7 @@ case class EvalGraphNode(val statement:ASTQueryStatement, val baseCase:Option[AS
   var deps: List[EvalGraphNode] = List()
   def computePlan(config:Config): List[QueryPlan] = {
     val thisPlan = if (baseCase.isDefined) {
-      val converganceCriteria =  statement.convergence.get match {
-        case ASTEpsilonCondition(x) => ConverganceCriteria("epsilon", "=", x.toString)
-        case ASTItersCondition(x) => ConverganceCriteria("iterations", "=", x.toString)
-      }
-      val recursion = (new Recursion(RecursionNode(statement.join, statement.joinAggregates, statement.lhs, Some(converganceCriteria)),
+      val recursion = (new Recursion(RecursionNode(statement.join, statement.joinAggregates, statement.lhs, Some(statement.convergence.get)),
         RecursionNode(baseCase.get.join, baseCase.get.joinAggregates, baseCase.get.lhs, None)))
       recursion.doPostProcessingPass
       recursion.getQueryPlan
