@@ -106,11 +106,11 @@ def pruned_graph(dataset,create):
     createDB("tmp.json")
   loadDB("/dfs/scratch0/caberger/datasets/"+dataset+"/db_python_pruned")
   print "RUNNING QUERY: COUNT_Triangle"
-  query("CTriangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=<<COUNT(*)>>.")
+  query("CTriangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=[<<COUNT(*)>>].")
   print "RUNNING QUERY: Triangle"
   query("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).")
   print "RUNNING QUERY: COUNT_Flique"
-  query("CFlique(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);x=<<COUNT(*)>>.")
+  query("CFlique(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);x=[<<COUNT(*)>>].")
   #print "RUNNING QUERY: Flique"
   #query("Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).")
 
@@ -122,11 +122,11 @@ def duplicated_graph(dataset,create):
     createDB("tmp.json")
   loadDB("/dfs/scratch0/caberger/datasets/"+dataset+"/db_python")
   print "RUNNING QUERY: COUNT_Lollipop"
-  query("CLollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=<<COUNT(*)>>.")
+  query("CLollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=[<<COUNT(*)>>].")
   #print "RUNNING QUERY: Lollipop"
   #query("Lollipop(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x).")
   print "RUNNING QUERY: COUNT_Barbell"
-  query("CBarbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=<<COUNT(*)>>.")
+  query("CBarbell(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z);m=[<<COUNT(*)>>].")
   #print "RUNNING QUERY: Barbell"
   #query("Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z).")
 
