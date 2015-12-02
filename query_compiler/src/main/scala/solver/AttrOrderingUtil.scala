@@ -4,9 +4,6 @@ import DunceCap.attr._
 
 import scala.collection.mutable
 
-/**
- * Created by sctu on 12/1/15.
- */
 object AttrOrderingUtil {
 
   /**

@@ -43,6 +43,7 @@ class Recursion(recurse:RecursionNode,
     recurse.join.foreach(rel => {
       if (rel.name == baseCase.outputRelation.name) {
         rel.name = baseCase.bagName
+        rel.annotationType = baseCase.outputRel.annotationType
       }
     })
     val recurseBag = recurse.getBagInfo(recurse.joinAggregates)
@@ -71,8 +72,8 @@ case class RecursionNode(val join:List[QueryRelation],
   private def getConvergenceInfo(): Option[QueryPlanRecursion] = {
     convergenceCriteria.map(cc => {
       cc match {
-        case ASTEpsilonCondition(x) => QueryPlanRecursion("epsilon", "=", x.toString)
-        case ASTItersCondition(x) => QueryPlanRecursion("iterations", "=", x.toString)
+        case ASTEpsilonCondition(x) => QueryPlanRecursion("base_case", "epsilon", x.toString)
+        case ASTItersCondition(x) => QueryPlanRecursion("base_case", "iterations", x.toString)
       }
     })
   }
