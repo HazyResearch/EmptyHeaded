@@ -21,7 +21,7 @@ TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in, const size_t num_attributes){
   cur_level = 1;
 
   tmp_level = 0;
-  tmp_buffers.resize(num_attributes);
+  tmp_buffers.resize(num_attributes); 
   aggregate_sets.resize(num_attributes);
   for(size_t i = 0; i < num_attributes; i++){
     tmp_buffers.at(i) = new MemoryBuffer(2);
@@ -439,9 +439,7 @@ void TrieBuilder<A,M>::foreach_aggregate(
   std::function<void(
     const uint32_t a_d)> f) {
 
-    uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_address(0);
-    Set<hybrid> *s = (Set<hybrid>*)place;
-
+    const Set<hybrid> *s = aggregate_sets.at(tmp_level);
     auto buf = tmp_buffers.at(tmp_level);
     tmp_level++;
     s->foreach(sizeof(Set<hybrid>),buf,f);
