@@ -21,7 +21,8 @@ TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in, const size_t num_attributes){
   cur_level = 1;
 
   tmp_level = 0;
-  tmp_buffers.resize(num_attributes);
+  tmp_buffers.resize(num_attributes); 
+  aggregate_sets.resize(num_attributes);
   for(size_t i = 0; i < num_attributes; i++){
     tmp_buffers.at(i) = new MemoryBuffer(2);
   }
@@ -213,10 +214,14 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
   //fixme
   assert(tb1 != NULL);
   if(tb1 == NULL){
+    uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_next(sizeof(Set<hybrid>));
+    memset(place,(uint8_t)0,sizeof(Set<hybrid>));
+    aggregate_sets.at(tmp_level) = (const Set<hybrid>*)place;
     return 0;
   }
 
   const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)tb1+sizeof(TrieBlock<hybrid,M>));
+  aggregate_sets.at(tmp_level) = s1;
   return s1->cardinality;
 }
 
@@ -232,6 +237,7 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
     //clear the memory and move on (will set num bytes and cardinality to 0)
     uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_next(sizeof(Set<hybrid>));
     memset(place,(uint8_t)0,sizeof(Set<hybrid>));
+    aggregate_sets.at(tmp_level) = (const Set<hybrid>*)place;
     return 0;
   }
 
@@ -251,6 +257,7 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
           r, 
           s1,
           s2);
+  aggregate_sets.at(tmp_level) = r;
   return r->cardinality;
 }
 
@@ -262,16 +269,24 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
   //make a pass over the sets, find the minimum set
   //find the allocation size
   const TrieBlock<hybrid,M> *head = isets->at(0);
-  if(head == NULL)
+  if(head == NULL){
+    uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_next(sizeof(Set<hybrid>));
+    memset(place,(uint8_t)0,sizeof(Set<hybrid>));
+    aggregate_sets.at(tmp_level) = (const Set<hybrid>*)place;
     return 0;
+  }
   Set<hybrid>* s1 = (Set<hybrid>*)((uint8_t*)head+sizeof(TrieBlock<hybrid,M>));
   size_t min_set = s1->cardinality;
   size_t alloc_size = s1->number_of_bytes;
   size_t min_index = 0;
   for(size_t i = 1; i < isets->size(); i++){
     const TrieBlock<hybrid,M> *tmp_head_set = isets->at(i);
-    if(tmp_head_set == NULL)
+    if(tmp_head_set == NULL){
+      uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_next(sizeof(Set<hybrid>));
+      memset(place,(uint8_t)0,sizeof(Set<hybrid>));
+      aggregate_sets.at(tmp_level) = (const Set<hybrid>*)place;
       return 0;
+    }
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
     alloc_size = std::max(alloc_size,tmp_set->number_of_bytes);
     min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
@@ -316,6 +331,7 @@ size_t TrieBuilder<A,M>::build_aggregated_set(
             sn,
             (const Set<hybrid>*)operator_set);
   }
+  aggregate_sets.at(tmp_level) = result_set;
   return result_set->cardinality;
 }
 
@@ -423,9 +439,7 @@ void TrieBuilder<A,M>::foreach_aggregate(
   std::function<void(
     const uint32_t a_d)> f) {
 
-    uint8_t* place = (uint8_t*)tmp_buffers.at(tmp_level)->get_address(0);
-    Set<hybrid> *s = (Set<hybrid>*)place;
-
+    const Set<hybrid> *s = aggregate_sets.at(tmp_level);
     auto buf = tmp_buffers.at(tmp_level);
     tmp_level++;
     s->foreach(sizeof(Set<hybrid>),buf,f);
