@@ -15,6 +15,8 @@ python tests/graph/createSimpleDB.py
 python tests/graph/lollipop_materialized.py
 python tests/graph/barbell_materialized.py
 
+python tests/graph/pagerank.py
+
 python tests/fft/createFFTDB.py
 python tests/fft/readFFT.py
 
