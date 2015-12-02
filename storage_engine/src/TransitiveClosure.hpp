@@ -65,7 +65,7 @@ namespace tc {
             //union in element and return index if element does not exist in the set
             // and return -1 if it exists in the set (no work to do in the union)
             if(ops::atomic_union(visited->get_set(),l2)){
-              visited->template set_annotation<A>(join(visited->template get_annotation<A>(0,f),init),0,l2); //index does not matter this is dense
+              visited->template set_annotation<A>(join(visited->template get_annotation<A>(0,f)),0,l2); //index does not matter this is dense
               const size_t buffer_index = frontier_sizes[tid*PADDING];
               frontier_buffer[tid][buffer_index] = l2;
               frontier_sizes[tid*PADDING]++;
@@ -85,12 +85,14 @@ namespace tc {
       iteration++;
     }
 
-    range_bitset::set_indices(
+    size_t numvis = range_bitset::set_indices(
       visited->get_const_set()->get_data(),
       visited->get_const_set()->cardinality,
       visited->get_const_set()->number_of_bytes,
       visited->get_const_set()->type);
     
+    visited->get_set()->cardinality = numvis;
+    output->num_rows = numvis;
     /*
     output->foreach([&](std::vector<uint32_t> *v, int a){
       std::cout << v->at(0) << "\t" << a << std::endl;

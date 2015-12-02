@@ -19,6 +19,10 @@ object CPPGenerator {
     return ghd
   }
 
+  def detectTransitiveClosure(qp:QueryPlan) : Boolean = {
+    return false
+  }
+
   def run(qps:QueryPlans) = {
     //get distinct relations we need to load
     //dump output at the end, rest just in a loop
@@ -47,7 +51,7 @@ object CPPGenerator {
       cppCode.append("auto query_timer = timer::start_clock();")
       val topDown = qp.topdown.length > 0
       var i = 1
-      val single_source_tc = true
+      val single_source_tc = detectTransitiveClosure(qp)
       if(!single_source_tc){
         qp.ghd.foreach(bag => {
           val outputName = 
@@ -67,16 +71,23 @@ object CPPGenerator {
           outputAttributes = bagOutput
         }
       } else{
-        println("SHORTEST PATHS")
+        val base_case = qp.ghd.head
+        val input = base_case.relations.head.name + "_" + base_case.relations.head.ordering.mkString("_")
+        val output = qp.output.name + "_" + qp.output.ordering.mkString("_")
+        val init = base_case.nprr.head.aggregation.get.init
+        val source = base_case.nprr.head.selection.head.expression
+        val expression = qp.ghd.last.nprr.last.aggregation.get.expression
+        val encoding = Environment.config.schemas(base_case.relations.head.name).attributes.map(_.encoding).distinct.head
+        //get encoding
         includeCode.append("""#include "TransitiveClosure.hpp" """)
         cppCode.append(s"""
-          tc::unweighted_single_source<hybrid,ParMemoryBuffer,int>(
-            Encoding_node->value_to_key.at(83222), // from encoding
-            Encoding_node->num_distinct, //from encoding
-            Trie_Edge_0_1, //input graph
-            Trie_SSSP_0, //output vector
-            1,
-            [&](int a, int b){return a+b;});
+          tc::unweighted_single_source<hybrid,ParMemoryBuffer,${qp.output.annotation}>(
+            Encoding_${encoding}->value_to_key.at(${source}), // from encoding
+            Encoding_${encoding}->num_distinct, //from encoding
+            Trie_${input}, //input graph
+            Trie_${output}, //output vector
+            ${init},
+            [&](${qp.output.annotation} a){return ${expression} a;});
           """)
       }
       cppCode.append(emitEndQuery(qp.output))
