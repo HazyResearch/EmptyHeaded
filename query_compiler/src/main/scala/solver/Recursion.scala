@@ -16,16 +16,35 @@ class Recursion(recurse:RecursionNode,
   }
 
   override def getQueryPlan: QueryPlan = {
+    baseCase.bagName = "base_case"
+    val missingRel1 = baseCase.join.find(rel => !Environment.setAnnotationAccordingToConfig(rel))
+    if (missingRel1.isDefined) {
+      throw RelationNotFoundException(missingRel1.get.name)
+    }
+
+    recurse.bagName = "recursion"
+    recurse.join.foreach(rel => {
+      if (rel.name == baseCase.outputRelation.name) {
+        rel.name = baseCase.bagName
+        rel.annotationType = baseCase.outputRel.annotationType
+      }
+    })
+    val nonBaseRels = recurse.join.filter(rel => rel.name != "base_case")
+    val missingRel2 = nonBaseRels.find(rel => !Environment.setAnnotationAccordingToConfig(rel))
+    if (missingRel2.isDefined) {
+      throw RelationNotFoundException(missingRel2.get.name)
+    }
+
     new QueryPlan(
       "recursion",
       getRelationsSummary(),
       getOutputInfo(),
-      getPlanBody(),
+      getPlanBodyAndRewriteBagNames(),
       List())
   }
 
   private def getRelationsSummary(): List[QueryPlanRelationInfo] = {
-    (PlanUtil.getRelationInfoBasedOnName(true, recurse.join.filter(rel => rel.name != baseCase.outputRel.name), recurse.attributeOrdering):::
+    (PlanUtil.getRelationInfoBasedOnName(true, recurse.join.filter(rel => rel.name != "base_case"), recurse.attributeOrdering):::
       PlanUtil.getRelationInfoBasedOnName(true, baseCase.join, baseCase.attributeOrdering)).distinct
   }
 
@@ -36,16 +55,8 @@ class Recursion(recurse:RecursionNode,
       recurse.outputRelation.annotationType)
   }
 
-  private def getPlanBody(): List[QueryPlanBagInfo] = {
-    baseCase.bagName = "base_case"
+  private def getPlanBodyAndRewriteBagNames(): List[QueryPlanBagInfo] = {
     val baseBag = baseCase.getBagInfo(baseCase.joinAggregates)
-    recurse.bagName = "recursion"
-    recurse.join.foreach(rel => {
-      if (rel.name == baseCase.outputRelation.name) {
-        rel.name = baseCase.bagName
-        rel.annotationType = baseCase.outputRel.annotationType
-      }
-    })
     val recurseBag = recurse.getBagInfo(recurse.joinAggregates)
     List(baseBag, recurseBag)
   }
