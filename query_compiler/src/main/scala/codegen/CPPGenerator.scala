@@ -20,6 +20,20 @@ object CPPGenerator {
   }
 
   def detectTransitiveClosure(qp:QueryPlan) : Boolean = {
+    //check encodings, check that base case is not annotated
+    if(qp.ghd.length == 2 && qp.ghd.last.recursion.isDefined){
+      val base_case = qp.ghd.head
+      val encodings = Environment.config.schemas(base_case.relations.head.name).attributes.map(_.encoding).distinct
+      if(base_case.relations.length > 0 && encodings.length == 1){
+        if(base_case.nprr.length == 2){
+          if(base_case.nprr.head.selection.length == 1){
+            if(qp.ghd.last.nprr.last.aggregation.get.operation == "MIN"){
+              return true
+            }
+          }
+        }
+      }
+    }
     return false
   }
 
@@ -78,6 +92,8 @@ object CPPGenerator {
         val source = base_case.nprr.head.selection.head.expression
         val expression = qp.ghd.last.nprr.last.aggregation.get.expression
         val encoding = Environment.config.schemas(base_case.relations.head.name).attributes.map(_.encoding).distinct.head
+        outputAttributes = List(Environment.config.schemas(base_case.relations.head.name).attributes.head)
+
         //get encoding
         includeCode.append("""#include "TransitiveClosure.hpp" """)
         cppCode.append(s"""
