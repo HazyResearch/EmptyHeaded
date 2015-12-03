@@ -69,11 +69,12 @@ namespace tc {
             const uint64_t set_bit = ((uint64_t) 1 << (data_elem%BITS_PER_WORD));
             const uint64_t old_value1 = set_data[word];
             if(!(old_value1 & set_bit)){
-                set_data[word] |= set_bit; 
+                set_data[word] |= set_bit; //keeps our buffer sizes reasonable
                 /*
                 We do not need an atomic write. We will just check it twice 
                 in the next iteration if we run into the case where t1 reads,
-                t2 writes, and then t1 writes.
+                t2 writes, and then t1 writes. If we overwrite existing bits
+                in the word we have a loop below to catch that.
                 */
                 //const uint64_t old_value = __sync_fetch_and_or((uint64_t*)&set_data[word],set_bit);
                 //if(!(old_value & set_bit)){
@@ -81,6 +82,7 @@ namespace tc {
                 const size_t buffer_index = frontier_sizes[tid*PADDING];
                 frontier_buffer[tid][buffer_index] = l2;
                 frontier_sizes[tid*PADDING]++;
+                assert(frontier_sizes[tid*PADDING] < num_distinct);
             }
           });
         }
@@ -93,6 +95,13 @@ namespace tc {
         memcpy(&frontier[frontier_size],frontier_buffer[t],num_thread_elems*sizeof(uint32_t));
         frontier_size += num_thread_elems;
         frontier_sizes[t*PADDING] = 0;
+      }
+
+      for(size_t i = 0 ; i < frontier_size; i++){
+        const uint32_t data_elem = frontier[i];
+        const size_t word = range_bitset::word_index(data_elem);
+        const uint64_t set_bit = ((uint64_t) 1 << (data_elem%BITS_PER_WORD));
+        set_data[word] |= set_bit; 
       }
       iteration++;
     }
