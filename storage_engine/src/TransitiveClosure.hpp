@@ -39,10 +39,10 @@ namespace tc {
 
     //setup buffers for the frontier
     uint32_t* frontier_allocator = new uint32_t[num_distinct*NUM_THREADS];
-    uint32_t** frontier_buffer = new uint32_t*[NUM_THREADS];
+    uint32_t** frontier_buffer = new uint32_t*[NUM_THREADS*PADDING];
     uint32_t* frontier_sizes = new uint32_t[NUM_THREADS*PADDING];
     for(size_t i = 0; i < NUM_THREADS; i++){
-      frontier_buffer[i] = &frontier_allocator[i*num_distinct];
+      frontier_buffer[i*PADDING] = &frontier_allocator[i*num_distinct];
       frontier_sizes[i*PADDING] = 0;
     }
 
@@ -66,7 +66,7 @@ namespace tc {
             if(ops::atomic_union(vs,l2)){
               visited->template set_annotation<A>(join(visited->template get_annotation<A>(0,f)),0,l2); //index does not matter this is dense
               const size_t buffer_index = frontier_sizes[tid*PADDING];
-              frontier_buffer[tid][buffer_index] = l2;
+              frontier_buffer[tid*PADDING][buffer_index] = l2;
               frontier_sizes[tid*PADDING]++;
             }
           });

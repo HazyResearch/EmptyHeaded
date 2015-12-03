@@ -163,12 +163,12 @@ def lubm(create):
 #mainly just used for regression testing
 def main(argv):
   snodes={
-    "cid-patents":"6009554",
-    "socLivejournal":"4846608",
-    "higgs":"455360",
-    "g_plus":"107613",
-    "orkut":"3072626",
-    "twitter2010":"41652230"
+    "cid-patents":"5795784",
+    "socLivejournal":"10009",
+    "higgs":"83222",
+    "g_plus":"6966",
+    "orkut":"43608",
+    "twitter2010":"1037948"
   }
 
   if argv[0] == "pruned":
