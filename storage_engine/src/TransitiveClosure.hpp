@@ -23,7 +23,7 @@ namespace tc {
     ///just stuff to setup the visited set
     const size_t visited_num_bytes = sizeof(TrieBlock<range_bitset,M>) +
       sizeof(Set<range_bitset>) +
-      PADDING*range_bitset::get_number_of_bytes(num_distinct,num_distinct) +
+      range_bitset::get_number_of_bytes(num_distinct,num_distinct) +
       (sizeof(A)*num_distinct);
 
     uint8_t* bs_data = output->memoryBuffers->get_next(NUM_THREADS,visited_num_bytes);
@@ -50,7 +50,6 @@ namespace tc {
     uint32_t* frontier = new uint32_t[num_distinct];
     uint32_t frontier_size = 1;
     ops::atomic_union(vs,start);
-    //visited->set_data(0,start,0);
     frontier[0] = start;
 
     uint64_t const * set_data = ((uint64_t*)vs->get_data())+1;
@@ -58,17 +57,18 @@ namespace tc {
     size_t iteration = 0;
     while(frontier_size != 0){
       std::cout  << "ITERATION: " << iteration << " FRONTIER SIZE: " << frontier_size << std::endl;
-      auto tt = timer::start_clock();
       par::for_range(0,frontier_size,100,[&](const size_t tid, const size_t i){
         const uint32_t f = frontier[i];
         const TrieBlock<T,M>* level2 = input_head->get_next_block(f,input->memoryBuffers);
         if(level2 != NULL){
           level2->get_const_set()->foreach([&](const uint32_t l2){
+            const uint32_t data_elem = l2;
             //union in element and return index if element does not exist in the set
             // and return -1 if it exists in the set (no work to do in the union)
-            const size_t word = range_bitset::word_index(l2);
-            const uint64_t set_bit = ((uint64_t) 1 << (l2%BITS_PER_WORD));
-            if(!(set_data[word] & set_bit)){
+            const size_t word = range_bitset::word_index(data_elem);
+            const uint64_t set_bit = ((uint64_t) 1 << (data_elem%BITS_PER_WORD));
+            const uint64_t old_value1 = set_data[word];
+            if(!(old_value1 & set_bit)){
               const uint64_t old_value = __sync_fetch_and_or((uint64_t*)&set_data[word],set_bit);
               if(!(old_value & set_bit)){
                 visited->template set_annotation<A>(join(visited->template get_annotation<A>(0,f)),0,l2); //index does not matter this is dense
@@ -80,7 +80,6 @@ namespace tc {
           });
         }
       });
-      timer::stop_clock("FRONTIER: ",tt);
 
       //reconstruct frontier buffer
       frontier_size = 0;

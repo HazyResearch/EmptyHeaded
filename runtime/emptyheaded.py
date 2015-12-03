@@ -121,7 +121,6 @@ def duplicated_graph(dataset,startNode,create):
     os.system("sed -e 's/$DATASET/"+dataset+"/g' "+db_config+" > tmp.json")
     createDB("tmp.json")
   loadDB("/dfs/scratch0/caberger/datasets/"+dataset+"/db_python")
-  comm="""
   print "RUNNING QUERY: COUNT_Lollipop"
   query("CLollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=[<<COUNT(*)>>].")
   #print "RUNNING QUERY: Lollipop"
@@ -131,11 +130,10 @@ def duplicated_graph(dataset,startNode,create):
   #print "RUNNING QUERY: Barbell"
   #query("Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z).")
   print "RUNNING QUERY: PageRank"
-  """
-  #query(
-  #"""N(;w:int):-Edge(x,y);w=[<<COUNT(x)>>].
-  #   PageRank(x;y:float):-Edge(x,z);y=[(1.0/N)*<<CONST(z;1.0)>>].
-  #   PageRank (x;y:float)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z);y=[0.15+0.85*<<SUM(z;1.0)>>].""")
+  query(
+  """N(;w:int):-Edge(x,y);w=[<<COUNT(x)>>].
+     PageRank(x;y:float):-Edge(x,z);y=[(1.0/N)*<<CONST(z;1.0)>>].
+     PageRank (x;y:float)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z);y=[0.15+0.85*<<SUM(z;1.0)>>].""")
   print "RUNNING QUERY: SSSP"
   
   query("""SSSP(x;y:int) :- Edge(w=%(startNode)s,x);y=[<<CONST(w;1)>>].
