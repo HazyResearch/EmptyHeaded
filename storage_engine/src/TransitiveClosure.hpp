@@ -52,7 +52,7 @@ namespace tc {
     ops::atomic_union(vs,start);
     frontier[0] = start;
 
-    volatile uint64_t * set_data = ((uint64_t*)vs->get_data())+1;
+    uint64_t * set_data = ((uint64_t*)vs->get_data())+1;
     const TrieBlock<T,M> * input_head = input->getHead();
     size_t iteration = 0;
     while(frontier_size != 0){
@@ -75,6 +75,8 @@ namespace tc {
                 in the next iteration if we run into the case where t1 reads,
                 t2 writes, and then t1 writes.
                 */
+                //const uint64_t old_value = __sync_fetch_and_or((uint64_t*)&set_data[word],set_bit);
+                //if(!(old_value & set_bit)){
                 visited->template set_annotation<A>(join(visited->template get_annotation<A>(0,f)),0,l2); //index does not matter this is dense
                 const size_t buffer_index = frontier_sizes[tid*PADDING];
                 frontier_buffer[tid][buffer_index] = l2;
