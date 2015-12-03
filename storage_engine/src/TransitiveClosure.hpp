@@ -57,14 +57,13 @@ namespace tc {
     while(frontier_size != 0){
       std::cout  << "ITERATION: " << iteration << " FRONTIER SIZE: " << frontier_size << std::endl;
       par::for_range(0,frontier_size,100,[&](size_t tid, size_t i){
-      //for(size_t i = 0; i < frontier_size; i++){ size_t tid = 0;
         const uint32_t f = frontier[i];
         TrieBlock<T,M>* level2 = input->getHead()->get_next_block(f,input->memoryBuffers);
         if(level2 != NULL){
           level2->get_const_set()->foreach([&](uint32_t l2){
             //union in element and return index if element does not exist in the set
             // and return -1 if it exists in the set (no work to do in the union)
-            if(ops::atomic_union(visited->get_set(),l2)){
+            if(ops::atomic_union(vs,l2)){
               visited->template set_annotation<A>(join(visited->template get_annotation<A>(0,f)),0,l2); //index does not matter this is dense
               const size_t buffer_index = frontier_sizes[tid*PADDING];
               frontier_buffer[tid][buffer_index] = l2;
@@ -72,7 +71,6 @@ namespace tc {
             }
           });
         }
-      //}
       });
       //reconstruct frontier buffer
       frontier_size = 0;

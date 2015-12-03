@@ -114,6 +114,7 @@ def pruned_graph(dataset,create):
   #query("Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).")
 
 def duplicated_graph(dataset,startNode,create):
+  print "START NODE: " + startNode
   print "DATASET: " + dataset
   if create:
     db_config="/afs/cs.stanford.edu/u/caberger/config.json"
@@ -134,6 +135,7 @@ def duplicated_graph(dataset,startNode,create):
      PageRank(x;y:float):-Edge(x,z);y=[(1.0/N)*<<CONST(z;1.0)>>].
      PageRank (x;y:float)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z);y=[0.15+0.85*<<SUM(z;1.0)>>].""")
   print "RUNNING QUERY: SSSP"
+  
   query("""SSSP(x;y:int) :- Edge(w=%(startNode)s,x);y=[<<CONST(w;1)>>].
     SSSP(x;y:int)*[c=0] :- Edge(w,x),SSSP(w);y=[1+<<MIN(w;1)>>]."""% locals())
 
@@ -161,12 +163,12 @@ def lubm(create):
 #mainly just used for regression testing
 def main(argv):
   snodes={
-    "cid-patents":6009554
-    "socLivejournal":4846608
-    "higgs":455360
-    "g_plus":107613
-    "orkut":3072626,
-    "twitter2010":41652230
+    "cid-patents":"6009554",
+    "socLivejournal":"4846608",
+    "higgs":"455360",
+    "g_plus":"107613",
+    "orkut":"3072626",
+    "twitter2010":"41652230"
   }
 
   if argv[0] == "pruned":
