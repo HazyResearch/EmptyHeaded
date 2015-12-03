@@ -19,6 +19,24 @@ object CPPGenerator {
     return ghd
   }
 
+  def detectTransitiveClosure(qp:QueryPlan) : Boolean = {
+    //check encodings, check that base case is not annotated
+    if(qp.ghd.length == 2 && qp.ghd.last.recursion.isDefined){
+      val base_case = qp.ghd.head
+      val encodings = Environment.config.schemas(base_case.relations.head.name).attributes.map(_.encoding).distinct
+      if(base_case.relations.length > 0 && encodings.length == 1){
+        if(base_case.nprr.length == 2){
+          if(base_case.nprr.head.selection.length == 1){
+            if(qp.ghd.last.nprr.last.aggregation.get.operation == "MIN"){
+              return true
+            }
+          }
+        }
+      }
+    }
+    return false
+  }
+
   def run(qps:QueryPlans) = {
     //get distinct relations we need to load
     //dump output at the end, rest just in a loop
@@ -47,22 +65,47 @@ object CPPGenerator {
       cppCode.append("auto query_timer = timer::start_clock();")
       val topDown = qp.topdown.length > 0
       var i = 1
-      qp.ghd.foreach(bag => {
-        val outputName = 
-          if((i == qp.ghd.length) && (!topDown))
-            Some(qp.output.name)
-          else 
-            None
-        val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
-        intermediateRelations += ((bag.name -> bagOutput))
-        outputAttributes = bagOutput
-        cppCode.append(bagCode)
-        i += 1
-      })
-      if(topDown){
-        val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
-        cppCode.append(bagCode)
-        outputAttributes = bagOutput
+      val single_source_tc = detectTransitiveClosure(qp)
+      if(!single_source_tc){
+        qp.ghd.foreach(bag => {
+          val outputName = 
+            if((i == qp.ghd.length) && (!topDown))
+              Some(qp.output.name)
+            else 
+              None
+          val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
+          intermediateRelations += ((bag.name -> bagOutput))
+          outputAttributes = bagOutput
+          cppCode.append(bagCode)
+          i += 1
+        })
+        if(topDown){
+          val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
+          cppCode.append(bagCode)
+          outputAttributes = bagOutput
+        }
+      } else{
+        val base_case = qp.ghd.head
+        val input = base_case.relations.head.name + "_" + base_case.relations.head.ordering.mkString("_")
+        val output = qp.output.name + "_" + qp.output.ordering.mkString("_")
+        val init = base_case.nprr.head.aggregation.get.init
+        val source = base_case.nprr.head.selection.head.expression
+        val expression = qp.ghd.last.nprr.last.aggregation.get.expression
+        val encoding = Environment.config.schemas(base_case.relations.head.name).attributes.map(_.encoding).distinct.head
+        outputAttributes = List(Environment.config.schemas(base_case.relations.head.name).attributes.head)
+
+        //get encoding
+        includeCode.append("""#include "TransitiveClosure.hpp" """)
+        cppCode.append(s"""
+          tc::unweighted_single_source<hybrid,ParMemoryBuffer,${qp.output.annotation}>(
+            Encoding_${encoding}->value_to_key.at(${source}), // from encoding
+            Encoding_${encoding}->num_distinct, //from encoding
+            Trie_${input}, //input graph
+            Trie_${output}, //output vector
+            ${init},
+            [&](${qp.output.annotation} a){return ${expression} a;});
+          Trie_${output}->encodings.push_back((void*)Encoding_${encoding});
+          """)
       }
       cppCode.append(emitEndQuery(qp.output))
       cppCode.append("}")

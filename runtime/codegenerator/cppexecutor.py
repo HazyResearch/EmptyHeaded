@@ -23,12 +23,10 @@ def execute(name,mem,types,annotationType):
   wrapperfile.close()
 
   compileQuery(name)
-  #os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"))
+  os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME/runtime/wrapper/querywrapper.cpp"))
 
   q = loadQuery(name)
   q_result = eval("q.run_"+name+"()")
-  #q_result = eval("q.run_"+name+"()")
-
   return (q,q_result)
 
 def compile(name,mem,types,annotationType):
@@ -38,6 +36,6 @@ def compile(name,mem,types,annotationType):
 	compileQuery(name)
 
 def run(name,mem,types,annotationType):
-	q = loadQuery(name)
-	q_result = q.run()
-	return (q,q_result)
+  q = loadQuery(name)
+  q_result = q.run()
+  return (q,q_result)

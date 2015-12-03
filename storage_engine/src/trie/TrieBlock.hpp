@@ -11,14 +11,14 @@ struct TrieBlock{
 
   TrieBlock(){}
 
-  inline const Set<hybrid>* get_const_set() const {
-    const Set<hybrid>* const result = (const Set<hybrid>*)((uint8_t*)this + sizeof(TrieBlock<T,M>));
+  inline const Set<T>* get_const_set() const {
+    const Set<T>* const result = (const Set<T>*)((uint8_t*)this + sizeof(TrieBlock<T,M>));
     //result->data = ((uint8_t*)result + sizeof(Set<hybrid>));
     return result;
   }
 
-  inline Set<hybrid>* get_set() const {
-    Set<hybrid> *result = (Set<hybrid>*)((uint8_t*)this + sizeof(TrieBlock<T,M>));
+  inline Set<T>* get_set() const {
+    Set<T> *result = (Set<T>*)((uint8_t*)this + sizeof(TrieBlock<T,M>));
     //result->data = ((uint8_t*)result + sizeof(Set<hybrid>));
     return result;
   }
@@ -30,7 +30,7 @@ struct TrieBlock{
   }
 
   inline size_t getNextIndex(const uint32_t index, const uint32_t data) const {
-   const Set<hybrid>* const set = this->get_const_set();
+   const Set<T>* const set = this->get_const_set();
     return common::is_sparse(set->cardinality,set->range) ? index:data;
   }
   
@@ -138,10 +138,10 @@ struct TrieBlock{
     const uint32_t index, 
     const uint32_t data) {
 
-    const Set<hybrid>* s1 = this->get_const_set();
+    const Set<T>* s1 = this->get_const_set();
     const uint32_t annotationIndex = this->getNextIndex(index,data);
     A* annotation = (A*)( ((uint8_t*)s1)+
-        sizeof(Set<hybrid>) +
+        sizeof(Set<T>) +
         s1->number_of_bytes);
     annotation[annotationIndex] = annotationValue;
   }
@@ -151,10 +151,10 @@ struct TrieBlock{
     const uint32_t index, 
     const uint32_t data){
 
-    const Set<hybrid>* s1 = this->get_const_set();
+    const Set<T>* s1 = this->get_const_set();
     const uint32_t annotationIndex = this->getNextIndex(index,data);
     A* annotation = (A*)( ((uint8_t*)s1)+
-        sizeof(Set<hybrid>) +
+        sizeof(Set<T>) +
         s1->number_of_bytes);
     return annotation[annotationIndex];
   }

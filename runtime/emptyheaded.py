@@ -13,7 +13,6 @@ import sys
 hashindex = 0
 environment = codegenerator.env.Environment()
 
-
 def query(datalog_string):
   global hashindex
   qcpath = os.path.expandvars("$EMPTYHEADED_HOME")+"/query_compiler/"
@@ -114,7 +113,8 @@ def pruned_graph(dataset,create):
   #print "RUNNING QUERY: Flique"
   #query("Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).")
 
-def duplicated_graph(dataset,create):
+def duplicated_graph(dataset,startNode,create):
+  print "START NODE: " + startNode
   print "DATASET: " + dataset
   if create:
     db_config="/afs/cs.stanford.edu/u/caberger/config.json"
@@ -134,6 +134,10 @@ def duplicated_graph(dataset,create):
   """N(;w:int):-Edge(x,y);w=[<<COUNT(x)>>].
      PageRank(x;y:float):-Edge(x,z);y=[(1.0/N)*<<CONST(z;1.0)>>].
      PageRank (x;y:float)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z);y=[0.15+0.85*<<SUM(z;1.0)>>].""")
+  print "RUNNING QUERY: SSSP"
+  
+  query("""SSSP(x;y:int) :- Edge(w=%(startNode)s,x);y=[<<CONST(w;1)>>].
+    SSSP(x;y:int)*[c=0] :- Edge(w,x),SSSP(w);y=[1+<<MIN(w;1)>>]."""% locals())
 
 def lubm(create):
   print "DATASET: LUBM10000"
@@ -158,10 +162,19 @@ def lubm(create):
 
 #mainly just used for regression testing
 def main(argv):
+  snodes={
+    "cid-patents":"5795784",
+    "socLivejournal":"10009",
+    "higgs":"83222",
+    "g_plus":"6966",
+    "orkut":"43608",
+    "twitter2010":"1037948"
+  }
+
   if argv[0] == "pruned":
     pruned_graph(argv[1],False)
   elif argv[0] == "duplicated":
-    duplicated_graph(argv[1],False)
+    duplicated_graph(argv[1],snodes[argv[1]],False)
   elif argv[0] == "lubm":
     lubm(False)
   else:

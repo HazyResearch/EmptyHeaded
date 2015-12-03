@@ -16,6 +16,7 @@ python tests/graph/lollipop_materialized.py
 python tests/graph/barbell_materialized.py
 
 python tests/graph/pagerank.py
+python tests/graph/sssp.py
 
 python tests/fft/createFFTDB.py
 python tests/fft/readFFT.py

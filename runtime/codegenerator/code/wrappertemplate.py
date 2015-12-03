@@ -19,7 +19,6 @@ static PyObject * run_%(hashstring)s(PyObject * self, PyObject * args)
 
   Query_%(hashstring)s* q = new Query_%(hashstring)s();
   q->run_%(hashstring)s();
-
   return PyCObject_FromVoidPtr(q, free_my_struct_%(hashstring)s);
 }
 
@@ -78,7 +77,10 @@ static PyObject * fetch_data_%(hashstring)s(PyObject * self, PyObject * args){
     PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
   elif annotationType == "void*":
     code+=""""""
-  elif t == "float":
+  elif annotationType == "int":
+    code+="""PyObject * rowelem_%(i)s = PyInt_FromLong((long)value);
+    PyTuple_SetItem(retRow,%(i)s,rowelem_%(i)s);"""% locals()
+  else:
     print "NOT IMPLEMENTED"
 
   code += """if(PyList_Append(retTable,retRow) == -1){
