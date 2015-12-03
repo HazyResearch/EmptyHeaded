@@ -76,7 +76,7 @@ namespace tc {
       frontier_size = 0;
       for(size_t t = 0 ; t < NUM_THREADS; t++){
         const size_t num_thread_elems = frontier_sizes[t*PADDING];
-        memcpy(&frontier[frontier_size],frontier_buffer[t],num_thread_elems*sizeof(uint32_t));
+        memcpy(&frontier[frontier_size],frontier_buffer[t*PADDING],num_thread_elems*sizeof(uint32_t));
         frontier_size += num_thread_elems;
         frontier_sizes[t*PADDING] = 0;
       }
