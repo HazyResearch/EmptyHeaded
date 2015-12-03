@@ -52,7 +52,7 @@ namespace tc {
     ops::atomic_union(vs,start);
     frontier[0] = start;
 
-    volatile uint64_t* set_data = ((uint64_t*)vs->get_data())+1;
+    volatile uint64_t const * set_data = ((uint64_t*)vs->get_data())+1;
     const TrieBlock<T,M> * input_head = input->getHead();
     size_t iteration = 0;
     while(frontier_size != 0){
