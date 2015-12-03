@@ -13,7 +13,6 @@ import sys
 hashindex = 0
 environment = codegenerator.env.Environment()
 
-
 def query(datalog_string):
   global hashindex
   qcpath = os.path.expandvars("$EMPTYHEADED_HOME")+"/query_compiler/"

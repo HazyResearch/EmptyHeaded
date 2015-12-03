@@ -104,6 +104,7 @@ object CPPGenerator {
             Trie_${output}, //output vector
             ${init},
             [&](${qp.output.annotation} a){return ${expression} a;});
+          Trie_${output}->encodings.push_back((void*)Encoding_${encoding});
           """)
       }
       cppCode.append(emitEndQuery(qp.output))
