@@ -71,8 +71,8 @@
       "orderings":["all"]
     },
     {
-      "name": "type",
-      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/type.tsv",
+      "name": "rdftype",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/rdftype.tsv",
       "attributes":[
         {
           "attrType":"std::string",

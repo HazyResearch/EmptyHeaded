@@ -5,7 +5,7 @@ class ResultError(Exception):
 
 def main():
   emptyheaded.loadDB("$EMPTYHEADED_HOME/examples/rdf/data/lubm1/db")
-  emptyheaded.query("lubm7(a,b) :- teacherOf(c='http://www.Department0.University0.edu/AssociateProfessor0',b),takesCourse(a,b),type(b,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'),type(a,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
+  emptyheaded.query("lubm7(a,b) :- teacherOf(c='http://www.Department0.University0.edu/AssociateProfessor0',b),takesCourse(a,b),rdftype(b,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'),rdftype(a,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
 
   data = emptyheaded.fetchData("lubm7")
   print len(data)
