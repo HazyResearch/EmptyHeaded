@@ -1,0 +1,42 @@
+{
+    "algorithm": "NPRR+",
+    "database": "/dfs/scratch0/susanctu/newversion/EmptyHeaded/examples/graph/data/facebook/db_pruned",
+    "encodings": {
+        "node": "long"
+    },
+    "layout": "hybrid",
+    "memory": "ParMemoryBuffer",
+    "numNUMA": 4,
+    "numThreads": 4,
+    "relations": {
+        "Edge_0_1": "disk",
+        "Edge_1_0": "disk"
+    },
+    "resultName": "",
+    "resultOrdering": [],
+    "schemas": {
+        "Edge": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    1,
+                    0
+                ]
+            ]
+        }
+    }
+}
