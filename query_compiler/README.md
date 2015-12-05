@@ -27,4 +27,4 @@ There are several other options, including an option for running codegen from a 
 
 Query Plans
 ----------------
-The fields in the query plans are fairly extensively documented in [`src/main/scala/QueryPlan.scala`](https://github.com/HazyResearch/EmptyHeaded/blob/master/query_compiler/src/main/scala/QueryPlan.scala).
+The fields in the query plans are fairly extensively documented in [`src/main/scala/QueryPlan.scala`](https://github.com/HazyResearch/EmptyHeaded/blob/qc_documentation/query_compiler/src/main/scala/QueryPlan.scala).
