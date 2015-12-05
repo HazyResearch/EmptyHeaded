@@ -1,4 +1,4 @@
-package scala
+package DunceCap
 
 import DunceCap.attr.Attr
 import net.liftweb.json.DefaultFormats
@@ -51,7 +51,7 @@ case class QueryPlan(val query_type:String,
  */
 case class QueryPlanRelationInfo(val name:String,
                             val ordering:List[Int],
-                            /*only filled out at */
+                            /*only filled out at top level of GHD*/
                             val attributes:Option[List[List[Attr]]],
                             val annotation:String)
 

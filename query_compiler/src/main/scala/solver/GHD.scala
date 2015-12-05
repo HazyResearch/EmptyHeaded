@@ -13,7 +13,7 @@ import scala.collection.mutable
 class GHD(val root:GHDNode,
           val queryRelations: List[QueryRelation],
           val joinAggregates:Map[String,ParsedAggregate],
-          val outputRelation: QueryRelation) extends QueryPlanPostProcessor {
+          val outputRelation:QueryRelation) extends QueryPlanPostProcessor {
   val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation)
   var depth: Int = -1
   var numBags: Int = -1
@@ -24,16 +24,12 @@ class GHD(val root:GHDNode,
   var nextAggregatedAttr:Option[Attr] = None
 
   def getQueryPlan(): QueryPlan = {
-    val a = getRelationsSummary()
-    val b = getOutputInfo()
-    val c = getPlanFromPostorderTraversal(root).toList
-    val d = getTopDownPassIterators()
     new QueryPlan(
       "join",
-      a,
-      b,
-      c,
-      d)
+      getRelationsSummary(),
+      getOutputInfo(),
+      getPlanFromPostorderTraversal(root).toList,
+      getTopDownPassIterators())
   }
 
   private def getAttrsToRelationsMap(): Map[Attr, List[QueryRelation]] = {
@@ -85,7 +81,7 @@ class GHD(val root:GHDNode,
         }
         QueryPlanAttrInfo(
           newAttr,
-          PlanUtil.getAccessor(newAttr, attrToRels),
+          PlanUtil.getAccessor(newAttr, attrToRels, attributeOrdering),
           outputRelation.attrNames.contains(newAttr),
           List[QueryPlanSelection](),
           lastMaterializedAttr.flatMap(at => {
@@ -190,7 +186,7 @@ abstract class EHNode(val rels: List[QueryRelation]) {
   }
 
   def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
-    PlanUtil.getAccessor(attr, attrToRels)
+    PlanUtil.getAccessor(attr, attrToRels, attributeOrdering)
   }
 
   def getOrderedAttrsWithAccessor(): List[Attr] = {
