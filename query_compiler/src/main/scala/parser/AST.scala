@@ -18,10 +18,11 @@ case class ASTQueryStatement(lhs:QueryRelation,
       :::joinAggregates.values.map(parsedAgg => parsedAgg.expressionLeft+parsedAgg.expressionRight).toList).toSet
     namesInThisStatement.find(name => name.contains(statement.lhs.name)).isDefined
   }
+
   def computePlan(config:Config, isRecursive:Boolean): QueryPlan = {
-    val annotationSetSuccess = join.map(rel => Environment.setAnnotationAccordingToConfig(rel))
-    if (annotationSetSuccess.find(b => !b).isDefined) {
-      throw RelationNotFoundException("TODO: fill in with a better explanation")
+    val missingRel = join.find(rel => Environment.setAnnotationAccordingToConfig(rel))
+    if (missingRel.isDefined) {
+      throw RelationNotFoundException(missingRel.get.name)
     }
 
     if (!config.nprrOnly) {
