@@ -20,7 +20,7 @@ case class ASTQueryStatement(lhs:QueryRelation,
   }
 
   def computePlan(config:Config, isRecursive:Boolean): QueryPlan = {
-    val missingRel = join.find(rel => Environment.setAnnotationAccordingToConfig(rel))
+    val missingRel = join.find(rel => !Environment.setAnnotationAccordingToConfig(rel))
     if (missingRel.isDefined) {
       throw RelationNotFoundException(missingRel.get.name)
     }
