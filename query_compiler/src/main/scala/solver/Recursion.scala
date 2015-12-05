@@ -2,8 +2,6 @@ package DunceCap
 
 import DunceCap.attr._
 
-import scala.collection.mutable
-
 class Recursion(recurse:RecursionNode,
                 baseCase:RecursionNode) extends QueryPlanPostProcessor {
   override def doPostProcessingPass = {
@@ -13,9 +11,7 @@ class Recursion(recurse:RecursionNode,
     baseCase.outputRelation = baseCase.outputRel
     baseCase.createAttrToRelsMapping
     baseCase.setAttributeOrdering(AttrOrderingUtil.getAttributeOrdering(baseCase, baseCase.join, baseCase.outputRelation))
-  }
 
-  override def getQueryPlan: QueryPlan = {
     baseCase.bagName = "base_case"
     val missingRel1 = baseCase.join.find(rel => !Environment.setAnnotationAccordingToConfig(rel))
     if (missingRel1.isDefined) {
@@ -34,7 +30,9 @@ class Recursion(recurse:RecursionNode,
     if (missingRel2.isDefined) {
       throw RelationNotFoundException(missingRel2.get.name)
     }
+  }
 
+  override def getQueryPlan: QueryPlan = {
     new QueryPlan(
       "recursion",
       getRelationsSummary(),
