@@ -23,11 +23,15 @@ object PlanUtil {
         if (forTopLevelSummary) {
           new QueryPlanRelationInfo(rels.head.name, ordering, None, rels.head.annotationType)
         } else {
-          new QueryPlanRelationInfo(rels.head.name, ordering, Some(rels.map(rel => rel.attrNames)), rels.head.annotationType)
+          new QueryPlanRelationInfo(rels.head.name, ordering, Some(rels.map(rel => reorderByNumericalOrdering(rel.attrNames, ordering))), rels.head.annotationType)
         }
       })
       or
     })
+  }
+
+  def reorderByNumericalOrdering(attr:List[Attr], ordering:List[Int]): List[Attr] = {
+    ordering.map(o => attr(o))
   }
 
   def getNumericalOrdering(attributeOrdering:List[Attr], rel:QueryRelation): List[Int] = {
@@ -38,7 +42,7 @@ object PlanUtil {
 
   def getOrderedAttrsWithAccessor(attributeOrdering:List[Attr], attrToRels:Map[Attr, List[QueryRelation]]): List[Attr] = {
     attributeOrdering.flatMap(attr => {
-      val accessor = getAccessor(attr, attrToRels)
+      val accessor = getAccessor(attr, attrToRels, attributeOrdering)
       if (accessor.isEmpty) {
         None
       } else {
@@ -47,9 +51,10 @@ object PlanUtil {
     })
   }
 
-  def getAccessor(attr:Attr, attrToRels:Map[Attr, List[QueryRelation]]): List[QueryPlanAccessor] = {
+  def getAccessor(attr:Attr, attrToRels:Map[Attr, List[QueryRelation]], attributeOrdering:List[Attr]): List[QueryPlanAccessor] = {
     attrToRels.get(attr).getOrElse(List()).map(rel => {
-      new QueryPlanAccessor(rel.name, rel.attrNames,(rel.attrNames.last == attr && rel.annotationType != "void*"))
+      val ordering = getNumericalOrdering(attributeOrdering, rel)
+      new QueryPlanAccessor(rel.name, reorderByNumericalOrdering(rel.attrNames, ordering),(rel.attrNames.last == attr && rel.annotationType != "void*"))
     })
   }
 

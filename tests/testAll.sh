@@ -10,6 +10,7 @@ python tests/graph/4clique_agg.py
 python tests/graph/createDuplicatedFBDB.py
 python tests/graph/lollipop_agg.py
 python tests/graph/barbell_agg.py
+python tests/graph/cycle_agg.py
 
 python tests/graph/createSimpleDB.py
 python tests/graph/lollipop_materialized.py

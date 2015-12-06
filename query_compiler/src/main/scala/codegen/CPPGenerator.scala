@@ -279,7 +279,7 @@ object CPPGenerator {
       r.attributes.foreach(attr => {
         attr.foreach(a => {
           a.foreach(i => {
-            encodings += ((i,enc(a.indexOf(i))))
+            encodings += ((i,enc(r.ordering(a.indexOf(i)))))
             dependers += ((i,(r.name + "_" + a.mkString("_"),a.indexOf(i),a.length)))
           })
           code.append(s"""ParTrieIterator<${r.annotation},${Environment.config.memory}> Iterators_${r.name}_${a.mkString("_")}(Trie_${name});""")
