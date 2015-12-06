@@ -23,7 +23,7 @@ object PlanUtil {
         if (forTopLevelSummary) {
           new QueryPlanRelationInfo(rels.head.name, ordering, None, rels.head.annotationType)
         } else {
-          new QueryPlanRelationInfo(rels.head.name, ordering, Some(rels.map(rel => rel.attrNames)), rels.head.annotationType)
+          new QueryPlanRelationInfo(rels.head.name, ordering, Some(rels.map(rel => reorderByNumericalOrdering(rel.attrNames, ordering))), rels.head.annotationType)
         }
       })
       or
