@@ -14,4 +14,11 @@ def main():
   if data.iloc[0][0] != 163853203160:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(data[0]))
 
+  emptyheaded.query("DCycle5(;m:long) :- Edge(a,b),Edge(b,c),Edge(c,d),Edge(d,e),Edge(e,a);m=[<<COUNT(*)>>].")
+
+  data = emptyheaded.fetchData("DCycle5")
+  print data.iloc[0][0]
+  if data.iloc[0][0] != 163853203160:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(data[0]))
+
 if __name__ == "__main__": main()
