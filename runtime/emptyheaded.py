@@ -12,6 +12,7 @@ import sys
 
 hashindex = 0
 environment = codegenerator.env.Environment()
+pd.set_option('max_colwidth', 120)
 
 def query(datalog_string):
   global hashindex
