@@ -3,7 +3,7 @@ EmptyHeaded v. 0.1
 
 <img src="docs/figs/eh_logo.png" height="200" >
 
-[![Build Status](https://magnum.travis-ci.com/HazyResearch/EmptyHeaded.svg?token=yLhGdySP4WB8z4ntVs3S&branch=master)](https://magnum.travis-ci.com/HazyResearch/EmptyHeaded)
+[![Build Status](https://travis-ci.org/HazyResearch/EmptyHeaded.svg?branch=master)](https://travis-ci.org/HazyResearch/EmptyHeaded)
 
 Table of Contents
 -----------------
