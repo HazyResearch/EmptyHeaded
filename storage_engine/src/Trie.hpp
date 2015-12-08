@@ -55,7 +55,9 @@ struct Trie{
     std::vector<std::vector<uint32_t> >* attr_in, 
     std::vector<A>* annotation);
 
-  ~Trie<A,M>(){};
+  ~Trie<A,M>(){
+    delete memoryBuffers;
+  };
 
   void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
   void save();
