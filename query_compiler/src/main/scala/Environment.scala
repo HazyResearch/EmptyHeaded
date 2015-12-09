@@ -1,5 +1,6 @@
 package DunceCap
 
+import DunceCap.attr.{Attr, AttrType, AnnotationType}
 import net.liftweb.json._
 
 import scala.collection.mutable
@@ -47,13 +48,24 @@ object Environment {
     return schema.isDefined
   }
 
+  def getType(relName:String, attrPos:Int): AttrType = {
+    val schemaOpt = schemaStack.find(schema => schema.get(relName)
+      .find(schema => schema.attributes.length > attrPos).isDefined)
+    val typeOpt = schemaOpt.map(schema => (schema.get(relName).get).attributes(attrPos).attrType)
+    if(typeOpt.isDefined) {
+      return typeOpt.get
+    } else {
+      throw NoTypeFoundException("")
+    }
+  }
+
   def startScope(): Unit = {
     schemaStack.push(mutable.Map[String, Schema]())
   }
 
-  def addRelation(rel:QueryRelation) = {
+  def addRelation(rel:QueryRelation, outputType:List[AttrType]) = {
     // TODO: do this properly
-    schemaStack.top += (rel.name -> Schema(rel.attrs.map(attr => Attribute("", "")), List(List(0)), rel.annotationType))
+    schemaStack.top += (rel.name -> Schema(outputType.map(attrType => Attribute(attrType, "")), List(List()), rel.annotationType))
   }
 
   def endScope(): Unit = {
