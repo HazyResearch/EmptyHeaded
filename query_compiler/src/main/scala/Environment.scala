@@ -30,6 +30,11 @@ object Environment {
     schemaStack.push(mutable.Map() ++ config.schemas)
   }
 
+  def fromJsonString(jsonString:String) = {
+    config = parse(jsonString).extract[DatabaseConfig]
+    schemaStack.push(mutable.Map() ++ config.schemas)
+  }
+
   def toJSON() = {
     val filename = config.database+"/config.json"
     implicit val formats = Serialization.formats(NoTypeHints)
