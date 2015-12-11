@@ -148,17 +148,27 @@ def lubm(create):
   print "RUNNING QUERY: LUBM1"
   query("lubm1(a) :- takesCourse(a,b='http://www.Department0.University0.edu/GraduateCourse0'),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent').")
   print "RUNNING QUERY: LUBM2"
-  query("lubm2(a,b,c) :- memberOf(a,b),subOrganizationOf(b,c),undergraduateDegreeFrom(a,c),rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'),rdftype(b,y='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'),rdftype(c,z='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University').")
+  emptyheaded.query("lubm2(a,b,c) :- memberOf(a,b),subOrganizationOf(b,c),undergraduateDegreeFrom(a,c),rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'),rdftype(b,y='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'),rdftype(c,z='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University').")
+  print "RUNNING QUERY: LUBM3"
+  emptyheaded.query("lubm3(a) :- rdftype(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Publication'),publicationAuthor(a,c='http://www.Department0.University0.edu/AssistantProfessor0').")
   print "RUNNING QUERY: LUBM4"
-  query("lubm4(a,b,c,d) :- worksFor(a,e='http://www.Department0.University0.edu'),name(a,b),emailAddress(a,d),telephone(a,c),rdftype(a,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#AssociateProfessor').")
-  print "RUNNING QUERY: LUBM6"
-  query("lubm6(a) :- rdftype(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
+  emptyheaded.query("lubm4(a,b,c,d) :- worksFor(a,e='http://www.Department0.University0.edu'),name(a,b),emailAddress(a,d),telephone(a,c),rdftype(a,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#AssociateProfessor').")
+  print "RUNNING QUERY LUBM5"
+  emptyheaded.query("lubm5(a) :- rdftype(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'),memberOf(a,c='http://www.Department0.University0.edu').")
   print "RUNNING QUERY: LUBM7"
-  query("lubm7(a,b) :- teacherOf(c='http://www.Department0.University0.edu/AssociateProfessor0',b),takesCourse(a,b),rdftype(b,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'),rdftype(a,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
+  emptyheaded.query("lubm7(b,c) :- teacherOf(a='http://www.Department0.University0.edu/AssociateProfessor0',b),takesCourse(c,b),rdftype(b,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'),rdftype(c,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
   print "RUNNING QUERY: LUBM8"
-  query("lubm8(a,b,c) :- memberOf(a,b),emailAddress(a,c),rdftype(a,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'),subOrganizationOf(b,e='http://www.University0.edu'),rdftype(b,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
+  emptyheaded.query("lubm8(a,b,c) :- memberOf(a,b),emailAddress(a,c),rdftype(a,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'),subOrganizationOf(b,e='http://www.University0.edu'),rdftype(b,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
+  print "RUNNING QUERY: LUBM9"
+  emptyheaded.query("lubm9(a,b,c) :- rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'),rdftype(b,y='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'),rdftype(c,z='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#AssistantProfessor'),advisor(a,c),teacherOf(c,b),takesCourse(a,b).")
+  print "RUNNING QUERY: LUBM11"
+  query("lubm11(a) :- rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#ResearchGroup'),subOrganizationOf(a,y='http://www.University0.edu').")
   print "RUNNING QUERY: LUBM12"
-  query("lubm12(a,b) :- worksFor(a,b),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfessor'),subOrganizationOf(b,d='http://www.University0.edu'),rdftype(b,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
+  emptyheaded.query("lubm12(a,b) :- worksFor(a,b),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfessor'),subOrganizationOf(b,d='http://www.University0.edu'),rdftype(b,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
+  print "RUNNING QUERY: LUBM 13"
+  emptyheaded.query("lubm13(a) :- rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'),undergraduateDegreeFrom(a,y='http://www.University567.edu').")
+  print "RUNNING QUERY: LUBM 14"
+  emptyheaded.query("lubm14(a) :- rdftype(a,b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').")
 
 #mainly just used for regression testing
 def main(argv):
