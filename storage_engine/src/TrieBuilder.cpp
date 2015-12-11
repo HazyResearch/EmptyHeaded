@@ -433,44 +433,6 @@ void TrieBuilder<A,M>::set_annotation(
   annotation[prev_block->get_index(index,data)] = value;
 }
 
-
-template<class A,class M>
-void TrieBuilder<A,M>::foreach_aggregate(
-  std::function<void(
-    const uint32_t a_d)> f) {
-
-    const Set<hybrid> *s = aggregate_sets.at(tmp_level);
-    auto buf = tmp_buffers.at(tmp_level);
-    tmp_level++;
-    s->foreach(sizeof(Set<hybrid>),buf,f);
-    tmp_level--;
-}
-
-template<class A,class M>
-void TrieBuilder<A,M>::foreach_builder(
-  std::function<void(
-    const uint32_t a_i,
-    const uint32_t a_d)> f) {
-
-    const int cur_index = next.at(cur_level).index;
-    if(cur_index == -1){
-      return;
-    }
-    const size_t cur_offset = next.at(cur_level).offset;
-
-    auto buf = trie->memoryBuffers->elements.at(cur_index);
-    uint8_t* place = (uint8_t*)(buf->get_address(cur_offset)+sizeof(TrieBlock<hybrid,M>));
-
-    Set<hybrid> *s = (Set<hybrid>*)place;
-
-    cur_level++;
-    s->foreach_index(
-      (cur_offset+sizeof(TrieBlock<hybrid,M>)+sizeof(Set<hybrid>)),
-      buf,
-      f);
-    cur_level--;
-}
-
 //////////////////////////////////////////////////////////////////////
 ////////////////////////////parallel wrapper
 //////////////////////////////////////////////////////////////////////
@@ -732,29 +694,6 @@ void ParTrieBuilder<A,M>::allocate_next(){
   const size_t next_size = block->nextSize();
   const size_t alloc_size = sizeof(NextLevel)*(next_size);
   trie->memoryBuffers->get_next(NUM_THREADS,alloc_size);
-}
-
-template<class A,class M>
-void ParTrieBuilder<A,M>::par_foreach_aggregate(
-  std::function<void(
-    const size_t tid,
-    const uint32_t a_d)> f) {
-
-    const TrieBlock<hybrid,M>* block = tmp_head;
-    Set<hybrid>* s = (Set<hybrid>*)((uint8_t*)block+sizeof(TrieBlock<hybrid,M>));
-    s->par_foreach(f);
-}
-
-template<class A,class M>
-void ParTrieBuilder<A,M>::par_foreach_builder(
-  std::function<void(
-    const size_t tid,
-    const size_t a_i,
-    const uint32_t a_d)> f) {
-
-    const TrieBlock<hybrid,M>* block = trie->getHead();
-    Set<hybrid>* s = (Set<hybrid>*)((uint8_t*)block+sizeof(TrieBlock<hybrid,M>));
-    s->par_foreach_index(f);
 }
 
 template<class A,class M>
