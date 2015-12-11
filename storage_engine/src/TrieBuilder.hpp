@@ -90,7 +90,7 @@ struct TrieBuilder{
     tmp_level++;
     s->foreach(sizeof(Set<hybrid>),buf,f);
     tmp_level--;
-  };
+  }
 
   template<typename F>
   inline void foreach_builder(F f){
@@ -111,8 +111,7 @@ struct TrieBuilder{
       buf,
       f);
     cur_level--;
-  };
-
+  }
 };
 
 template<class A, class M>
