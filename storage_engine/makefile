@@ -58,7 +58,7 @@ $(EXEDIR):
 	mkdir -p $(EXEDIR)
 
 $(APPS_EXES): $(EXEDIR) emptyheaded
-	$(CXX) $(CXXFLAGS) $(@:bin%=apps%.cpp) $(LIBS) -Llibs -lemptyheaded -o $@ -Isrc
+	$(CXX) $(LINKERARGS) $(CXXFLAGS) $(@:bin%=apps%.cpp) -DEXECUTABLE=1 $(LIBS) -Llibs -lemptyheaded -o $@ -Isrc
 
 query: $(EXEDIR) emptyheaded
 	$(CXX) $(LINKERARGS) $(CXXFLAGS) -DEXECUTABLE=1 codegen/Query.cpp $(LIBS) -Llibs -lemptyheaded -o bin/query -Isrc
