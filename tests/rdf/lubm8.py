@@ -4,8 +4,7 @@ class ResultError(Exception):
     pass
 
 def main():
-  #emptyheaded.loadDB("$EMPTYHEADED_HOME/examples/rdf/data/lubm1/db")
-  emptyheaded.loadDB("/dfs/scratch0/caberger/datasets/lubm10000/db_python")
+  emptyheaded.loadDB("$EMPTYHEADED_HOME/examples/rdf/data/lubm1/db")
   emptyheaded.query("lubm8(a,b,c) :- memberOf(a,b),emailAddress(a,c),rdftype(a,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'),subOrganizationOf(b,e='http://www.University0.edu'),rdftype(b,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
 
   data = emptyheaded.fetchData("lubm8")
