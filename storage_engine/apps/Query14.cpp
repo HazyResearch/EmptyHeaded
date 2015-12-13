@@ -8,6 +8,7 @@
 #include "utils/timer.hpp"
 #include "utils/ParMemoryBuffer.hpp"
 #include "Encoding.hpp"
+#include <atomic>
 
 void Query14::run14() {
   thread_pool::initializeThreadPool();
@@ -55,31 +56,31 @@ void Query14::run14() {
           "http://www.lehigh.edu/~zhp2/2004/0401/"
           "univ-bench.owl#UndergraduateStudent");
 
+      auto data_allocator = Builders.trie->memoryBuffers->head;
+      size_t alloc_size = Iterators_rdftype_b_a.head->get_const_set()->cardinality * sizeof(uint32_t);
+      uint8_t* place = (uint8_t*) (data_allocator->get_next(sizeof(TrieBlock<hybrid,ParMemoryBuffer>)+alloc_size+sizeof(Set<hybrid>)));
+      Set<hybrid> *r = (Set<hybrid>*)(place+sizeof(TrieBlock<hybrid,ParMemoryBuffer>));  
+      uint32_t* integer_data = (uint32_t*)(((uint8_t*)r) + sizeof(Set<hybrid>));
+      std::atomic<size_t> array_index(0);
 
       Iterators_rdftype_b_a.head->get_const_set()->par_foreach_index([&](const size_t tid, const uint32_t index, const uint32_t data){
         TrieIterator<void *, ParMemoryBuffer> *it1 = Iterators_rdftype_b_a.iterators.at(tid);
         it1->get_next_block(0, data);
         const TrieBlock<hybrid,ParMemoryBuffer>*l2 = it1->levels.at(1);
         if(l2->get_const_set()->find(selection_b_0) != -1){
+          integer_data[array_index.fetch_add(1)] = data;
           num_rows_reducer.update(tid,1);
         }
       });
+
+      r->number_of_bytes = (array_index*sizeof(uint32_t));
+      r->cardinality = array_index;
+      r->type = type::UINTEGER;
+
       std::cout << "NUM ROWS: " << num_rows_reducer.evaluate(0) << std::endl;
-      /*
-      Iterators_rdftype_b_a.get_next_block(selection_b_0);
-      const size_t count_a = Builders.build_set(Iterators_rdftype_b_a.head);
-      num_rows_reducer.update(0, count_a);
-      Builders.trie->num_rows = num_rows_reducer.evaluate(0);
-      std::cout << "NUM ROWS: " << Builders.trie->num_rows
-                << " ANNOTATION: " << Builders.trie->annotation << std::endl;
-      timer::stop_clock("BAG bag_0_b_a TIME", bag_timer);
-      Trie_lubm14_0->memoryBuffers = Builders.trie->memoryBuffers;
-      Trie_lubm14_0->num_rows = Builders.trie->num_rows;
-      Trie_lubm14_0->encodings = Builders.trie->encodings;
-      */
+      std::cout << "NUMBER OF ROWS: " << array_index << std::endl;
     }
     result14 = (void *)Trie_lubm14_0;
-    std::cout << "NUMBER OF ROWS: " << Trie_lubm14_0->num_rows << std::endl;
     timer::stop_clock("QUERY TIME", query_timer);
   }
   thread_pool::deleteThreadPool();
