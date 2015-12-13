@@ -33,13 +33,13 @@ void Query_0::run_0() {
         "subOrganizationOf/subOrganizationOf_1_0");
     timer::stop_clock("LOADING Trie subOrganizationOf_1_0", start_time);
   }
-  Trie<void *, ParMemoryBuffer> *Trie_worksFor_0_1 = NULL;
+  Trie<void *, ParMemoryBuffer> *Trie_worksFor_1_0 = NULL;
   {
     auto start_time = timer::start_clock();
-    Trie_worksFor_0_1 = Trie<void *, ParMemoryBuffer>::load(
+    Trie_worksFor_1_0 = Trie<void *, ParMemoryBuffer>::load(
         "/dfs/scratch0/caberger/datasets/lubm10000/db_python/relations/"
-        "worksFor/worksFor_0_1");
-    timer::stop_clock("LOADING Trie worksFor_0_1", start_time);
+        "worksFor/worksFor_1_0");
+    timer::stop_clock("LOADING Trie worksFor_1_0", start_time);
   }
 
   auto e_loading_subject = timer::start_clock();
@@ -134,37 +134,36 @@ void Query_0::run_0() {
       ParTrieBuilder<void *, ParMemoryBuffer> Builders(Trie_bag_0_a_b_0_1, 2);
       Builders.trie->encodings.push_back((void *)Encoding_subject);
       Builders.trie->encodings.push_back((void *)Encoding_subject);
-      ParTrieIterator<void *, ParMemoryBuffer> Iterators_worksFor_a_b(
-          Trie_worksFor_0_1);
+      ParTrieIterator<void *, ParMemoryBuffer> Iterators_worksFor_b_a(
+          Trie_worksFor_1_0);
       ParTrieIterator<void *, ParMemoryBuffer> Iterators_bag_1_c_a_a(
           Trie_bag_1_c_a_0);
       ParTrieIterator<void *, ParMemoryBuffer> Iterators_bag_1_d_b_b(
           Trie_bag_1_d_b_0);
       ParTrieIterator<void *, ParMemoryBuffer> Iterators_bag_1_e_b_b(
           Trie_bag_1_e_b_0);
-      const size_t count_a = Builders.build_set(
-                                                Iterators_bag_1_c_a_a.head);
+
+      std::vector<const TrieBlock<hybrid, ParMemoryBuffer> *> b_sets;
+      b_sets.push_back(Iterators_worksFor_b_a.head);
+      b_sets.push_back(Iterators_bag_1_d_b_b.head);
+      b_sets.push_back(Iterators_bag_1_e_b_b.head);
+      const size_t count_b = Builders.build_set(&b_sets);
+
       Builders.allocate_next();
       Builders.par_foreach_builder(
-          [&](const size_t tid, const uint32_t a_i, const uint32_t a_d) {
-            TrieBuilder<void *, ParMemoryBuffer> *Builder =
-                Builders.builders.at(tid);
-            TrieIterator<void *, ParMemoryBuffer> *Iterator_worksFor_a_b =
-                Iterators_worksFor_a_b.iterators.at(tid);
+          [&](const size_t tid, const uint32_t b_i, const uint32_t b_d) {
+            TrieIterator<void *, ParMemoryBuffer> *Iterator_worksFor_b_a =
+                Iterators_worksFor_b_a.iterators.at(tid);
             TrieIterator<void *, ParMemoryBuffer> *Iterator_bag_1_c_a_a =
                 Iterators_bag_1_c_a_a.iterators.at(tid);
-            TrieIterator<void *, ParMemoryBuffer> *Iterator_bag_1_d_b_b =
-                Iterators_bag_1_d_b_b.iterators.at(tid);
-            TrieIterator<void *, ParMemoryBuffer> *Iterator_bag_1_e_b_b =
-                Iterators_bag_1_e_b_b.iterators.at(tid);
-            Iterator_worksFor_a_b->get_next_block(0, a_d);
-            std::vector<const TrieBlock<hybrid, ParMemoryBuffer> *> b_sets;
-            b_sets.push_back(Iterator_worksFor_a_b->get_block(1));
-            b_sets.push_back(Iterator_bag_1_d_b_b->get_block(0));
-            b_sets.push_back(Iterator_bag_1_e_b_b->get_block(0));
-            const size_t count_b = Builder->build_set(tid, &b_sets);
-            num_rows_reducer.update(tid, count_b);
-            Builder->set_level(a_i, a_d);
+            Iterator_worksFor_b_a->get_next_block(0, b_d);
+            TrieBuilder<void *, ParMemoryBuffer> *Builder =
+                Builders.builders.at(tid);
+            const size_t count_a = Builder->build_set(tid, Iterator_worksFor_b_a->get_block(1),
+                                                      Iterator_bag_1_c_a_a->get_block(0));
+
+            num_rows_reducer.update(tid, count_a);
+            Builder->set_level(b_i, b_d);
           });
       Builders.trie->num_rows = num_rows_reducer.evaluate(0);
       std::cout << "NUM ROWS: " << Builders.trie->num_rows
