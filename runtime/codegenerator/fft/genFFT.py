@@ -118,15 +118,17 @@ class GenFFT(object):
                 body += "\n" + code_blocks.bag_print(bag_num)
 
             body += "\n" + "}"
-        return (
-            code_blocks.headers +
-            code_blocks.prologue(self.b, self.m, self.n) +
-            code_blocks.start_timer +
-            code_blocks.setup +
-            body +
-            code_blocks.end_timer +
-            code_blocks.epilogue
-        )
+        return "\n".join([
+            code_blocks.headers,
+            code_blocks.prologue(self.b, self.m, self.n),
+            code_blocks.start_timer("setup"),
+            code_blocks.setup,
+            code_blocks.end_timer("setup"),
+            code_blocks.start_timer("fft"),
+            body,
+            code_blocks.end_timer("fft"),
+            code_blocks.epilogue,
+        ])
 
     def get_filename(self):
         filename = "{home}/storage_engine/apps/fft_gen_{b}_{m}.cpp".format(

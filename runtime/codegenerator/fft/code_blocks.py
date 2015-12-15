@@ -287,10 +287,18 @@ def comment_var(var):
         var=var
     )
 
-start_timer = """
-auto fft_timer = timer::start_clock();
-"""
 
-end_timer = """
-timer::stop_clock("FFT TIME", fft_timer);
-"""
+def start_timer(name):
+    return """
+    auto {name}_timer = timer::start_clock();
+    """.format(
+        name=name,
+    ).strip()
+
+
+def end_timer(name):
+    return """
+    timer::stop_clock("{name} TIME", {name}_timer);
+    """.format(
+        name=name,
+    ).strip()
