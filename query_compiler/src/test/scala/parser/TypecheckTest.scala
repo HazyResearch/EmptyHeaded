@@ -126,4 +126,30 @@ class TypecheckTest extends FunSuite {
       query.typecheck()
     }
   }
+
+  test("Throws exception when you attempt to output an attribute that's aggregated away") {
+    Environment.fromJsonString(configContents)
+    val query = ASTQueryStatement(
+      QueryRelation("lhs", List(("a", "", ""), ("b", "", ""), ("c", "", ""))),
+      None,
+      "join",
+      List(QueryRelation("Edge", List(("a", "", ""), ("b", "", ""))), QueryRelation("Edge", List(("a", "", ""), ("c", "", "")))),
+      Map(("b"-> ParsedAggregate("COUNT", "", "1", "")))
+    )
+    intercept[OutputAttributeAggregatedAwayException] {
+      query.typecheck()
+    }
+  }
+
+  test("Can have aggregations, as long as you don't try to output them") {
+    Environment.fromJsonString(configContents)
+    val query = ASTQueryStatement(
+      QueryRelation("lhs", List(("a", "", ""), ("c", "", ""))),
+      None,
+      "join",
+      List(QueryRelation("Edge", List(("a", "", ""), ("b", "", ""))), QueryRelation("Edge", List(("c", "", ""), ("a", "", "")))),
+      Map("b" -> ParsedAggregate("COUNT", "", "1", ""))
+    )
+    query.typecheck()
+  }
 }

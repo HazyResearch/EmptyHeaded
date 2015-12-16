@@ -18,6 +18,8 @@ case class JoinTypeMismatchException(attr:Attr, attrTypes:Set[AttrType]) extends
   s"""Found multiple types [${attrTypes.mkString(",")}] for attribute ${attr}""")
 case class OutputAttributeNotFoundInJoinException(attr:Attr) extends Exception(
   s"""Output attribute ${attr} not found in query body""")
+case class OutputAttributeAggregatedAwayException(attr:Attr) extends Exception(
+  s"""Output attribute ${attr} is aggregated away""")
 case class NoTypeFoundException(relName:String, attrPos:Int) extends Exception(
   s"""No type found for ${attrPos}th attribute of relation ${relName}"""
 )
@@ -52,10 +54,15 @@ case class ASTQueryStatement(lhs:QueryRelation,
         (attr, attrType.head)
       }
     }).toMap
-    val attrTypes = lhs.attrNames.map(attrName => attrToType.get(attrName) match {
-      case Some(x) => x
-      case None => throw OutputAttributeNotFoundInJoinException(attrName)
-    } )
+    val attrTypes = lhs.attrNames.map(attrName => {
+      if (joinAggregates.get(attrName).isDefined)
+        throw OutputAttributeAggregatedAwayException(attrName)
+      else
+        attrToType.get(attrName) match {
+          case Some(x) => x
+          case None => throw OutputAttributeNotFoundInJoinException(attrName)
+        }
+    })
     outputType = attrTypes
   }
 
