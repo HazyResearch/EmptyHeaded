@@ -66,8 +66,8 @@ object DCParser extends RegexParsers {
     this.parseAll(this.statements, line) match {
       case DCParser.Success(parsedStatements, _) => {
         Environment.startScope()
-        parsedStatements.foreach(_.typecheck)
         parsedStatements.foreach(parsedStatement => {
+          parsedStatement.typecheck
           Environment.addRelation(parsedStatement.lhs, parsedStatement.getOutputType)
         })
         val graph = EvalGraph(parsedStatements)
