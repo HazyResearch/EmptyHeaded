@@ -503,6 +503,8 @@ Trie<A,M>::Trie(
     }
   }
 
+  delete[] tmp_st;
+  delete[] tmp_i;
   delete ranges_buffer;
   delete set_data_buffer;
 }
