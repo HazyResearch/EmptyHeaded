@@ -31,6 +31,7 @@ object Environment {
   }
 
   def fromJsonString(jsonString:String) = {
+    implicit val formats = DefaultFormats
     config = parse(jsonString).extract[DatabaseConfig]
     schemaStack.push(mutable.Map() ++ config.schemas)
   }
