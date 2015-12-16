@@ -12,13 +12,15 @@ case class ASTEpsilonCondition(eps:Double) extends ASTConvergenceCondition
 
 case class InfiniteRecursionException(what:String) extends Exception(
   s"""Infinite recursion detected in eval graph: ${what}""")
-case class NoOutputTypeException(query:String) extends Exception(
-  s"""No output type for ${query}, likely due to failure to running typechecking pass""")
+case class NoOutputTypeException(lhsName:String) extends Exception(
+  s"""No output type for ${lhsName}, likely due to failure to run typechecking pass""")
 case class JoinTypeMismatchException(attr:Attr, attrTypes:Set[AttrType]) extends Exception(
-  s"""Found multiple types ${attrTypes} for attribute ${attr}""")
+  s"""Found multiple types [${attrTypes.mkString(",")}] for attribute ${attr}""")
 case class OutputAttributeNotFoundInJoinException(attr:Attr) extends Exception(
   s"""Output attribute ${attr} not found in query body""")
-case class NoTypeFoundException(what:String) extends Exception
+case class NoTypeFoundException(relName:String, attrPos:Int) extends Exception(
+  s"""No type found for ${attrPos}th attribute of relation ${relName}"""
+)
 
 case class ASTQueryStatement(lhs:QueryRelation,
                              convergence:Option[ASTConvergenceCondition],
@@ -52,7 +54,7 @@ case class ASTQueryStatement(lhs:QueryRelation,
     }).toMap
     val attrTypes = lhs.attrNames.map(attrName => attrToType.get(attrName) match {
       case Some(x) => x
-      case None => throw OutputAttributeNotFoundInJoinException("")
+      case None => throw OutputAttributeNotFoundInJoinException(attrName)
     } )
     outputType = attrTypes
   }
@@ -63,7 +65,7 @@ case class ASTQueryStatement(lhs:QueryRelation,
    */
   def getOutputType() : List[AttrType] = {
     if (outputType == null) {
-      throw NoOutputTypeException("")
+      throw NoOutputTypeException(lhs.name)
     } else {
       return outputType
     }

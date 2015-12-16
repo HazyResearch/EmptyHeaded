@@ -99,6 +99,20 @@ class TypecheckTest extends FunSuite {
     }
   }
 
+  test("Throws exception when you claim rel has more attributes than it actually has") {
+    Environment.fromJsonString(configContents)
+    val query = ASTQueryStatement(
+      QueryRelation("lhs", List(("a", "", ""))),
+      None,
+      "join",
+      List(QueryRelation("Edge", List(("a", "", ""), ("b", "=", "1"), ("d", "=", "1"))), QueryRelation("Edge", List(("a", "", ""), ("c", "=", "1")))),
+      Map()
+    )
+    intercept[NoTypeFoundException] {
+      query.typecheck()
+    }
+  }
+
   test("Throws exception when you're attempting to join two cols of different types") {
     Environment.fromJsonString(configContents)
     val query = ASTQueryStatement(

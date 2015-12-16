@@ -61,7 +61,7 @@ object Environment {
     if(typeOpt.isDefined) {
       return typeOpt.get
     } else {
-      throw NoTypeFoundException("")
+      throw NoTypeFoundException(relName, attrPos)
     }
   }
 
