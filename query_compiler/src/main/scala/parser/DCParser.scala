@@ -7,10 +7,12 @@ import scala.util.parsing.combinator.RegexParsers
 
 package object attr {
   type Attr = String
+  type AttrType = String
   type SelectionOp = String
   type SelectionVal = String
   type AttrInfo = (Attr, SelectionOp, SelectionVal)
   type AggInfo = Map[String, ParsedAggregate]
+  type AnnotationType = String
 }
 
 case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*") {
@@ -64,7 +66,10 @@ object DCParser extends RegexParsers {
     this.parseAll(this.statements, line) match {
       case DCParser.Success(parsedStatements, _) => {
         Environment.startScope()
-        parsedStatements.foreach(parsedStatement => Environment.addRelation(parsedStatement.lhs))
+        parsedStatements.foreach(parsedStatement => {
+          parsedStatement.typecheck
+          Environment.addRelation(parsedStatement.lhs, parsedStatement.getOutputType)
+        })
         val graph = EvalGraph(parsedStatements)
         val plans = graph.computePlan(config)
         Environment.endScope()
