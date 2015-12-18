@@ -140,11 +140,11 @@ def duplicated_graph(dataset,startNode,create):
     SSSP(x;y:int)*[c=0] :- Edge(w,x),SSSP(w);y=[1+<<MIN(w;1)>>]."""% locals())
 
 def lubm(create):
-  print "DATASET: LUBM10000"
+  print "DATASET: LUBM500M"
   if create:
     db_config="/afs/cs.stanford.edu/u/caberger/rdf.json"
     createDB(db_config)
-  loadDB("/dfs/scratch0/caberger/datasets/lubm10000/db_python")
+  loadDB("/dfs/scratch0/caberger/datasets/lubm500M/db_python")
   print "RUNNING QUERY: LUBM1"
   query("lubm1(a) :- takesCourse(a,b='http://www.Department0.University0.edu/GraduateCourse0'),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent').")
   print "RUNNING QUERY: LUBM2"
