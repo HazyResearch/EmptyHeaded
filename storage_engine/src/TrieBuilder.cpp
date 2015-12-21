@@ -153,7 +153,7 @@ size_t TrieBuilder<A,M>::build_set(
       return 0;
     }
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
-    alloc_size = std::max(alloc_size,tmp_set->number_of_bytes);
+    alloc_size = std::min(alloc_size,tmp_set->number_of_bytes);
     min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
     if(min_set == tmp_set->cardinality){
       s1 = tmp_set;

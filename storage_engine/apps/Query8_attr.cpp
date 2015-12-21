@@ -38,7 +38,7 @@ void Query_0::run_0() {
     auto start_time = timer::start_clock();
     Trie_rdftype_1_0 = Trie<void *, ParMemoryBuffer>::load(
         "/dfs/scratch0/caberger/datasets/lubm10000/db_python/relations/rdftype/"
-        "rdftype_1_0");
+        "rdftype_0_1");
     timer::stop_clock("LOADING Trie rdftype_1_0", start_time);
   }
   Trie<void *, ParMemoryBuffer> *Trie_subOrganizationOf_1_0 = NULL;
@@ -89,9 +89,29 @@ void Query_0::run_0() {
       const uint32_t selection_d_0 = Encoding_types->value_to_key.at(
           "http://www.lehigh.edu/~zhp2/2004/0401/"
           "univ-bench.owl#UndergraduateStudent");
-      Iterators_rdftype_d_a.get_next_block(selection_d_0);
-      const size_t count_a = Builders.build_set(Iterators_rdftype_d_a.head);
-      num_rows_reducer.update(0, count_a);
+      //////////////////////////////////////////////
+      //copy me for bad attr selection
+      auto iterator = Iterators_rdftype_d_a;
+      auto selection = selection_d_0;
+      auto data_allocator = Builders.trie->memoryBuffers->head;
+      size_t alloc_size = iterator.head->get_const_set()->cardinality * sizeof(uint32_t);
+      uint8_t* place = (uint8_t*) (data_allocator->get_next(sizeof(TrieBlock<hybrid,ParMemoryBuffer>)+alloc_size+sizeof(Set<hybrid>)));
+      Set<hybrid> *r = (Set<hybrid>*)(place+sizeof(TrieBlock<hybrid,ParMemoryBuffer>));  
+      uint32_t* integer_data = (uint32_t*)(((uint8_t*)r) + sizeof(Set<hybrid>));
+      std::atomic<size_t> array_index(0);
+      iterator.head->get_const_set()->par_foreach_index([&](const size_t tid, const uint32_t index, const uint32_t data){
+        TrieIterator<void *, ParMemoryBuffer> *it1 = iterator.iterators.at(tid);
+        it1->get_next_block(0, data);
+        const TrieBlock<hybrid,ParMemoryBuffer>*l2 = it1->levels.at(1);
+        if(l2->get_const_set()->find(selection) != -1){
+          integer_data[array_index.fetch_add(1)] = data;
+          num_rows_reducer.update(tid,1);
+        }
+      });
+      r->number_of_bytes = (array_index*sizeof(uint32_t));
+      r->cardinality = array_index;
+      r->type = type::UINTEGER;
+      //////////////////////////////////////////////
       Builders.trie->num_rows = num_rows_reducer.evaluate(0);
       std::cout << "NUM ROWS: " << Builders.trie->num_rows
                 << " ANNOTATION: " << Builders.trie->annotation << std::endl;
@@ -134,9 +154,29 @@ void Query_0::run_0() {
           Trie_rdftype_1_0);
       const uint32_t selection_f_0 = Encoding_types->value_to_key.at(
           "http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department");
-      Iterators_rdftype_f_b.get_next_block(selection_f_0);
-      const size_t count_b = Builders.build_set(Iterators_rdftype_f_b.head);
-      num_rows_reducer.update(0, count_b);
+      //////////////////////////////////////////////
+      //copy me for bad attr selection
+      auto iterator = Iterators_rdftype_f_b;
+      auto selection = selection_f_0;
+      auto data_allocator = Builders.trie->memoryBuffers->head;
+      size_t alloc_size = iterator.head->get_const_set()->cardinality * sizeof(uint32_t);
+      uint8_t* place = (uint8_t*) (data_allocator->get_next(sizeof(TrieBlock<hybrid,ParMemoryBuffer>)+alloc_size+sizeof(Set<hybrid>)));
+      Set<hybrid> *r = (Set<hybrid>*)(place+sizeof(TrieBlock<hybrid,ParMemoryBuffer>));  
+      uint32_t* integer_data = (uint32_t*)(((uint8_t*)r) + sizeof(Set<hybrid>));
+      std::atomic<size_t> array_index(0);
+      iterator.head->get_const_set()->par_foreach_index([&](const size_t tid, const uint32_t index, const uint32_t data){
+        TrieIterator<void *, ParMemoryBuffer> *it1 = iterator.iterators.at(tid);
+        it1->get_next_block(0, data);
+        const TrieBlock<hybrid,ParMemoryBuffer>*l2 = it1->levels.at(1);
+        if(l2->get_const_set()->find(selection) != -1){
+          integer_data[array_index.fetch_add(1)] = data;
+          num_rows_reducer.update(tid,1);
+        }
+      });
+      r->number_of_bytes = (array_index*sizeof(uint32_t));
+      r->cardinality = array_index;
+      r->type = type::UINTEGER;
+      //////////////////////////////////////////////
       Builders.trie->num_rows = num_rows_reducer.evaluate(0);
       std::cout << "NUM ROWS: " << Builders.trie->num_rows
                 << " ANNOTATION: " << Builders.trie->annotation << std::endl;

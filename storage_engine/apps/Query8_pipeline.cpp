@@ -1,5 +1,4 @@
-
-#include "LUBM.hpp"
+#include "Query8_ghd.hpp"
 #include "utils/thread_pool.hpp"
 #include "utils/parallel.hpp"
 #include "Trie.hpp"
@@ -146,7 +145,7 @@ void Query_0::run_0() {
         new Trie<void *, ParMemoryBuffer>("/dfs/scratch0/caberger/datasets/"
                                           "lubm10000/db_python/relations/"
                                           "bag_0_a_b",
-                                          2, false);
+                                          3, false);
     {
       auto bag_timer = timer::start_clock();
       num_rows_reducer.clear();
@@ -161,7 +160,14 @@ void Query_0::run_0() {
           Trie_bag_1_e_b_0);
       ParTrieIterator<void *, ParMemoryBuffer> Iterators_bag_1_f_b_b(
           Trie_bag_1_f_b_0);
-      const size_t count_a = Builders.build_set(Iterators_bag_1_d_a_a.head,Iterators_memberOf_a_b.head);
+      ParTrieIterator<void *, ParMemoryBuffer> Iterators_emailAddress_a_c(
+          Trie_emailAddress_0_1);
+
+      std::vector<const TrieBlock<hybrid, ParMemoryBuffer> *> a_sets;
+      a_sets.push_back(Iterators_memberOf_a_b.head);
+      a_sets.push_back(Iterators_bag_1_d_a_a.head);
+      a_sets.push_back(Iterators_emailAddress_a_c.head);
+      const size_t count_a = Builders.build_set(&a_sets);
       Builders.allocate_next();
       Builders.par_foreach_builder(
           [&](const size_t tid, const uint32_t a_i, const uint32_t a_d) {
@@ -175,20 +181,31 @@ void Query_0::run_0() {
                 Iterators_bag_1_e_b_b.iterators.at(tid);
             TrieIterator<void *, ParMemoryBuffer> *Iterator_bag_1_f_b_b =
                 Iterators_bag_1_f_b_b.iterators.at(tid);
+            TrieIterator<void *, ParMemoryBuffer> *Iterator_emailAddress_a_c =
+              Iterators_emailAddress_a_c.iterators.at(tid);
             Iterator_memberOf_a_b->get_next_block(0, a_d);
+            Iterator_emailAddress_a_c->get_next_block(0, a_d);
             std::vector<const TrieBlock<hybrid, ParMemoryBuffer> *> b_sets;
             b_sets.push_back(Iterator_memberOf_a_b->get_block(1));
             b_sets.push_back(Iterator_bag_1_e_b_b->get_block(0));
             b_sets.push_back(Iterator_bag_1_f_b_b->get_block(0));
             const size_t count_b = Builder->build_set(tid, &b_sets);
-            num_rows_reducer.update(tid, count_b);
+            Builder->allocate_next(tid);
+            Builder->foreach_builder([&](const uint32_t b_i, const uint32_t b_d){
+              const size_t count_c =
+                Builder->build_set(tid, Iterator_emailAddress_a_c->get_block(1));
+              num_rows_reducer.update(tid, count_c);
+              Builder->set_level(b_i, b_d);
+            });
             Builder->set_level(a_i, a_d);
           });
       Builders.trie->num_rows = num_rows_reducer.evaluate(0);
+      Trie_lubm8_0_1_2 = Builders.trie;
       std::cout << "NUM ROWS: " << Builders.trie->num_rows
                 << " ANNOTATION: " << Builders.trie->annotation << std::endl;
       timer::stop_clock("BAG bag_0_a_b TIME", bag_timer);
     }
+    /*
     Trie<void *, ParMemoryBuffer> *Trie_bag_1_a_c_0_1 =
         new Trie<void *, ParMemoryBuffer>("/dfs/scratch0/caberger/datasets/"
                                           "lubm10000/db_python/relations/"
@@ -202,9 +219,9 @@ void Query_0::run_0() {
       Builders.trie->encodings.push_back((void *)Encoding_email);
       ParTrieIterator<void *, ParMemoryBuffer> Iterators_emailAddress_a_c(
           Trie_emailAddress_0_1);
-      ParTrieIterator<void *, ParMemoryBuffer> Iterators_prev(Trie_bag_0_a_b_0_1);
-      const size_t count_a =
-          Builders.build_set(Iterators_emailAddress_a_c.head,Iterators_prev.head);
+      ParTrieIterator<void *, ParMemoryBuffer> Iterators_bag_0_a_b(
+          Trie_bag_0_a_b_0_1);
+      const size_t count_a = Builders.build_set(Iterators_emailAddress_a_c.head,Iterators_bag_0_a_b.head);
       Builders.allocate_next();
       Builders.par_foreach_builder([&](const size_t tid, const uint32_t a_i,
                                        const uint32_t a_d) {
@@ -236,13 +253,11 @@ void Query_0::run_0() {
           Trie_bag_1_d_a_0);
       ParTrieIterator<void *, ParMemoryBuffer> Iterators_bag_1_e_b(
           Trie_bag_1_e_b_0);
-      ParTrieIterator<void *, ParMemoryBuffer> Iterators_prev(Trie_bag_1_a_c_0_1);
-
       ParTrieBuilder<void *, ParMemoryBuffer> Builders(Trie_lubm8_0_1_2, 3);
       Builders.trie->encodings.push_back((void *)Encoding_subject);
       Builders.trie->encodings.push_back((void *)Encoding_subject);
       Builders.trie->encodings.push_back((void *)Encoding_email);
-      Builders.build_set(Iterators_prev.head);
+      Builders.build_set(Iterators_bag_0_a_b.head);
       Builders.allocate_next();
       Builders.par_foreach_builder([&](const size_t tid, const uint32_t a_i,
                                        const uint32_t a_d) {
@@ -273,6 +288,7 @@ void Query_0::run_0() {
       Builders.trie->num_rows = num_rows_reducer.evaluate(0);
       timer::stop_clock("TOP DOWN TIME", bag_timer);
     }
+    */
     result_0 = (void *)Trie_lubm8_0_1_2;
     std::cout << "NUMBER OF ROWS: " << Trie_lubm8_0_1_2->num_rows << std::endl;
     timer::stop_clock("QUERY TIME", query_timer);

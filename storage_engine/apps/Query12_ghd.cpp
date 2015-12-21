@@ -14,14 +14,14 @@ void Query_0::run_0() {
 
   Trie<void *, ParMemoryBuffer> *Trie_lubm12_0_1 =
       new Trie<void *, ParMemoryBuffer>("/dfs/scratch0/caberger/datasets/"
-                                        "lubm10000/db_python/relations/lubm12/"
+                                        "lubm10000/db_python_uinteger/relations/lubm12/"
                                         "lubm12_0_1",
                                         2, false);
   Trie<void *, ParMemoryBuffer> *Trie_rdftype_1_0 = NULL;
   {
     auto start_time = timer::start_clock();
     Trie_rdftype_1_0 = Trie<void *, ParMemoryBuffer>::load(
-        "/dfs/scratch0/caberger/datasets/lubm10000/db_python/relations/rdftype/"
+        "/dfs/scratch0/caberger/datasets/lubm10000/db_python_uinteger/relations/rdftype/"
         "rdftype_1_0");
     timer::stop_clock("LOADING Trie rdftype_1_0", start_time);
   }
@@ -29,7 +29,7 @@ void Query_0::run_0() {
   {
     auto start_time = timer::start_clock();
     Trie_subOrganizationOf_1_0 = Trie<void *, ParMemoryBuffer>::load(
-        "/dfs/scratch0/caberger/datasets/lubm10000/db_python/relations/"
+        "/dfs/scratch0/caberger/datasets/lubm10000/db_python_uinteger/relations/"
         "subOrganizationOf/subOrganizationOf_1_0");
     timer::stop_clock("LOADING Trie subOrganizationOf_1_0", start_time);
   }
@@ -37,20 +37,20 @@ void Query_0::run_0() {
   {
     auto start_time = timer::start_clock();
     Trie_worksFor_1_0 = Trie<void *, ParMemoryBuffer>::load(
-        "/dfs/scratch0/caberger/datasets/lubm10000/db_python/relations/"
+        "/dfs/scratch0/caberger/datasets/lubm10000/db_python_uinteger/relations/"
         "worksFor/worksFor_1_0");
     timer::stop_clock("LOADING Trie worksFor_1_0", start_time);
   }
 
   auto e_loading_subject = timer::start_clock();
   Encoding<std::string> *Encoding_subject = Encoding<std::string>::from_binary(
-      "/dfs/scratch0/caberger/datasets/lubm10000/db_python/encodings/subject/");
+      "/dfs/scratch0/caberger/datasets/lubm10000/db_python_uinteger/encodings/subject/");
   (void)Encoding_subject;
   timer::stop_clock("LOADING ENCODINGS subject", e_loading_subject);
 
   auto e_loading_types = timer::start_clock();
   Encoding<std::string> *Encoding_types = Encoding<std::string>::from_binary(
-      "/dfs/scratch0/caberger/datasets/lubm10000/db_python/encodings/types/");
+      "/dfs/scratch0/caberger/datasets/lubm10000/db_python_uinteger/encodings/types/");
   (void)Encoding_types;
   timer::stop_clock("LOADING ENCODINGS types", e_loading_types);
   par::reducer<size_t> num_rows_reducer(
@@ -62,7 +62,7 @@ void Query_0::run_0() {
     auto query_timer = timer::start_clock();
     Trie<void *, ParMemoryBuffer> *Trie_bag_1_c_a_0 =
         new Trie<void *, ParMemoryBuffer>("/dfs/scratch0/caberger/datasets/"
-                                          "lubm10000/db_python/relations/"
+                                          "lubm10000/db_python_uinteger/relations/"
                                           "bag_1_c_a",
                                           1, false);
     {
@@ -84,7 +84,7 @@ void Query_0::run_0() {
     }
     Trie<void *, ParMemoryBuffer> *Trie_bag_1_d_b_0 =
         new Trie<void *, ParMemoryBuffer>("/dfs/scratch0/caberger/datasets/"
-                                          "lubm10000/db_python/relations/"
+                                          "lubm10000/db_python_uinteger/relations/"
                                           "bag_1_d_b",
                                           1, false);
     {
@@ -107,7 +107,7 @@ void Query_0::run_0() {
     }
     Trie<void *, ParMemoryBuffer> *Trie_bag_1_e_b_0 =
         new Trie<void *, ParMemoryBuffer>("/dfs/scratch0/caberger/datasets/"
-                                          "lubm10000/db_python/relations/"
+                                          "lubm10000/db_python_uinteger/relations/"
                                           "bag_1_e_b",
                                           1, false);
     {
@@ -148,7 +148,6 @@ void Query_0::run_0() {
       b_sets.push_back(Iterators_bag_1_d_b_b.head);
       b_sets.push_back(Iterators_bag_1_e_b_b.head);
       const size_t count_b = Builders.build_set(&b_sets);
-
       Builders.allocate_next();
       Builders.par_foreach_builder(
           [&](const size_t tid, const uint32_t b_i, const uint32_t b_d) {
