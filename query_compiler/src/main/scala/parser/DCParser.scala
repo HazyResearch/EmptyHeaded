@@ -28,6 +28,23 @@ case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotat
   }
 }
 
+object QueryRelationFactory {
+  def createQueryRelationWithEqualitySelect(attrsWithoutSelect:List[Attr],
+                                            attrsWithSelect:List[Attr]): QueryRelation = {
+    val attrInfo = attrsWithoutSelect.map(attr => {
+      (attr, "", "")
+    }):::attrsWithSelect.map(attr => {
+      (attr, "=", "b")
+    })
+    new QueryRelation("", attrInfo)
+  }
+
+  def createQueryRelationWithNoSelects(attrs:Iterable[Attr]) = {
+    QueryRelation("", attrs.map(attr => (attr, "", "")).toList)
+  }
+}
+
+
 class RecursionStatement(val functionName:String, val inputArgument:QueryRelation, val convergance:ASTConvergenceCondition)
 
 class TransitiveClosureStatement(val join:List[QueryRelation])

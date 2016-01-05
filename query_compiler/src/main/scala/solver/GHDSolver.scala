@@ -5,6 +5,42 @@ import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
 import scala.collection.mutable
 
 object GHDSolver {
+  def computeAJAR_GHD(rels: mutable.Set[QueryRelation], agg: Set[String]):List[GHDNode] = {
+    val components = getConnectedComponents(rels, List(), agg)
+    val componentsPlus = components.map(getAttrSet(_))
+    val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf agg) union
+      componentsPlus.map(compPlus => agg intersect compPlus).map(QueryRelationFactory.createQueryRelationWithNoSelects(_)).toSet
+    val characteristicHypergraphEdges = components.zip(componentsPlus).map({
+      compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, agg)
+    })
+    val G_i_options = (H_0_edges::characteristicHypergraphEdges).map(H => getMinFHWDecompositions(H.toList))
+    val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)
+    G_i_combos.zip(componentsPlus).map({case (trees, compPlus) => stitchTogether(trees.head, trees.tail, compPlus, agg)})
+  }
+
+  def stitchTogether(G_0:GHDNode, 
+                     G_i:List[GHDNode], 
+                     componentPlus: Set[Attr],
+                     agg:Set[String]): GHDNode = {
+    G_i.foreach(g_i => {
+      g_i.foreach(t_i => {
+        G_0.foreach(t_i_prime => {
+          if (((agg intersect componentPlus) subsetOf t_i.attrSet) &&
+            ((agg intersect componentPlus) subsetOf t_i_prime.attrSet)) {
+            t_i_prime.children = t_i::t_i_prime.children
+          }
+        })
+      })
+    })
+    return G_0
+  }
+
+  def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], agg: Set[String]): mutable.Set[QueryRelation] = {
+    val characteristicHypergraphEdges:mutable.Set[QueryRelation] = mutable.Set[QueryRelation](comp.toList:_*)
+    characteristicHypergraphEdges += QueryRelationFactory.createQueryRelationWithNoSelects(compPlus intersect agg)
+    return characteristicHypergraphEdges
+  }
+
   def getAttrSet(rels: List[QueryRelation]): Set[String] = {
     return rels.foldLeft(Set[String]())(
       (accum: Set[String], rel : QueryRelation) => accum | rel.attrNames.toSet[String])
@@ -61,17 +97,15 @@ object GHDSolver {
   private def getListsOfPossibleSubtrees(partitions: List[List[QueryRelation]], parentAttrs: Set[String]): List[List[GHDNode]] = {
     assert(!partitions.isEmpty)
     val subtreesPerPartition: List[List[GHDNode]] = partitions.map((l: List[QueryRelation]) => getDecompositions(l, parentAttrs))
+    return subtreesPerPartition.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)
+  }
 
-    val foldFunc: (List[List[GHDNode]], List[GHDNode]) => List[List[GHDNode]]
-    = (accum: List[List[GHDNode]], subtreesForOnePartition: List[GHDNode]) => {
-      accum.map((children : List[GHDNode]) => {
-        subtreesForOnePartition.map((subtree : GHDNode) => {
-          subtree::children
-        })
-      }).flatten
-    }
-
-    return subtreesPerPartition.foldLeft(List[List[GHDNode]](List[GHDNode]()))(foldFunc)
+  private def allSubtreeAssignmentsFoldFunc(accum: List[List[GHDNode]], subtreesForOnePartition: List[GHDNode]): List[List[GHDNode]] = {
+    accum.map((children : List[GHDNode]) => {
+      subtreesForOnePartition.map((subtree : GHDNode) => {
+        subtree::children
+      })
+    }).flatten
   }
 
   private def getDecompositions(rels: List[QueryRelation], parentAttrs: Set[String]): List[GHDNode] =  {

@@ -229,10 +229,9 @@ abstract class EHNode(val rels: List[QueryRelation]) {
       }
     })
   }
-
 }
 
-class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) {
+class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with Iterable[GHDNode] {
   var subtreeRels = rels
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
@@ -240,6 +239,10 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) {
   var bagWidth: Int = 0
   var depth: Int = 0
   var projectedOutAttrs: Set[Attr] = null
+
+  override def iterator: Iterator[GHDNode] = {
+    children.iterator.map(_.iterator).flatten ++ Iterator(this)
+  }
 
   /**
    * This is intended for use by GHDSolver, so we don't distinguish between trees with different vars set
