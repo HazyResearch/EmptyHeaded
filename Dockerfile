@@ -32,7 +32,12 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test && apt-get update && apt-get 
     g++-4.9 \
     libtbb-dev \
     clang-format-3.4 \
+    vim \
+    pkg-config \
+    screen \
     libjemalloc-dev 
+
+RUN apt-get install -y firefox
 
 #install scala
 RUN wget https://dl.bintray.com/sbt/debian/sbt-0.13.7.deb
@@ -42,3 +47,9 @@ RUN apt-get install sbt
 #install python add ons
 RUN pip install pandas 
 RUN pip install ipython
+
+RUN git clone https://github.com/HazyResearch/EmptyHeaded.git
+RUN cd EmptyHeaded && ./setup.sh #pulls scala
+
+ENV EMPTYHEADED_HOME=`pwd`
+ENV PYTHONPATH=$EMPTYHEADED_HOME/runtime
