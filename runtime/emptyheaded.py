@@ -184,9 +184,9 @@ def main(argv):
   }
 
   if argv[0] == "pruned":
-    pruned_graph(argv[1],True)
+    pruned_graph(argv[1],False)
   elif argv[0] == "duplicated":
-    duplicated_graph(argv[1],snodes[argv[1]],True)
+    duplicated_graph(argv[1],snodes[argv[1]],False)
   elif argv[0] == "lubm":
     lubm(False)
   else:
