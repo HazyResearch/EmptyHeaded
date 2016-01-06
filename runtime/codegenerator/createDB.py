@@ -31,14 +31,14 @@ def fromJSON(path,env):
   libname = "loadDB"
   os.system("rm -rf "+env.config["database"])
   os.system("cd $EMPTYHEADED_HOME/storage_engine && make clean && make emptyheaded NUM_THREADS=" + str(env.config["numThreads"]) + "&& cd -")
-  cppgenerator.compileAndRun(
+  q = cppgenerator.compileAndRun(
 		lambda: loadRelations(relations,env,libname),
 		libname,env.config["memory"],[],"void*",str(env.config["numThreads"]))
   
-  #Force memory to be cleared
+  #Force memory to be cleared from the reloading the shared library.
   imp.acquire_lock()
   fname = os.path.expandvars("$EMPTYHEADED_HOME/runtime/queries/Query_") + "loadDB.so"
-  mod = imp.reload("Query_loadDB",fname)
+  mod = imp.load_dynamic("Query_loadDB",fname)
   imp.release_lock()
 
   envRelations = {}
