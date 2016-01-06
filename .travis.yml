@@ -18,7 +18,12 @@ addons:
     - python-pandas
 
 install:
-  - pip install --upgrade pandas
+  - pip install conda
+  - conda init
+  - conda update conda --yes
+  - deps='pip numpy pandas requests nose numpydoc sphinx'
+  - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
+  - export PATH=$HOME/py/bin:$PATH 
 
 script: "source ./tests/testAll.sh"
 
