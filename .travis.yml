@@ -4,9 +4,6 @@ language:
   -scala
   -python
 
-jdk:
-  -openjdk8
-
 scala:
   - "2.11.2"
 
