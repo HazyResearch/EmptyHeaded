@@ -17,6 +17,9 @@ addons:
     - libjemalloc-dev
     - python-pandas
 
+install:
+  - pip install --upgrade pandas
+
 script: "source ./tests/testAll.sh"
 
 notifications:
