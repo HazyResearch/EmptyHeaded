@@ -10,7 +10,7 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - clang-format-3.8
+    - clang-format-3.4
     - g++-4.9
     - libtbb-dev
     - libgtest-dev
