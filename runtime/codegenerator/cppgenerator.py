@@ -8,7 +8,10 @@ def generate(f,hashstring):
   cppfile = open(os.environ["EMPTYHEADED_HOME"]+"/storage_engine/codegen/Query.cpp","w")
   cppfile.write(codeString)
   cppfile.close()
-  os.system("clang-format -style=llvm -i "+os.environ["EMPTYHEADED_HOME"]+"/storage_engine/codegen/Query.cpp")
+  try:
+    os.system("clang-format -style=llvm -i "+os.environ["EMPTYHEADED_HOME"]+"/storage_engine/codegen/Query.cpp")
+  except:
+    print "Clang format not found."
 
 def compileC(hashstring,numThreads):
   command = """sed -e "s/HASHSTRING/"""+hashstring+"""/g" """+os.environ["EMPTYHEADED_HOME"]+"/storage_engine/codegen/Query.cpp > "+os.environ["EMPTYHEADED_HOME"]+"/storage_engine/generated/Query_"+hashstring+".cpp"
