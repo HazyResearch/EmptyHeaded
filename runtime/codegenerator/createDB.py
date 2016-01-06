@@ -9,7 +9,7 @@ from sets import Set
 import code.build
 import imp
 import time
-import gc 
+import imp
 
 def printraw(s):
 	sys.stdout.write(s)
@@ -34,7 +34,13 @@ def fromJSON(path,env):
   cppgenerator.compileAndRun(
 		lambda: loadRelations(relations,env,libname),
 		libname,env.config["memory"],[],"void*",str(env.config["numThreads"]))
-  gc.collect()
+  
+  #Force memory to be cleared
+  imp.acquire_lock()
+  fname = os.path.expandvars("$EMPTYHEADED_HOME/runtime/queries/Query_") + "loadDB.so"
+  mod = imp.reload("Query_loadDB",fname)
+  imp.release_lock()
+
   envRelations = {}
   for relation in relations:
     attributes = relation["attributes"]
