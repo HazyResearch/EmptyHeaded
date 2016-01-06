@@ -22,6 +22,7 @@ addons:
     - libjemalloc-dev
 
 install:
+  - pip install --upgrade pip
   - pip install pandas
 
 script: "source ./tests/testAll.sh"
