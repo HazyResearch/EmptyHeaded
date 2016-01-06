@@ -1,17 +1,9 @@
 sudo: false
 
-language: 
-  -scala
-  -python
+language: scala
 
 scala:
-  - "2.11.2"
-
-python:
-  - "2.7"
-
-virtualenv:
-  system_site_packages: true
+  - 2.11.2
 
 addons:
   apt:
