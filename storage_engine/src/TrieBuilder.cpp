@@ -619,7 +619,7 @@ size_t ParTrieBuilder<A,M>::build_set(
     }
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
     same = same && (prev_t == s1->type);
-    alloc_size = get_alloc_size(alloc_size,tmp_set->number_of_bytes,);
+    alloc_size = get_alloc_size(alloc_size,tmp_set->number_of_bytes,same);
     min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
     prev_t = s1->type;
     if(min_set == tmp_set->cardinality){
