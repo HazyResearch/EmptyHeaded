@@ -9,6 +9,7 @@ from sets import Set
 import code.build
 import imp
 import time
+import gc 
 
 def printraw(s):
 	sys.stdout.write(s)
@@ -33,6 +34,7 @@ def fromJSON(path,env):
   cppgenerator.compileAndRun(
 		lambda: loadRelations(relations,env,libname),
 		libname,env.config["memory"],[],"void*",str(env.config["numThreads"]))
+  gc.collect()
   envRelations = {}
   for relation in relations:
     attributes = relation["attributes"]
