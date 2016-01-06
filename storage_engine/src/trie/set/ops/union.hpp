@@ -7,13 +7,12 @@ namespace ops{
     assert(set->number_of_bytes > 0);
     uint64_t* set_data = (uint64_t*)set->get_data();
 
-    const size_t num_data_words = range_bitset::get_number_of_words(set->number_of_bytes);
     const uint64_t offset = ((uint64_t*)set_data)[0];
     uint64_t* A64 = (uint64_t*)(set_data+1);
     const size_t word = range_bitset::word_index(data);
 
     //there better be capacity to perform the op
-    assert(word >= offset && word < (offset+num_data_words));
+    assert(word >= offset && word < (offset+range_bitset::get_number_of_words(set->number_of_bytes)));
 
     const uint64_t set_bit = ((uint64_t) 1 << (data%BITS_PER_WORD));
     const uint64_t old_value = __sync_fetch_and_or((uint64_t*)&A64[word-offset],set_bit);

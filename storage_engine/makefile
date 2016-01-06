@@ -8,6 +8,8 @@ OBJECTS=$(SOURCES:src/%.cpp=$(OBJDIR)/%.o)
 
 ifdef DEBUG
 	override CXXFLAGS += -DDEBUG -g
+else
+	override CXXFLAGS += -DNDEBUG
 endif
 
 ifdef NO_VECTOR

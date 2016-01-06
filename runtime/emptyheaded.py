@@ -164,7 +164,7 @@ def lubm(create):
   print "RUNNING QUERY: LUBM11"
   query("lubm11(a) :- rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#ResearchGroup'),subOrganizationOf(a,y='http://www.University0.edu').")
   print "RUNNING QUERY: LUBM12"
-  query("lubm12(a,b) :- worksFor(a,b),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfessor'),subOrganizationOf(b,d='http://www.University0.edu'),rdftype(b,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
+  query("lubm12(a,b) :- worksFor(b,a),rdftype(b,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfessor'),subOrganizationOf(a,d='http://www.University0.edu'),rdftype(a,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
   print "RUNNING QUERY: LUBM 13"
   query("lubm13(a) :- rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'),undergraduateDegreeFrom(a,y='http://www.University567.edu').")
   print "RUNNING QUERY: LUBM 14"
