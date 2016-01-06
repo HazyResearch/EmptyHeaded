@@ -26,9 +26,13 @@ inline size_t get_alloc_size(
 
 inline size_t get_alloc_size(
   const size_t s1_num_bytes,
-  const size_t s2_num_bytes){
-  
-  return std::min(std::max(s1_num_bytes,s2_num_bytes),32*std::min(s1_num_bytes,s2_num_bytes));
+  const size_t s2_num_bytes,
+  const bool same){
+
+  if(!same)
+    return std::min(std::max(s1_num_bytes,s2_num_bytes),32*std::min(s1_num_bytes,s2_num_bytes));
+  else
+    return std::min(s1_num_bytes,s2_num_bytes);
 }
 
 template<class A,class M>
@@ -156,6 +160,8 @@ size_t TrieBuilder<A,M>::build_set(
   size_t min_set = s1->cardinality;
   size_t alloc_size = s1->number_of_bytes;
   size_t min_index = 0;
+  bool same = true;
+  type::layout prev_t = s1->type;
   for(size_t i = 1; i < isets->size(); i++){
     const TrieBlock<hybrid,M> *tmp_head_set = isets->at(i);
     if(tmp_head_set == NULL){
@@ -171,8 +177,9 @@ size_t TrieBuilder<A,M>::build_set(
       return 0;
     }
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
-    alloc_size = get_alloc_size(alloc_size,tmp_set->number_of_bytes);
+    alloc_size = get_alloc_size(alloc_size,tmp_set->number_of_bytes,(same && (prev_t == tmp_set->type)));
     min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
+    prev_t = tmp_set->type;
     if(min_set == tmp_set->cardinality){
       s1 = tmp_set;
       min_index = i;
@@ -599,6 +606,8 @@ size_t ParTrieBuilder<A,M>::build_set(
   size_t min_set = s1->cardinality;
   size_t alloc_size = s1->number_of_bytes;
   size_t min_index = 0;
+  bool same = true;
+  type::layout prev_t = s1->type;
   for(size_t i = 1; i < isets->size(); i++){
     const TrieBlock<hybrid,M> *tmp_head_set = isets->at(i);
     if(tmp_head_set == NULL){
@@ -608,8 +617,9 @@ size_t ParTrieBuilder<A,M>::build_set(
       return 0;
     }
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
-    alloc_size = get_alloc_size(alloc_size,tmp_set->number_of_bytes);
+    alloc_size = get_alloc_size(alloc_size,tmp_set->number_of_bytes,(same && (prev_t == s1->type)));
     min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
+    prev_t = s1->type;
     if(min_set == tmp_set->cardinality){
       s1 = tmp_set;
       min_index = i;
