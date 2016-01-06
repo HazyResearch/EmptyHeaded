@@ -16,11 +16,13 @@ addons:
     - libgtest-dev
     - libjemalloc-dev
 
-before_script:
+install:
+  - ./mc/bin/conda install -y pandas
+
+before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
-  - export PATH=/home/travis/miniconda/bin:$PATH
-  - conda install --yes pandas=0.17
+  - ./miniconda.sh -b -p mc
  
 script: "source ./tests/testAll.sh"
 
