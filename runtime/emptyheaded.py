@@ -145,6 +145,7 @@ def lubm(create):
     db_config="/afs/cs.stanford.edu/u/caberger/rdf.json"
     createDB(db_config)
   loadDB("/dfs/scratch0/caberger/datasets/lubm10000/db_python")
+  comm="""
   print "RUNNING QUERY: LUBM1"
   query("lubm1(a) :- takesCourse(a,b='http://www.Department0.University0.edu/GraduateCourse0'),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent').")
   print "RUNNING QUERY: LUBM2"
@@ -163,8 +164,9 @@ def lubm(create):
   query("lubm9(a,b,c) :- rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'),rdftype(b,y='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'),rdftype(c,z='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#AssistantProfessor'),advisor(a,c),teacherOf(c,b),takesCourse(a,b).")
   print "RUNNING QUERY: LUBM11"
   query("lubm11(a) :- rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#ResearchGroup'),subOrganizationOf(a,y='http://www.University0.edu').")
+  """
   print "RUNNING QUERY: LUBM12"
-  query("lubm12(a,b) :- worksFor(a,b),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfessor'),subOrganizationOf(b,d='http://www.University0.edu'),rdftype(b,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
+  query("lubm12(a,b) :- worksFor(b,a),rdftype(b,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfessor'),subOrganizationOf(a,d='http://www.University0.edu'),rdftype(a,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department').")
   print "RUNNING QUERY: LUBM 13"
   query("lubm13(a) :- rdftype(a,x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'),undergraduateDegreeFrom(a,y='http://www.University567.edu').")
   print "RUNNING QUERY: LUBM 14"
