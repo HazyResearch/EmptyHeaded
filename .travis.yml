@@ -10,6 +10,9 @@ scala:
 python:
   - "2.7"
 
+virtualenv:
+  system_site_packages: true
+
 addons:
   apt:
     sources:
@@ -20,9 +23,7 @@ addons:
     - libtbb-dev
     - libgtest-dev
     - libjemalloc-dev
-
-install:
-  - pip install pandas
+    - -qq python-pandas
 
 script: "source ./tests/testAll.sh"
 
