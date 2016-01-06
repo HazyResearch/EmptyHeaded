@@ -1,16 +1,16 @@
 import os
 
 def declareColumnStore(name,types):
-	return """ColumnStore<%(types)s> *ColumnStore_%(name)s = new ColumnStore<%(types)s>();"""% locals()
+	return """ColumnStore<%(types)s> ColumnStore_%(name)s;"""% locals()
 
 def declareAnnotationStore(name,type):
-  	return """std::vector<%(type)s> *annotation_%(name)s = new std::vector<%(type)s>();"""% locals()
+  	return """std::vector<%(type)s> annotation_%(name)s;"""% locals()
 
 def declareEncoding(e):
 	name,types = e
   	return """
-  		SortableEncodingMap<%(types)s> *EncodingMap_%(name)s = new SortableEncodingMap<%(types)s>();
-  		Encoding<%(types)s> *Encoding_%(name)s = new Encoding<%(types)s>();
+  		SortableEncodingMap<%(types)s> EncodingMap_%(name)s;
+  		Encoding<%(types)s> Encoding_%(name)s;
 	"""% locals()
 
 def readRelationFromTSV(name,encodings,path,annotation):
@@ -24,14 +24,14 @@ def readRelationFromTSV(name,encodings,path,annotation):
   i = 0
   for ename,types in encodings:
     code += \
-		"""EncodingMap_%(ename)s->update(ColumnStore_%(name)s->append_from_string<%(i)s>(next));
+		"""EncodingMap_%(ename)s.update(ColumnStore_%(name)s.append_from_string<%(i)s>(next));
 		   next = f_reader.tsv_get_next();"""% locals()
     i+=1
   if annotation != "void*":
-    code+="""annotation_%(name)s->push_back(utils::from_string<%(annotation)s>(next));
+    code+="""annotation_%(name)s.push_back(utils::from_string<%(annotation)s>(next));
     next = f_reader.tsv_get_next();"""% locals()
   code += \
-	"""ColumnStore_%(name)s->num_rows++;
+	"""ColumnStore_%(name)s.num_rows++;
 	   }
        timer::stop_clock("READING %(name)s from disk",start_time);
     }"""% locals()
@@ -42,13 +42,12 @@ def buildAndDumpEncoding(path,encoding):
 	return """
 	  {
 	    auto start_time = timer::start_clock();
-	    Encoding_%(name)s->build(EncodingMap_%(name)s->get_sorted());
-	    delete EncodingMap_%(name)s;
+	    Encoding_%(name)s.build(EncodingMap_%(name)s.get_sorted());
 	    timer::stop_clock("BUILDING ENCODINGS", start_time);
 	  }
 	  {
 	    auto start_time = timer::start_clock();
-	    Encoding_%(name)s->to_binary(
+	    Encoding_%(name)s.to_binary(
 	        "%(path)s/encodings/%(name)s/");
 	    timer::stop_clock("WRITING ENCODING %(name)s", start_time);
 	  }
@@ -57,8 +56,7 @@ def buildAndDumpEncoding(path,encoding):
 def encodeRelation(path,name,encodings,annotationType):
 	code = \
 """
-EncodedColumnStore<%(annotationType)s> *Encoded_%(name)s =
-  new EncodedColumnStore<%(annotationType)s>(annotation_%(name)s);
+EncodedColumnStore<%(annotationType)s> Encoded_%(name)s(&annotation_%(name)s);
 {
 auto start_time = timer::start_clock();
 // encodeRelation
@@ -67,12 +65,12 @@ auto start_time = timer::start_clock();
 	for e in encodings:
 		ename,types = e
 		code += \
-"""Encoded_%(name)s->add_column(Encoding_%(ename)s->encode_column(&ColumnStore_%(name)s->get<%(i)s>()),
-                      Encoding_%(ename)s->num_distinct);"""% locals()
+"""Encoded_%(name)s.add_column(Encoding_%(ename)s.encode_column(&ColumnStore_%(name)s.get<%(i)s>()),
+                      Encoding_%(ename)s.num_distinct);"""% locals()
 		i += 1
 	code += \
 """
-Encoded_%(name)s->to_binary(
+Encoded_%(name)s.to_binary(
     "%(path)s/relations/%(name)s/");
 timer::stop_clock("ENCODING %(name)s", start_time);
 }
@@ -90,6 +88,9 @@ def loadEncodedRelation(path,name,annotationType):
       timer::stop_clock("LOADING ENCODED RELATION %(name)s", start_time);
     }
 """% locals()
+
+def deleteMasterEncodedRelation(path,name,annotationType):
+  return """delete Encoded_%(name)s;"""% locals()
 
 def buildOrder(path,name,ordering,annotationType,memType):
 	rname = name
@@ -116,6 +117,7 @@ def buildOrder(path,name,ordering,annotationType,memType):
           &Encoded_%(name)s->annotation);
       timer::stop_clock("BUILDING TRIE %(name)s", start_time);
     }
+    delete Encoded_%(name)s;
     {
       auto start_time = timer::start_clock();
       Trie_%(name)s->save();
