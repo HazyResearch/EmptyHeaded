@@ -15,15 +15,21 @@ addons:
     - libtbb-dev
     - libgtest-dev
     - libjemalloc-dev
-    - python-pandas
 
+# Setup anaconda
+before_install:
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH
+  - conda update --yes conda
+
+# Install packages
 install:
-  - pip install conda
-  - conda init
-  - conda update conda --yes
-  - deps='pip numpy pandas requests nose numpydoc sphinx'
-  - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
-  - export PATH=$HOME/py/bin:$PATH 
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose dateutil pandas statsmodels
+  # Coverage packages are on my binstar channel
+  - conda install --yes -c dan_blanchard python-coveralls nose-cov
+  - python setup.py install
 
 script: "source ./tests/testAll.sh"
 
