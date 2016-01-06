@@ -1,19 +1,31 @@
-language: scala
+sudo: false
+
+language: 
+  -scala
+  -python
+
+jdk:
+  -openjdk8
 
 scala:
-  - 2.11.2
+  - "2.11.2"
 
-before_install:
-  - sudo apt-get install build-essential
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  
-  - sudo apt-get update
-  - sudo apt-get install g++-4.9
-  - sudo apt-get install libtbb-dev
-  - sudo apt-get install libgtest-dev
-  - sudo apt-get install clang-format-3.4
-  - sudo apt-get install libjemalloc-dev
-  - sudo pip install pandas
-  - "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
+python:
+  - "2.7"
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - clang-format-3.4
+    - g++-4.9
+    - libtbb-dev
+    - libgtest-dev
+    - libjemalloc-dev
+
+install:
+  - pip install pandas
 
 script: "source ./tests/testAll.sh"
 
