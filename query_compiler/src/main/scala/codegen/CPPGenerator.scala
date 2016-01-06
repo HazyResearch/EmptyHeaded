@@ -207,6 +207,11 @@ object CPPGenerator {
 
     s"""mkdir -p ${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}""" !
 
+    val memFolder = if(Environment.config.memory == "ParMMapBuffer") "mmap"
+      else "ram"
+
+    s"""mkdir -p ${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}/${memFolder}""" !
+
     code.append(s"""
       Trie<${output.annotation},${Environment.config.memory}> *Trie_${output.name}_${output.ordering.mkString("_")} = new Trie<${output.annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}",${output.ordering.length},${output.annotation != "void*"});
     """)
@@ -233,9 +238,7 @@ object CPPGenerator {
   /////////////////////////////////////////////////////////////////////////////
   def emitIntermediateTrie(name:String,annotation:String,num:Int,bagDuplicate:Option[String]) : StringBuilder = {
     val code = new StringBuilder()
-    assert(Environment.config.memory != "ParMMapBuffer")
     val ordering = (0 until num).toList.mkString("_")
-
     bagDuplicate match {
       case Some(bd) => {
         code.append(s"""Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = Trie_${bd}_${ordering};""")
