@@ -128,11 +128,7 @@ object CPPGenerator {
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(cpp.toString)
     bw.close()
-    try{
-      s"""clang-format -style=llvm -i ${cppFilepath}""" !
-    } catch {
-      case e:Exception => println("Clang format not found.")
-    }
+    s"""clang-format -style=llvm -i ${cppFilepath}""" !
   } 
 
   def getIncludes(ghd:QueryPlans) : StringBuilder = {
