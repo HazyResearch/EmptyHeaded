@@ -24,6 +24,13 @@ inline size_t get_alloc_size(
     return std::min(s1_num_bytes,s2_num_bytes);
 }
 
+inline size_t get_alloc_size(
+  const size_t s1_num_bytes,
+  const size_t s2_num_bytes){
+  
+  return std::min(std::max(s1_num_bytes,s2_num_bytes),32*std::min(s1_num_bytes,s2_num_bytes));
+}
+
 template<class A,class M>
 TrieBuilder<A,M>::TrieBuilder(Trie<A,M>* t_in, const size_t num_attributes){
   trie = t_in;
@@ -110,8 +117,6 @@ size_t TrieBuilder<A,M>::build_set(
             myset, 
             s1,
             s2);
-  if(alloc_size < myset->number_of_bytes)
-    std::cout << (uint32_t)myset->type << " " << alloc_size << " " << myset->number_of_bytes << std::endl;
   assert(alloc_size >= myset->number_of_bytes);
   data_allocator->roll_back(tid,alloc_size - (myset->number_of_bytes) );
 
@@ -166,7 +171,7 @@ size_t TrieBuilder<A,M>::build_set(
       return 0;
     }
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
-    alloc_size = std::max(alloc_size,tmp_set->number_of_bytes);
+    alloc_size = get_alloc_size(alloc_size,tmp_set->number_of_bytes);
     min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
     if(min_set == tmp_set->cardinality){
       s1 = tmp_set;
@@ -603,8 +608,8 @@ size_t ParTrieBuilder<A,M>::build_set(
       return 0;
     }
     Set<hybrid>* tmp_set = (Set<hybrid>*)((uint8_t*)tmp_head_set+sizeof(TrieBlock<hybrid,M>));
-    alloc_size = std::max(alloc_size,tmp_set->number_of_bytes);
-    min_set = std::min((size_t)min_set,(size_t)32*tmp_set->cardinality);
+    alloc_size = get_alloc_size(alloc_size,tmp_set->number_of_bytes);
+    min_set = std::min((size_t)min_set,(size_t)tmp_set->cardinality);
     if(min_set == tmp_set->cardinality){
       s1 = tmp_set;
       min_index = i;
