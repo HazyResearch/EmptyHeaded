@@ -50,6 +50,4 @@ RUN pip install ipython
 
 RUN git clone https://github.com/HazyResearch/EmptyHeaded.git
 RUN cd EmptyHeaded && ./setup.sh #pulls scala
-
-ENV EMPTYHEADED_HOME=`pwd`
-ENV PYTHONPATH=$EMPTYHEADED_HOME/runtime
+RUN mv /usr/bin/clang-format-3.4 /usr/bin/clang-format
