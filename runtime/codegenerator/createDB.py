@@ -100,23 +100,24 @@ def loadRelations(relations,env,hashstring):
 	return code.querytemplate.getCode(include,runCode,hashstring)
 
 def buildTrie(orderings,relation,env,hashstring):
-	include = """#include "emptyheaded.hpp" """
-	codeString = code.build.loadEncodedRelation(env.config["database"],relation["name"],relation["annotation"])
+  include = """#include "emptyheaded.hpp" """
+  codeString = code.build.loadEncodedRelation(env.config["database"],relation["name"],relation["annotation"])
 
-	envRelations = {}
-	for ordering in orderings:
-		roname = relation["name"] + "_" + "_".join(map(str,ordering))
-		envRelations[roname] = "disk"
-		trieFolder = env.config["database"] + "/relations/"+relation["name"]+"/"+roname
-		os.system("mkdir -p " + trieFolder)
-		os.system("mkdir -p " + trieFolder +"/mmap")
-		os.system("mkdir -p " + trieFolder+"/ram")
+  envRelations = {}
+  for ordering in orderings:
+    roname = relation["name"] + "_" + "_".join(map(str,ordering))
+    envRelations[roname] = "disk"
+    trieFolder = env.config["database"] + "/relations/"+relation["name"]+"/"+roname
+    os.system("mkdir -p " + trieFolder)
+    os.system("mkdir -p " + trieFolder +"/mmap")
+    os.system("mkdir -p " + trieFolder+"/ram")
 
-		codeString += code.build.buildOrder(
+    codeString += code.build.buildOrder(
 			trieFolder,
 			relation["name"],
 			ordering,
 			relation["annotation"],
 			env.config["memory"])
-	env.setRelations(envRelations)
-	return code.querytemplate.getCode(include,codeString,hashstring)
+  env.setRelations(envRelations)
+  codeString += code.build.deleteMasterEncodedRelation(env.config["database"],relation["name"],relation["annotation"])
+  return code.querytemplate.getCode(include,codeString,hashstring)
