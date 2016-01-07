@@ -5,24 +5,32 @@ import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
 import scala.collection.mutable
 
 object GHDSolver {
-  def computeAJAR_GHD(rels: mutable.Set[QueryRelation], output: Set[String]):List[GHDNode] = {
+  def computeAJAR_GHD(rels: Set[QueryRelation], output: Set[String]):List[GHDNode] = {
     /*val components = getConnectedComponents(
       rels.map(rel => QueryRelationFactory.createQueryRelationWithNoSelects(rel.attrNames.filter(name => !output.contains(name)))).filter(rel => !rel.attrs.isEmpty),
       List(), Set())*/
-    val components = getConnectedComponents(rels, List(), output).filter(rels => !(rels.size == 1 && rels.head.attrNames.toSet.equals(output)))
+    val components = getConnectedComponents(mutable.Set(rels.toList:_*), List(), output).filter(rels => !(rels.size == 1 && rels.head.attrNames.toSet.equals(output)))
     println(components)
     val componentsPlus = components.map(getAttrSet(_))
     println(componentsPlus)
     val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf output) union
       componentsPlus.map(compPlus => output intersect compPlus).map(QueryRelationFactory.createQueryRelationWithNoSelects(_)).toSet
+    println("H_0 edges")
+    println(rels)
+    //println(rels.last.attrNames.toSet subsetOf output)
+    println(H_0_edges)
     val characteristicHypergraphEdges = components.zip(componentsPlus).map({
       compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, output).toList
     })
 
     println((H_0_edges::characteristicHypergraphEdges).size)
     val G_i_options = (H_0_edges::characteristicHypergraphEdges).map(H => getMinFHWDecompositions(H.toList))
+    println("G_0 options")
+    println(G_i_options(0))
     println("G_1 options")
     println(G_i_options(1))
+    println("G_2 options")
+    println(G_i_options(2))
 
     val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc) // need to make some copies here
     println(G_i_combos.size) // 43
@@ -41,12 +49,13 @@ object GHDSolver {
                      componentPlus: List[Set[Attr]],
                      agg:Set[String]): GHDNode = {
     G_i.zip(componentPlus).foreach({ case (g_i, compPlus) => {
-      val stitchable = generateAllPossiblePairs(G_0.toList, g_i.toList).find(nodes => {
+      val g_i_duplicate = duplicateTree(g_i)
+      val stitchable = generateAllPossiblePairs(G_0.toList, g_i_duplicate.toList).find(nodes => {
         (((agg intersect compPlus) subsetOf nodes._1.attrSet) &&
           ((agg intersect compPlus) subsetOf nodes._2.attrSet))
       })
       assert(stitchable.isDefined)
-      stitchable.get._1.children = reroot(g_i, stitchable.get._2)::stitchable.get._1.children
+      stitchable.get._1.children = reroot(g_i_duplicate, stitchable.get._2)::stitchable.get._1.children
     }})
     return G_0
   }

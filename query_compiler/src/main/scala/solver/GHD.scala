@@ -256,7 +256,7 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
    * in GHD's post-processing pass
    */
   override def equals(o: Any) = o match {
-    case that: GHDNode => that.rels.equals(rels) && that.children.toSet.equals(children.toSet)
+    case that: GHDNode => that.rels.toSet.equals(rels.toSet) && that.children.toSet.equals(children.toSet)
     case _ => false
   }
 

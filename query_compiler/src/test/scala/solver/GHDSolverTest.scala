@@ -46,7 +46,7 @@ class GHDSolverTest extends FunSuite {
 
 
   test("Can form 2 node AJAR GHD for length 2 path query") {
-    val ajarGHDs = GHDSolver.computeAJAR_GHD(mutable.Set(PATH2:_*), Set("a", "c"))
+    val ajarGHDs = GHDSolver.computeAJAR_GHD(PATH2.toSet, Set("a", "c"))
     assert(ajarGHDs.size == 1) // there should only be one option
     val ajarGHD = ajarGHDs.head
     assertResult(Set("a", "c"))(ajarGHD.attrSet)
@@ -85,21 +85,20 @@ class GHDSolverTest extends FunSuite {
     assertResult(List(BARBELL(1)))(childWithChild.get.children.head.rels)
   }
 
+  test("Can form 3 node AJAR GHD for barbell") {
+    val ajarGHDs = GHDSolver.computeAJAR_GHD(BARBELL.toSet, Set("c", "d"))
 
-
-  test("Can form 2 node AJAR GHD for FFT without rel size info") {
-    val ajarGHDs = GHDSolver.computeAJAR_GHD(mutable.Set(FFT:_*), Set("x0", "x1"))
-
-    ajarGHDs.foreach(ghd => {
-      assertResult(Set("x0", "x1"))(ghd.attrSet) // the top node should contain only the imaginary edge
+    println("number of ajar ghds")
+    println(ajarGHDs.size)
+    val singleNodeG_0Trees = ajarGHDs.filter(ghd => {
+      ghd.attrSet.equals(Set("c", "d")) &&
+        ghd.children.size == 2 &&
+        ghd.children.head.attrSet.equals(Set("a", "b", "c")) &&
+        ghd.children.tail.head.attrSet.equals(Set("d", "e", "f"))
     })
 
-    val ghdWithTwoNodes = ajarGHDs.filter(ghd => {
-      (ghd.children.size == 1
-        && ghd.children.head.children.isEmpty)
-    })
-    assert(ghdWithTwoNodes.toList.size >= 1)
-    assertResult(Set("x0", "x1", "x2", "y0", "y1", "y2"))(ghdWithTwoNodes.head.children.head.attrSet)
+    assert(singleNodeG_0Trees.size == 4)
+    assert(singleNodeG_0Trees.filter(ghd => ghd.children.head.children.isEmpty && ghd.children.tail.head.children.isEmpty).size == 1)
   }
 
   test("Can identify connected components of graph when removing the chosen hyper edge leaves 2 disconnected components") {
