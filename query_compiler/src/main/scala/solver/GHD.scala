@@ -240,8 +240,15 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
   var depth: Int = 0
   var projectedOutAttrs: Set[Attr] = null
 
+  /**
+   * Iterator returns the nodes in the GHD in preorder traversal order
+   */
   override def iterator: Iterator[GHDNode] = {
-    children.iterator.map(_.iterator).flatten ++ Iterator(this)
+    Iterator(this) ++ children.iterator.map(_.iterator).flatten
+  }
+
+  override def toString: String = {
+    return s"""GHDNode(${rels}, ${children})"""
   }
 
   /**

@@ -5,34 +5,73 @@ import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
 import scala.collection.mutable
 
 object GHDSolver {
-  def computeAJAR_GHD(rels: mutable.Set[QueryRelation], agg: Set[String]):List[GHDNode] = {
-    val components = getConnectedComponents(rels, List(), agg)
+  def computeAJAR_GHD(rels: mutable.Set[QueryRelation], output: Set[String]):List[GHDNode] = {
+    /*val components = getConnectedComponents(
+      rels.map(rel => QueryRelationFactory.createQueryRelationWithNoSelects(rel.attrNames.filter(name => !output.contains(name)))).filter(rel => !rel.attrs.isEmpty),
+      List(), Set())*/
+    val components = getConnectedComponents(rels, List(), output).filter(rels => !(rels.size == 1 && rels.head.attrNames.toSet.equals(output)))
+    println(components)
     val componentsPlus = components.map(getAttrSet(_))
-    val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf agg) union
-      componentsPlus.map(compPlus => agg intersect compPlus).map(QueryRelationFactory.createQueryRelationWithNoSelects(_)).toSet
+    println(componentsPlus)
+    val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf output) union
+      componentsPlus.map(compPlus => output intersect compPlus).map(QueryRelationFactory.createQueryRelationWithNoSelects(_)).toSet
     val characteristicHypergraphEdges = components.zip(componentsPlus).map({
-      compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, agg)
+      compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, output).toList
     })
+
+    println((H_0_edges::characteristicHypergraphEdges).size)
     val G_i_options = (H_0_edges::characteristicHypergraphEdges).map(H => getMinFHWDecompositions(H.toList))
-    val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)
-    G_i_combos.zip(componentsPlus).map({case (trees, compPlus) => stitchTogether(trees.head, trees.tail, compPlus, agg)})
+    println("G_1 options")
+    println(G_i_options(1))
+
+    val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc) // need to make some copies here
+    println(G_i_combos.size) // 43
+    G_i_combos.map(trees => {
+      val reversedTrees = trees.reverse
+      stitchTogether(duplicateTree(reversedTrees.head), reversedTrees.tail, componentsPlus, output)
+    })
   }
 
-  def stitchTogether(G_0:GHDNode, 
-                     G_i:List[GHDNode], 
-                     componentPlus: Set[Attr],
+  def generateAllPossiblePairs(l1:List[GHDNode], l2:List[GHDNode]): List[(GHDNode, GHDNode)] = {
+    for {x <- l1; y <- l2} yield (x, y)
+  }
+
+  def stitchTogether(G_0:GHDNode,
+                     G_i:List[GHDNode],
+                     componentPlus: List[Set[Attr]],
                      agg:Set[String]): GHDNode = {
-    G_i.foreach(g_i => {
-      g_i.foreach(t_i => {
-        G_0.foreach(t_i_prime => {
-          if (((agg intersect componentPlus) subsetOf t_i.attrSet) &&
-            ((agg intersect componentPlus) subsetOf t_i_prime.attrSet)) {
-            t_i_prime.children = t_i::t_i_prime.children
-          }
-        })
+    G_i.zip(componentPlus).foreach({ case (g_i, compPlus) => {
+      val stitchable = generateAllPossiblePairs(G_0.toList, g_i.toList).find(nodes => {
+        (((agg intersect compPlus) subsetOf nodes._1.attrSet) &&
+          ((agg intersect compPlus) subsetOf nodes._2.attrSet))
       })
-    })
+      assert(stitchable.isDefined)
+      stitchable.get._1.children = reroot(g_i, stitchable.get._2)::stitchable.get._1.children
+    }})
     return G_0
+  }
+
+  def reroot(oldRoot:GHDNode, newRoot:GHDNode): GHDNode = {
+   // val oldRoot = duplicateTree(oldRootRef)
+    val path = getPathToNode(oldRoot, newRoot)
+    path.map(p => println(p.attrSet))
+    path.take(path.size-1).foldRight(path.last)((prev:GHDNode,next:GHDNode) => {
+      next.children = prev::next.children
+      prev.children = prev.children.filter(child => !(child eq next))
+      prev
+    })
+    return path.head
+  }
+
+  def getPathToNode(root:GHDNode, n: GHDNode):List[GHDNode] = {
+    if (root eq n) {
+      return List(n)
+    } else if (root.children.isEmpty) {
+      return List()
+    } else  {
+        val pathsFromChildren = root.children.map(getPathToNode(_, n))
+        root::pathsFromChildren.find(path => !path.isEmpty).get // todo error case
+    }
   }
 
   def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], agg: Set[String]): mutable.Set[QueryRelation] = {
@@ -50,6 +89,10 @@ object GHDSolver {
     if (rels.isEmpty) return comps
     val component = getOneConnectedComponent(rels, ignoreAttrs)
     return getConnectedComponents(rels, component::comps, ignoreAttrs)
+  }
+
+  private def ajarGetConnectedComponents(): Unit = {
+
   }
 
   private def getOneConnectedComponent(rels: mutable.Set[QueryRelation], ignoreAttrs: Set[String]): List[QueryRelation] = {
@@ -106,6 +149,21 @@ object GHDSolver {
         subtree::children
       })
     }).flatten
+  }
+
+  private def allSubtreeAssignmentsDeepCopyFoldFunc(accum: List[List[GHDNode]], subtreesForOnePartition: List[GHDNode]): List[List[GHDNode]] = {
+    accum.map((children : List[GHDNode]) => {
+      subtreesForOnePartition.map((subtree : GHDNode) => {
+        duplicateTree(subtree)::children
+      })
+    }).flatten
+  }
+
+  private def duplicateTree(ghd: GHDNode): GHDNode = {
+    val newGHD = new GHDNode(ghd.rels)
+    newGHD.bagFractionalWidth = ghd.bagFractionalWidth
+    newGHD.children = ghd.children.map(duplicateTree(_))
+    return newGHD
   }
 
   private def getDecompositions(rels: List[QueryRelation], parentAttrs: Set[String]): List[GHDNode] =  {

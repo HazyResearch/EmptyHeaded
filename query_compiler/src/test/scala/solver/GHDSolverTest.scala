@@ -4,6 +4,8 @@ import org.scalatest.FunSuite
 
 import DunceCap.attr.Attr
 
+import scala.collection.mutable
+
 class GHDSolverTest extends FunSuite {
 
   final val RELATIONS: List[QueryRelation] = List(
@@ -34,8 +36,71 @@ class GHDSolverTest extends FunSuite {
     QueryRelationFactory.createQueryRelationWithNoSelects(List("d", "f")),
     QueryRelationFactory.createQueryRelationWithNoSelects(List("c", "d"))
   )
-
+  final val FFT: List[QueryRelation] = List(
+    QueryRelationFactory.createQueryRelationWithNoSelects(List("y0", "y1")),
+    QueryRelationFactory.createQueryRelationWithNoSelects(List("x0", "y0")),
+    QueryRelationFactory.createQueryRelationWithNoSelects(List("x0", "y1")),
+    QueryRelationFactory.createQueryRelationWithNoSelects(List("x1", "y0"))
+  )
   final val solver = GHDSolver
+
+
+  test("Can form 2 node AJAR GHD for length 2 path query") {
+    val ajarGHDs = GHDSolver.computeAJAR_GHD(mutable.Set(PATH2:_*), Set("a", "c"))
+    assert(ajarGHDs.size == 1) // there should only be one option
+    val ajarGHD = ajarGHDs.head
+    assertResult(Set("a", "c"))(ajarGHD.attrSet)
+    assert(ajarGHD.children.size == 1)
+    assertResult(Set("a", "b", "c"))(ajarGHD.children.head.attrSet)
+  }
+
+  test("Check that we can reroot a GHD") {
+    val decomp = new GHDNode(List(TADPOLE(0)))
+    val decompChild1 = new GHDNode(List(TADPOLE(1), TADPOLE(2)))
+    val decompChild2 = new GHDNode(List(TADPOLE(3)))
+    decomp.children = List(decompChild1, decompChild2)
+
+    GHDSolver.reroot(decomp, decompChild1)
+    assert(decompChild1.children.size == 1)
+    assertResult(List(TADPOLE(0)))(decompChild1.children.head.rels)
+    assert(decompChild1.children.head.children.size == 1)
+    assertResult(List(TADPOLE(3)))(decompChild1.children.head.children.head.rels)
+  }
+
+  test("Check that we can reroot a more complex tree (although this one isn't a valid GHD)") {
+    val tree = new GHDNode(List(BARBELL(0)))
+    val level1Child1 = new GHDNode(List(BARBELL(1)))
+    val level1Child2 = new GHDNode(List(BARBELL(2)))
+    tree.children = List(level1Child1, level1Child2)
+    val level2Child1 = new GHDNode(List(BARBELL(3)))
+    val level2Child2 = new GHDNode(List(BARBELL(4)))
+    level1Child2.children = List(level2Child1, level2Child2)
+
+    GHDSolver.reroot(tree, level1Child2)
+    assert(level1Child2.children.size == 3)
+    val childWithChild = level1Child2.children.find(child => child.children.size > 0)
+    assert(childWithChild.isDefined)
+    assertResult(List(BARBELL(0)))(childWithChild.get.rels)
+    assert(childWithChild.get.children.size == 1)
+    assertResult(List(BARBELL(1)))(childWithChild.get.children.head.rels)
+  }
+
+
+
+  test("Can form 2 node AJAR GHD for FFT without rel size info") {
+    val ajarGHDs = GHDSolver.computeAJAR_GHD(mutable.Set(FFT:_*), Set("x0", "x1"))
+
+    ajarGHDs.foreach(ghd => {
+      assertResult(Set("x0", "x1"))(ghd.attrSet) // the top node should contain only the imaginary edge
+    })
+
+    val ghdWithTwoNodes = ajarGHDs.filter(ghd => {
+      (ghd.children.size == 1
+        && ghd.children.head.children.isEmpty)
+    })
+    assert(ghdWithTwoNodes.toList.size >= 1)
+    assertResult(Set("x0", "x1", "x2", "y0", "y1", "y2"))(ghdWithTwoNodes.head.children.head.attrSet)
+  }
 
   test("Can identify connected components of graph when removing the chosen hyper edge leaves 2 disconnected components") {
     val chosen = List(RELATIONS.head)
