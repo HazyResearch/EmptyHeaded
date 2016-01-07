@@ -47,11 +47,13 @@ object CPPGenerator {
     val cppCode = new StringBuilder()
     qps.queryPlans.foreach(qp => {
       //spit out output for each query in global vars
-      val topDown = qp.topdown.length > 0
+      val topDown = qp.topdown.length > 0      
       cppCode.append(emitInitializeOutput(qp.output))
       //find all distinct relations
+      val single_source_tc = detectTransitiveClosure(qp)
       qp.relations.foreach( r => {
-        if(!distinctLoadRelations.contains(s"""${r.name}_${r.ordering.mkString("_")}"""))
+        val loadTC = !single_source_tc || (r.ordering == (0 until r.ordering.length).toList)
+        if(loadTC && !distinctLoadRelations.contains(s"""${r.name}_${r.ordering.mkString("_")}"""))
           distinctLoadRelations += ((s"""${r.name}_${r.ordering.mkString("_")}""" -> r))
       })
     })
