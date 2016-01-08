@@ -20,9 +20,9 @@
 
 template <class T>
 struct Encoding{
-  std::unordered_map<T,uint32_t> value_to_key;
-  std::vector<T> key_to_value;
   uint32_t num_distinct;
+  std::vector<T> key_to_value;
+  std::unordered_map<T,uint32_t> value_to_key;
 
   Encoding(){
     num_distinct = 0;
