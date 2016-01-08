@@ -49,9 +49,8 @@ class GHDSolverTest extends FunSuite {
     val ajarGHDs = GHDSolver.computeAJAR_GHD(PATH2.toSet, Set("a", "c"))
     assert(ajarGHDs.size == 1) // there should only be one option
     val ajarGHD = ajarGHDs.head
-    assertResult(Set("a", "c"))(ajarGHD.attrSet)
-    assert(ajarGHD.children.size == 1)
-    assertResult(Set("a", "b", "c"))(ajarGHD.children.head.attrSet)
+    assertResult(Set("a", "b", "c"))(ajarGHD.attrSet)
+    assert(ajarGHD.children.size == 0)
   }
 
   test("Check that we can reroot a GHD") {
@@ -93,12 +92,13 @@ class GHDSolverTest extends FunSuite {
     val singleNodeG_0Trees = ajarGHDs.filter(ghd => {
       ghd.attrSet.equals(Set("c", "d")) &&
         ghd.children.size == 2 &&
-        ghd.children.head.attrSet.equals(Set("a", "b", "c")) &&
-        ghd.children.tail.head.attrSet.equals(Set("d", "e", "f"))
+        (ghd.children.head.attrSet.equals(Set("d", "e", "f")) &&
+        ghd.children.tail.head.attrSet.equals(Set("a", "b", "c"))) ||
+        (ghd.children.head.attrSet.equals(Set("a", "b", "c")) &&
+          ghd.children.tail.head.attrSet.equals(Set("d", "e", "f")))
     })
 
-    assert(singleNodeG_0Trees.size == 4)
-    assert(singleNodeG_0Trees.filter(ghd => ghd.children.head.children.isEmpty && ghd.children.tail.head.children.isEmpty).size == 1)
+    assert(singleNodeG_0Trees.filter(ghd => ghd.children.head.children.isEmpty && ghd.children.tail.head.children.isEmpty).size == 36)
   }
 
   test("Can delete imaginary edges") {

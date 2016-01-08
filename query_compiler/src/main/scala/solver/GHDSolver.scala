@@ -6,10 +6,13 @@ import scala.collection.mutable
 
 object GHDSolver {
   def computeAJAR_GHD(rels: Set[QueryRelation], output: Set[String]):List[GHDNode] = {
-    val components = getConnectedComponents(mutable.Set(rels.toList:_*), List(), output).filter(rels => !(rels.size == 1 && rels.head.attrNames.toSet.equals(output)))
+    val components = getConnectedComponents(
+      mutable.Set(rels.toList.filter(rel => !(rel.attrNames.toSet subsetOf output)):_*), List(), output)
+    println("components")
     println(components)
     val componentsPlus = components.map(getAttrSet(_))
-    println(componentsPlus)
+    println("components plus")
+    componentsPlus.map(println(_))
     val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf output) union
       componentsPlus.map(compPlus => output intersect compPlus).map(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(_)).toSet
     println("H_0 edges")
