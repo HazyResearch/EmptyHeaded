@@ -15,7 +15,7 @@ package object attr {
   type AnnotationType = String
 }
 
-case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*") {
+case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*", val isImaginary: Boolean = false) {
   val attrNames = attrs.map(x => x._1)
   override def equals(that: Any): Boolean =
     that match {
@@ -41,6 +41,10 @@ object QueryRelationFactory {
 
   def createQueryRelationWithNoSelects(attrs:Iterable[Attr]) = {
     QueryRelation("", attrs.map(attr => (attr, "", "")).toList)
+  }
+
+  def createImaginaryQueryRelationWithNoSelects(attrs:Iterable[Attr]) = {
+    QueryRelation("", attrs.map(attr => (attr, "", "")).toList, "void*", true)
   }
 }
 

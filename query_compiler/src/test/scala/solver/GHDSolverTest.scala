@@ -101,6 +101,42 @@ class GHDSolverTest extends FunSuite {
     assert(singleNodeG_0Trees.filter(ghd => ghd.children.head.children.isEmpty && ghd.children.tail.head.children.isEmpty).size == 1)
   }
 
+  test("Can delete imaginary edges") {
+    // Should delete just the upper node
+    val iAB_BC = new GHDNode(List(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(List("a", "b"))))
+    iAB_BC.children = List(new GHDNode(List(QueryRelationFactory.createQueryRelationWithNoSelects(List("b", "c")))))
+    val  justBC = GHDSolver.deleteImaginaryEdges(iAB_BC)
+    assert(justBC.isDefined)
+    assertResult(justBC.get.attrSet)(Set("b", "c"))
+    assert(justBC.get.children.isEmpty)
+
+    // Should delete just the lower node
+    val AB_iBC = new GHDNode(List(QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b"))))
+    AB_iBC.children = List(new GHDNode(List(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(List("b", "c")))))
+    val justAB = GHDSolver.deleteImaginaryEdges(AB_iBC)
+    assert(justAB.isDefined)
+    assertResult(justAB.get.attrSet)(Set("a", "b"))
+    assert(justAB.get.children.isEmpty)
+
+    // deletes the root, and puts the left chld in as the root
+    val AB_2BC = new GHDNode(List(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(List("a", "b"))))
+    AB_2BC.children = List(new GHDNode(List(QueryRelationFactory.createQueryRelationWithNoSelects(List("b", "c")))),
+      new GHDNode(List(QueryRelationFactory.createQueryRelationWithNoSelects(List("b", "c")))))
+    val BC_BC = GHDSolver.deleteImaginaryEdges(AB_2BC)
+    assert(BC_BC.isDefined)
+    assertResult(Set("b", "c"))(BC_BC.get.attrSet)
+    assertResult(Set("b", "c"))(BC_BC.get.children.head.attrSet)
+
+    // deletes a relation but doesn't modify the structure of the tree
+    val ABC_CD = new GHDNode(List(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(List("b", "c"))))
+    ABC_CD.children = List(new GHDNode(List(QueryRelationFactory.createQueryRelationWithNoSelects(List("c", "d")))))
+    val twoNodes = GHDSolver.deleteImaginaryEdges(ABC_CD)
+    assert(twoNodes.isDefined)
+    assertResult(twoNodes.get.toList.size)(2)
+  }
+
   test("Can identify connected components of graph when removing the chosen hyper edge leaves 2 disconnected components") {
     val chosen = List(RELATIONS.head)
     val partitions = solver.getPartitions(

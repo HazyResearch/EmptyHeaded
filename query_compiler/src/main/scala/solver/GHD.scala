@@ -23,6 +23,7 @@ class GHD(val root:GHDNode,
   var lastMaterializedAttr:Option[Attr] = None
   var nextAggregatedAttr:Option[Attr] = None
 
+
   def getQueryPlan(): QueryPlan = {
     new QueryPlan(
       "join",

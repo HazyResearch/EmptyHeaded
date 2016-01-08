@@ -1,14 +1,11 @@
 package DunceCap
 
-import DunceCap.attr.{Attr, SelectionVal, SelectionOp}
+import DunceCap.attr.Attr
 
 import scala.collection.mutable
 
 object GHDSolver {
   def computeAJAR_GHD(rels: Set[QueryRelation], output: Set[String]):List[GHDNode] = {
-    /*val components = getConnectedComponents(
-      rels.map(rel => QueryRelationFactory.createQueryRelationWithNoSelects(rel.attrNames.filter(name => !output.contains(name)))).filter(rel => !rel.attrs.isEmpty),
-      List(), Set())*/
     val components = getConnectedComponents(mutable.Set(rels.toList:_*), List(), output).filter(rels => !(rels.size == 1 && rels.head.attrNames.toSet.equals(output)))
     println(components)
     val componentsPlus = components.map(getAttrSet(_))
@@ -25,19 +22,51 @@ object GHDSolver {
 
     println((H_0_edges::characteristicHypergraphEdges).size)
     val G_i_options = (H_0_edges::characteristicHypergraphEdges).map(H => getMinFHWDecompositions(H.toList))
-    println("G_0 options")
-    println(G_i_options(0))
-    println("G_1 options")
-    println(G_i_options(1))
-    println("G_2 options")
-    println(G_i_options(2))
 
     val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc) // need to make some copies here
-    println(G_i_combos.size) // 43
-    G_i_combos.map(trees => {
+    println(G_i_combos.size)
+
+    // These are the GHDs described in the AJAR paper;
+    // We get rid of all the edges that don't correspond to relations
+    // in order to get the GHD that we actually create our query plan from.
+    // Note that the GHDs returned from this function might
+    // therefore not actually conform to the definition of a GHD,
+    // but we guarantee that the result of running yannakakis over it
+    // is the same as if we had these imaginary edges that contain all possible tuples
+    val theoreticalGHDs = G_i_combos.map(trees => {
       val reversedTrees = trees.reverse
       stitchTogether(duplicateTree(reversedTrees.head), reversedTrees.tail, componentsPlus, output)
     })
+
+    theoreticalGHDs.flatMap(deleteImaginaryEdges(_))
+  }
+
+
+  /**
+   * Delete the imaginary edges (added when constructing the characteristic hypergraphs) from the GHD
+   * @param validGHD
+   * @return
+   */
+  def deleteImaginaryEdges(validGHD: GHDNode): Option[GHDNode] = {
+    val realEdges = validGHD.rels.filter(!_.isImaginary)
+    if (realEdges.isEmpty) { // you'll have to delete this entire node
+      if (validGHD.children.isEmpty) {
+        return None
+      } else if (validGHD.children.size == 1) {
+        validGHD.children = validGHD.children.flatMap(deleteImaginaryEdges(_))
+        return Some(validGHD.children.head)
+      } else {
+        val newRoot = validGHD.children.head
+        newRoot.children = validGHD.children.tail
+        newRoot.children = newRoot.children.flatMap(deleteImaginaryEdges(_))
+        return Some(newRoot)
+      }
+    } else {
+      val newGHD = new GHDNode(realEdges)
+      newGHD.bagFractionalWidth = validGHD.bagFractionalWidth
+      newGHD.children = validGHD.children.flatMap(deleteImaginaryEdges(_))
+      return Some(newGHD)
+    }
   }
 
   def generateAllPossiblePairs(l1:List[GHDNode], l2:List[GHDNode]): List[(GHDNode, GHDNode)] = {
@@ -49,19 +78,18 @@ object GHDSolver {
                      componentPlus: List[Set[Attr]],
                      agg:Set[String]): GHDNode = {
     G_i.zip(componentPlus).foreach({ case (g_i, compPlus) => {
-      val g_i_duplicate = duplicateTree(g_i)
+      val g_i_duplicate = duplicateTree(g_i) // we need to duplicate them since we're going to modify them if we reroot
       val stitchable = generateAllPossiblePairs(G_0.toList, g_i_duplicate.toList).find(nodes => {
         (((agg intersect compPlus) subsetOf nodes._1.attrSet) &&
           ((agg intersect compPlus) subsetOf nodes._2.attrSet))
       })
-      assert(stitchable.isDefined)
+      assert(stitchable.isDefined) // in theory, we always find a stitchable pair
       stitchable.get._1.children = reroot(g_i_duplicate, stitchable.get._2)::stitchable.get._1.children
     }})
     return G_0
   }
 
   def reroot(oldRoot:GHDNode, newRoot:GHDNode): GHDNode = {
-   // val oldRoot = duplicateTree(oldRootRef)
     val path = getPathToNode(oldRoot, newRoot)
     path.map(p => println(p.attrSet))
     path.take(path.size-1).foldRight(path.last)((prev:GHDNode,next:GHDNode) => {
