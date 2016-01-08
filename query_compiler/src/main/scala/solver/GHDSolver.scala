@@ -11,7 +11,7 @@ object GHDSolver {
     val componentsPlus = components.map(getAttrSet(_))
     println(componentsPlus)
     val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf output) union
-      componentsPlus.map(compPlus => output intersect compPlus).map(QueryRelationFactory.createQueryRelationWithNoSelects(_)).toSet
+      componentsPlus.map(compPlus => output intersect compPlus).map(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(_)).toSet
     println("H_0 edges")
     println(rels)
     //println(rels.last.attrNames.toSet subsetOf output)
@@ -37,7 +37,8 @@ object GHDSolver {
       val reversedTrees = trees.reverse
       stitchTogether(duplicateTree(reversedTrees.head), reversedTrees.tail, componentsPlus, output)
     })
-
+    println("number after deleting imaginary")
+    println(theoreticalGHDs.flatMap(deleteImaginaryEdges(_)).size)
     theoreticalGHDs.flatMap(deleteImaginaryEdges(_))
   }
 
@@ -113,7 +114,7 @@ object GHDSolver {
 
   def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], agg: Set[String]): mutable.Set[QueryRelation] = {
     val characteristicHypergraphEdges:mutable.Set[QueryRelation] = mutable.Set[QueryRelation](comp.toList:_*)
-    characteristicHypergraphEdges += QueryRelationFactory.createQueryRelationWithNoSelects(compPlus intersect agg)
+    characteristicHypergraphEdges += QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(compPlus intersect agg)
     return characteristicHypergraphEdges
   }
 
