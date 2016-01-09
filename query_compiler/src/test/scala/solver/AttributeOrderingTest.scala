@@ -38,6 +38,6 @@ class AttributeOrderingTest extends FunSuite {
       rootBag.rels:::child1.rels:::child2.rels:::child3.rels,
       QueryRelationFactory.createQueryRelationWithNoSelects(List[Attr]("a", "b", "c")))
 
-    assertResult(List[Attr]("x", "z", "y", "a", "b", "c"))(ordering)
+    assertResult(Set[Attr]("x", "y", "z"))(ordering.take(3).toSet)
   }
 }

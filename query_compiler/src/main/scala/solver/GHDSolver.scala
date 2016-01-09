@@ -8,26 +8,16 @@ object GHDSolver {
   def computeAJAR_GHD(rels: Set[QueryRelation], output: Set[String]):List[GHDNode] = {
     val components = getConnectedComponents(
       mutable.Set(rels.toList.filter(rel => !(rel.attrNames.toSet subsetOf output)):_*), List(), output)
-    println("components")
-    println(components)
     val componentsPlus = components.map(getAttrSet(_))
-    println("components plus")
-    componentsPlus.map(println(_))
     val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf output) union
       componentsPlus.map(compPlus => output intersect compPlus).map(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(_)).toSet
-    println("H_0 edges")
-    println(rels)
-    //println(rels.last.attrNames.toSet subsetOf output)
-    println(H_0_edges)
     val characteristicHypergraphEdges = components.zip(componentsPlus).map({
       compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, output).toList
     })
 
-    println((H_0_edges::characteristicHypergraphEdges).size)
     val G_i_options = (H_0_edges::characteristicHypergraphEdges).map(H => getMinFHWDecompositions(H.toList))
 
     val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc) // need to make some copies here
-    println(G_i_combos.size)
 
     // These are the GHDs described in the AJAR paper;
     // We get rid of all the edges that don't correspond to relations
@@ -40,8 +30,6 @@ object GHDSolver {
       val reversedTrees = trees.reverse
       stitchTogether(duplicateTree(reversedTrees.head), reversedTrees.tail, componentsPlus, output)
     })
-    println("number after deleting imaginary")
-    println(theoreticalGHDs.flatMap(deleteImaginaryEdges(_)).size)
     theoreticalGHDs.flatMap(deleteImaginaryEdges(_))
   }
 
@@ -95,7 +83,6 @@ object GHDSolver {
 
   def reroot(oldRoot:GHDNode, newRoot:GHDNode): GHDNode = {
     val path = getPathToNode(oldRoot, newRoot)
-    path.map(p => println(p.attrSet))
     path.take(path.size-1).foldRight(path.last)((prev:GHDNode,next:GHDNode) => {
       next.children = prev::next.children
       prev.children = prev.children.filter(child => !(child eq next))

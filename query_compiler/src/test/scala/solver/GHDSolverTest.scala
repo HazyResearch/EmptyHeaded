@@ -87,8 +87,6 @@ class GHDSolverTest extends FunSuite {
   test("Can form 3 node AJAR GHD for barbell") {
     val ajarGHDs = GHDSolver.computeAJAR_GHD(BARBELL.toSet, Set("c", "d"))
 
-    println("number of ajar ghds")
-    println(ajarGHDs.size)
     val singleNodeG_0Trees = ajarGHDs.filter(ghd => {
       ghd.attrSet.equals(Set("c", "d")) &&
         ghd.children.size == 2 &&

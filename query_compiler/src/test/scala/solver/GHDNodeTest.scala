@@ -32,7 +32,6 @@ class GHDNodeTest extends FunSuite {
     decomp1.children = List(decomp1Child1, decomp1Child2)
 
     val listOfBags = decomp1.iterator.toList
-    println(decomp1)
 
     assertResult(Set("a", "b"))(listOfBags.head.attrSet)
     assertResult(Set("a", "b", "c"))(listOfBags(1).attrSet)
