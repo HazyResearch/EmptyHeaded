@@ -1,0 +1,1 @@
+lubm7(b,c) :- Edge(a='http://www.Department0.University0.edu/AssociateProfessor0',b),Edge(c,b),Edge(b,d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'),Edge(c,e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent').

@@ -1,0 +1,1 @@
+result(a,b,c,d,e):-Edge(a,b),Edge(b,c),Edge(c,d),Edge(d,e),Edge(e,a).

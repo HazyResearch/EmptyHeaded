@@ -1,0 +1,3 @@
+N(;w:int):-S(x,y);w=[<<COUNT(x)>>].
+PageRank(x;y:float):-S(x ,z );y=[(1/N)*<<CONST(z;1)>>].
+PageRank (x;y:float)*[c=0.001]:-S(x,z),PageRank(z),InvDeg(z);y=[0.15+0.85*<<SUM(z;1)>>].

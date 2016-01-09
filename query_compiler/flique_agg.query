@@ -1,0 +1,1 @@
+Flique(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d);m=[<<COUNT(*)>>].
