@@ -26,7 +26,7 @@ MMapBuffer::MMapBuffer(const char* _filename, size_t initSize) : filename(_filen
   // TODO Auto-generated constructor stub
   fd = open(filename.c_str(), O_CREAT | O_RDWR, 0666);
   if(fd < 0) {
-    std::cout << "Create map file error" << std::endl;
+    std::cout << "Create map file error: " + filename << std::endl;
     assert(false);
   }
 

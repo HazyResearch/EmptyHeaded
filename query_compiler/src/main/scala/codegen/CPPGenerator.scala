@@ -47,11 +47,13 @@ object CPPGenerator {
     val cppCode = new StringBuilder()
     qps.queryPlans.foreach(qp => {
       //spit out output for each query in global vars
-      val topDown = qp.topdown.length > 0
+      val topDown = qp.topdown.length > 0      
       cppCode.append(emitInitializeOutput(qp.output))
       //find all distinct relations
+      val single_source_tc = detectTransitiveClosure(qp)
       qp.relations.foreach( r => {
-        if(!distinctLoadRelations.contains(s"""${r.name}_${r.ordering.mkString("_")}"""))
+        val loadTC = !single_source_tc || (r.ordering == (0 until r.ordering.length).toList)
+        if(loadTC && !distinctLoadRelations.contains(s"""${r.name}_${r.ordering.mkString("_")}"""))
           distinctLoadRelations += ((s"""${r.name}_${r.ordering.mkString("_")}""" -> r))
       })
     })
@@ -207,6 +209,11 @@ object CPPGenerator {
 
     s"""mkdir -p ${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}""" !
 
+    val memFolder = if(Environment.config.memory == "ParMMapBuffer") "mmap"
+      else "ram"
+
+    s"""mkdir -p ${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}/${memFolder}""" !
+
     code.append(s"""
       Trie<${output.annotation},${Environment.config.memory}> *Trie_${output.name}_${output.ordering.mkString("_")} = new Trie<${output.annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}",${output.ordering.length},${output.annotation != "void*"});
     """)
@@ -233,9 +240,7 @@ object CPPGenerator {
   /////////////////////////////////////////////////////////////////////////////
   def emitIntermediateTrie(name:String,annotation:String,num:Int,bagDuplicate:Option[String]) : StringBuilder = {
     val code = new StringBuilder()
-    assert(Environment.config.memory != "ParMMapBuffer")
     val ordering = (0 until num).toList.mkString("_")
-
     bagDuplicate match {
       case Some(bd) => {
         code.append(s"""Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = Trie_${bd}_${ordering};""")

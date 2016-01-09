@@ -1,19 +1,29 @@
+sudo: false
+
 language: scala
 
 scala:
   - 2.11.2
 
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - clang-format-3.4
+    - g++-4.9
+    - libtbb-dev
+    - libgtest-dev
+    - libjemalloc-dev
+
+install:
+  - conda install -y pandas
+
 before_install:
-  - sudo apt-get install build-essential
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test  
-  - sudo apt-get update
-  - sudo apt-get install g++-4.9
-  - sudo apt-get install libtbb-dev
-  - sudo apt-get install libgtest-dev
-  - sudo apt-get install clang-format-3.4
-  - sudo apt-get install libjemalloc-dev
-  - sudo pip install pandas
-  - "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
+  - wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b -p /home/travis/mc
+  - export PATH=/home/travis/mc/bin:$PATH 
 
 script: "source ./tests/testAll.sh"
 
