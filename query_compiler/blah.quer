@@ -1,2 +1,0 @@
-SSSP(x;y:int) :- S(a=0,x); y=[<<CONST(a;1)>>].
-SSSP(x;y: int )*[c=0] :- S(w,x), SSSP(w); y=[<<MIN(w)>>+1].

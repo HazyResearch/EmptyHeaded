@@ -1,1 +1,0 @@
-Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).

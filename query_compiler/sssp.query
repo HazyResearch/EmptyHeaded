@@ -1,2 +1,0 @@
-SSSP(x0;y0:int):-S(a0=1, x0);y0=[<<COUNT(x0)>>].
-SSSP(x0;y0:int)*[c=0]:-S(x0, x0),SSSP(w0);y0=[<<MIN(w0)>>+1].
