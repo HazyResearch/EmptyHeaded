@@ -252,6 +252,10 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
     return s"""GHDNode(${rels}, ${children})"""
   }
 
+  override def size(): Int = {
+    return iterator.size
+  }
+
   /**
    * This is intended for use by GHDSolver, so we don't distinguish between trees with different vars set
    * in GHD's post-processing pass
