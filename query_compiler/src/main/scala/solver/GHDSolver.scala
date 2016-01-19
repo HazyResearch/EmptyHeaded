@@ -15,13 +15,8 @@ object GHDSolver {
       compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, output).toList
     })
 
-    println(characteristicHypergraphEdges)
     val G_i_options = getMinFHWDecompositions(H_0_edges.toList)::characteristicHypergraphEdges
       .map(H => getMinFHWDecompositions(H.toList.filter(!_.isImaginary), H.find(_.isImaginary)))
-   // println(G_i_options(0))
-   // println(G_i_options(1))
-    //println(G_i_options(2))
-    println("here")
 
     val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)//.take(1) // need to make some copies here
 
@@ -36,12 +31,7 @@ object GHDSolver {
       val reversedTrees = trees.reverse
       stitchTogether(duplicateTree(reversedTrees.head), reversedTrees.tail, componentsPlus, output)
     })
-    println(theoreticalGHDs.head)
-    val result = theoreticalGHDs.flatMap(deleteImaginaryEdges(_))
-    println("starting printing all results +++++++++++++")
-    result.map(println(_))
-    println("end printing all results +++++++++++++")
-    result
+    theoreticalGHDs.flatMap(deleteImaginaryEdges(_))
   }
 
 
@@ -53,16 +43,12 @@ object GHDSolver {
   def deleteImaginaryEdges(validGHD: GHDNode): Option[GHDNode] = {
     val realEdges = validGHD.rels.filter(!_.isImaginary)
     if (realEdges.isEmpty) { // you'll have to delete this entire node
-      if (validGHD.children.isEmpty) {
-        return None
-      } else {
-        val listOfOneorNone = validGHD.children.flatMap(deleteImaginaryEdges(_))
-        if (listOfOneorNone.isEmpty) return None
-        else {
-          val newRoot = listOfOneorNone.head
-          newRoot.children = newRoot.children:::listOfOneorNone.tail
-          return Some(newRoot)
-        }
+      val listOfProcessedChildren = validGHD.children.flatMap(deleteImaginaryEdges(_))
+      if (listOfProcessedChildren.isEmpty) return None
+      else {
+        val newRoot = listOfProcessedChildren.head
+        newRoot.children = newRoot.children:::listOfProcessedChildren.tail
+        return Some(newRoot)
       }
     } else {
       val newGHD = new GHDNode(realEdges)
@@ -86,31 +72,6 @@ object GHDSolver {
       assert((agg intersect compPlus) subsetOf g_i.attrSet)
     }})
     return G_0
-  }
-
-  def reroot(oldRoot:GHDNode, newRoot:GHDNode): GHDNode = {
-    val path = getPathToNode(oldRoot, newRoot)
-    path.take(path.size-1).foldRight((Option.empty[GHDNode], path.last))((prev:GHDNode, removeAndLastRoot:(Option[GHDNode], GHDNode)) => {
-      val (remove, lastRoot) = removeAndLastRoot
-      if (remove.isDefined) {
-        prev.children = prev.children.filter(c => !(c eq remove.get))
-      }
-      lastRoot.children = prev::lastRoot.children
-      prev.children = prev.children.filter(child => !(child eq lastRoot))
-      (Some(prev), lastRoot)
-    })
-    return path.last
-  }
-
-  def getPathToNode(root:GHDNode, n: GHDNode):List[GHDNode] = {
-    if (root eq n) {
-      return List(n)
-    } else if (root.children.isEmpty) {
-      return List()
-    } else  {
-        val pathsFromChildren = root.children.map(getPathToNode(_, n))
-        root::pathsFromChildren.find(path => !path.isEmpty).get // todo error case
-    }
   }
 
   def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], agg: Set[String]): mutable.Set[QueryRelation] = {

@@ -393,9 +393,6 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
     val myRealRels = rels.filter(!_.isImaginary)
     val realAttrSet = attrSet
     val realRels = myRealRels:::children.flatMap(child => child.rels.filter(!_.isImaginary))
-    println(attrSet)
-    println(rels)
-    println(children)
     if (realRels.isEmpty) {
       return 1 // just return 1 because we're going to delete this node anyways
     }
