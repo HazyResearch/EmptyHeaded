@@ -15,7 +15,13 @@ object GHDSolver {
       compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, output).toList
     })
 
-    val G_i_options = (H_0_edges::characteristicHypergraphEdges).map(H => getMinFHWDecompositions(H.toList))
+    println(characteristicHypergraphEdges)
+    val G_i_options = getMinFHWDecompositions(H_0_edges.toList)::characteristicHypergraphEdges
+      .map(H => getMinFHWDecompositions(H.toList.filter(!_.isImaginary), H.find(_.isImaginary)))
+   // println(G_i_options(0))
+   // println(G_i_options(1))
+    //println(G_i_options(2))
+    println("here")
 
     val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)//.take(1) // need to make some copies here
 
@@ -30,7 +36,12 @@ object GHDSolver {
       val reversedTrees = trees.reverse
       stitchTogether(duplicateTree(reversedTrees.head), reversedTrees.tail, componentsPlus, output)
     })
-    theoreticalGHDs.flatMap(deleteImaginaryEdges(_))
+    println(theoreticalGHDs.head)
+    val result = theoreticalGHDs.flatMap(deleteImaginaryEdges(_))
+    println("starting printing all results +++++++++++++")
+    result.map(println(_))
+    println("end printing all results +++++++++++++")
+    result
   }
 
 
@@ -44,14 +55,14 @@ object GHDSolver {
     if (realEdges.isEmpty) { // you'll have to delete this entire node
       if (validGHD.children.isEmpty) {
         return None
-      } else if (validGHD.children.size == 1) {
-        validGHD.children = validGHD.children.flatMap(deleteImaginaryEdges(_))
-        return Some(validGHD.children.head)
       } else {
-        val newRoot = validGHD.children.head
-        newRoot.children = validGHD.children.tail
-        newRoot.children = newRoot.children.flatMap(deleteImaginaryEdges(_))
-        return Some(newRoot)
+        val listOfOneorNone = validGHD.children.flatMap(deleteImaginaryEdges(_))
+        if (listOfOneorNone.isEmpty) return None
+        else {
+          val newRoot = listOfOneorNone.head
+          newRoot.children = newRoot.children:::listOfOneorNone.tail
+          return Some(newRoot)
+        }
       }
     } else {
       val newGHD = new GHDNode(realEdges)
@@ -61,23 +72,18 @@ object GHDSolver {
     }
   }
 
-  def generateAllPossiblePairs(l1:List[GHDNode], l2:List[GHDNode]): List[(GHDNode, GHDNode)] = {
-    for {x <- l1; y <- l2} yield (x, y)
-  }
-
   def stitchTogether(G_0:GHDNode,
                      G_i:List[GHDNode],
                      componentPlus: List[Set[Attr]],
                      agg:Set[String]): GHDNode = {
+    val G_0_nodes = G_0.toList
     G_i.zip(componentPlus).foreach({ case (g_i, compPlus) => {
-      val g_i_duplicate = duplicateTree(g_i) // we need to duplicate them since we're going to modify them if we reroot
-      val stitchable = generateAllPossiblePairs(G_0.toList, g_i_duplicate.toList).find(nodes => {
-        (((agg intersect compPlus) subsetOf nodes._1.attrSet) &&
-          ((agg intersect compPlus) subsetOf nodes._2.attrSet))
+      val stitchable = G_0_nodes.find(node => {
+        (agg intersect compPlus) subsetOf node.attrSet
       })
-      assert(stitchable.isDefined) // in theory, we always find a stitchable pair
-      val rerooted = reroot(g_i_duplicate, stitchable.get._2)
-      stitchable.get._1.children = rerooted::stitchable.get._1.children
+      assert(stitchable.isDefined) // in theory, we always find a stitchable node
+      stitchable.get.children = g_i::stitchable.get.children
+      assert((agg intersect compPlus) subsetOf g_i.attrSet)
     }})
     return G_0
   }
@@ -168,7 +174,7 @@ object GHDSolver {
    */
   private def getListsOfPossibleSubtrees(partitions: List[List[QueryRelation]], parentAttrs: Set[String]): List[List[GHDNode]] = {
     assert(!partitions.isEmpty)
-    val subtreesPerPartition: List[List[GHDNode]] = partitions.map((l: List[QueryRelation]) => getDecompositions(l, parentAttrs))
+    val subtreesPerPartition: List[List[GHDNode]] = partitions.map((l: List[QueryRelation]) => getDecompositions(l, None, parentAttrs))
     return subtreesPerPartition.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)
   }
 
@@ -195,24 +201,42 @@ object GHDSolver {
     return newGHD
   }
 
-  private def getDecompositions(rels: List[QueryRelation], parentAttrs: Set[String]): List[GHDNode] =  {
+  private def bagCannotBeExpanded(bag: GHDNode, leftOverRels: Set[QueryRelation]): Boolean = {
+    // true if each remaining rels are not entirely covered by bag
+    val b = leftOverRels.forall(rel => !rel.attrNames.forall(attrName => bag.attrSet.contains(attrName)))
+    return b
+  }
+
+  private def getDecompositions(rels: List[QueryRelation],
+                                imaginaryRel: Option[QueryRelation],
+                                parentAttrs: Set[String]): List[GHDNode] =  {
+
     val treesFound = mutable.ListBuffer[GHDNode]()
     for (tryNumRelationsTogether <- (1 to rels.size).toList) {
-      for (bag <- rels.combinations(tryNumRelationsTogether).toList) {
+      for (combo <- rels.combinations(tryNumRelationsTogether).toList) {
+        val bag =
+          if (imaginaryRel.isDefined) {
+            imaginaryRel.get::combo
+          } else {
+            combo
+          }
+        // If your edges cover attributes that a larger set of edges could cover, then
+        // don't bother trying this bag
         val leftoverBags = rels.toSet[QueryRelation] &~ bag.toSet[QueryRelation]
-        if (leftoverBags.toList.isEmpty) {
-          val newNode = new GHDNode(bag)
-          treesFound.append(newNode)
-        } else {
-          val bagAttrSet = getAttrSet(bag)
-          val partitions = getPartitions(leftoverBags.toList, bag, parentAttrs, bagAttrSet)
-          if (partitions.isDefined) {
-            // lists of possible children for |bag|
-            val possibleSubtrees: List[List[GHDNode]] = getListsOfPossibleSubtrees(partitions.get, bagAttrSet)
-            for (subtrees <- possibleSubtrees) {
-              val newNode = new GHDNode(bag)
-              newNode.children = subtrees
-              treesFound.append(newNode)
+        val newNode = new GHDNode(bag)
+        if (bagCannotBeExpanded(newNode, leftoverBags)) {
+          if (leftoverBags.toList.isEmpty) {
+            treesFound.append(newNode)
+          } else {
+            val bagAttrSet = getAttrSet(bag)
+            val partitions = getPartitions(leftoverBags.toList, bag, parentAttrs, bagAttrSet)
+            if (partitions.isDefined) {
+              // lists of possible children for |bag|
+              val possibleSubtrees: List[List[GHDNode]] = getListsOfPossibleSubtrees(partitions.get, bagAttrSet)
+              for (subtrees <- possibleSubtrees) {
+                newNode.children = subtrees
+                treesFound.append(newNode)
+              }
             }
           }
         }
@@ -221,12 +245,12 @@ object GHDSolver {
     return treesFound.toList
   }
 
-  def getDecompositions(rels: List[QueryRelation]): List[GHDNode] = {
-    return getDecompositions(rels, Set[String]())
+  def getDecompositions(rels: List[QueryRelation], imaginaryRel:Option[QueryRelation]): List[GHDNode] = {
+    return getDecompositions(rels, imaginaryRel, Set[String]())
   }
 
-  def getMinFHWDecompositions(rels: List[QueryRelation]): List[GHDNode] = {
-    val decomps = getDecompositions(rels)
+  def getMinFHWDecompositions(rels: List[QueryRelation], imaginaryRel:Option[QueryRelation] = None): List[GHDNode] = {
+    val decomps = getDecompositions(rels, imaginaryRel)
     val fhwsAndDecomps = decomps.map((root : GHDNode) => (root.fractionalScoreTree(), root))
     val minScore = fhwsAndDecomps.unzip._1.min
 

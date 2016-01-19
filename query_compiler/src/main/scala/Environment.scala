@@ -42,7 +42,6 @@ object Environment {
     scala.tools.nsc.io.File(filename).writeAll(writePretty(config))
   }
 
-
   /**
    * @param queryRelation find the query relation with this name and attrs and set it's annotation as in the config
    * @return boolean indicates whether this was successful (may not be if queryRelation does not exist)

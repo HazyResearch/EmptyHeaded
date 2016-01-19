@@ -380,7 +380,7 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
   }
 
   def scoreTree(): Int = {
-    bagWidth = attrSet.size
+    bagWidth = rels.size
     return children.map((child: GHDNode) => child.scoreTree()).foldLeft(bagWidth)((accum: Int, x: Int) => if (x > accum) x else accum)
   }
 
@@ -390,10 +390,12 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
   }
 
   private def fractionalScoreNode(): Double = { // TODO: catch UnboundedSolutionException
-    val realRels = rels.filter(!_.isImaginary)
-    val realAttrSet = realRels.foldLeft(TreeSet[String]())(
-      (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
-
+    val myRealRels = rels.filter(!_.isImaginary)
+    val realAttrSet = attrSet
+    val realRels = myRealRels:::children.flatMap(child => child.rels.filter(!_.isImaginary))
+    println(attrSet)
+    println(rels)
+    println(children)
     if (realRels.isEmpty) {
       return 1 // just return 1 because we're going to delete this node anyways
     }
@@ -405,19 +407,19 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
     })
     val constraints = new LinearConstraintSet(constraintList)
     val solver = new SimplexSolver
-
-    val solution = try {
-       solver.optimize(objective, constraints, GoalType.MINIMIZE, new NonNegativeConstraint(true))
-    } catch {
-      case e: NoFeasibleSolutionException => {
-        val it = constraintList.iterator
-        while (it.hasNext) {
-          println(it.next().getCoefficients)
+      val solution =
+        try {
+          solver.optimize(objective, constraints, GoalType.MINIMIZE, new NonNegativeConstraint(true))
+        } catch {
+           case e: NoFeasibleSolutionException => {
+                val it = constraintList.iterator
+                while (it.hasNext) {
+                    println(it.next().getCoefficients)
+                  }
+                println(rels.filter(_.isImaginary))
+                throw e
+              }
         }
-        println(rels.filter(_.isImaginary))
-        throw e
-      }
-    }
     return solution.getValue
   }
 
