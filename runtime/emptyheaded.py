@@ -101,7 +101,7 @@ def pruned_graph(db_source,dataset,create):
   print "DATASET: " + dataset
   if create:
     db_config=db_source+"/configs/config_pruned.json"
-    os.system("sed -e 's|$DATASET|"+dataset+"/g' -e 's|$FOLDER|"+db_source+"|g' "+db_config+" > tmp.json")
+    os.system("sed -e 's|$DATASET|"+dataset+"|g' -e 's|$FOLDER|"+db_source+"|g' "+db_config+" > tmp.json")
     createDB("tmp.json")
   loadDB(db_source+"/"+dataset+"/pruned/db")
   print "RUNNING QUERY: COUNT_Triangle"
@@ -120,7 +120,6 @@ def duplicated_graph(db_source,dataset,startNode,create):
     db_config=db_source+"/configs/config.json"
     os.system("sed -e 's|$DATASET|"+dataset+"|g' -e 's|$FOLDER|"+db_source+"|g' "+db_config+" > tmp.json")
     createDB("tmp.json")
-    exit
   loadDB(db_source+"/"+dataset+"/duplicated/db")
   print "RUNNING QUERY: COUNT_Lollipop"
   query("CLollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=[<<COUNT(*)>>].")
