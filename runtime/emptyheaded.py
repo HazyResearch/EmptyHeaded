@@ -100,10 +100,10 @@ def loadDB(path):
 def pruned_graph(dataset,create):
   print "DATASET: " + dataset
   if create:
-    db_config="/afs/cs.stanford.edu/u/caberger/config_pruned.json"
+    db_config=db_source+"/configs/config_pruned.json"
     os.system("sed -e 's/$DATASET/"+dataset+"/g' "+db_config+" > tmp.json")
     createDB("tmp.json")
-  loadDB("/dfs/scratch0/caberger/datasets/"+dataset+"/db_python_pruned")
+  loadDB(db_source+"/"+dataset+"/pruned/db")
   print "RUNNING QUERY: COUNT_Triangle"
   query("CTriangle(;x:long) :- Edge(a,b),Edge(b,c),Edge(a,c);x=[<<COUNT(*)>>].")
   print "RUNNING QUERY: Triangle"
@@ -113,14 +113,14 @@ def pruned_graph(dataset,create):
   #print "RUNNING QUERY: Flique"
   #query("Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).")
 
-def duplicated_graph(dataset,startNode,create):
+def duplicated_graph(db_source,dataset,startNode,create):
   print "START NODE: " + startNode
   print "DATASET: " + dataset
   if create:
-    db_config="/afs/cs.stanford.edu/u/caberger/config.json"
+    db_config=db_source+"/configs/config.json"
     os.system("sed -e 's/$DATASET/"+dataset+"/g' "+db_config+" > tmp.json")
     createDB("tmp.json")
-  loadDB("/dfs/scratch0/caberger/datasets/"+dataset+"/db_python")
+  loadDB(db_source+"/"+dataset+"/duplicated/db")
   print "RUNNING QUERY: COUNT_Lollipop"
   query("CLollipop(;m:long) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x);m=[<<COUNT(*)>>].")
   #print "RUNNING QUERY: Lollipop"
@@ -139,12 +139,12 @@ def duplicated_graph(dataset,startNode,create):
   query("""SSSP(x;y:int) :- Edge(w=%(startNode)s,x);y=[<<CONST(w;1)>>].
     SSSP(x;y:int)*[c=0] :- Edge(w,x),SSSP(w);y=[1+<<MIN(w;1)>>]."""% locals())
 
-def lubm(create):
+def lubm(db_source,create):
   print "DATASET: LUBM10000"
   if create:
-    db_config="/afs/cs.stanford.edu/u/caberger/rdf.json"
+    db_config=db_source+"/configs/rdf.json"
     createDB(db_config)
-  loadDB("/dfs/scratch0/caberger/datasets/lubm10000/db_python")
+  loadDB(db_source+"/lubm10000/db")
   print "RUNNING QUERY: LUBM1"
   query("lubm1(a) :- takesCourse(a,b='http://www.Department0.University0.edu/GraduateCourse0'),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent').")
   print "RUNNING QUERY: LUBM2"
@@ -172,6 +172,7 @@ def lubm(create):
 
 #mainly just used for regression testing
 def main(argv):
+  db_source="/dfs/scratch0/susanctu/datasets/eh_datasets" #you might need to change this
   snodes={
     "cid-patents":"5795784",
     "socLivejournal":"10009",
@@ -182,11 +183,11 @@ def main(argv):
   }
 
   if argv[0] == "pruned":
-    pruned_graph(argv[1],False)
+    pruned_graph(db_source,argv[1],False)
   elif argv[0] == "duplicated":
-    duplicated_graph(argv[1],snodes[argv[1]],False)
+    duplicated_graph(db_source,argv[1],snodes[argv[1]],False)
   elif argv[0] == "lubm":
-    lubm(False)
+    lubm(db_source,False)
   else:
     print "Running"
 
