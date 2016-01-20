@@ -101,7 +101,7 @@ def pruned_graph(dataset,create):
   print "DATASET: " + dataset
   if create:
     db_config=db_source+"/configs/config_pruned.json"
-    os.system("sed -e 's/$DATASET/"+dataset+"/g' -e 's/$FOLDER/"+db_source+"/' "+"+db_config+" > tmp.json")
+    os.system("sed -e 's/$DATASET/"+dataset+"/g' -e 's/$FOLDER/"+db_source+"/g' "+"+db_config+" > tmp.json")
     createDB("tmp.json")
   loadDB(db_source+"/"+dataset+"/pruned/db")
   print "RUNNING QUERY: COUNT_Triangle"
@@ -118,7 +118,7 @@ def duplicated_graph(db_source,dataset,startNode,create):
   print "DATASET: " + dataset
   if create:
     db_config=db_source+"/configs/config.json"
-    os.system("sed -e 's/$DATASET/"+dataset+"/g' -e 's/$FOLDER/"+db_source+"/' "+db_config+" > tmp.json")
+    os.system("sed -e 's/$DATASET/"+dataset+"/g' -e 's/$FOLDER/"+db_source+"/g' "+db_config+" > tmp.json")
     createDB("tmp.json")
   loadDB(db_source+"/"+dataset+"/duplicated/db")
   print "RUNNING QUERY: COUNT_Lollipop"
@@ -143,7 +143,7 @@ def lubm(db_source,create):
   print "DATASET: LUBM10000"
   if create:
     db_config=db_source+"/configs/rdf.json"
-    os.system("sed -e 's/$FOLDER/"+db_source+"/' "+db_config+" > tmp.json")
+    os.system("sed -e 's/$FOLDER/"+db_source+"/g' "+db_config+" > tmp.json")
     createDB("tmp.json")
   loadDB(db_source+"/lubm10000/db")
   print "RUNNING QUERY: LUBM1"
