@@ -19,6 +19,9 @@ def get_query_times(filename):
     if matchObj:
       queryname = matchObj.group(1)
     
+    if queryname == "PageRank":
+      matchObj = re.match(r'.*Time\[QUERY TIME\]: (\d+.\d+) s.*', line, re.M|re.I)
+
     matchObj = re.match(r'.*Time\[QUERY TIME\]: (\d+.\d+) s.*', line, re.M|re.I)
     if matchObj:
       time = matchObj.group(1)

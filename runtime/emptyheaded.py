@@ -97,7 +97,7 @@ def loadDB(path):
   environment.fromJSON(path)
 
 ##methods for regression testing
-def pruned_graph(dataset,create):
+def pruned_graph(db_source,dataset,create):
   print "DATASET: " + dataset
   if create:
     db_config=db_source+"/configs/config_pruned.json"
