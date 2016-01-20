@@ -33,7 +33,7 @@ def main():
   os.system("rm -rf " + logdir)
   os.system("mkdir -p " + logdir)  
 
-  datasets = ["g_plus","higgs","socLivejournal","orkut","cid-patents","twitter2010"]
+  datasets = ["googlePlus","higgs","socLivejournal","orkut","cidPatents","twitter2010"]
   for dataset in datasets:
     os.system("cd " + logdir + " && python "+os.path.expandvars("$EMPTYHEADED_HOME")+"/runtime/emptyheaded.py pruned "+dataset+" |& tee --append "+logdir+"/pruned.log")
   get_query_times("pruned")

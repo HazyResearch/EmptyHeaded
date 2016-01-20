@@ -101,7 +101,7 @@ def pruned_graph(dataset,create):
   print "DATASET: " + dataset
   if create:
     db_config=db_source+"/configs/config_pruned.json"
-    os.system("sed -e 's/$DATASET/"+dataset+"/g' "+db_config+" > tmp.json")
+    os.system("sed -e 's/$DATASET/"+dataset+"/g' -e 's/$FOLDER/"+db_source+"/' "+"+db_config+" > tmp.json")
     createDB("tmp.json")
   loadDB(db_source+"/"+dataset+"/pruned/db")
   print "RUNNING QUERY: COUNT_Triangle"
@@ -118,7 +118,7 @@ def duplicated_graph(db_source,dataset,startNode,create):
   print "DATASET: " + dataset
   if create:
     db_config=db_source+"/configs/config.json"
-    os.system("sed -e 's/$DATASET/"+dataset+"/g' "+db_config+" > tmp.json")
+    os.system("sed -e 's/$DATASET/"+dataset+"/g' -e 's/$FOLDER/"+db_source+"/' "+db_config+" > tmp.json")
     createDB("tmp.json")
   loadDB(db_source+"/"+dataset+"/duplicated/db")
   print "RUNNING QUERY: COUNT_Lollipop"
@@ -143,7 +143,8 @@ def lubm(db_source,create):
   print "DATASET: LUBM10000"
   if create:
     db_config=db_source+"/configs/rdf.json"
-    createDB(db_config)
+    os.system("sed -e 's/$FOLDER/"+db_source+"/' "+db_config+" > tmp.json")
+    createDB("tmp.json")
   loadDB(db_source+"/lubm10000/db")
   print "RUNNING QUERY: LUBM1"
   query("lubm1(a) :- takesCourse(a,b='http://www.Department0.University0.edu/GraduateCourse0'),rdftype(a,c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent').")
@@ -174,10 +175,10 @@ def lubm(db_source,create):
 def main(argv):
   db_source="/dfs/scratch0/susanctu/datasets/eh_datasets" #you might need to change this
   snodes={
-    "cid-patents":"5795784",
+    "cidPatents":"5795784",
     "socLivejournal":"10009",
     "higgs":"83222",
-    "g_plus":"6966",
+    "googlePlus":"6966",
     "orkut":"43608",
     "twitter2010":"1037948"
   }
