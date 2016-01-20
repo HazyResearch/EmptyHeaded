@@ -101,7 +101,7 @@ def pruned_graph(dataset,create):
   print "DATASET: " + dataset
   if create:
     db_config=db_source+"/configs/config_pruned.json"
-    os.system("sed -e 's/$DATASET/"+dataset+"/g' -e 's/$FOLDER/"+db_source+"/g' "+"+db_config+" > tmp.json")
+    os.system("sed -e 's/$DATASET/"+dataset+"/g' -e 's/$FOLDER/"+db_source+"/g' "+db_config+" > tmp.json")
     createDB("tmp.json")
   loadDB(db_source+"/"+dataset+"/pruned/db")
   print "RUNNING QUERY: COUNT_Triangle"
