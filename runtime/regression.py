@@ -9,6 +9,7 @@ def get_query_times(filename):
   dataset = ""
   queryname = ""
   time = ""
+  first = True
   writefile = open(logdir+"/"+filename + ".csv","w")
   for line in open(logdir+"/"+filename+ ".log","r"):
     matchObj = re.match(r'.*DATASET: (.*)', line, re.M|re.I)
@@ -19,13 +20,14 @@ def get_query_times(filename):
     if matchObj:
       queryname = matchObj.group(1)
     
-    if queryname == "PageRank":
-      matchObj = re.match(r'.*Time\[QUERY TIME\]: (\d+.\d+) s.*', line, re.M|re.I)
-
     matchObj = re.match(r'.*Time\[QUERY TIME\]: (\d+.\d+) s.*', line, re.M|re.I)
     if matchObj:
-      time = matchObj.group(1)
-
+      if queryname == "PageRank" and first:
+        first = False
+        break
+      else:
+        first = True
+        time = matchObj.group(1)
     if time != "" and queryname != "":
       writefile.write(dataset + "," + queryname + "," + time + "\n")
       queryname = ""
