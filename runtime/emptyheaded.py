@@ -174,6 +174,7 @@ def lubm(db_source,create):
 #mainly just used for regression testing
 def main(argv):
   db_source="/dfs/scratch0/susanctu/datasets/eh_datasets" #you might need to change this
+  build=False
   snodes={
     "cidPatents":"5795784",
     "socLivejournal":"10009",
@@ -184,11 +185,11 @@ def main(argv):
   }
 
   if argv[0] == "pruned":
-    pruned_graph(db_source,argv[1],False)
+    pruned_graph(db_source,argv[1],build)
   elif argv[0] == "duplicated":
-    duplicated_graph(db_source,argv[1],snodes[argv[1]],False)
+    duplicated_graph(db_source,argv[1],snodes[argv[1]],build)
   elif argv[0] == "lubm":
-    lubm(db_source,False)
+    lubm(db_source,build)
   else:
     print "Running"
 
