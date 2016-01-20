@@ -24,7 +24,6 @@ def get_query_times(filename):
     if matchObj:
       if queryname == "PageRank" and first:
         first = False
-        break
       else:
         first = True
         time = matchObj.group(1)
