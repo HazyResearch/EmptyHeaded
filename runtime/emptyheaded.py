@@ -174,7 +174,7 @@ def lubm(db_source,create):
 #mainly just used for regression testing
 def main(argv):
   db_source="/dfs/scratch0/susanctu/datasets/eh_datasets" #you might need to change this
-  build=False
+  build=True
   snodes={
     "cidPatents":"5795784",
     "socLivejournal":"10009",
