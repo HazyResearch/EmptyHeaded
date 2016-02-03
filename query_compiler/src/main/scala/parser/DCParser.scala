@@ -15,18 +15,39 @@ package object attr {
   type AnnotationType = String
 }
 
-case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*") {
+case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*", val isImaginary: Boolean = false) {
   val attrNames = attrs.map(x => x._1)
-  override def equals(that: Any): Boolean =
+  /*override def equals(that: Any): Boolean =
     that match {
       case that: QueryRelation => that.attrs.equals(attrs) && that.name.equals(name) && that.annotationType.equals(annotationType)
       case _ => false
-    }
+    } */
 
   def printData() = {
     println("name: " + name + " attrs: " + attrs + " annotationType: " + annotationType)
   }
 }
+
+object QueryRelationFactory {
+  def createQueryRelationWithEqualitySelect(attrsWithoutSelect:List[Attr],
+                                            attrsWithSelect:List[Attr]): QueryRelation = {
+    val attrInfo = attrsWithoutSelect.map(attr => {
+      (attr, "", "")
+    }):::attrsWithSelect.map(attr => {
+      (attr, "=", "b")
+    })
+    new QueryRelation("", attrInfo)
+  }
+
+  def createQueryRelationWithNoSelects(attrs:Iterable[Attr]) = {
+    QueryRelation("", attrs.map(attr => (attr, "", "")).toList)
+  }
+
+  def createImaginaryQueryRelationWithNoSelects(attrs:Iterable[Attr]) = {
+    QueryRelation("", attrs.map(attr => (attr, "", "")).toList, "void*", true)
+  }
+}
+
 
 class RecursionStatement(val functionName:String, val inputArgument:QueryRelation, val convergance:ASTConvergenceCondition)
 

@@ -23,6 +23,7 @@ class GHD(val root:GHDNode,
   var lastMaterializedAttr:Option[Attr] = None
   var nextAggregatedAttr:Option[Attr] = None
 
+
   def getQueryPlan(): QueryPlan = {
     new QueryPlan(
       "join",
@@ -229,10 +230,9 @@ abstract class EHNode(val rels: List[QueryRelation]) {
       }
     })
   }
-
 }
 
-class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) {
+class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with Iterable[GHDNode] {
   var subtreeRels = rels
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
@@ -242,11 +242,26 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) {
   var projectedOutAttrs: Set[Attr] = null
 
   /**
+   * Iterator returns the nodes in the GHD in preorder traversal order
+   */
+  override def iterator: Iterator[GHDNode] = {
+    Iterator(this) ++ children.iterator.map(_.iterator).flatten
+  }
+
+  override def toString: String = {
+    return s"""GHDNode(${rels}, ${children})"""
+  }
+
+  override def size(): Int = {
+    return iterator.size
+  }
+
+  /**
    * This is intended for use by GHDSolver, so we don't distinguish between trees with different vars set
    * in GHD's post-processing pass
    */
   override def equals(o: Any) = o match {
-    case that: GHDNode => that.rels.equals(rels) && that.children.toSet.equals(children.toSet)
+    case that: GHDNode => that.rels.toSet.equals(rels.toSet) && that.children.toSet.equals(children.toSet)
     case _ => false
   }
 
@@ -365,7 +380,7 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) {
   }
 
   def scoreTree(): Int = {
-    bagWidth = attrSet.size
+    bagWidth = rels.size
     return children.map((child: GHDNode) => child.scoreTree()).foldLeft(bagWidth)((accum: Int, x: Int) => if (x > accum) x else accum)
   }
 
@@ -375,13 +390,33 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) {
   }
 
   private def fractionalScoreNode(): Double = { // TODO: catch UnboundedSolutionException
-  val objective = new LinearObjectiveFunction(rels.map((rel : QueryRelation) => 1.0).toArray, 0)
+    val myRealRels = rels.filter(!_.isImaginary)
+    val realAttrSet = attrSet
+    val realRels = myRealRels:::children.flatMap(child => child.rels.filter(!_.isImaginary))
+    if (realRels.isEmpty) {
+      return 1 // just return 1 because we're going to delete this node anyways
+    }
+    val objective = new LinearObjectiveFunction(realRels.map((rel : QueryRelation) => 1.0).toArray, 0)
     // constraints:
     val constraintList = new util.ArrayList[LinearConstraint]
-    attrSet.map((attr : String) => constraintList.add(new LinearConstraint(getMatrixRow(attr, rels), Relationship.GEQ,  1.0)))
+    realAttrSet.map((attr : String) => {
+      constraintList.add(new LinearConstraint(getMatrixRow(attr, realRels), Relationship.GEQ,  1.0))
+    })
     val constraints = new LinearConstraintSet(constraintList)
     val solver = new SimplexSolver
-    val solution = solver.optimize(objective, constraints, GoalType.MINIMIZE, new NonNegativeConstraint(true))
+      val solution =
+        try {
+          solver.optimize(objective, constraints, GoalType.MINIMIZE, new NonNegativeConstraint(true))
+        } catch {
+           case e: NoFeasibleSolutionException => {
+                val it = constraintList.iterator
+                while (it.hasNext) {
+                    println(it.next().getCoefficients)
+                  }
+                println(rels.filter(_.isImaginary))
+                throw e
+              }
+        }
     return solution.getValue
   }
 
