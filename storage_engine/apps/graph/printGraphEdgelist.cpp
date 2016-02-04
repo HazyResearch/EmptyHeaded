@@ -5,21 +5,39 @@ struct createGraphDBEdgelist: public application {
   ////////////////////emitInitCreateDB////////////////////
   // init ColumnStores
   void run(){
+
+    std::string db_path = "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/data/facebook/db";
+
     Trie<void *,ParMemoryBuffer> *Trie_R_0_1 = NULL;
     {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_R_0_1 = Trie<void *,ParMemoryBuffer>::load( 
-          "/Users/caberger/Documents/Research/data/databases/higgs/db_pruned/relations/R/R_0_1"
-          //"/afs/cs.stanford.edu/u/caberger/db/relations/R/R_0_1"
-          //"/dfs/scratch0/caberger/datasets/higgs/db_python/relations/R/R_0_1"
+          db_path+"/relations/Edge/Edge_0_1"
           );
-      timer::stop_clock("BUILDING TRIE R_0_1", start_time);
+      timer::stop_clock("BUILDING TRIE Edge_0_1", start_time);
     }
 
+    auto e_loading_node = timer::start_clock();
+    Encoding<long> *Encoding_node = Encoding<long>::from_binary(
+        db_path+"/encodings/node/");
+    (void)Encoding_node;
+    timer::stop_clock("LOADING ENCODINGS node", e_loading_node);
+
+
+
+    long prev = -1;
+    long count  = 0;
     Trie_R_0_1->foreach([&](std::vector<uint32_t>* tuple,void* value){
       for(size_t i =0; i < tuple->size(); i++){
-        std::cout << tuple->at(i) << " ";
+        if(prev != tuple->at(0)){
+          if(prev != -1){
+            std::cout << "NODE: " << prev << " COUNT: " << count << std::endl;
+          }
+          prev = (long)tuple->at(0);
+          count = 0;
+        }
+        count++;
       }
       std::cout << std::endl;
     });

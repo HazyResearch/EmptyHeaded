@@ -12,32 +12,31 @@
 void Query_0::run_0() {
   thread_pool::initializeThreadPool();
 
+  long selection_value = 0;
+  std::string db_path = "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/data/facebook/db";
+
   Trie<void *, ParMemoryBuffer> *Trie_SFlique_0_1_2_3_4 =
       new Trie<void *, ParMemoryBuffer>(
-          "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/"
-          "data/facebook/db_pruned/relations/SFlique/SFlique_0_1_2_3_4",
+          db_path+"/relations/SFlique/SFlique_0_1_2_3_4",
           5, false);
   Trie<void *, ParMemoryBuffer> *Trie_Edge_0_1 = NULL;
   {
     auto start_time = timer::start_clock();
     Trie_Edge_0_1 = Trie<void *, ParMemoryBuffer>::load(
-        "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/"
-        "data/facebook/db_pruned/relations/Edge/Edge_0_1");
+        db_path+"/relations/Edge/Edge_0_1");
     timer::stop_clock("LOADING Trie Edge_0_1", start_time);
   }
   Trie<void *, ParMemoryBuffer> *Trie_Edge_1_0 = NULL;
   {
     auto start_time = timer::start_clock();
     Trie_Edge_1_0 = Trie<void *, ParMemoryBuffer>::load(
-        "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/"
-        "data/facebook/db_pruned/relations/Edge/Edge_1_0");
+        db_path+"/relations/Edge/Edge_1_0");
     timer::stop_clock("LOADING Trie Edge_1_0", start_time);
   }
 
   auto e_loading_node = timer::start_clock();
   Encoding<long> *Encoding_node = Encoding<long>::from_binary(
-      "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/data/"
-      "facebook/db_pruned/encodings/node/");
+      db_path+"/encodings/node/");
   (void)Encoding_node;
   timer::stop_clock("LOADING ENCODINGS node", e_loading_node);
   par::reducer<size_t> num_rows_reducer(
@@ -51,8 +50,7 @@ void Query_0::run_0() {
 
     Trie<void *, ParMemoryBuffer> *Trie_bag_0_a_b_c_d_0_1_2_3 =
         new Trie<void *, ParMemoryBuffer>(
-            "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/"
-            "graph/data/facebook/db_pruned/relations/bag_0_a_b_c_d",
+            db_path+"/relations/bag_0_a_b_c_d",
             4, false);
     {
       auto bag_timer = timer::start_clock();
@@ -140,8 +138,7 @@ void Query_0::run_0() {
     }
     Trie<void *, ParMemoryBuffer> *Trie_bag_1_a_e_0_1 =
         new Trie<void *, ParMemoryBuffer>(
-            "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/"
-            "graph/data/facebook/db_pruned/relations/bag_1_a_e",
+            db_path+"/relations/bag_1_a_e",
             1, false);
     {
       auto bag_timer = timer::start_clock();
@@ -152,7 +149,7 @@ void Query_0::run_0() {
           Trie_Edge_1_0);
       ParTrieIterator<void *, ParMemoryBuffer> Iterators_B0(
           Trie_bag_0_a_b_c_d_0_1_2_3);
-      const uint32_t selection_e_0 = Encoding_node->value_to_key.at(0);
+      const uint32_t selection_e_0 = Encoding_node->value_to_key.at(selection_value);
       Iterators_Edge_e_a.get_next_block(selection_e_0);
       const size_t count_a = Builders.build_set(Iterators_Edge_e_a.head,Iterators_B0.head);
       num_rows_reducer.update(0, count_a);
