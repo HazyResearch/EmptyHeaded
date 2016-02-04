@@ -1,0 +1,218 @@
+{
+    "algorithm": "NPRR+",
+    "database": "/dfs/scratch0/susanctu/newversion/EmptyHeaded/examples/graph/data/facebook/db_pruned",
+    "encodings": {
+        "node": "long"
+    },
+    "layout": "hybrid",
+    "memory": "ParMemoryBuffer",
+    "numNUMA": 4,
+    "numThreads": 4,
+    "relations": {
+        "R00_0_1": "disk",
+        "R00_1_0": "disk",
+        "R01_0_1": "disk",
+        "R01_1_0": "disk",
+        "R02_0_1": "disk",
+        "R02_1_0": "disk",
+        "R10_0_1": "disk",
+        "R10_1_0": "disk",
+        "R12_0_1": "disk",
+        "R12_1_0": "disk",
+        "R22_0_1": "disk",
+        "R22_1_0": "disk"
+    },
+    "resultName": "",
+    "resultOrdering": [],
+    "schemas": {
+        "R00": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    1,
+                    0
+                ]
+            ]
+        },
+        "R01": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    1,
+                    0
+                ]
+            ]
+        },
+        "R02": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    1,
+                    0
+                ]
+            ]
+        },
+        "R10": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    1,
+                    0
+                ]
+            ]
+        },
+        "R11": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    1,
+                    0
+                ]
+            ]
+        },
+        "R20": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [
+                    0,
+                    1
+                ],
+                [
+                    1,
+                    0
+                ]
+            ]
+        },
+        "B": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [0,1,2],
+                [0,2,1],
+                [1,0,2],
+                [1,2,0],
+                [2,1,0],
+                [2,0,1]
+            ]
+        },
+        "C": {
+            "annotation": "void*",
+            "attributes": [
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                },
+                {
+                    "attrType": "long",
+                    "encoding": "node"
+                }
+            ],
+            "orderings": [
+                [0,1,2],
+                [0,2,1],
+                [1,0,2],
+                [1,2,0],
+                [2,1,0],
+                [2,0,1]
+            ]
+        }
+
+    }
+}
