@@ -12,7 +12,7 @@
 void Query_0::run_0() {
   thread_pool::initializeThreadPool();
 
-  long selection_value = 0;
+  long selection_value = 6;
   std::string db_path = "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/data/facebook/db";
 
   Trie<void *, ParMemoryBuffer> *Trie_SBarbell_0_3_1_2_4_5 =
