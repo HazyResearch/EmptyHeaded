@@ -158,8 +158,8 @@ class GHD(val root:GHDNode,
     root.setBagName("bag_0_"+attrNames)
     root.setDescendantNames(1)
 
-    root.createAttrToRelsMapping
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
+    root.createAttrToRelsMapping
     bagOutputs = getBagOutputRelations(root)
   }
 
@@ -183,6 +183,9 @@ abstract class EHNode(val rels: List[QueryRelation]) {
   def setAttributeOrdering(ordering: List[Attr] )
 
   protected def getSelection(attr:Attr): List[QueryPlanSelection] = {
+    if (attrToRels == null) {
+      attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, rels)
+    }
     PlanUtil.getSelection(attr, attrToRels)
   }
 
@@ -334,8 +337,6 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
     
     PlanUtil.getRelationInfoBasedOnName(forTopLevelSummary, relsToUse, attributeOrdering)
   }
-
-
 
   override def createAttrToRelsMapping: Unit = {
     attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels)
