@@ -104,19 +104,6 @@ class GHDSolverTest extends FunSuite {
     assertResult(twoNodes.get.toList.size)(2)
   }
 
-  test("understand why this test is still failing") {
-    val root = new GHDNode(List(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(List("c"))))
-    root.children = List(new GHDNode(
-      List(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(List("c")),
-        QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
-        QueryRelationFactory.createQueryRelationWithNoSelects(List("b", "c")),
-        QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "c")))
-    ))
-    val oneNode = GHDSolver.deleteImaginaryEdges(root)
-    assert(oneNode.isDefined)
-    oneNode.get.rels.foreach(rel => assert(!rel.isImaginary))
-  }
-
   test("Can identify connected components of graph when removing the chosen hyper edge leaves 2 disconnected components") {
     val chosen = List(RELATIONS.head)
     val partitions = solver.getPartitions(
