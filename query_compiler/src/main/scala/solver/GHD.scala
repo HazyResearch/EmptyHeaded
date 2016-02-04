@@ -182,7 +182,10 @@ abstract class EHNode(val rels: List[QueryRelation]) {
   }
   def setAttributeOrdering(ordering: List[Attr] )
 
-  private def getSelection(attr:Attr): List[QueryPlanSelection] = {
+  protected def getSelection(attr:Attr): List[QueryPlanSelection] = {
+    if (attrToRels == null) {
+      attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, rels)
+    }
     PlanUtil.getSelection(attr, attrToRels)
   }
 
@@ -335,8 +338,6 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
     PlanUtil.getRelationInfoBasedOnName(forTopLevelSummary, relsToUse, attributeOrdering)
   }
 
-
-
   override def createAttrToRelsMapping: Unit = {
     attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels)
     children.map(child => child.createAttrToRelsMapping)
@@ -353,11 +354,15 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
   def computeProjectedOutAttrsAndOutputRelation(annotationType:String,outputAttrs:Set[Attr], attrsFromAbove:Set[Attr]): QueryRelation = {
     projectedOutAttrs = attrSet -- (outputAttrs ++ attrsFromAbove)
     val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
+    val equalitySelectedAttrs = attrSet.filter(attr => !getSelection(attr).isEmpty)
     // Right now we only allow a query to have one type of annotation, so
     // we take the annotation type from an arbitrary relation that was joined in this bag
     outputRelation = new QueryRelation(bagName, keptAttrs.map(attr =>(attr, "", "")).toList, annotationType)
     val childrensOutputRelations = children.map(child => {
-      child.computeProjectedOutAttrsAndOutputRelation(annotationType,outputAttrs, attrsFromAbove ++ attrSet)
+      child.computeProjectedOutAttrsAndOutputRelation(
+        annotationType,
+        outputAttrs,
+        attrsFromAbove ++ attrSet -- equalitySelectedAttrs)
     })
     subtreeRels ++= childrensOutputRelations
     return outputRelation
