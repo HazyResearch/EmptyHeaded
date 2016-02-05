@@ -21,8 +21,9 @@ case class OutputAttributeNotFoundInJoinException(attr:Attr) extends Exception(
 case class OutputAttributeAggregatedAwayException(attr:Attr) extends Exception(
   s"""Output attribute ${attr} is aggregated away""")
 case class NoTypeFoundException(relName:String, attrPos:Int) extends Exception(
-  s"""No type found for ${attrPos}th attribute of relation ${relName}"""
-)
+  s"""No type found for ${attrPos}th attribute of relation ${relName}""")
+case class MaterializationOfSelectedAttrUnsupportedException(attrName:Attr) extends Exception(
+  s"""Cannot both equality select and materialize attribute ${attrName}""")
 
 case class ASTQueryStatement(lhs:QueryRelation,
                              convergence:Option[ASTConvergenceCondition],
@@ -33,6 +34,7 @@ case class ASTQueryStatement(lhs:QueryRelation,
     (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
   val outputAttrs = attrSet -- joinAggregates.keySet
   val attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, join)
+  val attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
   private var outputType:List[AttrType] = null
 
   // TODO (sctu) : ignoring everything except for join, joinAggregates for now
@@ -40,6 +42,16 @@ case class ASTQueryStatement(lhs:QueryRelation,
     val namesInThisStatement = (join.map(rels => rels.name)
       :::joinAggregates.values.map(parsedAgg => parsedAgg.expressionLeft+parsedAgg.expressionRight).toList).toSet
     namesInThisStatement.find(name => name.contains(statement.lhs.name)).isDefined
+  }
+
+  def propagateSelections(): Unit = {
+    // TODO: remove this check that could throw MaterializationOfSelectedAttrUnsupportedException later
+    // when we do support this in the codegen
+    val selectedAndMaterialized = attrToSelection.filter({case (attr, selects) => !selects.isEmpty})
+      .keys.find(attr => lhs.attrNames.contains(attr))
+    selectedAndMaterialized.foreach(attr => throw MaterializationOfSelectedAttrUnsupportedException(attr))
+
+    //attrToSelection.
   }
 
   /**

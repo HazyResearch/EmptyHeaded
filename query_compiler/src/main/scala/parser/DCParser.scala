@@ -88,6 +88,7 @@ object DCParser extends RegexParsers {
       case DCParser.Success(parsedStatements, _) => {
         Environment.startScope()
         parsedStatements.foreach(parsedStatement => {
+          parsedStatement.propagateSelections
           parsedStatement.typecheck
           Environment.addRelation(parsedStatement.lhs, parsedStatement.getOutputType)
         })
