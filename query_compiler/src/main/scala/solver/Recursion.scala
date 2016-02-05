@@ -6,10 +6,10 @@ class Recursion(recurse:RecursionNode,
                 baseCase:RecursionNode) extends QueryPlanPostProcessor {
   override def doPostProcessingPass = {
     recurse.outputRelation = recurse.outputRel
-    recurse.createAttrToRelsMapping
+    recurse.createFromAttrMappings
     recurse.setAttributeOrdering(AttrOrderingUtil.getAttributeOrdering(recurse, recurse.join, recurse.outputRelation))
     baseCase.outputRelation = baseCase.outputRel
-    baseCase.createAttrToRelsMapping
+    baseCase.createFromAttrMappings
     baseCase.setAttributeOrdering(AttrOrderingUtil.getAttributeOrdering(baseCase, baseCase.join, baseCase.outputRelation))
 
     baseCase.bagName = "base_case"

@@ -89,8 +89,8 @@ case class ASTQueryStatement(lhs:QueryRelation,
       val rootNodes = GHDSolver.computeAJAR_GHD(join.toSet, outputAttrs)
       val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs))
       candidates.map(c => c.doPostProcessingPass())
-      val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(
-        HeuristicUtils.getGHDsOfMinHeight(HeuristicUtils.getGHDsWithMinBags(candidates)))
+      val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(HeuristicUtils.getGHDsWithSelectionsPushedDown(
+        HeuristicUtils.getGHDsOfMinHeight(HeuristicUtils.getGHDsWithMinBags(candidates))))
       if (config.bagDedup) {
         chosen.head.doBagDedup
       }

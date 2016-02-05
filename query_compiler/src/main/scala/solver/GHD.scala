@@ -159,7 +159,7 @@ class GHD(val root:GHDNode,
     root.setDescendantNames(1)
 
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
-    root.createAttrToRelsMapping
+    root.createFromAttrMappings
     bagOutputs = getBagOutputRelations(root)
   }
 
@@ -173,24 +173,33 @@ abstract class EHNode(val rels: List[QueryRelation]) {
     (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
 
   var attrToRels:Map[Attr,List[QueryRelation]] = null
-  var outputRelation: QueryRelation = null
+  var attrToSelection:Map[Attr,List[QueryPlanSelection]] = null 
+  var outputRelation:QueryRelation = null
   var attributeOrdering: List[Attr] = null
   var children: List[GHDNode] = List()
 
-  def createAttrToRelsMapping: Unit = {
+  def createFromAttrMappings: Unit = {
     attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, rels)
+    attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
   }
   def setAttributeOrdering(ordering: List[Attr] )
 
   protected def getSelection(attr:Attr): List[QueryPlanSelection] = {
-    if (attrToRels == null) {
-      attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, rels)
+    if (attrToSelection == null) {
+      createFromAttrMappings
     }
-    PlanUtil.getSelection(attr, attrToRels)
+    attrToSelection.getOrElse(attr, List())
   }
 
   def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
     PlanUtil.getAccessor(attr, attrToRels, attributeOrdering)
+  }
+
+  def getSelectedAttrs(): Iterable[Attr] = {
+    if (attrToSelection == null) {
+      createFromAttrMappings
+    }
+    attrToSelection.filter({case (attr, selects) => !selects.isEmpty}).keys
   }
 
   def getOrderedAttrsWithAccessor(): List[Attr] = {
@@ -242,6 +251,7 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
   var bagFractionalWidth: Double = 0
   var bagWidth: Int = 0
   var depth: Int = 0
+  var level:Int = 0
   var projectedOutAttrs: Set[Attr] = null
 
   /**
@@ -318,12 +328,13 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
       None) //SUSAN FIXME
   }
 
-  def setDescendantNames(depth:Int): Unit = {
+  def setDescendantNames(level:Int): Unit = {
     children.map(childAndIndex => {
       val attrNames = childAndIndex.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
-      childAndIndex.setBagName(s"bag_${depth}_${attrNames}")
+      childAndIndex.setBagName(s"bag_${level}_${attrNames}")
+      childAndIndex.level = level
     })
-    children.map(child => {child.setDescendantNames(depth+1)})
+    children.map(child => {child.setDescendantNames(level + 1)})
   }
 
 
@@ -334,13 +345,13 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
       } else {
         subtreeRels
       }
-    
     PlanUtil.getRelationInfoBasedOnName(forTopLevelSummary, relsToUse, attributeOrdering)
   }
 
-  override def createAttrToRelsMapping: Unit = {
+  override def createFromAttrMappings: Unit = {
     attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels)
-    children.map(child => child.createAttrToRelsMapping)
+    attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
+    children.map(child => child.createFromAttrMappings)
   }
 
   override def setAttributeOrdering(ordering: List[Attr] ): Unit = {
