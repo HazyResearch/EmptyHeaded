@@ -17,11 +17,6 @@ package object attr {
 
 case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*", val isImaginary: Boolean = false) {
   val attrNames = attrs.map(x => x._1)
-  /*override def equals(that: Any): Boolean =
-    that match {
-      case that: QueryRelation => that.attrs.equals(attrs) && that.name.equals(name) && that.annotationType.equals(annotationType)
-      case _ => false
-    } */
 
   def printData() = {
     println("name: " + name + " attrs: " + attrs + " annotationType: " + annotationType)

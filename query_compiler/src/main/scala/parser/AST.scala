@@ -24,11 +24,13 @@ case class NoTypeFoundException(relName:String, attrPos:Int) extends Exception(
   s"""No type found for ${attrPos}th attribute of relation ${relName}""")
 case class MaterializationOfSelectedAttrUnsupportedException(attrName:Attr) extends Exception(
   s"""Cannot both equality select and materialize attribute ${attrName}""")
+case class MultipleSelectionsUnsupportedException(attr:Attr) extends Exception(
+  s"""Cannot support multiple selections in same attribute ${attr}""")
 
 case class ASTQueryStatement(lhs:QueryRelation,
                              convergence:Option[ASTConvergenceCondition],
                              joinType:String,
-                             join:List[QueryRelation],
+                             var join:List[QueryRelation],
                              joinAggregates:Map[String,ParsedAggregate]) extends ASTStatement {
   val attrSet = join.foldLeft(TreeSet[String]())(
     (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
@@ -51,7 +53,21 @@ case class ASTQueryStatement(lhs:QueryRelation,
       .keys.find(attr => lhs.attrNames.contains(attr))
     selectedAndMaterialized.foreach(attr => throw MaterializationOfSelectedAttrUnsupportedException(attr))
 
-    //attrToSelection.
+    join = join.map(rel => {
+      val rewrittenAttrs = rel.attrs.map(attr => {
+        val selections = attrToSelection(attr._1).map(selection => {
+          (attr._1, selection.operation, selection.expression)
+        })
+        if (selections.size > 1) {
+          throw MultipleSelectionsUnsupportedException(attr._1)
+        } else if (selections.size == 0) {
+          (attr._1, "", "")
+        } else {
+          selections.head
+        }
+      })
+      QueryRelation(rel.name, rewrittenAttrs, rel.annotationType, rel.isImaginary)
+    })
   }
 
   /**

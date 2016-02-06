@@ -98,7 +98,7 @@ case class QueryPlanRecursion(val input:String,
 /**
  * @param operation SUM, COUNT, etc.
  * @param init what to initialize to when there isn't already an annotation
- * @param expression parts of the expression outside the actual aggregation, may be something like agg+1, for example
+ * @param expression parts of the expression outside the actual aggregation, may be something like agg + 1, for example
  * @param prev previous attribute to be aggregated in nprr
  * @param next next attribute to be aggregated in nprr
  */
