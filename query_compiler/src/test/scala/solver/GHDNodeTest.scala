@@ -37,4 +37,14 @@ class GHDNodeTest extends FunSuite {
     assertResult(Set("a", "b", "c"))(listOfBags(1).attrSet)
     assertResult(Set("a", "e"))(listOfBags(2).attrSet)
   }
+
+  test("Test that we don't give weight to cover equality-selected attrs") {
+    val justTriangle = List(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("b", "c")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a", "c"), List("d"))
+    )
+    val bag = new GHDNode(justTriangle)
+    assertResult(1.5)(bag.fractionalScoreTree())
+  }
 }

@@ -17,6 +17,7 @@ package object attr {
 
 case class QueryRelation(var name:String, val attrs:List[AttrInfo],  var annotationType:String = "void*", val isImaginary: Boolean = false) {
   val attrNames = attrs.map(x => x._1)
+  val nonSelectedAttrNames = attrs.filter(x => x._2.isEmpty && x._3.isEmpty).map(x => x._1).toSet
 
   def printData() = {
     println("name: " + name + " attrs: " + attrs + " annotationType: " + annotationType)
@@ -29,7 +30,7 @@ object QueryRelationFactory {
     val attrInfo = attrsWithoutSelect.map(attr => {
       (attr, "", "")
     }):::attrsWithSelect.map(attr => {
-      (attr, "=", "b")
+      (attr, "=", "PLACEHOLDER")
     })
     new QueryRelation("", attrInfo)
   }

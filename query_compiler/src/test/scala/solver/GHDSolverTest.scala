@@ -240,4 +240,22 @@ class GHDSolverTest extends FunSuite {
     val fractionalScores = decompositions.map((root: GHDNode) => root.fractionalScoreTree())
     assert(fractionalScores.min === 1.5)
   }
+
+  test("Test that rels with equality selected attrs are absorbed into bags that cover them (not counting the eq-selected attrs)") {
+    val LUBM4 = List(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a"), List("e")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a"), List("f")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "d")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "c"))
+    )
+    val decomps = solver.getMinFHWDecompositions(LUBM4)
+
+    val expectedDecomp = new GHDNode(List(LUBM4(0)))
+    expectedDecomp.children = List(
+      new GHDNode(List(LUBM4(1),LUBM4(2),LUBM4(3))),
+      new GHDNode(List(LUBM4(4))))
+
+    assert(decomps.find(_ == expectedDecomp).isDefined)
+  }
 }

@@ -94,11 +94,30 @@ object GHDSolver {
   private def getOneConnectedComponent(rels: mutable.Set[QueryRelation], ignoreAttrs: Set[String]): List[QueryRelation] = {
     val curr = rels.head
     rels -= curr
-    return DFS(mutable.LinkedHashSet[QueryRelation](curr), curr, rels, ignoreAttrs)
+    val component = DFS(mutable.LinkedHashSet[QueryRelation](curr), curr, rels, ignoreAttrs)
+    return component:::getCoveredIfSelectsIgnored(component, rels)
+  }
+
+  /**
+   * Why doing this is correct: This will give you an opportunity to keep selects low in the tree,
+   * but you don't miss any GHDs because you can still make the ones you would have made in this subtree
+   * and you can tack on the extra edges that you get here in the root
+   */
+  private def getCoveredIfSelectsIgnored(component:List[QueryRelation],
+                                         rels: mutable.Set[QueryRelation]): List[QueryRelation] = {
+    var covered = mutable.Set[QueryRelation]()
+    val componentAttrs = component.flatMap(rel => rel.attrNames).toSet
+    for (rel <- rels.toList) {
+      if (rel.nonSelectedAttrNames subsetOf componentAttrs) {
+        covered += rel
+        rels -= rel
+      }
+    }
+    return covered.toList
   }
 
   private def DFS(seen: mutable.Set[QueryRelation], curr: QueryRelation, rels: mutable.Set[QueryRelation], ignoreAttrs: Set[String]): List[QueryRelation] = {
-    for (rel <- rels) {
+    for (rel <- rels.toList) {
       // if these two hyperedges are connected
       if (!((curr.attrNames.toSet[String] & rel.attrNames.toSet[String]) &~ ignoreAttrs).isEmpty) {
         seen += curr
@@ -163,7 +182,7 @@ object GHDSolver {
   }
 
   private def bagCannotBeExpanded(bag: GHDNode, leftOverRels: Set[QueryRelation]): Boolean = {
-    // true if each remaining rels are not entirely covered by bag
+    // true if there does not exist a remaining rel entirely covered by this bag
     val b = leftOverRels.forall(rel => !rel.attrNames.forall(attrName => bag.attrSet.contains(attrName)))
     return b
   }

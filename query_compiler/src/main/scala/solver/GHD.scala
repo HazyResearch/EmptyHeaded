@@ -159,7 +159,7 @@ class GHD(val root:GHDNode,
     root.setDescendantNames(1)
 
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
-    root.createFromAttrMappings
+    root.recreateFromAttrMappings
     bagOutputs = getBagOutputRelations(root)
   }
 
@@ -168,81 +168,6 @@ class GHD(val root:GHDNode,
   }
 }
 
-abstract class EHNode(val rels: List[QueryRelation]) {
-  val attrSet = rels.foldLeft(TreeSet[String]())(
-    (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
-
-  var attrToRels:Map[Attr,List[QueryRelation]] = null
-  var attrToSelection:Map[Attr,List[QueryPlanSelection]] = null 
-  var outputRelation:QueryRelation = null
-  var attributeOrdering: List[Attr] = null
-  var children: List[GHDNode] = List()
-
-  def createFromAttrMappings: Unit = {
-    attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, rels)
-    attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
-  }
-  def setAttributeOrdering(ordering: List[Attr] )
-
-  protected def getSelection(attr:Attr): List[QueryPlanSelection] = {
-    if (attrToSelection == null) {
-      createFromAttrMappings
-    }
-    attrToSelection.getOrElse(attr, List())
-  }
-
-  def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
-    PlanUtil.getAccessor(attr, attrToRels, attributeOrdering)
-  }
-
-  def getSelectedAttrs(): Iterable[Attr] = {
-    if (attrToSelection == null) {
-      createFromAttrMappings
-    }
-    attrToSelection.filter({case (attr, selects) => !selects.isEmpty}).keys
-  }
-
-  def getOrderedAttrsWithAccessor(): List[Attr] = {
-    PlanUtil.getOrderedAttrsWithAccessor(attributeOrdering, attrToRels)
-  }
-
-  private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,ParsedAggregate]): Option[Attr] = {
-    if (!outputRelation.attrNames.isEmpty && outputRelation.attrNames.last == attr) {
-      attributeOrdering.dropWhile(a => a != attr).tail.find(a => joinAggregates.contains(a) && attrSet.contains(a))
-    } else {
-      None
-    }
-  }
-
-  protected def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) = {
-    val attrsWithAccessor = getOrderedAttrsWithAccessor()
-    val prevAndNextAttrMaterialized = PlanUtil.getPrevAndNextAttrNames(
-      attrsWithAccessor,
-      ((attr:Attr) => outputRelation.attrNames.contains(attr)))
-    val prevAndNextAttrAggregated = PlanUtil.getPrevAndNextAttrNames(
-      attrsWithAccessor,
-      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr)))
-
-    attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
-      val (attr, prevNextInfo) = attrAndPrevNextInfo
-      val (materializedInfo, aggregatedInfo) = prevNextInfo
-      val accessor = getAccessor(attr)
-      if (accessor.isEmpty) {
-        None // this should not happen
-      } else {
-        Some(new QueryPlanAttrInfo(
-          attr,
-          accessor,
-          outputRelation.attrNames.contains(attr),
-          getSelection(attr),
-          getNextAnnotatedForLastMaterialized(attr, joinAggregates),
-          PlanUtil.getAggregation(joinAggregates, attr, aggregatedInfo),
-          materializedInfo._1,
-          materializedInfo._2))
-      }
-    })
-  }
-}
 
 class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with Iterable[GHDNode] {
   var subtreeRels = rels
@@ -348,10 +273,10 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
     PlanUtil.getRelationInfoBasedOnName(forTopLevelSummary, relsToUse, attributeOrdering)
   }
 
-  override def createFromAttrMappings: Unit = {
+  def recreateFromAttrMappings: Unit = {
     attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels)
     attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
-    children.map(child => child.createFromAttrMappings)
+    children.map(child => child.recreateFromAttrMappings)
   }
 
   override def setAttributeOrdering(ordering: List[Attr] ): Unit = {
@@ -407,7 +332,9 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
 
   private def fractionalScoreNode(): Double = { // TODO: catch UnboundedSolutionException
     val myRealRels = rels.filter(!_.isImaginary)
-    val realAttrSet = attrSet
+    val unselectedAttrSet = attrSet -- attrToSelection.keys.filter(attr => {
+      attrToSelection.get(attr).isDefined && !attrToSelection.get(attr).get.isEmpty
+    }) // don't bother covering attributes that are equality selected
     val realRels = myRealRels:::children.flatMap(child => child.rels.filter(!_.isImaginary))
     if (realRels.isEmpty) {
       return 1 // just return 1 because we're going to delete this node anyways
@@ -415,7 +342,7 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
     val objective = new LinearObjectiveFunction(realRels.map((rel : QueryRelation) => 1.0).toArray, 0)
     // constraints:
     val constraintList = new util.ArrayList[LinearConstraint]
-    realAttrSet.map((attr : String) => {
+    unselectedAttrSet.map((attr : String) => {
       constraintList.add(new LinearConstraint(getMatrixRow(attr, realRels), Relationship.GEQ,  1.0))
     })
     val constraints = new LinearConstraintSet(constraintList)
