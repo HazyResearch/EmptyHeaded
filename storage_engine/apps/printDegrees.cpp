@@ -24,17 +24,24 @@ struct createGraphDBEdgelist: public application {
 
     long prev = -1;
     long count  = 0;
+    long max_node = -1;
+    long max_count = 0;
     Trie_Edge_0_1->foreach([&](std::vector<uint32_t>* tuple,void* value){
         long srcnode = Encoding_node->key_to_value.at(tuple->at(0));
         if(prev != srcnode){
-          if(prev != -1){
+          if(prev != -1 && count == 10){
             std::cout << "NODE: " << prev << " COUNT: " << count << std::endl;
           }
           prev = srcnode;
+          if(count > max_count){
+            max_node = prev;
+            max_count = count;
+          }
           count = 0;
         }
         count++;
     });
+    std::cout <<  "MAX NODE: " << max_node << " COUNT: " << max_count << std::endl;
     delete Trie_Edge_0_1;
   }
 };
