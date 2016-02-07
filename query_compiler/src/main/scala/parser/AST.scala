@@ -21,18 +21,22 @@ case class OutputAttributeNotFoundInJoinException(attr:Attr) extends Exception(
 case class OutputAttributeAggregatedAwayException(attr:Attr) extends Exception(
   s"""Output attribute ${attr} is aggregated away""")
 case class NoTypeFoundException(relName:String, attrPos:Int) extends Exception(
-  s"""No type found for ${attrPos}th attribute of relation ${relName}"""
-)
+  s"""No type found for ${attrPos}th attribute of relation ${relName}""")
+case class MaterializationOfSelectedAttrUnsupportedException(attrName:Attr) extends Exception(
+  s"""Cannot both equality select and materialize attribute ${attrName}""")
+case class MultipleSelectionsUnsupportedException(attr:Attr) extends Exception(
+  s"""Cannot support multiple selections in same attribute ${attr}""")
 
 case class ASTQueryStatement(lhs:QueryRelation,
                              convergence:Option[ASTConvergenceCondition],
                              joinType:String,
-                             join:List[QueryRelation],
+                             var join:List[QueryRelation],
                              joinAggregates:Map[String,ParsedAggregate]) extends ASTStatement {
   val attrSet = join.foldLeft(TreeSet[String]())(
     (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
   val outputAttrs = attrSet -- joinAggregates.keySet
   val attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, join)
+  val attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
   private var outputType:List[AttrType] = null
 
   // TODO (sctu) : ignoring everything except for join, joinAggregates for now
@@ -40,6 +44,30 @@ case class ASTQueryStatement(lhs:QueryRelation,
     val namesInThisStatement = (join.map(rels => rels.name)
       :::joinAggregates.values.map(parsedAgg => parsedAgg.expressionLeft+parsedAgg.expressionRight).toList).toSet
     namesInThisStatement.find(name => name.contains(statement.lhs.name)).isDefined
+  }
+
+  def propagateSelections(): Unit = {
+    // TODO: remove this check that could throw MaterializationOfSelectedAttrUnsupportedException later
+    // when we do support this in the codegen
+    val selectedAndMaterialized = attrToSelection.filter({case (attr, selects) => !selects.isEmpty})
+      .keys.find(attr => lhs.attrNames.contains(attr))
+    selectedAndMaterialized.foreach(attr => throw MaterializationOfSelectedAttrUnsupportedException(attr))
+
+    join = join.map(rel => {
+      val rewrittenAttrs = rel.attrs.map(attr => {
+        val selections = attrToSelection(attr._1).map(selection => {
+          (attr._1, selection.operation, selection.expression)
+        })
+        if (selections.size > 1) {
+          throw MultipleSelectionsUnsupportedException(attr._1)
+        } else if (selections.size == 0) {
+          (attr._1, "", "")
+        } else {
+          selections.head
+        }
+      })
+      QueryRelation(rel.name, rewrittenAttrs, rel.annotationType, rel.isImaginary)
+    })
   }
 
   /**
@@ -89,8 +117,8 @@ case class ASTQueryStatement(lhs:QueryRelation,
       val rootNodes = GHDSolver.computeAJAR_GHD(join.toSet, outputAttrs)
       val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs))
       candidates.map(c => c.doPostProcessingPass())
-      val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(
-        HeuristicUtils.getGHDsOfMinHeight(HeuristicUtils.getGHDsWithMinBags(candidates)))
+      val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(HeuristicUtils.getGHDsWithSelectionsPushedDown(
+        HeuristicUtils.getGHDsOfMinHeight(HeuristicUtils.getGHDsWithMinBags(candidates))))
       if (config.bagDedup) {
         chosen.head.doBagDedup
       }
