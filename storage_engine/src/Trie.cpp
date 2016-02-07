@@ -120,6 +120,8 @@ void recursive_foreach(
 
 template<class A,class M>
 TrieBlock<layout,M>* Trie<A,M>::getHead(){
+  if(num_columns == 0)
+    return NULL;
   TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)(memoryBuffers->get_address(NUM_THREADS,0));
   return head; 
 }

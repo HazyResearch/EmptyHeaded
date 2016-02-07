@@ -49,6 +49,7 @@ struct TrieIterator{
 
 template<class A, class M>
 struct ParTrieIterator{
+  A annotation;
   TrieBlock<hybrid,M> * head;
   Trie<A,M>* trie;
   std::vector<TrieIterator<A,M>*> iterators;

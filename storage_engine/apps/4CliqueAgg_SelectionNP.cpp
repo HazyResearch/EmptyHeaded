@@ -1,5 +1,5 @@
 
-#include "Query_0.hpp"
+#include "Query.hpp"
 #include "utils/thread_pool.hpp"
 #include "utils/parallel.hpp"
 #include "Trie.hpp"

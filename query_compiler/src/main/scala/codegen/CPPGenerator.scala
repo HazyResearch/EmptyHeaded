@@ -244,12 +244,12 @@ object CPPGenerator {
     bagDuplicate match {
       case Some(bd) => {
         code.append(s"""Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = Trie_${bd}_${ordering};""")
-        if(annotation != "void*" && num == 0)
-          code.append(s"""${annotation} ${name};""")
       } case None => {
         code.append(s"""Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = new Trie<${annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${name}",${num},${annotation != "void*"});""")
       }
     }
+    if(annotation != "void*" && num == 0)
+      code.append(s"""${annotation} ${name};""")
     return code
   }
 
@@ -900,7 +900,8 @@ object CPPGenerator {
             } else {
               if(remainingAttrs.length == 1){
                 val loopOverSet = remainingAttrs.head.accessors.map(_.annotated).reduce((a,b) => {a || b})
-                if(loopOverSet){
+                println("LOOP OVER SET: " + loopOverSet)
+                if(true){//loopOverSet){
                   code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
                   code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors)) 
                   code.append(emitSetValues(remainingAttrs.head))

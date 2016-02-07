@@ -14,9 +14,10 @@ template<class A,class M>
 TrieIterator<A,M>::TrieIterator(Trie<A,M>* t_in){
   trie = t_in;
   levels.resize(trie->num_columns);
-  assert(trie->num_columns > 0);
+  if(trie->num_columns > 0){
+    levels.at(0) = trie->getHead();
+  }
   num_rows = 0;
-  levels.at(0) = trie->getHead();
 }
 
 template<class A,class M>
@@ -60,6 +61,7 @@ A TrieIterator<A,M>::get_annotation(
 template<class A, class M>
 ParTrieIterator<A,M>::ParTrieIterator(Trie<A,M> *t_in){
   head = t_in->getHead();
+  annotation = t_in->annotation;
   iterators.resize(NUM_THREADS);
   trie = t_in;
   for(size_t i = 0; i < NUM_THREADS; i++){
