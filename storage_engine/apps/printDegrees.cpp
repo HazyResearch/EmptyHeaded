@@ -6,7 +6,7 @@ struct createGraphDBEdgelist: public application {
   // init ColumnStores
   void run(){
 
-    std::string db_path = "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/data/facebook/db";
+    std::string db_path = "/dfs/scratch0/caberger/datasets/cid-patents/db_python";
 
 
     Trie<void *, ParMemoryBuffer> *Trie_Edge_0_1 = NULL;
