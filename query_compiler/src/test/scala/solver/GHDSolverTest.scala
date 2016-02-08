@@ -258,4 +258,23 @@ class GHDSolverTest extends FunSuite {
 
     assert(decomps.find(_ == expectedDecomp).isDefined)
   }
+
+  test("Test that we handle LUBM8 selections correctly (all of them should be in a leaf)") {
+    val LUBM8 = List(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "c")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a"), List("d")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("b"), List("e")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("b"), List("f"))
+    )
+    //val decomps = solver.getMinFHWDecompositions(LUBM8)
+    val decomps = GHDSolver.computeAJAR_GHD(LUBM8.toSet, Set("a", "b", "c", "d", "e", "f"))
+
+    val expectedDecomp = new GHDNode(List(LUBM8(0)))
+    expectedDecomp.children = List(
+      new GHDNode(List(LUBM8(1),LUBM8(2))),
+      new GHDNode(List(LUBM8(3),LUBM8(4))))
+
+    assert(decomps.find(_ == expectedDecomp).isDefined)
+  }
 }

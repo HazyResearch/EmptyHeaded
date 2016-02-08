@@ -99,7 +99,7 @@ object GHDSolver {
   }
 
   /**
-   * This gets relations still in rels that are covered by your current component if you ignore selects
+   * This gets relations still in rels that are covered by a relation in your current component if you ignore selects
    *
    * This is correct (i.e., you don't miss lower fhw decomps) because for any decomps D that you could have
    * made with |component|, you can now have D', where D' is just D iwth a couple rels added into bags that already cover
@@ -113,7 +113,7 @@ object GHDSolver {
     var covered = mutable.Set[QueryRelation]()
     val componentAttrs = component.flatMap(rel => rel.attrNames).toSet
     for (rel <- rels.toList) {
-      if (rel.nonSelectedAttrNames subsetOf componentAttrs) {
+      if (component.exists(c => rel.nonSelectedAttrNames subsetOf c.attrNames.toSet)) {
         covered += rel
         rels -= rel
       }
