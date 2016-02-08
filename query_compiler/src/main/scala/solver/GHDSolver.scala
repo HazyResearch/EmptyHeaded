@@ -99,9 +99,14 @@ object GHDSolver {
   }
 
   /**
-   * Why doing this is correct: This will give you an opportunity to keep selects low in the tree,
-   * but you don't miss any GHDs because you can still make the ones you would have made in this subtree
-   * and you can tack on the extra edges that you get here in the root
+   * This gets relations still in rels that are covered by your current component if you ignore selects
+   *
+   * This is correct (i.e., you don't miss lower fhw decomps) because for any decomps D that you could have
+   * made with |component|, you can now have D', where D' is just D iwth a couple rels added into bags that already cover
+   * them anyways
+   *
+   * This is potentially helpful because it gives you an opportunity to put rels with selections
+   * lower in the GHD
    */
   private def getCoveredIfSelectsIgnored(component:List[QueryRelation],
                                          rels: mutable.Set[QueryRelation]): List[QueryRelation] = {
