@@ -30,7 +30,7 @@ object QueryRelationFactory {
     val attrInfo = attrsWithoutSelect.map(attr => {
       (attr, "", "")
     }):::attrsWithSelect.map(attr => {
-      (attr, "=", "PLACEHOLDER")
+      (attr, "=", "1")
     })
     new QueryRelation("", attrInfo)
   }
@@ -135,7 +135,6 @@ object DCParser extends RegexParsers {
 
   //for the join query
   def joinAndRecursionStatements = (joinStatement | emptyStatement) ^^ {case a => a}
-
 
   def joinStatement:Parser[List[QueryRelation]] = multipleJoinIdentifiers | singleJoinIdentifier
   def multipleJoinIdentifiers = (singleJoinIdentifier <~ ",") ~ joinStatement ^^ {case t~rest => t ++: rest}

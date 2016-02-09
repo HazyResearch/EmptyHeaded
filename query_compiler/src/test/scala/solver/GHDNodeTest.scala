@@ -3,9 +3,6 @@ package scala.solver
 import DunceCap.{GHDNode, QueryRelationFactory, QueryRelation}
 import org.scalatest.FunSuite
 
-/**
- * Created by sctu on 1/5/16.
- */
 class GHDNodeTest extends FunSuite {
   test("Check that iterator works correctly on a two node GHD") {
     val PATH2: List[QueryRelation] = List(

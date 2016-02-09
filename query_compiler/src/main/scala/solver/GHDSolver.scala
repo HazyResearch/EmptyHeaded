@@ -74,9 +74,9 @@ object GHDSolver {
     return G_0
   }
 
-  def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], agg: Set[String]): mutable.Set[QueryRelation] = {
+  def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], output: Set[String]): mutable.Set[QueryRelation] = {
     val characteristicHypergraphEdges:mutable.Set[QueryRelation] = mutable.Set[QueryRelation](comp.toList:_*)
-    characteristicHypergraphEdges += QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(compPlus intersect agg)
+    characteristicHypergraphEdges += QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(compPlus intersect output)
     return characteristicHypergraphEdges
   }
 
@@ -85,16 +85,19 @@ object GHDSolver {
       (accum: Set[String], rel : QueryRelation) => accum | rel.attrNames.toSet[String])
   }
 
-  private def getConnectedComponents(rels: mutable.Set[QueryRelation], comps: List[List[QueryRelation]], ignoreAttrs: Set[String]): List[List[QueryRelation]] = {
+  private def getConnectedComponents(rels: mutable.Set[QueryRelation],
+                                     comps: List[List[QueryRelation]],
+                                     ignoreAttrs: Set[String]): List[List[QueryRelation]] = {
     if (rels.isEmpty) return comps
     val component = getOneConnectedComponent(rels, ignoreAttrs)
     return getConnectedComponents(rels, component::comps, ignoreAttrs)
   }
 
   private def getOneConnectedComponent(rels: mutable.Set[QueryRelation], ignoreAttrs: Set[String]): List[QueryRelation] = {
-    val curr = rels.head
+    val curr = rels.toList.sortBy(rel => -rel.nonSelectedAttrNames.size).head
     rels -= curr
     val component = DFS(mutable.LinkedHashSet[QueryRelation](curr), curr, rels, ignoreAttrs)
+
     return component:::getCoveredIfSelectsIgnored(component, rels)
   }
 
@@ -236,7 +239,7 @@ object GHDSolver {
 
   def getMinFHWDecompositions(rels: List[QueryRelation], imaginaryRel:Option[QueryRelation] = None): List[GHDNode] = {
     val decomps = getDecompositions(rels, imaginaryRel)
-    val fhwsAndDecomps = decomps.map((root : GHDNode) => (root.fractionalScoreTree(), root))
+    val fhwsAndDecomps = decomps.map((root :GHDNode) => (root.fractionalScoreTree(), root))
     val minScore = fhwsAndDecomps.unzip._1.min
 
     case class Precision(val p:Double)

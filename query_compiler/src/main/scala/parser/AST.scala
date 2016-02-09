@@ -34,9 +34,9 @@ case class ASTQueryStatement(lhs:QueryRelation,
                              joinAggregates:Map[String,ParsedAggregate]) extends ASTStatement {
   val attrSet = join.foldLeft(TreeSet[String]())(
     (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
-  val outputAttrs = attrSet -- joinAggregates.keySet
   val attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, join)
   val attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
+  val outputAttrs = attrSet -- joinAggregates.keySet
   private var outputType:List[AttrType] = null
 
   // TODO (sctu) : ignoring everything except for join, joinAggregates for now
@@ -114,7 +114,12 @@ case class ASTQueryStatement(lhs:QueryRelation,
     }
 
     if (!config.nprrOnly) {
-      val rootNodes = GHDSolver.computeAJAR_GHD(join.toSet, outputAttrs)
+      val rootNodes = if (joinAggregates.keys.isEmpty) {
+        GHDSolver.getMinFHWDecompositions(join)
+      } else {
+        GHDSolver.computeAJAR_GHD(join.toSet, outputAttrs)
+      }
+
       val candidates = rootNodes.map(r => new GHD(r, join, joinAggregates, lhs))
       candidates.map(c => c.doPostProcessingPass())
       val chosen = HeuristicUtils.getGHDsWithMaxCoveringRoot(HeuristicUtils.getGHDsWithSelectionsPushedDown(

@@ -170,7 +170,7 @@ class GHD(val root:GHDNode,
 
 
 class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with Iterable[GHDNode] {
-  var subtreeRels = rels
+  var subtreeRels = rels.toSet
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
   var bagFractionalWidth: Double = 0
@@ -268,13 +268,13 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
       if (forTopLevelSummary) {
         rels
       } else {
-        subtreeRels
+        subtreeRels.toList
       }
     PlanUtil.getRelationInfoBasedOnName(forTopLevelSummary, relsToUse, attributeOrdering)
   }
 
   def recreateFromAttrMappings: Unit = {
-    attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels)
+    attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels.toList)
     attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
     children.map(child => child.recreateFromAttrMappings)
   }

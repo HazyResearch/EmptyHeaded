@@ -2,9 +2,9 @@ package DunceCap
 
 import org.scalatest.FunSuite
 
-import DunceCap.attr.Attr
 
-import scala.collection.mutable
+
+import scala.collection.{mutable, immutable}
 
 class GHDSolverTest extends FunSuite {
 
@@ -43,7 +43,6 @@ class GHDSolverTest extends FunSuite {
     QueryRelationFactory.createQueryRelationWithNoSelects(List("x1", "y0"))
   )
   final val solver = GHDSolver
-
 
   test("Can form 1 node AJAR GHD for length 2 path query") {
     val ajarGHDs = GHDSolver.computeAJAR_GHD(PATH2.toSet, Set("a", "c"))
@@ -267,13 +266,16 @@ class GHDSolverTest extends FunSuite {
       QueryRelationFactory.createQueryRelationWithEqualitySelect(List("b"), List("e")),
       QueryRelationFactory.createQueryRelationWithEqualitySelect(List("b"), List("f"))
     )
-    //val decomps = solver.getMinFHWDecompositions(LUBM8)
-    val decomps = GHDSolver.computeAJAR_GHD(LUBM8.toSet, Set("a", "b", "c", "d", "e", "f"))
+    LUBM8.foreach(rel => println(rel))
+    val decomps = GHDSolver.getMinFHWDecompositions(LUBM8)
 
     val expectedDecomp = new GHDNode(List(LUBM8(0)))
     expectedDecomp.children = List(
       new GHDNode(List(LUBM8(1),LUBM8(2))),
       new GHDNode(List(LUBM8(3),LUBM8(4))))
+
+    val decompsWithABRoot = decomps.filter(_.attrSet == Set("a", "b"))
+    decompsWithABRoot.map(decomp => println(decomp))
 
     assert(decomps.find(_ == expectedDecomp).isDefined)
   }
