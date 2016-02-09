@@ -231,9 +231,15 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
    */
   def recursivelyPushOutSelections(): GHDNode = {
     val (withoutSelects, withSelects) = rels.partition(rel => rel.nonSelectedAttrNames.size == rel.attrNames.size)
-    val newNode = new GHDNode(withoutSelects)
-    newNode.children = children.map(_.recursivelyPushOutSelections):::withSelects.map(rel => new GHDNode(List(rel)))
-    return newNode
+    if (!withoutSelects.isEmpty) {
+      val newNode = new GHDNode(withoutSelects)
+      newNode.children = children.map(_.recursivelyPushOutSelections) ::: withSelects.map(rel => new GHDNode(List(rel)))
+      return newNode
+    } else {
+      val newNode = new GHDNode(rels)
+      children.map(_.recursivelyPushOutSelections)
+      return newNode
+    }
   }
 
   def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, ParsedAggregate]): List[GHDNode] = {
