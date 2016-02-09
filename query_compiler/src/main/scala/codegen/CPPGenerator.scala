@@ -366,6 +366,7 @@ object CPPGenerator {
 
   def emitSetHeadAnnotations(outputName:String,head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
+    println(head.aggregation + " " + head.materialize)
     (head.aggregation,head.materialize) match {
       case (Some(a),false) =>
         code.append(s"""Builders.trie->annotation = annotation_${head.name}.evaluate(0);
@@ -906,8 +907,7 @@ object CPPGenerator {
             } else {
               if(remainingAttrs.length == 1){
                 val loopOverSet = remainingAttrs.head.accessors.map(_.annotated).reduce((a,b) => {a || b})
-                println("LOOP OVER SET: " + loopOverSet)
-                if(true){//loopOverSet){
+                if(loopOverSet){
                   code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
                   code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors)) 
                   code.append(emitSetValues(remainingAttrs.head))
