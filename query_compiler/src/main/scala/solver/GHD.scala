@@ -23,7 +23,6 @@ class GHD(val root:GHDNode,
   var lastMaterializedAttr:Option[Attr] = None
   var nextAggregatedAttr:Option[Attr] = None
 
-
   def getQueryPlan(): QueryPlan = {
     new QueryPlan(
       "join",
@@ -149,6 +148,7 @@ class GHD(val root:GHDNode,
    * You should call this before calling getQueryPlan
    */
   def doPostProcessingPass() = {
+
     root.computeDepth
     depth = root.depth
     numBags = root.getNumBags()
@@ -165,6 +165,10 @@ class GHD(val root:GHDNode,
 
   def doBagDedup() = {
     root.eliminateDuplicateBagWork(List[GHDNode](), joinAggregates)
+  }
+
+  def pushOutSelections() = {
+    root.recursivelyPushOutSelections()
   }
 }
 
@@ -227,6 +231,19 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
   override def hashCode = 41 * rels.hashCode() + children.toSet.hashCode()
 
   def setBagName(name:String): Unit = { bagName = name }
+
+  /**
+   * Does not change execution, but for clarity/cosmetic reasons we push rels w/ selections out from each bag B
+   * so that
+   *
+   * Returns a new copy of the tree
+   */
+  def recursivelyPushOutSelections(): GHDNode = {
+    val (withoutSelects, withSelects) = rels.partition(rel => rel.nonSelectedAttrNames.size == rel.attrNames.size)
+    val newNode = new GHDNode(withoutSelects)
+    newNode.children = children.map(_.recursivelyPushOutSelections):::withSelects.map(rel => new GHDNode(List(rel)))
+    return newNode
+  }
 
   def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, ParsedAggregate]): List[GHDNode] = {
     var newSeen = seen
