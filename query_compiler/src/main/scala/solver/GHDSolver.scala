@@ -7,7 +7,7 @@ import scala.collection.mutable
 object GHDSolver {
   def computeAJAR_GHD(rels: Set[QueryRelation], output: Set[String]):List[GHDNode] = {
     val components = getConnectedComponents(
-      mutable.Set(rels.toList.filter(rel => !(rel.attrNames.toSet subsetOf output)):_*), List(), output)
+      mutable.Set(rels.toList.filter(rel => !(rel.attrNames.toSet subsetOf output)):_*), List(), output, Set())
     val componentsPlus = components.map(getAttrSet(_))
     val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf output) union
       componentsPlus.map(compPlus => output intersect compPlus).map(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(_)).toSet
@@ -87,18 +87,21 @@ object GHDSolver {
 
   private def getConnectedComponents(rels: mutable.Set[QueryRelation],
                                      comps: List[List[QueryRelation]],
-                                     ignoreAttrs: Set[String]): List[List[QueryRelation]] = {
+                                     ignoreAttrs: Set[String],
+                                     reusable:Set[QueryRelation]): List[List[QueryRelation]] = {
     if (rels.isEmpty) return comps
-    val component = getOneConnectedComponent(rels, ignoreAttrs)
-    return getConnectedComponents(rels, component::comps, ignoreAttrs)
+    val (component, newReusable) = getOneConnectedComponent(rels, ignoreAttrs, reusable)
+    return getConnectedComponents(rels, component::comps, ignoreAttrs, newReusable)
   }
 
-  private def getOneConnectedComponent(rels: mutable.Set[QueryRelation], ignoreAttrs: Set[String]): List[QueryRelation] = {
+  private def getOneConnectedComponent(rels: mutable.Set[QueryRelation],
+                                       ignoreAttrs: Set[String],
+                                       reusable:Set[QueryRelation]): (List[QueryRelation], Set[QueryRelation]) = {
     val curr = rels.toList.sortBy(rel => -rel.nonSelectedAttrNames.size).head
     rels -= curr
     val component = DFS(mutable.LinkedHashSet[QueryRelation](curr), curr, rels, ignoreAttrs)
-
-    return component:::getCoveredIfSelectsIgnored(component, rels)
+    val alsoCovered = getCoveredIfSelectsIgnored(component, rels, rels ++ reusable)
+    return (component:::alsoCovered.toList, alsoCovered ++ reusable)
   }
 
   /**
@@ -112,16 +115,18 @@ object GHDSolver {
    * lower in the GHD
    */
   private def getCoveredIfSelectsIgnored(component:List[QueryRelation],
-                                         rels: mutable.Set[QueryRelation]): List[QueryRelation] = {
+                                         shouldBeUpdatedRels: mutable.Set[QueryRelation],
+                                         rels: mutable.Set[QueryRelation]): Set[QueryRelation] = {
     var covered = mutable.Set[QueryRelation]()
     val componentAttrs = component.flatMap(rel => rel.attrNames).toSet
     for (rel <- rels.toList) {
       if (component.exists(c => rel.nonSelectedAttrNames subsetOf c.attrNames.toSet)) {
         covered += rel
         rels -= rel
+        shouldBeUpdatedRels -= rel
       }
     }
-    return covered.toList
+    return covered.toSet
   }
 
   private def DFS(seen: mutable.Set[QueryRelation], curr: QueryRelation, rels: mutable.Set[QueryRelation], ignoreAttrs: Set[String]): List[QueryRelation] = {
@@ -152,7 +157,7 @@ object GHDSolver {
     // if the concordance condition is satisfied, figure out what components you just
     // partitioned your graph into, and do ghd on each of those disconnected components
     val relations = mutable.LinkedHashSet[QueryRelation]() ++ leftoverBags
-    return Some(getConnectedComponents(relations, List[List[QueryRelation]](), getAttrSet(chosen).toSet[String]))
+    return Some(getConnectedComponents(relations, List[List[QueryRelation]](), getAttrSet(chosen).toSet[String], Set()))
   }
 
   /**

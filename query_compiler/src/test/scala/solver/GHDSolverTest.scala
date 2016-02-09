@@ -240,7 +240,7 @@ class GHDSolverTest extends FunSuite {
     assert(fractionalScores.min === 1.5)
   }
 
-  test("Test that rels with equality selected attrs are absorbed into bags that cover them (not counting the eq-selected attrs)") {
+  test("Test that we handle LUBM 4 selections correctly (able to duplicate selected rels in subtrees)") {
     val LUBM4 = List(
       QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
       QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a"), List("e")),
@@ -250,10 +250,12 @@ class GHDSolverTest extends FunSuite {
     )
     val decomps = solver.getMinFHWDecompositions(LUBM4)
 
+    decomps.filter(_.attrSet == Set("a", "b")).distinct.map(root => println(root))
+
     val expectedDecomp = new GHDNode(List(LUBM4(0)))
     expectedDecomp.children = List(
       new GHDNode(List(LUBM4(1),LUBM4(2),LUBM4(3))),
-      new GHDNode(List(LUBM4(4))))
+      new GHDNode(List(LUBM4(1),LUBM4(2),LUBM4(4))))
 
     assert(decomps.find(_ == expectedDecomp).isDefined)
   }
