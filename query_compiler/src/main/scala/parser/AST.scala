@@ -95,10 +95,6 @@ case class ASTQueryStatement(lhs:QueryRelation,
     outputType = attrTypes
   }
 
-  /**
-   *
-   * @return
-   */
   def getOutputType() : List[AttrType] = {
     if (outputType == null) {
       throw NoOutputTypeException(lhs.name)
