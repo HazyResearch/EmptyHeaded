@@ -13,6 +13,7 @@ abstract class EHNode(val rels: List[QueryRelation]) {
   var outputRelation:QueryRelation = null
   var attributeOrdering: List[Attr] = null
   var children: List[GHDNode] = List()
+  var scalars = List[QueryRelation]()
 
   def setAttributeOrdering(ordering: List[Attr] )
 
@@ -42,23 +43,32 @@ abstract class EHNode(val rels: List[QueryRelation]) {
 
   protected def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) = {
     val attrsWithAccessor = getOrderedAttrsWithAccessor()
+    val firstAttr = attrsWithAccessor.head
     val prevAndNextAttrMaterialized = PlanUtil.getPrevAndNextAttrNames(
       attrsWithAccessor,
       ((attr:Attr) => outputRelation.attrNames.contains(attr)))
     val prevAndNextAttrAggregated = PlanUtil.getPrevAndNextAttrNames(
       attrsWithAccessor,
       ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr)))
+    val emptyAccessors = scalars.map(rel => {
+      val ordering = PlanUtil.getNumericalOrdering(attributeOrdering, rel)
+      new QueryPlanAccessor(
+        rel.name,
+        PlanUtil.reorderByNumericalOrdering(rel.attrNames, ordering),
+        true /* obviously annotated since that's the only way we have a scalar to pass up */)
+    })
 
     attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
       val (attr, prevNextInfo) = attrAndPrevNextInfo
       val (materializedInfo, aggregatedInfo) = prevNextInfo
       val accessor = getAccessor(attr)
       if (accessor.isEmpty) {
+        assert(false)
         None // this should not happen
       } else {
         Some(new QueryPlanAttrInfo(
           attr,
-          accessor,
+          if (attr == firstAttr) accessor:::emptyAccessors else accessor,
           outputRelation.attrNames.contains(attr),
           getSelection(attr),
           getNextAnnotatedForLastMaterialized(attr, joinAggregates),

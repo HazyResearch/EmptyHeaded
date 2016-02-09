@@ -2,16 +2,14 @@ package DunceCap
 
 import java.util
 
-import DunceCap.attr.{AttrInfo, Attr}
+import DunceCap.attr.Attr
 import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
-import scala.collection.immutable.TreeSet
 import scala.collection.mutable
 
-
 class GHD(val root:GHDNode,
-          val queryRelations: List[QueryRelation],
+          val queryRelations:List[QueryRelation],
           val joinAggregates:Map[String,ParsedAggregate],
           val outputRelation:QueryRelation) extends QueryPlanPostProcessor {
   val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation)
@@ -124,13 +122,6 @@ class GHD(val root:GHDNode,
     node.getRelationInfo(true):::node.children.flatMap(c => {getRelationSummaryFromPreOrderTraversal(c)})
   }
 
-  /**
-   *"output":{
-		"name":"TriangleCount",
-		"ordering":[],
-		"annotation":"long"
-	  },
-   */
   private def getOutputInfo(): QueryPlanOutputInfo = {
     new QueryPlanOutputInfo(
       outputRelation.name,
@@ -318,6 +309,7 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
         attrsFromAbove ++ attrSet -- equalitySelectedAttrs)
     })
     subtreeRels ++= childrensOutputRelations
+    scalars = childrensOutputRelations.filter(rel => rel.attrs.isEmpty)
     return outputRelation
   }
 

@@ -123,8 +123,8 @@ class GHDSolverTest extends FunSuite {
     assert(partitions.isDefined)
     assert(partitions.get.size == 2)
 
-    val firstPart = partitions.get.head
-    val secondPart = partitions.get.tail.head
+    val firstPart = partitions.get.sortBy(_.size).last
+    val secondPart = partitions.get.sortBy(_.size).head
     assert(firstPart.size == 2 && secondPart.size == 1)
     assert(secondPart.head == RELATIONS(1))
     assert(firstPart.head == RELATIONS(2))
@@ -250,8 +250,6 @@ class GHDSolverTest extends FunSuite {
     )
     val decomps = solver.getMinFHWDecompositions(LUBM4)
 
-    decomps.filter(_.attrSet == Set("a", "b")).distinct.map(root => println(root))
-
     val expectedDecomp = new GHDNode(List(LUBM4(0)))
     expectedDecomp.children = List(
       new GHDNode(List(LUBM4(1),LUBM4(2),LUBM4(3))),
@@ -268,7 +266,6 @@ class GHDSolverTest extends FunSuite {
       QueryRelationFactory.createQueryRelationWithEqualitySelect(List("b"), List("e")),
       QueryRelationFactory.createQueryRelationWithEqualitySelect(List("b"), List("f"))
     )
-    LUBM8.foreach(rel => println(rel))
     val decomps = GHDSolver.getMinFHWDecompositions(LUBM8)
 
     val expectedDecomp = new GHDNode(List(LUBM8(0)))
@@ -277,7 +274,6 @@ class GHDSolverTest extends FunSuite {
       new GHDNode(List(LUBM8(3),LUBM8(4))))
 
     val decompsWithABRoot = decomps.filter(_.attrSet == Set("a", "b"))
-    decompsWithABRoot.map(decomp => println(decomp))
 
     assert(decomps.find(_ == expectedDecomp).isDefined)
   }
