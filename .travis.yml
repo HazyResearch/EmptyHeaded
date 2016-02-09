@@ -34,4 +34,3 @@ notifications:
 branches:
   only:
     - master
-    - weightlessSelect
