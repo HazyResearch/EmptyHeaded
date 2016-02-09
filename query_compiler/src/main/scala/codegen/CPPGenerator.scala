@@ -44,6 +44,9 @@ object CPPGenerator {
     val intermediateRelations:mutable.Map[String,List[Attribute]] = mutable.Map()
     val distinctLoadRelations:mutable.Map[String,QueryPlanRelationInfo] = mutable.Map()
 
+    //if we see a bag with the same name we don't process it again
+    val seenBags:mutable.Set[String] = mutable.Set()
+
     val cppCode = new StringBuilder()
     qps.queryPlans.foreach(qp => {
       //spit out output for each query in global vars
@@ -75,11 +78,14 @@ object CPPGenerator {
               Some(qp.output.name)
             else 
               None
-          val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
-          intermediateRelations += ((bag.name -> bagOutput))
-          outputAttributes = bagOutput
-          cppCode.append(bagCode)
-          i += 1
+          if(!seenBags.contains(bag.name)){
+            val (bagCode,bagOutput) = emitNPRR(outputName,bag,intermediateRelations.toMap,outputAttributes)
+            seenBags += bag.name
+            intermediateRelations += ((bag.name -> bagOutput))
+            outputAttributes = bagOutput
+            cppCode.append(bagCode)
+            i += 1
+          }
         })
         if(topDown){
           val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)

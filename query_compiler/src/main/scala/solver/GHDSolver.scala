@@ -7,7 +7,7 @@ import scala.collection.mutable
 object GHDSolver {
   def computeAJAR_GHD(rels: Set[QueryRelation], output: Set[String]):List[GHDNode] = {
     val components = getConnectedComponents(
-      mutable.Set(rels.toList.filter(rel => !(rel.attrNames.toSet subsetOf output)):_*), List(), output)
+      mutable.Set(rels.toList.filter(rel => !(rel.attrNames.toSet subsetOf output)):_*), List(), output, Set())
     val componentsPlus = components.map(getAttrSet(_))
     val H_0_edges = rels.filter(rel => rel.attrNames.toSet subsetOf output) union
       componentsPlus.map(compPlus => output intersect compPlus).map(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(_)).toSet
@@ -74,9 +74,9 @@ object GHDSolver {
     return G_0
   }
 
-  def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], agg: Set[String]): mutable.Set[QueryRelation] = {
+  def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], output: Set[String]): mutable.Set[QueryRelation] = {
     val characteristicHypergraphEdges:mutable.Set[QueryRelation] = mutable.Set[QueryRelation](comp.toList:_*)
-    characteristicHypergraphEdges += QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(compPlus intersect agg)
+    characteristicHypergraphEdges += QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(compPlus intersect output)
     return characteristicHypergraphEdges
   }
 
@@ -85,20 +85,52 @@ object GHDSolver {
       (accum: Set[String], rel : QueryRelation) => accum | rel.attrNames.toSet[String])
   }
 
-  private def getConnectedComponents(rels: mutable.Set[QueryRelation], comps: List[List[QueryRelation]], ignoreAttrs: Set[String]): List[List[QueryRelation]] = {
+  private def getConnectedComponents(rels: mutable.Set[QueryRelation],
+                                     comps: List[List[QueryRelation]],
+                                     ignoreAttrs: Set[String],
+                                     reusable:Set[QueryRelation]): List[List[QueryRelation]] = {
     if (rels.isEmpty) return comps
-    val component = getOneConnectedComponent(rels, ignoreAttrs)
-    return getConnectedComponents(rels, component::comps, ignoreAttrs)
+    val (component, newReusable) = getOneConnectedComponent(rels, ignoreAttrs, reusable)
+    return getConnectedComponents(rels, component::comps, ignoreAttrs, newReusable)
   }
 
-  private def getOneConnectedComponent(rels: mutable.Set[QueryRelation], ignoreAttrs: Set[String]): List[QueryRelation] = {
-    val curr = rels.head
+  private def getOneConnectedComponent(rels: mutable.Set[QueryRelation],
+                                       ignoreAttrs: Set[String],
+                                       reusable:Set[QueryRelation]): (List[QueryRelation], Set[QueryRelation]) = {
+    val curr = rels.toList.sortBy(rel => -rel.nonSelectedAttrNames.size).head
     rels -= curr
-    return DFS(mutable.LinkedHashSet[QueryRelation](curr), curr, rels, ignoreAttrs)
+    val component = DFS(mutable.LinkedHashSet[QueryRelation](curr), curr, rels, ignoreAttrs)
+    val alsoCovered = getCoveredIfSelectsIgnored(component, rels, rels ++ reusable)
+    return (component:::alsoCovered.toList, alsoCovered ++ reusable)
+  }
+
+  /**
+   * This gets relations still in rels that are covered by a relation in your current component if you ignore selects
+   *
+   * This is correct (i.e., you don't miss lower fhw decomps) because for any decomps D that you could have
+   * made with |component|, you can now have D', where D' is just D iwth a couple rels added into bags that already cover
+   * them anyways
+   *
+   * This is potentially helpful because it gives you an opportunity to put rels with selections
+   * lower in the GHD
+   */
+  private def getCoveredIfSelectsIgnored(component:List[QueryRelation],
+                                         shouldBeUpdatedRels: mutable.Set[QueryRelation],
+                                         rels: mutable.Set[QueryRelation]): Set[QueryRelation] = {
+    var covered = mutable.Set[QueryRelation]()
+    val componentAttrs = component.flatMap(rel => rel.attrNames).toSet
+    for (rel <- rels.toList) {
+      if (component.exists(c => rel.nonSelectedAttrNames subsetOf c.attrNames.toSet)) {
+        covered += rel
+        rels -= rel
+        shouldBeUpdatedRels -= rel
+      }
+    }
+    return covered.toSet
   }
 
   private def DFS(seen: mutable.Set[QueryRelation], curr: QueryRelation, rels: mutable.Set[QueryRelation], ignoreAttrs: Set[String]): List[QueryRelation] = {
-    for (rel <- rels) {
+    for (rel <- rels.toList) {
       // if these two hyperedges are connected
       if (!((curr.attrNames.toSet[String] & rel.attrNames.toSet[String]) &~ ignoreAttrs).isEmpty) {
         seen += curr
@@ -125,7 +157,7 @@ object GHDSolver {
     // if the concordance condition is satisfied, figure out what components you just
     // partitioned your graph into, and do ghd on each of those disconnected components
     val relations = mutable.LinkedHashSet[QueryRelation]() ++ leftoverBags
-    return Some(getConnectedComponents(relations, List[List[QueryRelation]](), getAttrSet(chosen).toSet[String]))
+    return Some(getConnectedComponents(relations, List[List[QueryRelation]](), getAttrSet(chosen).toSet[String], Set()))
   }
 
   /**
@@ -163,7 +195,7 @@ object GHDSolver {
   }
 
   private def bagCannotBeExpanded(bag: GHDNode, leftOverRels: Set[QueryRelation]): Boolean = {
-    // true if each remaining rels are not entirely covered by bag
+    // true if there does not exist a remaining rel entirely covered by this bag
     val b = leftOverRels.forall(rel => !rel.attrNames.forall(attrName => bag.attrSet.contains(attrName)))
     return b
   }
@@ -212,7 +244,7 @@ object GHDSolver {
 
   def getMinFHWDecompositions(rels: List[QueryRelation], imaginaryRel:Option[QueryRelation] = None): List[GHDNode] = {
     val decomps = getDecompositions(rels, imaginaryRel)
-    val fhwsAndDecomps = decomps.map((root : GHDNode) => (root.fractionalScoreTree(), root))
+    val fhwsAndDecomps = decomps.map((root :GHDNode) => (root.fractionalScoreTree(), root))
     val minScore = fhwsAndDecomps.unzip._1.min
 
     case class Precision(val p:Double)

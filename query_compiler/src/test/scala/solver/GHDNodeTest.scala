@@ -3,9 +3,6 @@ package scala.solver
 import DunceCap.{GHDNode, QueryRelationFactory, QueryRelation}
 import org.scalatest.FunSuite
 
-/**
- * Created by sctu on 1/5/16.
- */
 class GHDNodeTest extends FunSuite {
   test("Check that iterator works correctly on a two node GHD") {
     val PATH2: List[QueryRelation] = List(
@@ -36,5 +33,15 @@ class GHDNodeTest extends FunSuite {
     assertResult(Set("a", "b"))(listOfBags.head.attrSet)
     assertResult(Set("a", "b", "c"))(listOfBags(1).attrSet)
     assertResult(Set("a", "e"))(listOfBags(2).attrSet)
+  }
+
+  test("Test that we don't give weight to cover equality-selected attrs") {
+    val justTriangle = List(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("b", "c")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a", "c"), List("d"))
+    )
+    val bag = new GHDNode(justTriangle)
+    assertResult(1.5)(bag.fractionalScoreTree())
   }
 }

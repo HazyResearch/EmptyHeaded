@@ -2,16 +2,14 @@ package DunceCap
 
 import java.util
 
-import DunceCap.attr.{AttrInfo, Attr}
+import DunceCap.attr.Attr
 import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
-import scala.collection.immutable.TreeSet
 import scala.collection.mutable
 
-
 class GHD(val root:GHDNode,
-          val queryRelations: List[QueryRelation],
+          val queryRelations:List[QueryRelation],
           val joinAggregates:Map[String,ParsedAggregate],
           val outputRelation:QueryRelation) extends QueryPlanPostProcessor {
   val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation)
@@ -22,7 +20,6 @@ class GHD(val root:GHDNode,
   var attrToAnnotation:Map[Attr, String] = null
   var lastMaterializedAttr:Option[Attr] = None
   var nextAggregatedAttr:Option[Attr] = None
-
 
   def getQueryPlan(): QueryPlan = {
     new QueryPlan(
@@ -125,13 +122,6 @@ class GHD(val root:GHDNode,
     node.getRelationInfo(true):::node.children.flatMap(c => {getRelationSummaryFromPreOrderTraversal(c)})
   }
 
-  /**
-   *"output":{
-		"name":"TriangleCount",
-		"ordering":[],
-		"annotation":"long"
-	  },
-   */
   private def getOutputInfo(): QueryPlanOutputInfo = {
     new QueryPlanOutputInfo(
       outputRelation.name,
@@ -149,6 +139,7 @@ class GHD(val root:GHDNode,
    * You should call this before calling getQueryPlan
    */
   def doPostProcessingPass() = {
+
     root.computeDepth
     depth = root.depth
     numBags = root.getNumBags()
@@ -159,93 +150,22 @@ class GHD(val root:GHDNode,
     root.setDescendantNames(1)
 
     root.computeProjectedOutAttrsAndOutputRelation(outputRelation.annotationType,outputRelation.attrNames.toSet, Set())
-    root.createFromAttrMappings
+    root.recreateFromAttrMappings
     bagOutputs = getBagOutputRelations(root)
   }
 
   def doBagDedup() = {
     root.eliminateDuplicateBagWork(List[GHDNode](), joinAggregates)
   }
-}
 
-abstract class EHNode(val rels: List[QueryRelation]) {
-  val attrSet = rels.foldLeft(TreeSet[String]())(
-    (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
-
-  var attrToRels:Map[Attr,List[QueryRelation]] = null
-  var attrToSelection:Map[Attr,List[QueryPlanSelection]] = null 
-  var outputRelation:QueryRelation = null
-  var attributeOrdering: List[Attr] = null
-  var children: List[GHDNode] = List()
-
-  def createFromAttrMappings: Unit = {
-    attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, rels)
-    attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
-  }
-  def setAttributeOrdering(ordering: List[Attr] )
-
-  protected def getSelection(attr:Attr): List[QueryPlanSelection] = {
-    if (attrToSelection == null) {
-      createFromAttrMappings
-    }
-    attrToSelection.getOrElse(attr, List())
-  }
-
-  def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
-    PlanUtil.getAccessor(attr, attrToRels, attributeOrdering)
-  }
-
-  def getSelectedAttrs(): Iterable[Attr] = {
-    if (attrToSelection == null) {
-      createFromAttrMappings
-    }
-    attrToSelection.filter({case (attr, selects) => !selects.isEmpty}).keys
-  }
-
-  def getOrderedAttrsWithAccessor(): List[Attr] = {
-    PlanUtil.getOrderedAttrsWithAccessor(attributeOrdering, attrToRels)
-  }
-
-  private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,ParsedAggregate]): Option[Attr] = {
-    if (!outputRelation.attrNames.isEmpty && outputRelation.attrNames.last == attr) {
-      attributeOrdering.dropWhile(a => a != attr).tail.find(a => joinAggregates.contains(a) && attrSet.contains(a))
-    } else {
-      None
-    }
-  }
-
-  protected def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) = {
-    val attrsWithAccessor = getOrderedAttrsWithAccessor()
-    val prevAndNextAttrMaterialized = PlanUtil.getPrevAndNextAttrNames(
-      attrsWithAccessor,
-      ((attr:Attr) => outputRelation.attrNames.contains(attr)))
-    val prevAndNextAttrAggregated = PlanUtil.getPrevAndNextAttrNames(
-      attrsWithAccessor,
-      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr)))
-
-    attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
-      val (attr, prevNextInfo) = attrAndPrevNextInfo
-      val (materializedInfo, aggregatedInfo) = prevNextInfo
-      val accessor = getAccessor(attr)
-      if (accessor.isEmpty) {
-        None // this should not happen
-      } else {
-        Some(new QueryPlanAttrInfo(
-          attr,
-          accessor,
-          outputRelation.attrNames.contains(attr),
-          getSelection(attr),
-          getNextAnnotatedForLastMaterialized(attr, joinAggregates),
-          PlanUtil.getAggregation(joinAggregates, attr, aggregatedInfo),
-          materializedInfo._1,
-          materializedInfo._2))
-      }
-    })
+  def pushOutSelections() = {
+    root.recursivelyPushOutSelections()
   }
 }
+
 
 class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with Iterable[GHDNode] {
-  var subtreeRels = rels
+  var subtreeRels = rels.toSet
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
   var bagFractionalWidth: Double = 0
@@ -303,6 +223,25 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
 
   def setBagName(name:String): Unit = { bagName = name }
 
+  /**
+   * Does not change execution, but for clarity/cosmetic reasons we push rels w/ selections out from each bag B
+   * so that
+   *
+   * Returns a new copy of the tree
+   */
+  def recursivelyPushOutSelections(): GHDNode = {
+    val (withoutSelects, withSelects) = rels.partition(rel => rel.nonSelectedAttrNames.size == rel.attrNames.size)
+    if (!withoutSelects.isEmpty) {
+      val newNode = new GHDNode(withoutSelects)
+      newNode.children = children.map(_.recursivelyPushOutSelections) ::: withSelects.map(rel => new GHDNode(List(rel)))
+      return newNode
+    } else {
+      val newNode = new GHDNode(rels)
+      children.map(_.recursivelyPushOutSelections)
+      return newNode
+    }
+  }
+
   def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, ParsedAggregate]): List[GHDNode] = {
     var newSeen = seen
     children.foreach(c => {
@@ -343,15 +282,15 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
       if (forTopLevelSummary) {
         rels
       } else {
-        subtreeRels
+        subtreeRels.toList
       }
     PlanUtil.getRelationInfoBasedOnName(forTopLevelSummary, relsToUse, attributeOrdering)
   }
 
-  override def createFromAttrMappings: Unit = {
-    attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels)
+  def recreateFromAttrMappings: Unit = {
+    attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels.toList)
     attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
-    children.map(child => child.createFromAttrMappings)
+    children.map(child => child.recreateFromAttrMappings)
   }
 
   override def setAttributeOrdering(ordering: List[Attr] ): Unit = {
@@ -376,6 +315,7 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
         attrsFromAbove ++ attrSet -- equalitySelectedAttrs)
     })
     subtreeRels ++= childrensOutputRelations
+    scalars = childrensOutputRelations.filter(rel => rel.attrs.isEmpty)
     return outputRelation
   }
 
@@ -407,7 +347,9 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
 
   private def fractionalScoreNode(): Double = { // TODO: catch UnboundedSolutionException
     val myRealRels = rels.filter(!_.isImaginary)
-    val realAttrSet = attrSet
+    val unselectedAttrSet = attrSet -- attrToSelection.keys.filter(attr => {
+      attrToSelection.get(attr).isDefined && !attrToSelection.get(attr).get.isEmpty
+    }) // don't bother covering attributes that are equality selected
     val realRels = myRealRels:::children.flatMap(child => child.rels.filter(!_.isImaginary))
     if (realRels.isEmpty) {
       return 1 // just return 1 because we're going to delete this node anyways
@@ -415,7 +357,7 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
     val objective = new LinearObjectiveFunction(realRels.map((rel : QueryRelation) => 1.0).toArray, 0)
     // constraints:
     val constraintList = new util.ArrayList[LinearConstraint]
-    realAttrSet.map((attr : String) => {
+    unselectedAttrSet.map((attr : String) => {
       constraintList.add(new LinearConstraint(getMatrixRow(attr, realRels), Relationship.GEQ,  1.0))
     })
     val constraints = new LinearConstraintSet(constraintList)

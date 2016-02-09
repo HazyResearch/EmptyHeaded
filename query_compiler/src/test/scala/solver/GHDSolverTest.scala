@@ -2,9 +2,9 @@ package DunceCap
 
 import org.scalatest.FunSuite
 
-import DunceCap.attr.Attr
 
-import scala.collection.mutable
+
+import scala.collection.{mutable, immutable}
 
 class GHDSolverTest extends FunSuite {
 
@@ -43,7 +43,6 @@ class GHDSolverTest extends FunSuite {
     QueryRelationFactory.createQueryRelationWithNoSelects(List("x1", "y0"))
   )
   final val solver = GHDSolver
-
 
   test("Can form 1 node AJAR GHD for length 2 path query") {
     val ajarGHDs = GHDSolver.computeAJAR_GHD(PATH2.toSet, Set("a", "c"))
@@ -124,8 +123,8 @@ class GHDSolverTest extends FunSuite {
     assert(partitions.isDefined)
     assert(partitions.get.size == 2)
 
-    val firstPart = partitions.get.head
-    val secondPart = partitions.get.tail.head
+    val firstPart = partitions.get.sortBy(_.size).last
+    val secondPart = partitions.get.sortBy(_.size).head
     assert(firstPart.size == 2 && secondPart.size == 1)
     assert(secondPart.head == RELATIONS(1))
     assert(firstPart.head == RELATIONS(2))
@@ -239,5 +238,43 @@ class GHDSolverTest extends FunSuite {
 
     val fractionalScores = decompositions.map((root: GHDNode) => root.fractionalScoreTree())
     assert(fractionalScores.min === 1.5)
+  }
+
+  test("Test that we handle LUBM 4 selections correctly (able to duplicate selected rels in subtrees)") {
+    val LUBM4 = List(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a"), List("e")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a"), List("f")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "d")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "c"))
+    )
+    val decomps = solver.getMinFHWDecompositions(LUBM4)
+
+    val expectedDecomp = new GHDNode(List(LUBM4(0)))
+    expectedDecomp.children = List(
+      new GHDNode(List(LUBM4(1),LUBM4(2),LUBM4(3))),
+      new GHDNode(List(LUBM4(1),LUBM4(2),LUBM4(4))))
+
+    assert(decomps.find(_ == expectedDecomp).isDefined)
+  }
+
+  test("Test that we handle LUBM8 selections correctly (all of them should be in a leaf)") {
+    val LUBM8 = List(
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+      QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "c")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("a"), List("d")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("b"), List("e")),
+      QueryRelationFactory.createQueryRelationWithEqualitySelect(List("b"), List("f"))
+    )
+    val decomps = GHDSolver.getMinFHWDecompositions(LUBM8)
+
+    val expectedDecomp = new GHDNode(List(LUBM8(0)))
+    expectedDecomp.children = List(
+      new GHDNode(List(LUBM8(1),LUBM8(2))),
+      new GHDNode(List(LUBM8(3),LUBM8(4))))
+
+    val decompsWithABRoot = decomps.filter(_.attrSet == Set("a", "b"))
+
+    assert(decomps.find(_ == expectedDecomp).isDefined)
   }
 }
