@@ -9,8 +9,8 @@ def main():
 
   data = emptyheaded.fetchData("lubm8")
   print len(data)
-  print data.iloc[50][2]
-  if len(data) != 5916 or data.iloc[50][2] != "UndergraduateStudent143@Department0.University0.edu":
+  print data.iloc[50][1]
+  if len(data) != 5916 or data.iloc[50][1] != "UndergraduateStudent143@Department0.University0.edu":
     raise ResultError("ROW INCORRECT: " + str(data.iloc[50]))
 
 if __name__ == "__main__": main()
