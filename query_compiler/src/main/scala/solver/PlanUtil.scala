@@ -54,7 +54,11 @@ object PlanUtil {
   def getAccessor(attr:Attr, attrToRels:Map[Attr, List[QueryRelation]], attributeOrdering:List[Attr]): List[QueryPlanAccessor] = {
     attrToRels.get(attr).getOrElse(List()).map(rel => {
       val ordering = getNumericalOrdering(attributeOrdering, rel)
-      new QueryPlanAccessor(rel.name, reorderByNumericalOrdering(rel.attrNames, ordering),(rel.attrNames.last == attr && rel.annotationType != "void*"))
+      val reordered = reorderByNumericalOrdering(rel.attrNames, ordering)
+      new QueryPlanAccessor(
+        rel.name,
+        reordered,
+        (reordered.last == attr && rel.annotationType != "void*"))
     })
   }
 
