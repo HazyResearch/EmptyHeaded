@@ -35,7 +35,12 @@ abstract class EHNode(val rels: List[QueryRelation]) {
 
   private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,ParsedAggregate]): Option[Attr] = {
     if (!outputRelation.attrNames.isEmpty && outputRelation.attrNames.last == attr) {
-      attributeOrdering.dropWhile(a => a != attr).tail.find(a => joinAggregates.contains(a) && attrSet.contains(a))
+      val selectedAttrs = attributeOrdering.takeWhile(a => attrToSelection.contains(a) && !attrToSelection(a).isEmpty)
+      if (!selectedAttrs.isEmpty) {
+        Some(selectedAttrs.last)
+      } else {
+        attributeOrdering.dropWhile(a => a != attr).tail.find(a => joinAggregates.contains(a) && attrSet.contains(a))
+      }
     } else {
       None
     }
