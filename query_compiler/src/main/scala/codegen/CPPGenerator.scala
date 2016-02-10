@@ -307,27 +307,21 @@ object CPPGenerator {
     return (code,iteratorAccessors,retEncodings)
   }
   
-  def emitHeadBuildCode(head:QueryPlanAttrInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  def emitHeadBuildCode(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
-
-    val relationNames = iteratorAccessors(head.name).map(_._1)
-    val relationIndices = iteratorAccessors(head.name).map(_._2)
-
     head.materialize match {
       case true => {
         head.accessors.length match {
           case 0 =>
             throw new IllegalArgumentException("This probably not be occuring.")
-          case 1 => {
+          case 1 =>
             code.append(s"""const size_t count_${head.name} = Builders.build_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head);""")
-          }
           case 2 =>
             code.append(s"""const size_t count_${head.name} = Builders.build_set(Iterators_${head.accessors(0).name}_${head.accessors(0).attrs.mkString("_")}.head,Iterators_${head.accessors(1).name}_${head.accessors(1).attrs.mkString("_")}.head);""")
           case _ =>
            code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${head.name}_sets;""")
             (0 until head.accessors.length).toList.foreach(i =>{
-              if(head.accessors(i).attrs.length != 0)
-                code.append(s"""${head.name}_sets.push_back(Iterators_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}.head);""")
+              code.append(s"""${head.name}_sets.push_back(Iterators_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}.head);""")
             })
             code.append(s"""const size_t count_${head.name} = Builders.build_set(&${head.name}_sets);""")
         } 
@@ -343,8 +337,7 @@ object CPPGenerator {
           case _ =>
             code.append(s"""std::vector<const TrieBlock<hybrid,${Environment.config.memory}>*> ${head.name}_sets;""")
             (0 until head.accessors.length).toList.foreach(i =>{
-              if(head.accessors(i).attrs.length != 0)
-                code.append(s"""${head.name}_sets.push_back(Iterators_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}.head);""")
+              code.append(s"""${head.name}_sets.push_back(Iterators_${head.accessors(i).name}_${head.accessors(i).attrs.mkString("_")}.head);""")
             })
             code.append(s"""const size_t count_${head.name} = Builders.build_aggregated_set(&${head.name}_sets);""")
         } 
@@ -583,18 +576,8 @@ object CPPGenerator {
           //now actually get annotated values (if they exist)
           head.accessors.foreach(acc => {
             if(acc.annotated){
-              println("HERE: " + head)
-              println("NAMES: " + relationNames)
-              println("INDICES: " + relationIndices)
-              println( acc.name + "_" + acc.attrs.mkString("_") )
-              val attrIndex = relationNames.indexOf( acc.name + "_" + acc.attrs.mkString("_") )
-              if(attrIndex != -1){ //we found the attribute in the accessor
-                val index1 = relationIndices(attrIndex)
-                println("END HERE")
-                code.append(s"""${joinType} Iterator_${acc.name}_${acc.attrs.mkString("_")}->get_annotation(${index1},${head.name}_d)""")  
-              } else { //we are multiplying by a scalar
-                code.append(s"""${joinType} Iterators_${acc.name}_${acc.attrs.mkString("_")}.annotation""")
-              }
+              val index1 = relationIndices(relationNames.indexOf( acc.name + "_" + acc.attrs.mkString("_") ) )
+              code.append(s"""${joinType} Iterator_${acc.name}_${acc.attrs.mkString("_")}->get_annotation(${index1},${head.name}_d)""")
             } else if(head.name == acc.attrs.last) {
               code.append(s"""${joinType} ${a.init}""")
             }
@@ -914,7 +897,7 @@ object CPPGenerator {
           val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr,bag.annotation,iteratorAccessors)
           code.append(hsCode)
           if(remainingAttrs.length > 0){
-            code.append(emitHeadBuildCode(remainingAttrs.head,iteratorAccessors))
+            code.append(emitHeadBuildCode(remainingAttrs.head))
             code.append(emitHeadAllocations(remainingAttrs.head))
             code.append(emitInitHeadAnnotations(remainingAttrs.head,bag.annotation))
             if(remainingAttrs.length > 1){  
