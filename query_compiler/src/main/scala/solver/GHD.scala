@@ -264,7 +264,8 @@ class GHDNode(override val rels: List[QueryRelation]) extends EHNode(rels) with 
       outputRelation.annotationType,
       jsonRelInfo,
       getNPRRInfo(joinAggregates),
-      None) //SUSAN FIXME
+      None,
+      scalars.map(_.name))
   }
 
   def setDescendantNames(level:Int): Unit = {
