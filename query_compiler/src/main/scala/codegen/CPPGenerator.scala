@@ -363,13 +363,20 @@ object CPPGenerator {
     code
   }
 
-  def emitSetHeadAnnotations(outputName:String,head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
+  def emitSetHeadAnnotations(
+    outputName:String,
+    head:QueryPlanAttrInfo,
+    annotationType:String,
+    passedScalars:List[String]) : StringBuilder = {
     val code = new StringBuilder()
     (head.aggregation,head.materialize) match {
-      case (Some(a),false) =>
-        code.append(s"""Builders.trie->annotation = annotation_${head.name}.evaluate(0);
-          ${outputName} = Builders.trie->annotation;
-          """)
+      case (Some(a),false) => {
+        code.append(s"""Builders.trie->annotation = annotation_${head.name}.evaluate(0)""")
+        passedScalars.foreach(pa => {
+          code.append(s"""* Trie_${pa}_->annotation""")
+        })
+        code.append(s"""; ${outputName} = Builders.trie->annotation;""")
+      }
       case _ =>
     }
     code
@@ -909,7 +916,6 @@ object CPPGenerator {
               code.append("});")
             } else {
               if(remainingAttrs.length == 1){
-                println(remainingAttrs.head.accessors)
                 val loopOverSet = remainingAttrs.head.materialize && remainingAttrs.head.aggregation.isDefined
                 if(loopOverSet){
                   code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
@@ -923,9 +929,10 @@ object CPPGenerator {
                 code.append(emitFinalAnnotation(remainingAttrs.head,bag.annotation,iteratorAccessors,true)) 
               }
             }
-            code.append(emitSetHeadAnnotations(outputName,remainingAttrs.head,bag.annotation))
+            code.append(emitSetHeadAnnotations(outputName,remainingAttrs.head,bag.annotation,bag.passedScalars))
           }
           code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
+
         }
         code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
         code.append(s"""timer::stop_clock("BAG ${bag.name} TIME", bag_timer);""")
