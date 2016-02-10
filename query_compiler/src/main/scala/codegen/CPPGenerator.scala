@@ -418,7 +418,12 @@ object CPPGenerator {
     val containsSelection = (cur.accessors.length == 1) && (cur.selection.length == 1) && !cur.materialize && cur.selection.head.operation == "="
     if(containsSelection){
       code.append(emitContainsSelection(cur.name,cur.materialize,cur.selection.head,cur.accessors.head))
-      code.append(emitAnnotationAccessors(cur,annotationType,iteratorAccessors))
+      (cur.aggregation) match {
+        case Some(a) => {
+          code.append(s"""${annotationType} annotation_${cur.name} = (${annotationType}) ${a.init};""")
+        }
+        case _ => //do nothing 
+      }
       val (newcode,newhead) = emitHeadContainsSelections(head.tail,annotationType,iteratorAccessors)
       code.append(newcode)
       (code,newhead)
@@ -571,7 +576,11 @@ object CPPGenerator {
           //now actually get annotated values (if they exist)
           head.accessors.foreach(acc => {
             if(acc.annotated){
+              println("HERE")
+              println(relationNames)
+              println( acc.name + "_" + acc.attrs.mkString("_") )
               val index1 = relationIndices(relationNames.indexOf( acc.name + "_" + acc.attrs.mkString("_") ) )
+              println("END HERE")
               code.append(s"""${joinType} Iterator_${acc.name}_${acc.attrs.mkString("_")}->get_annotation(${index1},${head.name}_d)""")
             } else if(head.name == acc.attrs.last) {
               code.append(s"""${joinType} ${a.init}""")
