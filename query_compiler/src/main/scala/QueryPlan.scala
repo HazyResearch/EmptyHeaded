@@ -70,7 +70,8 @@ case class QueryPlanBagInfo(val name:String,
                             val annotation:String,
                             val relations:List[QueryPlanRelationInfo],
                             val nprr:List[QueryPlanAttrInfo],
-                            val recursion:Option[QueryPlanRecursion])
+                            val recursion:Option[QueryPlanRecursion],
+                            val passedScalars:List[String])
 
 /**
  * @param accessors relations that this attr appears in

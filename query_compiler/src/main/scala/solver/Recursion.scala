@@ -73,7 +73,8 @@ case class RecursionNode(val join:List[QueryRelation],
       outputRelation.annotationType,
       jsonRelInfo,
       getNPRRInfo(joinAggregates),
-      getConvergenceInfo)
+      getConvergenceInfo,
+      List())
   }
 
   private def getConvergenceInfo(): Option[QueryPlanRecursion] = {

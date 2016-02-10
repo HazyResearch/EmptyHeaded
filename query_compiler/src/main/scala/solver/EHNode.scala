@@ -55,13 +55,6 @@ abstract class EHNode(val rels: List[QueryRelation]) {
     val prevAndNextAttrAggregated = PlanUtil.getPrevAndNextAttrNames(
       attrsWithAccessor,
       ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr)))
-    val emptyAccessors = scalars.map(rel => {
-      val ordering = PlanUtil.getNumericalOrdering(attributeOrdering, rel)
-      new QueryPlanAccessor(
-        rel.name,
-        PlanUtil.reorderByNumericalOrdering(rel.attrNames, ordering),
-        true /* obviously annotated since that's the only way we have a scalar to pass up */)
-    })
 
     attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
       val (attr, prevNextInfo) = attrAndPrevNextInfo
@@ -73,7 +66,7 @@ abstract class EHNode(val rels: List[QueryRelation]) {
       } else {
         Some(new QueryPlanAttrInfo(
           attr,
-          if (attr == firstAttr) accessor:::emptyAccessors else accessor,
+          accessor,
           outputRelation.attrNames.contains(attr),
           getSelection(attr),
           getNextAnnotatedForLastMaterialized(attr, joinAggregates),
