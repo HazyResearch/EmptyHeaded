@@ -157,7 +157,6 @@ object CPPGenerator {
       #include "utils/ParMemoryBuffer.hpp"
       #include "Encoding.hpp"
       ${includes.toString}
-
       void Query_HASHSTRING::run_HASHSTRING(){
         thread_pool::initializeThreadPool();
         ${run.toString}
@@ -250,12 +249,12 @@ object CPPGenerator {
     bagDuplicate match {
       case Some(bd) => {
         code.append(s"""Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = Trie_${bd}_${ordering};""")
-        if(annotation != "void*" && num == 0)
-          code.append(s"""${annotation} ${name};""")
       } case None => {
         code.append(s"""Trie<${annotation},${Environment.config.memory}> *Trie_${name}_${ordering} = new Trie<${annotation},${Environment.config.memory}>("${Environment.config.database}/relations/${name}",${num},${annotation != "void*"});""")
       }
     }
+    if(annotation != "void*" && num == 0)
+      code.append(s"""${annotation} ${name};""")
     return code
   }
 
@@ -366,6 +365,7 @@ object CPPGenerator {
 
   def emitSetHeadAnnotations(outputName:String,head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
+    println(head.aggregation + " " + head.materialize)
     (head.aggregation,head.materialize) match {
       case (Some(a),false) =>
         code.append(s"""Builders.trie->annotation = annotation_${head.name}.evaluate(0);
@@ -411,7 +411,7 @@ object CPPGenerator {
     })
     code
   }
-  def emitHeadContainsSelections(head:List[QueryPlanAttrInfo]) : (StringBuilder,List[QueryPlanAttrInfo]) = {
+  def emitHeadContainsSelections(head:List[QueryPlanAttrInfo],annotationType:String,iteratorAccessors:IteratorAccessors) : (StringBuilder,List[QueryPlanAttrInfo]) = {
     val code = new StringBuilder()
     if(head.length == 0)
       (code,head)
@@ -419,7 +419,8 @@ object CPPGenerator {
     val containsSelection = (cur.accessors.length == 1) && (cur.selection.length == 1) && !cur.materialize && cur.selection.head.operation == "="
     if(containsSelection){
       code.append(emitContainsSelection(cur.name,cur.materialize,cur.selection.head,cur.accessors.head))
-      val (newcode,newhead) = emitHeadContainsSelections(head.tail)
+      code.append(emitAnnotationAccessors(cur,annotationType,iteratorAccessors))
+      val (newcode,newhead) = emitHeadContainsSelections(head.tail,annotationType,iteratorAccessors)
       code.append(newcode)
       (code,newhead)
     } else {
@@ -562,7 +563,7 @@ object CPPGenerator {
     (head.aggregation,head.materialize) match { //you always check for annotations
       case (Some(a),false) => {
         if(a.operation != "CONST"){
-          code.append(s"""const ${annotationType} intermediate_${head.name} = """)
+          code.append(s"""const ${annotationType} intermediate_${head.name} =""")
           //starter that has no effect on join operation
           joinType match {
             case "*" => code.append(s"""(${annotationType})1""")
@@ -889,8 +890,9 @@ object CPPGenerator {
 
         if(bag.nprr.length > 0){
           code.append(emitSelectionValues(bag.nprr,encodings))
-          val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr)
+          val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr,bag.annotation,iteratorAccessors)
           code.append(hsCode)
+          println(remainingAttrs.length)
           if(remainingAttrs.length > 0){
             code.append(emitHeadBuildCode(remainingAttrs.head))
             code.append(emitHeadAllocations(remainingAttrs.head))
@@ -903,10 +905,19 @@ object CPPGenerator {
               code.append(emitParallelAnnotationComputation(remainingAttrs.head))
               code.append("});")
             } else {
-              code.append(s"""num_rows_reducer.update(0,count_${remainingAttrs.head.name});""")
-              //code.append(emitInitializeAnnotation(remainingAttrs.head,bag.annotation))
-              //emit compute annotation (might have to contain a foreach)
-              code.append(emitFinalAnnotation(remainingAttrs.head,bag.annotation,iteratorAccessors,true))
+              if(remainingAttrs.length == 1){
+                val loopOverSet = remainingAttrs.head.accessors.map(_.annotated).reduce((a,b) => {a || b})
+                if(loopOverSet){
+                  code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
+                  code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors)) 
+                  code.append(emitSetValues(remainingAttrs.head))
+                  code.append(emitParallelAnnotationComputation(remainingAttrs.head))
+                  code.append("});")
+                }
+              } else{
+                code.append(s"""num_rows_reducer.update(0,count_${remainingAttrs.head.name});""")
+                code.append(emitFinalAnnotation(remainingAttrs.head,bag.annotation,iteratorAccessors,true)) 
+              }
             }
             code.append(emitSetHeadAnnotations(outputName,remainingAttrs.head,bag.annotation))
           }
