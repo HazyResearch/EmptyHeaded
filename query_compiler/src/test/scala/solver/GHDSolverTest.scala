@@ -103,6 +103,19 @@ class GHDSolverTest extends FunSuite {
     assertResult(twoNodes.get.toList.size)(2)
   }
 
+  test("understand why this test is still failing") {
+    val root = new GHDNode(List(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(List("c"))))
+    root.children = List(new GHDNode(
+      List(QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(List("c")),
+        QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "b")),
+        QueryRelationFactory.createQueryRelationWithNoSelects(List("b", "c")),
+        QueryRelationFactory.createQueryRelationWithNoSelects(List("a", "c")))
+    ))
+    val oneNode = GHDSolver.deleteImaginaryEdges(root)
+    assert(oneNode.isDefined)
+    oneNode.get.rels.foreach(rel => assert(!rel.isImaginary))
+  }
+
   test("Can identify connected components of graph when removing the chosen hyper edge leaves 2 disconnected components") {
     val chosen = List(RELATIONS.head)
     val partitions = solver.getPartitions(
@@ -226,7 +239,6 @@ class GHDSolverTest extends FunSuite {
     val fractionalScores = decompositions.map((root: GHDNode) => root.fractionalScoreTree())
     assert(fractionalScores.min === 1.5)
   }
-<<<<<<< HEAD
 
   test("Test that we handle LUBM 4 selections correctly (able to duplicate selected rels in subtrees)") {
     val LUBM4 = List(
@@ -266,6 +278,3 @@ class GHDSolverTest extends FunSuite {
     assert(decomps.find(_ == expectedDecomp).isDefined)
   }
 }
-=======
-}
->>>>>>> master
