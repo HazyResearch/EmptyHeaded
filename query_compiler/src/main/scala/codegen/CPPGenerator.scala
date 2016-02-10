@@ -365,7 +365,6 @@ object CPPGenerator {
 
   def emitSetHeadAnnotations(outputName:String,head:QueryPlanAttrInfo,annotationType:String) : StringBuilder = {
     val code = new StringBuilder()
-    println(head.aggregation + " " + head.materialize)
     (head.aggregation,head.materialize) match {
       case (Some(a),false) =>
         code.append(s"""Builders.trie->annotation = annotation_${head.name}.evaluate(0);
@@ -892,7 +891,6 @@ object CPPGenerator {
           code.append(emitSelectionValues(bag.nprr,encodings))
           val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr,bag.annotation,iteratorAccessors)
           code.append(hsCode)
-          println(remainingAttrs.length)
           if(remainingAttrs.length > 0){
             code.append(emitHeadBuildCode(remainingAttrs.head))
             code.append(emitHeadAllocations(remainingAttrs.head))
@@ -906,7 +904,8 @@ object CPPGenerator {
               code.append("});")
             } else {
               if(remainingAttrs.length == 1){
-                val loopOverSet = remainingAttrs.head.accessors.map(_.annotated).reduce((a,b) => {a || b})
+                println(remainingAttrs.head.accessors)
+                val loopOverSet = remainingAttrs.head.materialize && remainingAttrs.head.aggregation.isDefined
                 if(loopOverSet){
                   code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
                   code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors)) 
