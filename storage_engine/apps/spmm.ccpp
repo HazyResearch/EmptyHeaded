@@ -1,0 +1,183 @@
+
+#define EXECUTABLE
+#include "main.hpp"
+
+struct createGraphDB1: public application {
+  ////////////////////emitInitCreateDB////////////////////
+  // init ColumnStores
+  void run(){
+    ColumnStore<long, long> *R = new ColumnStore<long, long>();
+    std::vector<double> *annotation_R = new std::vector<double>();
+
+    // init encodings
+    SortableEncodingMap<long> *node_encodingMap = new SortableEncodingMap<long>();
+    Encoding<long> *Encoding_node = new Encoding<long>();
+
+    ////////////////////emitLoadColumnStore////////////////////
+    {
+      auto start_time = timer::start_clock();
+      tsv_reader f_reader(
+          "/dfs/scratch0/caberger/systems/matrix/mkl/rma10/rma10.mtx");
+      char *next = f_reader.tsv_get_first();
+      while (next != NULL) {
+        node_encodingMap->update(R->append_from_string<0>(next));
+        next = f_reader.tsv_get_next();
+        node_encodingMap->update(R->append_from_string<1>(next));
+        next = f_reader.tsv_get_next();
+        annotation_R->push_back(utils::from_string<double>(next));
+        next = f_reader.tsv_get_next();
+        R->num_rows++;
+      }
+      timer::stop_clock("READING ColumnStore R", start_time);
+    }
+
+    ////////////////////emitBuildEncodings////////////////////
+    {
+      auto start_time = timer::start_clock();
+      Encoding_node->build(node_encodingMap->get_sorted());
+      delete node_encodingMap;
+      timer::stop_clock("BUILDING ENCODINGS", start_time);
+    }
+
+    ////////////////////emitEncodeColumnStore////////////////////
+    EncodedColumnStore<double> *Encoded_R =
+        new EncodedColumnStore<double>(annotation_R);
+    {
+      auto start_time = timer::start_clock();
+      // encodeColumnStore
+      Encoded_R->add_column(Encoding_node->encode_column(&R->get<0>()),
+                            Encoding_node->num_distinct);
+      Encoded_R->add_column(Encoding_node->encode_column(&R->get<1>()),
+                            Encoding_node->num_distinct);
+      timer::stop_clock("ENCODING R", start_time);
+    }
+
+    Trie<double,ParMemoryBuffer> *Trie_R_0_1 = NULL;
+    {
+      auto start_time = timer::start_clock();
+      // buildTrie
+      Trie_R_0_1 = new Trie<double,ParMemoryBuffer>( 
+          "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1",
+          &Encoded_R->max_set_size,
+          &Encoded_R->data, 
+          &Encoded_R->annotation);
+      timer::stop_clock("BUILDING TRIE R_0_1", start_time);
+    }
+    EncodedColumnStore<double> *Encoded_R_1_0 =
+        new EncodedColumnStore<double>(annotation_R);
+    {
+      auto start_time = timer::start_clock();
+      // encodeColumnStore
+      Encoded_R_1_0->add_column(Encoding_node->encode_column(&R->get<1>()),
+                            Encoding_node->num_distinct);
+      Encoded_R_1_0->add_column(Encoding_node->encode_column(&R->get<0>()),
+                            Encoding_node->num_distinct);
+      timer::stop_clock("ENCODING R_1_0", start_time);
+    }
+
+    Trie<double,ParMemoryBuffer> *Trie_R_1_0 = NULL;
+    {
+      auto start_time = timer::start_clock();
+      // buildTrie
+      Trie_R_1_0 = new Trie<double,ParMemoryBuffer>( 
+          "/Users/caberger/Documents/Research/data/databases/simple/db/relations/R/R_0_1",
+          &Encoded_R_1_0->max_set_size,
+          &Encoded_R_1_0->data, 
+          &Encoded_R_1_0->annotation);
+      timer::stop_clock("BUILDING TRIE R_1_0", start_time);
+    }
+    
+    /*
+    std::cout << "TRIE ORDERING 0 1" << std::endl;
+    Trie_R_0_1->foreach([&](std::vector<uint32_t> *v, double a){
+      for(size_t i = 0; i < v->size(); i++){
+        std::cout << v->at(i) << " ";
+      }
+      std::cout << a << std::endl;
+    });
+
+    std::cout << "TRIE ORDERING 1 0" << std::endl;
+    Trie_R_1_0->foreach([&](std::vector<uint32_t> *v, double a){
+      for(size_t i = 0; i < v->size(); i++){
+        std::cout << v->at(i) << " ";
+      }
+      std::cout << a << std::endl;
+    });
+    */
+
+    ///loading finished matrix multiply code here.
+
+    auto spmm = timer::start_clock();
+    TrieBlock<hybrid,ParMemoryBuffer>* a = Trie_R_0_1->getHead();
+    TrieBlock<hybrid,ParMemoryBuffer>* c = Trie_R_1_0->getHead();
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    //Allocate the result trie and build the head
+    Trie<double,ParMemoryBuffer>* result = new Trie<double,ParMemoryBuffer>("",2,true);
+    ParMemoryBuffer* data_allocator = result->memoryBuffers;
+    const Set<hybrid>* s1 = (const Set<hybrid>*)((uint8_t*)a+sizeof(TrieBlock<hybrid,ParMemoryBuffer>)); 
+    const size_t block_size = s1->number_of_bytes+
+      sizeof(TrieBlock<hybrid,ParMemoryBuffer>)+
+      sizeof(Set<hybrid>);
+    
+    const size_t next_size = a->nextSize();
+    const size_t alloc_size = sizeof(NextLevel)*(next_size);
+    uint8_t * const start_block = (uint8_t*)data_allocator->head->get_next(block_size+alloc_size);
+    memcpy((uint8_t*)start_block,(uint8_t*)a,block_size);
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    a->get_const_set()->par_foreach_index([&](const size_t tid, const uint32_t a_i, const uint32_t a_d){
+      TrieBlock<hybrid,ParMemoryBuffer>* b1 = a->get_next_block(a_i,a_d,Trie_R_0_1->memoryBuffers);
+
+      ////////////////////////////////////////////////////////////////////////////////////
+      const Set<hybrid>* s2 = (const Set<hybrid>*)((uint8_t*)c+sizeof(TrieBlock<hybrid,ParMemoryBuffer>)); 
+      const size_t annotation_size = c->nextSize()*sizeof(double);
+      const size_t copysize = s2->number_of_bytes+
+        sizeof(TrieBlock<hybrid,ParMemoryBuffer>)+
+        sizeof(Set<hybrid>);
+      const size_t block_size2 = copysize+annotation_size;
+      uint8_t * const start_block2 = (uint8_t*)data_allocator->get_next(tid,block_size2);
+      const size_t offset2 = start_block2-data_allocator->get_address(tid);
+      memcpy((uint8_t*)start_block2,(uint8_t*)c,copysize);
+      double* annotation = (double*)(start_block2+copysize);
+      memset((uint8_t*)(start_block2+copysize),(uint8_t)0,annotation_size);
+      ////////////////////////////////////////////////////////////////////////////////////
+
+      c->get_const_set()->foreach_index([&](const uint32_t c_i, const uint32_t c_d){
+        double value = 0.0;
+        TrieBlock<hybrid,ParMemoryBuffer>* b2 = c->get_next_block(c_i,c_d,Trie_R_1_0->memoryBuffers);
+          ops::set_intersect(b1->get_const_set(),b2->get_const_set(),[&](uint32_t data, uint32_t i_a, uint32_t i_b){
+            value += (b1->get_annotation<double>(i_a,data)*b2->get_annotation<double>(i_b,data));
+            return 1;
+          });
+          annotation[c->get_index(c_i,c_d)] = value;
+      });
+      TrieBlock<hybrid,ParMemoryBuffer>* prev_block = result->getHead();
+            prev_block->set_next_block(a_i,a_d,tid,offset2);
+
+      /*
+      TrieBlock<hybrid,ParMemoryBuffer>* next  = prev_block->get_next_block(a_i,a_d,result->memoryBuffers);
+      std::cout << "GRABBING NEXT BLOCK: " << (void*)start_block2 << " "  << (void*)next << " " << (void*) annotation << " " << (void*) (next+copysize) << std::endl;
+      next->get_const_set()->foreach_index([&](const uint32_t c_i, const uint32_t c_d){
+        std::cout << "itu: " << c_i << " " << c_d << " " << next->get_annotation_sp<double>(c_i,c_d) << std::endl;
+      });
+      */
+    });
+    timer::stop_clock("SPMM", spmm);
+
+    
+    result->foreach([&](std::vector<uint32_t> *v, double a){
+      if(a != 0){
+        for(size_t i = 0; i < v->size(); i++){
+          std::cout << v->at(i) << " ";
+        }
+        std::cout << a << std::endl;
+      }
+    });
+    
+  }
+};
+
+application* init_app(){
+  return new createGraphDB1(); 
+}

@@ -1,4 +1,4 @@
-#include "ParMMapBuffer.hpp"
+#include "utils/ParMMapBuffer.hpp"
 
 std::string ParMMapBuffer::folder = "/mmap/";
 

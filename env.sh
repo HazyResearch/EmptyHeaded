@@ -1,0 +1,2 @@
+export EMPTYHEADED_HOME=`pwd`
+export PYTHONPATH=$EMPTYHEADED_HOME/runtime

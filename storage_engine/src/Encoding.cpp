@@ -37,12 +37,12 @@ void Encoding<T>::build(std::vector<T>* values){
 }
 
 template<class T>
-std::vector<uint32_t>* Encoding<T>::encode_column(std::vector<T>* encodingMap){
+std::vector<uint32_t>* Encoding<T>::encode_column(T* encodingMap,const size_t length){
   std::vector<uint32_t>* column = new std::vector<uint32_t>();
-  column->resize(encodingMap->size());
-  par::for_range(0,encodingMap->size(),100,[&](size_t tid, size_t i){
+  column->resize(length);
+  par::for_range(0,length,100,[&](const size_t tid, const size_t i){
     (void) tid;
-    column->at(i) = value_to_key.at(encodingMap->at(i));
+    column->at(i) = value_to_key.at(encodingMap[i]);
   });
   return column;
 }
@@ -133,6 +133,7 @@ void Encoding<T>::to_binary(const std::string path){
 }
 
 //FIXME: Add types here
+template struct Encoding<uint32_t>;
 template struct Encoding<int>;
 template struct Encoding<float>;
 template struct Encoding<long>;

@@ -3,9 +3,7 @@ resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 name := "query_compiler"
 
 //resolvers += "Sonatype (releases)" at "https://oss.sonatype.org/content/repositories/releases/"
-scalaVersion := "2.11.2"
-
-mainClass := Some("DunceCap.QueryCompiler")
+scalaVersion := "2.11.7"
 
 publishTo := Some(Resolver.file("file",  new File( "exec" )) )
 

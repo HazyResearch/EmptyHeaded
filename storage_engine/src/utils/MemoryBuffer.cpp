@@ -11,7 +11,7 @@
 // San Francisco, California, 94105, USA.
 //---------------------------------------------------------------------------
 
-#include "MemoryBuffer.hpp"
+#include "utils/MemoryBuffer.hpp"
 
 #define INIT_PAGE_COUNT 1000000
 unsigned MemoryBuffer::pagesize = 4096; //4KB

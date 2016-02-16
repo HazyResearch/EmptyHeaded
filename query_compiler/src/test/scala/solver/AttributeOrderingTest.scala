@@ -17,7 +17,7 @@ class AttributeOrderingTest extends FunSuite {
         ("z", "<", "100"),
         ("z", "=", "5")
       ))
-    assertResult(Set[Attr]("x", "y", "z"))(partitioned.take(3).toSet)
+    assertResult(List[Attr]("x", "y", "z", "a", "b", "c"))(partitioned)
   }
 
   test("Can order attributes, taking into account GHD structure and what's equality-selected") {
@@ -38,6 +38,6 @@ class AttributeOrderingTest extends FunSuite {
       rootBag.rels:::child1.rels:::child2.rels:::child3.rels,
       QueryRelationFactory.createQueryRelationWithNoSelects(List[Attr]("a", "b", "c")))
 
-    assertResult(Set[Attr]("x", "y", "z"))(ordering.take(3).toSet)
+    assertResult(List[Attr]("x", "z", "y", "a", "b", "c"))(ordering)
   }
 }

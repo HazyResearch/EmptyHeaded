@@ -28,7 +28,6 @@ class QueryPlanTest extends FunSuite {
         |    "name":"result",
         |    "attributes":["a"],
         |    "annotation":"void*",
-        |    "passedScalars":[],
         |    "relations":[{
         |      "name":"takesCourse",
         |      "ordering":[0,1],
@@ -80,9 +79,7 @@ class QueryPlanTest extends FunSuite {
           QueryPlanAccessor("takesCourse", List[Attr]("a", "b"), false),
           QueryPlanAccessor("bag_1_0", List[Attr]("a"), false)
         ), true, List[QueryPlanSelection](QueryPlanSelection("=", "5")), None, None, None, None)),
-        None,
-        List()
-      )
+        None)
     ), List[TopDownPassIterator]()))(plan)
   }
 }

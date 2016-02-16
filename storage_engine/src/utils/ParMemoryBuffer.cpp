@@ -1,5 +1,5 @@
-#include "common.hpp"
-#include "ParMemoryBuffer.hpp"
+#include "utils/common.hpp"
+#include "utils/ParMemoryBuffer.hpp"
 
 std::string ParMemoryBuffer::folder = "/ram/";
 
