@@ -12,8 +12,8 @@
 void Query_0::run_0() {
   thread_pool::initializeThreadPool();
 
-  long selection_value = 6;
-  std::string db_path = "/Users/caberger/Documents/Research/code/EmptyHeaded/examples/graph/data/facebook/db";
+  long selection_value = 33156;
+  std::string db_path = "/dfs/scratch0/caberger/datasets/cid-patents/db_python";
 
   Trie<void *, ParMemoryBuffer> *Trie_SBarbell_0_3_1_2_4_5 =
       new Trie<void *, ParMemoryBuffer>(
