@@ -24,9 +24,19 @@ object DatalogParser extends RegexParsers {
     irbuilder.build()
   }
 
-  def body = """[a-z]+""".r
+  def emptyStatement = "".r ^^ {case r => List()}
+  def emptyString = "".r ^^ {case r => ""}
+  def identifierName:Parser[String] = """[_\p{L}][_\p{L}\p{Nd}]*""".r
+  def attrList : Parser[List[String]] = notLastAttr | lastAttr | emptyStatement
+  def notLastAttr = identifierName ~ ("," ~> attrList) ^^ {case a~rest => a +: rest}
+  def lastAttr = identifierName ^^ {case a => List(a)}
+  def aggStatement = ((";" ~> attrList) | emptyStatement)
 
-  def datalogRule:Parser[Rule] = body ^^ {
+  def result: Parser[Result] = identifierName ~ ("(" ~> attrList) ~ (aggStatement <~ ")") ^^ {case id~attrNames~annoNames =>
+   Result(Rel(id,Attributes(attrNames),Annotations(annoNames)))
+  }
+
+  def datalogRule:Parser[Rule] = result ^^ {
     case r => {
       val relR = new Rel("R",Attributes(List("a","b")),Annotations(List()))
       
@@ -42,7 +52,6 @@ object DatalogParser extends RegexParsers {
     }
   }
 
-  def emptyStatement = "".r ^^ {case r => List()}
   def notLastRule:Parser[List[Rule]] = datalogRule ~ ("." ~> rule) ^^ {case a~rest => a +: rest}
   def lastRule:Parser[List[Rule]] = datalogRule ^^ {case a => List(a)}
   def rule:Parser[List[Rule]] = notLastRule | lastRule | emptyStatement
