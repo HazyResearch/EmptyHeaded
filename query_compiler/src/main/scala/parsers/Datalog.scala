@@ -37,7 +37,7 @@ object DatalogParser extends RegexParsers {
   def convergenceCriteria:Parser[String] = """i|c""".r
   def convergenceOp:Parser[String] = """=|<=|<|>|>=""".r
   def numericalValue:Parser[String] = """\d+\.?\d*""".r
-  def convergenceExpression:Parser[Recursion] = "*[" ~> convergenceCriteria ~ convergenceOp ~ numericalValue <~ "]" ^^ {
+  def recursion:Parser[Recursion] = "*[" ~> convergenceCriteria ~ convergenceOp ~ numericalValue <~ "]" ^^ {
     case cc~co~cv => {
       val criteria = cc match {
         case "i" => ITERATIONS()
@@ -51,12 +51,11 @@ object DatalogParser extends RegexParsers {
     }
   }
 
-  def datalogRule:Parser[Rule] = result ~ opt(convergenceExpression) ^^ {
+  def datalogRule:Parser[Rule] = result ~ opt(recursion) ^^ {
     case rslt~ce => {
       val relR = new Rel("R",Attributes(List("a","b")),Annotations(List()))
       
       val order = Order(Attributes(List("a","b")))
-      val recursion = None
       val project = Project(Attributes(List()))
       val operation = Operation("*")
       val join = Join(List(relR))
@@ -64,7 +63,7 @@ object DatalogParser extends RegexParsers {
       val filters = Filters(List(new Selection("a",new EQUALS(),"1.0")))
       println(rslt)
       println(ce)
-      new Rule(rslt,recursion,order,project,operation,join,aggregations,filters)
+      new Rule(rslt,ce,order,project,operation,join,aggregations,filters)
     }
   }
 
