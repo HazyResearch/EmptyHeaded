@@ -12,11 +12,9 @@ case class ParserFailureException() extends Exception(s"""ParserFailureException
 */
 object DatalogParser extends RegexParsers {
   def run(line:String) : IR = {
-    println("HERE PARSING DATALOG: " + line)
     val irbuilder = new IRBuilder()
     this.parseAll(this.rule, line) match {
       case DatalogParser.Success(parsedRules, _) => {
-        println(parsedRules.length)
         irbuilder.addRules(parsedRules)
       } case _ => 
         throw new ParserFailureException()
@@ -37,18 +35,17 @@ object DatalogParser extends RegexParsers {
   }
 
   def datalogRule:Parser[Rule] = result ^^ {
-    case r => {
+    case rslt => {
       val relR = new Rel("R",Attributes(List("a","b")),Annotations(List()))
       
-      val result = new Result(relR)
       val order = Order(Attributes(List("a","b")))
       val project = Project(Attributes(List()))
       val operation = Operation("*")
       val join = Join(List(relR))
       val aggregations = Aggregations(List(new Aggregation(new SUM(),Attributes(List("a")),"1","")))
       val filters = Filters(List(new Selection("a",new EQUALS(),"1.0")))
-      println("I GOT A RULE: "+r)
-      new Rule(result,order,project,operation,join,aggregations,filters)
+      println(rslt)
+      new Rule(rslt,order,project,operation,join,aggregations,filters)
     }
   }
 
