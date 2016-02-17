@@ -88,10 +88,8 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
 
   //Parse a datalog statement and code generate it.
   def datalog(query:String):String = {
-    println("PARSING DATALOG")
-    println(query)
-    //run SQL parser
-    //return IR
+    val ir = DatalogParser.run(query)
+    println(ir)
     "Query.cpp"
   }
 

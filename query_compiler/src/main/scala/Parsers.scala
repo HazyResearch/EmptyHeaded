@@ -6,8 +6,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 package duncecap
 
-import scala.collection.mutable.ListBuffer
-
 //Wrapper class to parse SQL
 class SQL(val query:String) {
   def parse():IR ={
@@ -18,7 +16,6 @@ class SQL(val query:String) {
 //Wrapper class to parse Datalog
 class Datalog(val query:String) {
   def parse():IR ={
-    println("Parsing Datalog: " + query)
-    new IR()
+    DatalogParser.run(query)
   }
 }

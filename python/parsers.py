@@ -9,14 +9,14 @@ class Parser:
   def __init__(self):
     self.duncecap = jpype.JPackage('duncecap')
 
-class SQL(Parser):
+class sql(Parser):
   def __init__(self,query):
     Parser.__init__(self)
     ir = self.duncecap.SQL(query).parse()
     #return IR.java2python(ir)
 
-class Datalog(Parser):
+class datalog(Parser):
   def __init__(self,query):
     Parser.__init__(self)
-    ir = self.duncecap.SQL(query).parse()
+    ir = self.duncecap.Datalog(query).parse()
     #return IR.java2python(ir)

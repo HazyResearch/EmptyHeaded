@@ -2,6 +2,30 @@ package duncecap
 
 import scala.collection.mutable.ListBuffer
 
+case class IR(val statements:List[Rule]) {
+  def this(){this(List())}
+  def getNumRules():Int = {statements.length}
+  def getRule(i:Int):Rule = {statements(i)}
+}
+
+case class Rule(
+  val result:Result,
+  val order:Order,
+  val project:Project,
+  val operation:Operation,
+  val join:Join,
+  val aggregations:Aggregations,
+  val filters:Filters
+) {
+  def getResult():Result = {result}
+  def getOrder():Order = {order}
+  def getProject():Project = {project}
+  def getOperation():Operation = {operation}
+  def getJoin():Join = {join}
+  def getFilters():Filters = {filters}
+  def getAggregations():Aggregations = {aggregations}
+}
+
 case class Attributes(val values:List[String])
 
 case class Annotations(val values:List[String])
@@ -81,30 +105,6 @@ case class Aggregations(val aggregations:List[Aggregation]){
   def getExpression(i:Int):String = {aggregations(i).expression}
 }
 
-case class Rule(
-  val result:Result,
-  val order:Order,
-  val project:Project,
-  val operation:Operation,
-  val join:Join,
-  val aggregations:Aggregations,
-  val filters:Filters
-) {
-  def getResult():Result = {result}
-  def getOrder():Order = {order}
-  def getProject():Project = {project}
-  def getOperation():Operation = {operation}
-  def getJoin():Join = {join}
-  def getFilters():Filters = {filters}
-  def getAggregations():Aggregations = {aggregations}
-}
-
-case class IR(val statements:List[Rule]) {
-  def this(){this(List())}
-  def getNumRules():Int = {statements.length}
-  def getRule(i:Int):Rule = {statements(i)}
-}
-
 ///////////////////////////////////////////////////////////
 //From here down is just helper methods to bind to python.
 //Should not need to use unless you are modifying the python
@@ -129,6 +129,9 @@ class IRBuilder(){
   val rules = ListBuffer[Rule]()
   def addRule(rule:Rule) {
     rules += rule
+  }
+  def addRules(rule:List[Rule]) {
+    rules ++= rule
   }
   def build():IR = {
     IR(rules.toList)
