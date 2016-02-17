@@ -44,6 +44,7 @@ class IR:
 class RULE:
   def __init__(self,
     result,
+    recursion,
     order,
     project,
     operation,
@@ -53,6 +54,7 @@ class RULE:
     ):
     
     if not isinstance(result,RESULT) or \
+      not isinstance(recursion,RECURSION) or \
       not isinstance(order,ORDER) or \
       not isinstance(project,PROJECT) or \
       not isinstance(operation,OPERATION) or \
@@ -63,6 +65,7 @@ class RULE:
 
     self.duncecap = jpype.JPackage('duncecap')
     self.result = result
+    self.recursion = recursion
     self.order = order
     self.project = project
     self.operation = operation
@@ -72,6 +75,7 @@ class RULE:
 
   def python2java(self):
     javaResult = self.result.python2java(self.duncecap)
+    javaRecursion = self.recursion.python2java(self.duncecap)
     javaOrder = self.order.python2java(self.duncecap)
     javaProject = self.project.python2java(self.duncecap)
     javaOperation = self.operation.python2java(self.duncecap)
@@ -80,6 +84,7 @@ class RULE:
     javaFilter = self.filters.python2java(self.duncecap)
     return self.duncecap.Rule(
       javaResult,
+      javaRecursion,
       javaOrder,
       javaProject,
       javaOperation,
@@ -90,17 +95,19 @@ class RULE:
   @staticmethod
   def java2python(jobject):
     result = RESULT.java2python(jobject.getResult())
+    recursion = RECURSION.java2python(jobject.getRecursion())
     order = ORDER.java2python(jobject.getOrder())
     project = PROJECT.java2python(jobject.getProject())
     operation = OPERATION.java2python(jobject.getOperation())
     join = JOIN.java2python(jobject.getJoin())
     filters = FILTERS.java2python(jobject.getFilters())
     aggregates = AGGREGATES.java2python(jobject.getAggregations())
-    return RULE(result,order,project,operation,join,aggregates,filters)
+    return RULE(result,recursion,order,project,operation,join,aggregates,filters)
   
   def __repr__(self):
-    return """RULE :-\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s>""" \
+    return """RULE :-\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s>""" \
       % (self.result,\
+      self.recursion,\
       self.order,\
       self.project,\
       self.operation,\
@@ -127,6 +134,32 @@ class RESULT:
 
   def __repr__(self):
     return """RESULT: %s """ % (self.rel)
+
+#Holder for recursive statements
+class RECURSION:
+  def __init__(self,criteria="",operation="",value=""):
+    self.criteria = criteria
+    self.operation = operation
+    self.value = value
+
+  def python2java(self,duncecap):
+    return duncecap.RecursionBuilder().build(
+      self.criteria,
+      self.operation,
+      self.value)
+
+  @staticmethod
+  def java2python(jobject):
+    if jobject.isEmpty():
+      return RECURSION()
+    else:
+      return RECURSION(
+        strip_unicode(jobject.getCriteria()),
+        strip_unicode(jobject.getOperation()),
+        strip_unicode(jobject.getValue()))
+
+  def __repr__(self):
+    return """RECURSION: %s %s %s """ % (self.criteria,self.operation,self.value)
 
 #Order attributes are processed in NPRR
 class ORDER:

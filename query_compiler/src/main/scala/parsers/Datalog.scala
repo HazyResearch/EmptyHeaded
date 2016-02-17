@@ -34,18 +34,37 @@ object DatalogParser extends RegexParsers {
    Result(Rel(id,Attributes(attrNames),Annotations(annoNames)))
   }
 
-  def datalogRule:Parser[Rule] = result ^^ {
-    case rslt => {
+  def convergenceCriteria:Parser[String] = """i|c""".r
+  def convergenceOp:Parser[String] = """=|<=|<|>|>=""".r
+  def numericalValue:Parser[String] = """\d+\.?\d*""".r
+  def convergenceExpression:Parser[Recursion] = "*[" ~> convergenceCriteria ~ convergenceOp ~ numericalValue <~ "]" ^^ {
+    case cc~co~cv => {
+      val criteria = cc match {
+        case "i" => ITERATIONS()
+        case _ => throw new Exception("Convergance criteria "+cc+" not supported.")
+      }
+      val operation = co match {
+        case "=" => EQUALS()
+        case _ => throw new Exception("Convergance operation "+co+" not supported.")
+      }
+      Recursion(criteria,operation,cv)
+    }
+  }
+
+  def datalogRule:Parser[Rule] = result ~ opt(convergenceExpression) ^^ {
+    case rslt~ce => {
       val relR = new Rel("R",Attributes(List("a","b")),Annotations(List()))
       
       val order = Order(Attributes(List("a","b")))
+      val recursion = None
       val project = Project(Attributes(List()))
       val operation = Operation("*")
       val join = Join(List(relR))
       val aggregations = Aggregations(List(new Aggregation(new SUM(),Attributes(List("a")),"1","")))
       val filters = Filters(List(new Selection("a",new EQUALS(),"1.0")))
       println(rslt)
-      new Rule(rslt,order,project,operation,join,aggregations,filters)
+      println(ce)
+      new Rule(rslt,recursion,order,project,operation,join,aggregations,filters)
     }
   }
 

@@ -10,6 +10,7 @@ case class IR(val statements:List[Rule]) {
 
 case class Rule(
   val result:Result,
+  val recursion:Option[Recursion],
   val order:Order,
   val project:Project,
   val operation:Operation,
@@ -18,6 +19,7 @@ case class Rule(
   val filters:Filters
 ) {
   def getResult():Result = {result}
+  def getRecursion():Option[Recursion] = {recursion}
   def getOrder():Order = {order}
   def getProject():Project = {project}
   def getOperation():Operation = {operation}
@@ -43,6 +45,24 @@ case class Result(val rel:Rel){
   def getRel():Rel = {rel}
 }
 
+abstract class ConverganceCriteria {}
+
+case class ITERATIONS() extends ConverganceCriteria {}
+
+case class Recursion(
+  val criteria:ConverganceCriteria, 
+  val operation:Op, 
+  val value:String) {
+  def getCriteria():String = {
+    criteria match {
+      case i:ITERATIONS => "iterations"
+      case _ => throw new Exception("Convergance criteria not supported.")
+    }
+  }
+  def getOperation():String = {operation.value}
+  def getValue():String = {value}
+}
+
 case class Order(val attrs:Attributes){
   def getAttributes():Array[String] = {attrs.values.toArray}
 }
@@ -61,19 +81,19 @@ case class Join(val rels:List[Rel]){
 }
 
 case class Selection(val attr:String, 
-  val operation:SelectionOp,
+  val operation:Op,
   val value:String) {
   def getAttr():String = {attr}
   def getOperation():String = {operation.value}
   def getValue():String = {value}
 }
 
-abstract class SelectionOp{
+abstract class Op{
   val value:String = ""
 }
 
 //FIXME: ADD MORE OPS
-case class EQUALS() extends SelectionOp {
+case class EQUALS() extends Op {
   override val value = "="
 }
 
@@ -164,7 +184,7 @@ class AggregationsBuilder(){
 
 class FilterBuilder(){
   val filters = ListBuffer[Selection]()
-  private def getOp(op:String) : SelectionOp = {
+  private def getOp(op:String) : Op = {
     op match {
       case "=" => EQUALS()
       case _ =>
@@ -189,5 +209,21 @@ class JoinBuilder(){
   }
   def build():Join ={
     Join(joins.toList)
+  }
+}
+
+class RecursionBuilder(){
+  def build(criteria:String,op:String,value:String):Option[Recursion] = {
+    (criteria,op,value) match {
+      case ("","","") => None
+      case ("iterations",o,v) => {
+        val operation = o match {
+          case "=" => EQUALS()
+          case _ => throw new Exception("Not supported.")
+        }
+        Some(Recursion(ITERATIONS(),operation,v))
+      }
+      case _ => throw new Exception("Not supported.")
+    }
   }
 }
