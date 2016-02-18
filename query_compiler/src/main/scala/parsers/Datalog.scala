@@ -141,15 +141,6 @@ object DatalogParser extends RegexParsers {
       val order = Order(Attributes(attrs)) //just sorted before GHD optimizer
       val project = Project(Attributes(projectedAttrs))
       val aggregations = Aggregations(aggs_in)
-      println("\nSTATEMENT")
-      println(rslt)
-      println(ce)
-      println(jt)
-      println(order)
-      println(project)
-      println(join)
-      println(aggregations)
-      println(filters)
       new Rule(rslt,ce,jt,order,project,join,aggregations,filters)
     }
   }

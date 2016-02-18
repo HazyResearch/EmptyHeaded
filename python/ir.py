@@ -15,7 +15,7 @@ class RELATION:
     self.annotations = annotations
   
   def __repr__(self):
-    return """[%s,%s,%s]""" % (self.name,\
+    return """[%s %s,%s]""" % (self.name,\
       self.attributes,\
       self.annotations)
 
@@ -153,10 +153,11 @@ class RECURSION:
     if jobject.isEmpty():
       return RECURSION()
     else:
+      newobj = jobject.get()
       return RECURSION(
-        strip_unicode(jobject.getCriteria()),
-        strip_unicode(jobject.getOperation()),
-        strip_unicode(jobject.getValue()))
+        newobj.getCriteria(),
+        newobj.getOperation(),
+        newobj.getValue())
 
   def __repr__(self):
     return """RECURSION: %s %s %s """ % (self.criteria,self.operation,self.value)

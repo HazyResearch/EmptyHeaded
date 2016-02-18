@@ -16,6 +16,8 @@ class SQL(val query:String) {
 //Wrapper class to parse Datalog
 class Datalog(val query:String) {
   def parse():IR ={
-    DatalogParser.run(query)
+    val ir = DatalogParser.run(query)
+    println(ir)
+    ir
   }
 }
