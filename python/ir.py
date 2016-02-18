@@ -45,9 +45,9 @@ class RULE:
   def __init__(self,
     result,
     recursion,
+    operation,
     order,
     project,
-    operation,
     join,
     aggregates,
     filters,
@@ -55,9 +55,9 @@ class RULE:
     
     if not isinstance(result,RESULT) or \
       not isinstance(recursion,RECURSION) or \
+      not isinstance(operation,OPERATION) or \
       not isinstance(order,ORDER) or \
       not isinstance(project,PROJECT) or \
-      not isinstance(operation,OPERATION) or \
       not isinstance(join,JOIN) or \
       not isinstance(aggregates,AGGREGATES) or \
       not isinstance(filters,FILTERS):
@@ -66,9 +66,9 @@ class RULE:
     self.duncecap = jpype.JPackage('duncecap')
     self.result = result
     self.recursion = recursion
+    self.operation = operation
     self.order = order
     self.project = project
-    self.operation = operation
     self.join = join
     self.aggregates = aggregates
     self.filters = filters
@@ -76,18 +76,18 @@ class RULE:
   def python2java(self):
     javaResult = self.result.python2java(self.duncecap)
     javaRecursion = self.recursion.python2java(self.duncecap)
+    javaOperation = self.operation.python2java(self.duncecap)
     javaOrder = self.order.python2java(self.duncecap)
     javaProject = self.project.python2java(self.duncecap)
-    javaOperation = self.operation.python2java(self.duncecap)
     javaJoin = self.join.python2java(self.duncecap)
     javaAgg = self.aggregates.python2java(self.duncecap)
     javaFilter = self.filters.python2java(self.duncecap)
     return self.duncecap.Rule(
       javaResult,
       javaRecursion,
+      javaOperation,
       javaOrder,
       javaProject,
-      javaOperation,
       javaJoin,
       javaAgg,
       javaFilter)
@@ -96,21 +96,21 @@ class RULE:
   def java2python(jobject):
     result = RESULT.java2python(jobject.getResult())
     recursion = RECURSION.java2python(jobject.getRecursion())
+    operation = OPERATION.java2python(jobject.getOperation())
     order = ORDER.java2python(jobject.getOrder())
     project = PROJECT.java2python(jobject.getProject())
-    operation = OPERATION.java2python(jobject.getOperation())
     join = JOIN.java2python(jobject.getJoin())
     filters = FILTERS.java2python(jobject.getFilters())
     aggregates = AGGREGATES.java2python(jobject.getAggregations())
-    return RULE(result,recursion,order,project,operation,join,aggregates,filters)
+    return RULE(result,recursion,operation,order,project,join,aggregates,filters)
   
   def __repr__(self):
     return """RULE :-\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s>""" \
       % (self.result,\
       self.recursion,\
+      self.operation,\
       self.order,\
       self.project,\
-      self.operation,\
       self.join,\
       self.aggregates,\
       self.filters)
@@ -276,14 +276,15 @@ class FILTERS:
 
 #Aggregations over attributes.
 class AGGREGATE:
-  def __init__(self,operation="",attributes=[],init="",expression=""):
+  def __init__(self,annotation="",operation="",attributes=[],init="",expression=""):
+    self.annotation = annotation
     self.operation = operation
     self.attributes = attributes
     self.init = init
     self.expression = expression
 
   def __repr__(self):
-    return """(%s,%s,%s,%s)""" % (self.operation,self.attributes,self.init,self.expression)
+    return """(%s,%s,%s,%s,%s)""" % (self.annotation,self.operation,self.attributes,self.init,self.expression)
 
 
 class AGGREGATES:
@@ -297,6 +298,7 @@ class AGGREGATES:
     aggBuilder = duncecap.AggregationsBuilder()
     for agg in self.aggregates:
       aggBuilder.addAggregation(
+        agg.annotation,
         agg.operation,
         agg.attributes,
         agg.init,
@@ -309,6 +311,7 @@ class AGGREGATES:
     aggs = []
     for i in range(0,nAggs):
       aggs.append(AGGREGATE(
+        jobject.getAnnotation(i),
         jobject.getOperation(i),
         strip_unicode(jobject.getAttributes(i)),
         jobject.getInit(i),

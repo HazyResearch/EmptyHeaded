@@ -23,9 +23,9 @@ db = Database.from_existing("db")
 rule = RULE(
   RESULT(RELATION(name="Triangle",attributes=["a","b","c"])),
   RECURSION(),
+  OPERATION(operation="*"),
   ORDER(attributes=["a","b","c"]),
   PROJECT(attributes=[]),
-  OPERATION(operation="*"),
   JOIN([
     RELATION(name="R",attributes=["a","b"]),
     RELATION(name="R",attributes=["b","c"]),
