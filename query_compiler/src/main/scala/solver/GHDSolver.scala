@@ -58,7 +58,7 @@ object GHDSolver {
 
   def stitchTogether(G_0:GHDNode,
                      G_i:List[GHDNode],
-                     componentPlus: List[Set[Attr]],
+                     componentPlus: List[Set[String]],
                      agg:Set[String]): GHDNode = {
     val G_0_nodes = G_0.toList
     G_i.zip(componentPlus).foreach({ case (g_i, compPlus) => {
@@ -72,32 +72,32 @@ object GHDSolver {
     return G_0
   }
 
-  def getCharacteristicHypergraphEdges(comp: Set[QueryRelation], compPlus: Set[String], output: Set[String]): mutable.Set[QueryRelation] = {
-    val characteristicHypergraphEdges:mutable.Set[QueryRelation] = mutable.Set[QueryRelation](comp.toList:_*)
-    characteristicHypergraphEdges += QueryRelationFactory.createImaginaryQueryRelationWithNoSelects(compPlus intersect output)
+  def getCharacteristicHypergraphEdges(comp: Set[OptimizerRel], compPlus: Set[String], output: Set[String]): mutable.Set[OptimizerRel] = {
+    val characteristicHypergraphEdges:mutable.Set[OptimizerRel] = mutable.Set[OptimizerRel](comp.toList:_*)
+    characteristicHypergraphEdges += OptimizerRel.createImaginaryOptimizerRelWithNoSelects(compPlus intersect output)
     return characteristicHypergraphEdges
   }
 
-  def getAttrSet(rels: List[QueryRelation]): Set[String] = {
+  def getAttrSet(rels: List[OptimizerRel]): Set[String] = {
     return rels.foldLeft(Set[String]())(
-      (accum: Set[String], rel : QueryRelation) => accum | rel.attrNames.toSet[String])
+      (accum: Set[String], rel:OptimizerRel) => accum | rel.attrs.values.toSet[String])
   }
 
-  private def getConnectedComponents(rels: mutable.Set[QueryRelation],
-                                     comps: List[List[QueryRelation]],
+  private def getConnectedComponents(rels: mutable.Set[OptimizerRel],
+                                     comps: List[List[OptimizerRel]],
                                      ignoreAttrs: Set[String],
-                                     reusable:Set[QueryRelation]): List[List[QueryRelation]] = {
+                                     reusable:Set[OptimizerRel]): List[List[OptimizerRel]] = {
     if (rels.isEmpty) return comps
     val (component, newReusable) = getOneConnectedComponent(rels, ignoreAttrs, reusable)
     return getConnectedComponents(rels, component::comps, ignoreAttrs, newReusable)
   }
 
-  private def getOneConnectedComponent(rels: mutable.Set[QueryRelation],
+  private def getOneConnectedComponent(rels: mutable.Set[OptimizerRel],
                                        ignoreAttrs: Set[String],
-                                       reusable:Set[QueryRelation]): (List[QueryRelation], Set[QueryRelation]) = {
+                                       reusable:Set[OptimizerRel]): (List[OptimizerRel], Set[OptimizerRel]) = {
     val curr = rels.toList.sortBy(rel => -rel.nonSelectedAttrNames.size).head
     rels -= curr
-    val component = DFS(mutable.LinkedHashSet[QueryRelation](curr), curr, rels, ignoreAttrs)
+    val component = DFS(mutable.LinkedHashSet[OptimizerRel](curr), curr, rels, ignoreAttrs)
     val alsoCovered = getCoveredIfSelectsIgnored(component, rels, rels ++ reusable)
     return (component:::alsoCovered.toList, alsoCovered ++ reusable)
   }
@@ -127,7 +127,7 @@ object GHDSolver {
     return covered.toSet
   }
 
-  private def DFS(seen: mutable.Set[Rel], curr: Rel, rels: mutable.Set[Rel], ignoreAttrs: Set[String]): List[Rel] = {
+  private def DFS(seen: mutable.Set[OptimizerRel], curr: OptimizerRel, rels: mutable.Set[OptimizerRel], ignoreAttrs: Set[String]): List[OptimizerRel] = {
     for (rel <- rels.toList) {
       // if these two hyperedges are connected
       if (!((curr.attrs.values.toSet[String] & rel.attrs.values.toSet[String]) &~ ignoreAttrs).isEmpty) {
@@ -154,8 +154,8 @@ object GHDSolver {
 
     // if the concordance condition is satisfied, figure out what components you just
     // partitioned your graph into, and do ghd on each of those disconnected components
-    val relations = mutable.LinkedHashSet[Rel]() ++ leftoverBags
-    return Some(getConnectedComponents(relations, List[List[Rel]](), getAttrSet(chosen).toSet[String], Set()))
+    val relations = mutable.LinkedHashSet[OptimizerRel]() ++ leftoverBags
+    return Some(getConnectedComponents(relations, List[List[OptimizerRel]](), getAttrSet(chosen).toSet[String], Set()))
   }
 
   /**
@@ -165,7 +165,7 @@ object GHDSolver {
    */
   private def getListsOfPossibleSubtrees(partitions: List[List[OptimizerRel]], parentAttrs: Set[String]): List[List[GHDNode]] = {
     assert(!partitions.isEmpty)
-    val subtreesPerPartition: List[List[GHDNode]] = partitions.map((l: List[Rel]) => getDecompositions(l, None, parentAttrs))
+    val subtreesPerPartition: List[List[GHDNode]] = partitions.map((l: List[OptimizerRel]) => getDecompositions(l, None, parentAttrs))
     return subtreesPerPartition.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)
   }
 

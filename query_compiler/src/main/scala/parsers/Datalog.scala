@@ -10,12 +10,10 @@ package object attr {
   type SelectionOp = String
   type SelectionVal = String
   type AttrInfo = (Attr, SelectionOp, SelectionVal)
-  type AggInfo = Map[String, ParsedAggregate]
   type AnnotationType = String
 }
 
 case class ParserFailureException() extends Exception(s"""ParserFailureException""")
-
 
 /*
  A datalog parser which parsers EmptyHeaded datalog

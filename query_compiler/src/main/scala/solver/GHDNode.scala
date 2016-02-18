@@ -3,7 +3,6 @@ package duncecap
 import java.util
 
 import duncecap.attr._
-import duncecap._
 import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 

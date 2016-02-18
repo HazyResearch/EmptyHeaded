@@ -8,16 +8,15 @@ case class IR(val statements:List[Rule]) {
   def getRule(i:Int):Rule = {statements(i)}
 }
 
-case class Rule(
-                 val result:Result,
-                 val recursion:Option[Recursion],
-                 val operation:Operation,
-                 val order:Order,
-                 val project:Project,
-                 val join:Join,
-                 val aggregations:Aggregations,
-                 val filters:Filters
-                 ) {
+case class Rule(val result:Result,
+                val recursion:Option[Recursion],
+                val operation:Operation,
+                val order:Order,
+                val project:Project,
+                val join:Join,
+                val aggregations:Aggregations,
+                val filters:Filters) {
+
   def getResult():Result = {result}
   def getRecursion():Option[Recursion] = {recursion}
   def getOperation():Operation = {operation}
@@ -88,8 +87,7 @@ case class Selection(val attr:String,
   def getValue():String = { value }
 }
 
-
-abstract class Op{
+abstract class Op {
   val value:String = ""
 }
 
@@ -124,7 +122,7 @@ case class Aggregation(
   val expression:String)
 
 
-case class Aggregations(val aggregations:List[Aggregation]){
+case class Aggregations(val aggregations:List[Aggregation]) {
   def getNumAggregations():Int = {aggregations.length}
   def getAnnotation(i:Int):String = {aggregations(i).annotation}
   def getDatatype(i:Int):String = {aggregations(i).datatype}
@@ -204,7 +202,7 @@ class AggregationsBuilder() {
   }
 }
 
-class FilterBuilder(){
+class FilterBuilder() {
   val filters = ListBuffer[Selection]()
 
   private def getOp(op:String) : Op = {
@@ -228,7 +226,7 @@ class FilterBuilder(){
   }
 }
 
-class JoinBuilder(){
+class JoinBuilder() {
   val joins = ListBuffer[Rel]()
 
   def addRel(name:String,attrs:Array[String],anno:Array[String]) {
@@ -240,7 +238,7 @@ class JoinBuilder(){
   }
 }
 
-class RecursionBuilder(){
+class RecursionBuilder() {
   def build(criteria:String,op:String,value:String):Option[Recursion] = {
     (criteria,op,value) match {
       case ("","","") => None

@@ -1,16 +1,12 @@
 package duncecap
 
-import java.util
-
 import duncecap.attr.Attr
-import org.apache.commons.math3.optim.linear._
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
 import scala.collection.mutable
 
 class GHD(val root:GHDNode,
           val queryRelations:List[OptimizerRel],
-          val joinAggregates:Map[String, ParsedAggregate],
+          val joinAggregates:Map[String, Aggregation],
           val outputRelation:OptimizerRel) extends QueryPlanPostProcessor {
   val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation)
   var depth: Int = -1
@@ -35,15 +31,15 @@ class GHD(val root:GHDNode,
   }
 
   private def getTopDownPassIterators(): List[TopDownPassIterator] = {
-    if (outputRelation.attrNames.find(!root.attrSet.contains(_)).isEmpty) {
+    if (outputRelation.attrs.values.find(!root.attrSet.contains(_)).isEmpty) {
       // no need to do the top down pass since the root has all the materialized attrs
       return List[TopDownPassIterator]()
     }
     attrToRels = PlanUtil.createAttrToRelsMapping(attributeOrdering.toSet, bagOutputs)
-    lastMaterializedAttr = if (outputRelation.attrNames.isEmpty) {
+    lastMaterializedAttr = if (outputRelation.attrs.values.isEmpty) {
       None
     } else {
-      Some(outputRelation.attrNames.last)
+      Some(outputRelation.attrs.values.last)
     }
     if (lastMaterializedAttr.isDefined) {
       nextAggregatedAttr = attributeOrdering
@@ -52,7 +48,7 @@ class GHD(val root:GHDNode,
     }
     val aggregatedPrevNextInfo = PlanUtil.getPrevAndNextAttrNames(
       PlanUtil.getOrderedAttrsWithAccessor(attributeOrdering, attrToRels),
-      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr)))
+      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrs.values.contains(attr)))
     return getTopDownPassIterators(mutable.Set[Attr](), mutable.Set[GHDNode](root), aggregatedPrevNextInfo)
   }
 
@@ -62,7 +58,7 @@ class GHD(val root:GHDNode,
     val newFrontier = mutable.Set[GHDNode]()
     var prevNextAggLeft = prevNextAgg
     val iterators = f_in.map(node => {
-      val newAttrs = node.outputRelation.attrNames.filter(attrName => !seen.contains(attrName))
+      val newAttrs = node.outputRelation.attrs.values.filter(attrName => !seen.contains(attrName))
       newAttrs.map(newAttr => seen.add(newAttr))
       val prevNextAggThisBag = prevNextAggLeft.take(newAttrs.size)
       prevNextAggLeft = prevNextAgg.drop(newAttrs.size)

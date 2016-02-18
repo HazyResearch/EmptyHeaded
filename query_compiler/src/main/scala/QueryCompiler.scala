@@ -4,16 +4,6 @@ import java.io._
 
 import scala.collection.mutable.ListBuffer
 
-
-case class Config(directory: Option[String] = None,
-                  dbConfig:String = "",
-                  nprrOnly:Boolean = false,
-                  bagDedup:Boolean = true,
-                  codeGen:Option[String] = None,
-                  readQueryFromFile:Boolean = false,
-                  query:String = "",
-                  explain:Boolean = false)
-
 //Defines schema types for relations
 case class Schema(
   val externalAttributeTypes:List[String], 
@@ -122,7 +112,7 @@ object QueryCompiler {
     "float64" -> "double"
   )
 
-  //Special builder to conver arrays to lists 
+  //Special builder to convert arrays to lists
   def buildSchema(attrTypes:Array[String],annoTypes:Array[String]) : Schema = {
     Schema(attrTypes.toList, annoTypes.toList)
   }

@@ -4,16 +4,15 @@ import duncecap.attr._
 
 import scala.collection.immutable.TreeSet
 
-abstract class EHNode(val rels: List[QueryRelation]) {
+abstract class EHNode(val rels: List[OptimizerRel]) {
   val attrSet = rels.foldLeft(TreeSet[String]())(
-    (accum: TreeSet[String], rel: QueryRelation) => accum | TreeSet[String](rel.attrNames: _*))
-
-  var attrToRels:Map[Attr,List[QueryRelation]] = PlanUtil.createAttrToRelsMapping(attrSet, rels)
+    (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
+  var attrToRels:Map[Attr,List[OptimizerRel]] = PlanUtil.createAttrToRelsMapping(attrSet, rels)
   var attrToSelection:Map[Attr,List[QueryPlanSelection]] = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
-  var outputRelation:QueryRelation = null
+  var outputRelation:OptimizerRel = null
   var attributeOrdering: List[Attr] = null
   var children: List[GHDNode] = List()
-  var scalars = List[QueryRelation]()
+  var scalars = List[OptimizerRel]()
 
   def setAttributeOrdering(ordering: List[Attr] )
 
@@ -33,7 +32,7 @@ abstract class EHNode(val rels: List[QueryRelation]) {
     PlanUtil.getOrderedAttrsWithAccessor(attributeOrdering, attrToRels)
   }
 
-  private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,ParsedAggregate]): Option[Attr] = {
+  private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,Aggregation]): Option[Attr] = {
     if (!outputRelation.attrNames.isEmpty && outputRelation.attrNames.last == attr) {
       val selectedAttrs = attributeOrdering.takeWhile(a => attrToSelection.contains(a) && !attrToSelection(a).isEmpty)
       if (!selectedAttrs.isEmpty) {
