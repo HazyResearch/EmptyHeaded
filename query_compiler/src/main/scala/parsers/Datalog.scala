@@ -71,6 +71,8 @@ object DatalogParser extends RegexParsers {
   def findStar = """\*""".r ^^ {case a => List[String](a)}
   def aggregateStatement = ("(" ~> (findStar | attrList)) ~ (aggInit <~ ")")
 
+  def annoTypes = """uint32|int32|int64|uint64|float32|float64""".r
+
   //ughh, I couldn't get scala to just match everything BUT these strings
   def aggOp:Parser[(String,String)] = sumagg | countagg | minagg //"""SUM|COUNT|MIN""".r
   def sumagg:Parser[(String,String)] = """(.*)SUM""".r ^^ {case a =>
@@ -86,12 +88,13 @@ object DatalogParser extends RegexParsers {
   def endaggexpression:Parser[String] = """[^\]]*""".r
   //case where we assign a value to the last level of the trie.
   def emptyaggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
-    (identifierName <~ "<-") ~ ("[" ~> endaggexpression <~ "]") ^^ {case a~b => 
+    (identifierName <~ ":") ~ (annoTypes <~ "<-") ~ ("[" ~> endaggexpression <~ "]") ^^ {case a~t~b => 
       //map COUNT to a SUM with an init value of 1
       val (opin,initin) = ("CONST",b)
       
       val ab = new AggregationsBuilder()
       val agg = Aggregation(a,
+        QueryCompiler.validAnnotationTypes(t),
         ab.getOp(opin),
         Attributes(List()),
         initin,
@@ -100,13 +103,14 @@ object DatalogParser extends RegexParsers {
   }
   //normal case
   def fullaggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
-    (identifierName <~ "<-") ~ ("[" ~> aggOp) ~ aggregateStatement ~ (endaggexpression <~ "]") ^^ {case a~b~(attrs~init)~d => 
+    (identifierName <~ ":") ~ (annoTypes <~ "<-") ~ ("[" ~> aggOp) ~ aggregateStatement ~ (endaggexpression <~ "]") ^^ {case a~t~b~(attrs~init)~d => 
       val (startexp,op) = b
       //map COUNT to a SUM with an init value of 1
       val (opin,initin) = if(op=="COUNT") ("SUM","1") else (op,init)
       
       val ab = new AggregationsBuilder()
       val agg = Aggregation(a,
+        "long",
         ab.getOp(opin),
         Attributes(attrs),
         initin,
@@ -149,7 +153,7 @@ object DatalogParser extends RegexParsers {
           case ("","+") => "0"
           case _ => agg.init
         }
-        Aggregation(agg.annotation,agg.operation,newAttrs,newinit,agg.expression)
+        Aggregation(agg.annotation,agg.datatype,agg.operation,newAttrs,newinit,agg.expression)
       })
 
       //a little logic to figure out which attrs are projected

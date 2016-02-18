@@ -277,15 +277,16 @@ class FILTERS:
 
 #Aggregations over attributes.
 class AGGREGATE:
-  def __init__(self,annotation="",operation="",attributes=[],init="",expression=""):
+  def __init__(self,annotation="",datatype="",operation="",attributes=[],init="",expression=""):
     self.annotation = annotation
+    self.datatype = datatype
     self.operation = operation
     self.attributes = attributes
     self.init = init
     self.expression = expression
 
   def __repr__(self):
-    return """(%s,%s,%s,%s,%s)""" % (self.annotation,self.operation,self.attributes,self.init,self.expression)
+    return """(%s,%s,%s,%s,%s,%s)""" % (self.annotation,self.datatype,self.operation,self.attributes,self.init,self.expression)
 
 
 class AGGREGATES:
@@ -300,6 +301,7 @@ class AGGREGATES:
     for agg in self.aggregates:
       aggBuilder.addAggregation(
         agg.annotation,
+        agg.type,
         agg.operation,
         agg.attributes,
         agg.init,
@@ -313,6 +315,7 @@ class AGGREGATES:
     for i in range(0,nAggs):
       aggs.append(AGGREGATE(
         jobject.getAnnotation(i),
+        jobject.getDatatype(i),
         jobject.getOperation(i),
         strip_unicode(jobject.getAttributes(i)),
         jobject.getInit(i),

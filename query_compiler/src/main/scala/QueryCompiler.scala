@@ -153,6 +153,7 @@ object QueryCompiler {
     "uint32" -> "uint32_t",
     "int32" -> "int32_t",
     "int64" -> "int64_t",
+    "uint64" -> "uint64_t",
     "float32" -> "float",
     "float64" -> "double"
   )

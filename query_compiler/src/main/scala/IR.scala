@@ -116,6 +116,7 @@ case class CONST() extends AggOp {
 
 case class Aggregation(
   val annotation:String,
+  val datatype:String,
   val operation:AggOp, 
   val attrs:Attributes,
   val init:String,
@@ -124,6 +125,7 @@ case class Aggregation(
 case class Aggregations(val aggregations:List[Aggregation]){
   def getNumAggregations():Int = {aggregations.length}
   def getAnnotation(i:Int):String = {aggregations(i).annotation}
+  def getDatatype(i:Int):String = {aggregations(i).datatype}
   def getOperation(i:Int):String = {aggregations(i).operation.value}
   def getAttributes(i:Int):Array[String] = {aggregations(i).attrs.values.toArray}
   def getInit(i:Int):String = {aggregations(i).init}
@@ -175,12 +177,14 @@ class AggregationsBuilder(){
   }
   def addAggregation(
     annotation:String,
+    datatype:String,
     operation:String,
     attrs:Array[String],
     init:String,
     expression:String) {
     aggregations += Aggregation(
       annotation,
+      datatype:String,
       getOp(operation),
       Attributes(attrs.toList),
       init,
