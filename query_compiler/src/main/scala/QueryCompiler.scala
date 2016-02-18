@@ -1,6 +1,9 @@
 package duncecap
 
-import java.io.{FileOutputStream, PrintStream, File}
+import java.io._
+
+import scala.collection.mutable.ListBuffer
+
 
 case class Config(directory: Option[String] = None,
                   dbConfig:String = "",
@@ -11,67 +14,124 @@ case class Config(directory: Option[String] = None,
                   query:String = "",
                   explain:Boolean = false)
 
-object QueryCompiler {
-  def readFile(file:String): String = {
-    val source = scala.io.Source.fromFile(file)
-    val line = try source.mkString finally source.close()
-    line
+//Defines schema types for relations
+case class Schema(
+  val externalAttributeTypes:List[String], 
+  val externalAnnotationTypes:List[String]
+  ) extends Serializable {
+  val attributeTypes:List[String] = checkAttributes()
+  val annotationTypes:List[String] = checkAnnotations()
+  def getAttributeTypes:Array[String] = {externalAttributeTypes.toArray}
+  def getAnnotationTypes:Array[String] = {externalAnnotationTypes.toArray}
+  
+  //Checks that the schema has valid types.
+  private def checkAttributes():List[String] = {
+    externalAttributeTypes.map(a => {
+      if(!QueryCompiler.validAttributeTypes.contains(a))
+        throw new Exception("Attribute type " + a + " in schema is not valid.")
+      QueryCompiler.validAnnotationTypes(a)
+    })
   }
-  def main(args:Array[String]): Unit = {
-    val parser = new scopt.OptionParser[Config]("target/start") {
-      head("Emptyheaded", "0.1")
-      opt[Unit]("explain") action { (_, c) =>
-        c.copy(explain = true) } text("show the query plan instead of running the query")
-      opt[String]('d', "directory") action { (x, c) =>
-        c.copy(directory = Some(x))} text("directory within EMPTYHEADED_HOME to write json output, by default prints to stdout when running just planner")
-      opt[String]('g', "codegen") action { (x, c) =>
-        c.copy(codeGen = Some(x))} text("File to JSON query plan, runs only code generation with this argument.")
-      opt[String]('c', "db-config") required() valueName("<file>") action { (x, c) =>
-        c.copy(dbConfig = x)} text("database config file")
-      opt[Unit]('n', "nprr-only") action { (_, c) =>
-        c.copy(nprrOnly = true)} text("whether to use only NPRR (single bag GHD), defaults to false")
-      opt[Unit]("no-bag-dedup") action { (_, c) =>
-        c.copy(bagDedup = false)} text("whether to deduplicate bags in the GHD")
-      opt[Unit]('f', "read-query-from-file") action { (_, c) =>
-        c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
-      opt[String]('q',"<query>") action { (x, c) =>
-        c.copy(query = x)} text("query")
-      help("help") text("prints this usage text")
-    }
+  private def checkAnnotations():List[String] = {
+    externalAnnotationTypes.map(a => {
+      if(!QueryCompiler.validAnnotationTypes.contains(a))
+        throw new Exception("Attribute type " + a + " in schema is not valid.")
+      QueryCompiler.validAnnotationTypes(a)
+    })
+  }
+}
 
-    parser.parse(args, Config()) map { config =>
-      Environment.fromJSON(config.dbConfig)
-      val queryString =
-        if (config.readQueryFromFile) {
-          readFile(config.query)
-        } else if(!config.codeGen.isDefined){
-          config.query
-        } else ""
-        
+//Defines relations
+case class Relation(
+  val name:String,  
+  val schema:Schema,
+  val filename:String,
+  val df:Boolean
+  ) extends Serializable {
+  def getName():String = {name}
+  def getSchema():Schema = {schema}
+  def getFilename():String = {filename}
+  def getDF():Boolean = {df}
+}
 
-      val queryPlans:QueryPlans = config.codeGen match {
-        case None => QueryPlans(DCParser.run(queryString, config))
-        case Some(g) => QP.fromJSON(g)
-      }
+//Configuration for the db
+case class Config(
+  val system:String, 
+  val numThreads:Int, 
+  val numSockets:Int,
+  val layout:String,
+  val memory:String
+  ) extends Serializable {
+  def getSystem():String = {system}
+  def getNumThreads():Int = {numThreads}
+  def getNumSockets():Int = {numSockets}
+  def getLayout():String = {layout}
+  def getMemory():String = {memory}
+}
 
-      val output = config.directory match {
-        case Some(d) => {
-          new PrintStream(new FileOutputStream(
-            new File(d + "/q"+queryString.hashCode+".json"),false))
-        } 
-        case _ => { 
-          System.out
-        }
-      }
+//Creates an instance of database (needed to compile queries)
+case class DBInstance(val folder:String, val config:Config) extends Serializable {
+  val relations:ListBuffer[Relation] = ListBuffer[Relation]()
+  def addRelation(r:Relation){
+    relations += r
+  }
+  def getFolder():String = {folder}
+  def getConfig():Config = {config}
+  def getNumRelations():Int = {relations.length}
+  def getRelation(i:Int) = {relations(i)}
+}
 
-      if (!config.explain) {
-        CPPGenerator.run(queryPlans)
-      } else {
-        output.print(queryPlans)
-      }
-      output.close
-    } getOrElse {
-      // arguments are bad, usage message will have been displayed
-    }
+//Main class which compilation runs out of
+class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
+  def getDBInstance():DBInstance = {db}
+
+  def createDB(){
+    CreateDB.loadAndEncode(db,hash)
+  }
+
+  //Parse a datalog statement and code generate it.
+  def datalog(query:String):String = {
+    val ir = DatalogParser.run(query)
+    println(ir)
+    "Query.cpp"
+  }
+}
+
+object QueryCompiler {
+  //acceptable attribute types
+  val validAttributeTypes = Map(
+    //"Boolean" -> ,
+    //"Byte",
+    "uint32" -> "uint32_t",
+    "int32" -> "int32_t",
+    "int64" -> "uint64_t",
+    "uint64" -> "int64_t"
+    //"String",
+    //"Float",
+    //"Double",
+    //"Date"
+    )
+
+  //All numeric types
+  val validAnnotationTypes = Map(
+    "uint32" -> "uint32_t",
+    "int32" -> "int32_t",
+    "int64" -> "int64_t",
+    "uint64" -> "uint64_t",
+    "float32" -> "float",
+    "float64" -> "double"
+  )
+
+  //Special builder to conver arrays to lists 
+  def buildSchema(attrTypes:Array[String],annoTypes:Array[String]) : Schema = {
+    Schema(attrTypes.toList, annoTypes.toList)
+  }
+  //Build from a schema saved on disk
+  def fromDisk(filename:String) : QueryCompiler = {
+    val fos = new FileInputStream(filename)
+    val oos = new ObjectInputStream(fos)
+    val myqc = oos.readObject().asInstanceOf[QueryCompiler]
+    oos.close()
+    myqc
   }
 }

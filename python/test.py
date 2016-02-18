@@ -12,18 +12,20 @@ graph = Relation(
   name="graph",
   dataframe=ratings)
 
-db = Database.create(
-  Config(),
-  "db",
-  [graph])
-db.build()
+#db = Database.create(
+#  Config(),
+#  "db",
+#  [graph])
+#db.build()
+
 db = Database.from_existing("db")
 
 rule = RULE(
   RESULT(RELATION(name="Triangle",attributes=["a","b","c"])),
+  RECURSION(),
+  OPERATION(operation="*"),
   ORDER(attributes=["a","b","c"]),
   PROJECT(attributes=[]),
-  OPERATION(operation="*"),
   JOIN([
     RELATION(name="R",attributes=["a","b"]),
     RELATION(name="R",attributes=["b","c"]),
@@ -33,7 +35,10 @@ rule = RULE(
 )
 
 ir = IR([rule])
-print "OPTIMIZE"
+jir = ir.python2java()
+ir = IR.java2python(jir)
+print ir.rules[0]
+
 db.optimize(ir)
 
 stop()
