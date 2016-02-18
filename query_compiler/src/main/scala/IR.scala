@@ -110,6 +110,9 @@ abstract class AggOp {
 case class SUM() extends AggOp {
   override val value = "+"
 }
+case class CONST() extends AggOp {
+  override val value = ""
+}
 
 case class Aggregation(
   val annotation:String,
@@ -165,6 +168,7 @@ class AggregationsBuilder(){
   def getOp(op:String) : AggOp = {
     op match {
       case "SUM" => SUM()
+      case "CONST" => CONST()
       case _ =>
         throw new Exception("Aggregation operation " + op + " not supported.")
     }

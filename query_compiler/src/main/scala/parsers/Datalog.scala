@@ -68,22 +68,53 @@ object DatalogParser extends RegexParsers {
     }
 
   def aggInit:Parser[String] = (";" ~> numericalValue) | emptyString ^^ { case a => a}
-  def aggOp:Parser[String] = """SUM|COUNT|MIN|CONST""".r
   def findStar = """\*""".r ^^ {case a => List[String](a)}
-  def aggregateStatement = aggOp ~ ("(" ~> (findStar | attrList)) ~ (aggInit <~ ")")
+  def aggregateStatement = ("(" ~> (findStar | attrList)) ~ (aggInit <~ ")")
 
-  def aggexpression1:Parser[String] = """[^(SUM|COUNT|MIN|CONST)]*""".r
-  def aggexpression2:Parser[String] = s"""[^\\]]*""".r
-  def aggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
-    (identifierName <~ "<-") ~ ("[" ~> aggexpression1) ~ aggregateStatement ~ (aggexpression2 <~ "]") ^^ {case a~b~(op~attrs~init)~d => 
+  //ughh, I couldn't get scala to just match everything BUT these strings
+  def aggOp:Parser[(String,String)] = sumagg | countagg | minagg //"""SUM|COUNT|MIN""".r
+  def sumagg:Parser[(String,String)] = """(.*)SUM""".r ^^ {case a =>
+    (a.replaceAll("SUM","AGG"),"SUM")
+  }
+  def countagg:Parser[(String,String)] = """(.*)COUNT""".r ^^ {case a =>
+    (a.replaceAll("COUNT","AGG"),"COUNT")
+  }
+  def minagg:Parser[(String,String)] = """(.*)MIN""".r ^^ {case a =>
+    (a.replaceAll("MIN","AGG"),"MIN")
+  }
+  
+  def endaggexpression:Parser[String] = """[^\]]*""".r
+  //case where we assign a value to the last level of the trie.
+  def emptyaggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
+    (identifierName <~ "<-") ~ ("[" ~> endaggexpression <~ "]") ^^ {case a~b => 
+      //map COUNT to a SUM with an init value of 1
+      val (opin,initin) = ("CONST",b)
+      
       val ab = new AggregationsBuilder()
       val agg = Aggregation(a,
-        ab.getOp(op),
-        Attributes(attrs),
-        init,
-        b+"$AGG$"+d)
+        ab.getOp(opin),
+        Attributes(List()),
+        initin,
+        b+"AGG")
       List((None,Some(agg),None))
-    }
+  }
+  //normal case
+  def fullaggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
+    (identifierName <~ "<-") ~ ("[" ~> aggOp) ~ aggregateStatement ~ (endaggexpression <~ "]") ^^ {case a~b~(attrs~init)~d => 
+      val (startexp,op) = b
+      //map COUNT to a SUM with an init value of 1
+      val (opin,initin) = if(op=="COUNT") ("SUM","1") else (op,init)
+      
+      val ab = new AggregationsBuilder()
+      val agg = Aggregation(a,
+        ab.getOp(opin),
+        Attributes(attrs),
+        initin,
+        startexp+d)
+      List((None,Some(agg),None))
+  }
+  def aggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = fullaggregation | emptyaggregation
+
 
   def clause:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = join | selection | aggregation
 
@@ -148,6 +179,4 @@ object DatalogParser extends RegexParsers {
   def notLastRule:Parser[List[Rule]] = datalogRule ~ ("." ~> rule) ^^ {case a~rest => a +: rest}
   def lastRule:Parser[List[Rule]] = datalogRule ^^ {case a => List(a)}
   def rule:Parser[List[Rule]] = notLastRule | lastRule | emptyStatement
-
-  def rules = rep1(rule)
 }
