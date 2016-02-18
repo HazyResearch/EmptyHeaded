@@ -1,6 +1,6 @@
-package DunceCap
+package duncecap
 
-import DunceCap.attr.Attr
+import duncecap.attr.Attr
 import net.liftweb.json._
 import org.scalatest.FunSuite
 

@@ -1,6 +1,6 @@
 package solver
 
-import DunceCap._
+import duncecap._
 import net.liftweb.json._
 import org.scalatest.FunSuite
 

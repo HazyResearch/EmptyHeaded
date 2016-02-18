@@ -1,7 +1,7 @@
 package solver
 
-import DunceCap.attr._
-import DunceCap.{AttrOrderingUtil, GHDNode, QueryRelationFactory}
+import duncecap.attr._
+import duncecap.{AttrOrderingUtil, GHDNode, QueryRelationFactory}
 import org.scalatest.FunSuite
 
 class AttributeOrderingTest extends FunSuite {

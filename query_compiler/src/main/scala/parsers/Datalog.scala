@@ -4,6 +4,16 @@ import scala.util.parsing.json._
 import scala.io._
 import scala.util.parsing.combinator.RegexParsers
 
+package object attr {
+  type Attr = String
+  type AttrType = String
+  type SelectionOp = String
+  type SelectionVal = String
+  type AttrInfo = (Attr, SelectionOp, SelectionVal)
+  type AggInfo = Map[String, ParsedAggregate]
+  type AnnotationType = String
+}
+
 /*
  A datalog parser which parsers EmptyHeaded datalog
  into our intermediate representation (IR.scala).

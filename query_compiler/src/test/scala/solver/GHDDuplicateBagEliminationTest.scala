@@ -1,6 +1,6 @@
-package DunceCap
+package duncecap
 
-import DunceCap.attr.{AttrInfo, Attr}
+import duncecap.attr.{AttrInfo, Attr}
 import org.scalatest.FunSuite
 
 class GHDDuplicateBagEliminationTest extends FunSuite {

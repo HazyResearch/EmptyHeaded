@@ -1,8 +1,8 @@
-package DunceCap
+package duncecap
 
 import org.scalatest.FunSuite
 
-import DunceCap.attr.Attr
+import duncecap.attr.Attr
 
 object QueryRelationFactory {
   def createQueryRelationWithNoSelects(attrs:List[Attr]): QueryRelation = {

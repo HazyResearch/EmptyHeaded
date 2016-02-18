@@ -1,6 +1,6 @@
 package parser
 
-import DunceCap._
+import duncecap._
 import org.scalatest.FunSuite
 
 class TypecheckTest extends FunSuite {
