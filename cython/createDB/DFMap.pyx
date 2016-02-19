@@ -69,6 +69,9 @@ ctypedef pair[size_t,myvector] mypair
 cdef extern from "loadAndEncode.hpp":
     void loadAndEncode(unordered_map[string,mypair]* map)
 
+cdef extern from "build.hpp":
+    void build(unordered_map[string,mypair]* map)
+
 cdef pair[size_t,myvector] get_pair(size_t a, myvector v):
   cdef pair[size_t,myvector] p
   p.first = a
@@ -136,6 +139,7 @@ cdef class #DFMap#:
         p = get_pair(length,v)
         self._dfmap.insert(get_final_pair(rel.name,p))
     loadAndEncode(self._dfmap)
+    build(self._dfmap)
 
   def __dealloc__(#DFMap# self):
     # Only call del if the C++ object is alive, 

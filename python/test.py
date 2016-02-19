@@ -12,14 +12,18 @@ graph = Relation(
   name="graph",
   dataframe=ratings)
 
-#db = Database.create(
-#  Config(),
-#  "db",
-#  [graph])
-#db.build()
+db = Database.create(
+  Config(),
+  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
+  [graph])
+db.build()
 
 db = Database.from_existing("db")
 
+print "LOADING"
+db.load("graph")
+
+comm="""
 rule = RULE(
   RESULT(RELATION(name="Triangle",attributes=["a","b","c"])),
   RECURSION(),
@@ -40,5 +44,5 @@ ir = IR.java2python(jir)
 print ir.rules[0]
 
 db.optimize(ir)
-
+"""
 stop()

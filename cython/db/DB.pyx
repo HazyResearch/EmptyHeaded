@@ -35,12 +35,12 @@ cdef class DB:
     os.system("cd $EMPTYHEADED_HOME/cython/load && ./build.sh && cd -")
 
     imp.acquire_lock()
-    fname = os.path.expandvars("$EMPTYHEADED_HOME/cython/load/Trie")+".so"
-    mod = imp.load_dynamic("Trie",fname)
+    fname = os.path.expandvars("$EMPTYHEADED_HOME/cython/load/PTrie")+".so"
+    mod = imp.load_dynamic("PTrie",fname)
     imp.release_lock()
 
     voidptr = PyCObject_FromVoidPtr(self._dbmap,NULL) #FIXME add destructor
-    return mod.Trie(voidptr)
+    return mod.PTrie(voidptr)
 
   def create(self,relations,dbhash):
     imp.acquire_lock()

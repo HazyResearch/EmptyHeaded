@@ -17,9 +17,10 @@ Output: (void*)Trie*
 */
 void* load(mymap* map){
   std::cout << "HERE LOADING AND INSERTING" << std::endl;
+  Trie<void*,ParMemoryBuffer>* mytrie = Trie<void*,ParMemoryBuffer>::load("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db/relations/graph/graph_0_1");
   ///std::cout << map->at("graph").size() << std::endl;
-  map->insert(std::pair<std::string,void*>("graph",NULL));
-  return NULL;
+  map->insert(std::pair<std::string,void*>("graph",mytrie));
+  return mytrie;
 }
 
 #endif

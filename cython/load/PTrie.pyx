@@ -11,6 +11,7 @@ from cpython.ref cimport PyObject
 import imp
 import os
 from cpython.cobject cimport PyCObject_AsVoidPtr
+cimport PTrie
 
 cdef extern from "load.hpp":
   # Imports definitions from a c header file
@@ -18,25 +19,22 @@ cdef extern from "load.hpp":
   # the extension definition in setup.py for proper compiling & linking
   void* load(unordered_map[string,void*]* _Triemap)
 
-cdef class Trie:
-  """ 
-  Maintains the map from (relation names -> trie*)
-  """
+cdef class PTrie:
   cdef:
     #Cython does not like storing vector[void*] in a unordered_map.
-    void* _TriePointer
+    Trie[void*,ParMemoryBuffer]* _TriePointer
 
-  def __cinit__(Trie self):
+  def __cinit__(PTrie self):
     self._TriePointer = NULL
 
-  def __init__(Trie self,tm):
+  def __init__(PTrie self,tm):
     _Triemap = \
       <unordered_map[string,void*]*>PyCObject_AsVoidPtr(tm)
     print "LOAD1: " + str(_Triemap.size())
-    self._TriePointer = load(_Triemap)
+    self._TriePointer = <Trie[void*,ParMemoryBuffer]*>load(_Triemap)
     print "LOAD2: " + str(_Triemap.size())
 
-  cdef int _check_alive(Trie self) except -1:
+  cdef int _check_alive(PTrie self) except -1:
     # Beacuse of the context manager protocol, the C++ object
     # might die before Trie self is reclaimed.
     # We therefore need a small utility to check for the
@@ -51,10 +49,10 @@ cdef class Trie:
   # is called deterministically and independently of 
   # the Python garbage collection.
 
-  def __enter__(Trie self):
+  def __enter__(PTrie self):
     self._check_alive()
     return self
 
-  def __exit__(Trie self, exc_tp, exc_val, exc_tb):
+  def __exit__(PTrie self, exc_tp, exc_val, exc_tb):
     self._TriePointer = NULL # inform __dealloc__
     return False # propagate exceptions

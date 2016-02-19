@@ -22,6 +22,24 @@ struct EncodedColumnStore {
 
   std::vector<size_t> annotation_bytes;
   std::vector<void*> annotation;
+  
+  EncodedColumnStore(
+    EncodedColumnStore * in,
+    std::vector<size_t> order){
+    num_rows = in->num_rows;
+    num_attributes = in->num_attributes;
+    num_annotations = in->num_annotations;
+
+    //perform a reordering
+    assert(order.size() == num_attributes);
+    for(size_t i = 0; i < num_attributes; i++){
+      max_set_size.push_back(in->max_set_size.at(order.at(i)));
+      data.push_back(in->data.at((order.at(i))));
+    }
+
+    annotation_bytes = in->annotation_bytes;
+    annotation = in->annotation;
+  }
 
   EncodedColumnStore(
     size_t num_rows_in,
@@ -122,8 +140,8 @@ struct EncodedColumnStore {
     max_set_size_in.resize(num_attributes_in);
     data_in.resize(num_attributes_in);
 
-    annotation_bytes_in.resize(num_attributes_in);
-    annotation_in.resize(num_attributes_in);
+    annotation_bytes_in.resize(num_annotations_in);
+    annotation_in.resize(num_annotations_in);
 
     for(size_t i = 0; i < num_attributes_in; i++){
       uint32_t mss;
