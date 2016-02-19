@@ -404,6 +404,7 @@ Trie<A,M>::Trie(
 
   //DEBUG
   /*
+  std::cout << "TRIEE BUULd" << std::endl;
   std::cout << num_columns << std::endl;
   for(size_t i = 0; i < num_rows; i++){
     for(size_t j = 0; j < num_columns; j++){
@@ -412,7 +413,7 @@ Trie<A,M>::Trie(
     std::cout << std::endl;
   }
   */
-
+  
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();

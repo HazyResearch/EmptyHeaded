@@ -94,7 +94,6 @@ Encoding<T>* Encoding<T>::from_binary(const std::string path){
     for(uint32_t index = 0; index < new_encoding->num_distinct; index++){
       T value;
       infile->read((char *)&value, sizeof(value));
-
       new_encoding->value_to_key.insert(std::make_pair(value,index));
       new_encoding->key_to_value.at(index) = value;
     }

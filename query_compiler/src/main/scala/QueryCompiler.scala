@@ -92,8 +92,8 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
   }
 
   //Parse a datalog statement and code generate it.
-  def load(rel:String) {
-    Load.run(db,db.relations(db.name2relation(rel)))
+  def genTrieWrapper(rel:String) {
+    Trie.run(db,db.relations(db.name2relation(rel)))
   }
 
   //Parse a datalog statement and code generate it.

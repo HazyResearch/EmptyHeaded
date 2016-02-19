@@ -17,12 +17,17 @@ dbhash = 0
 
 class Database:
   #pulls the data from EH into a pandas dataframe
-  def load(self,name):
-    print name
+  def get(self,name):
     #code generation
-    self.qc.load(name)
+    self.qc.genTrieWrapper(name)
     #execution
-    return self.backend.load(name)
+    return self.backend.get(name)
+
+  def load(self,name):
+    #code generation
+    self.qc.genTrieWrapper(name)
+    #execution
+    self.backend.load(name)
 
   #parses, codegens, and runs
   def sql(self,sql):

@@ -148,8 +148,6 @@ struct EncodedColumnStore {
       infile->read((char *)&mss, sizeof(mss));
       max_set_size_in.at(i) = mss;
 
-      size_t num_rows;
-      infile->read((char *)&num_rows, sizeof(num_rows));
       std::vector<uint32_t>* new_column = new std::vector<uint32_t>();
       new_column->resize(num_rows_in);
       for(size_t j = 0; j < num_rows_in; j++){

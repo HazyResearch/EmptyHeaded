@@ -20,10 +20,13 @@ graph = Relation(
 
 db = Database.from_existing("db")
 
-g = db.load("graph")
+g = db.get("graph")
 print g.annotated
 print g.num_rows
 print g.num_columns
+
+db.load("graph")
+print g.getDF()
 
 comm="""
 rule = RULE(

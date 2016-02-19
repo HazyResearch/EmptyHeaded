@@ -129,7 +129,9 @@ ColumnStore_${r.name}.push_back((void*)v_${i}->data());""")
 timer::stop_clock("READING ${r.name}", start_time);
 }""")
     })
+    s"mkdir ${db.folder}/encodings".!
     encodings.foreach(e => {
+      s"mkdir ${db.folder}/encodings/${e}".!
       code.append(s"""
 {
   auto start_time = timer::start_clock();

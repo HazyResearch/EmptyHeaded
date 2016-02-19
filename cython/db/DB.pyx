@@ -31,8 +31,8 @@ cdef class DB:
     voidptr = PyCObject_FromVoidPtr(self._dbmap,NULL) #FIXME add destructor
     return mod.c_query(voidptr)
 
-  def load(self,libname):
-    fname = self._folder+"/libs/load_"+libname
+  def get(self,libname):
+    fname = self._folder+"/libs/trie_"+libname
 
     os.system("cd "+fname+" && ./build.sh && cd - > /dev/null")
 
@@ -42,7 +42,22 @@ cdef class DB:
     imp.release_lock()
 
     voidptr = PyCObject_FromVoidPtr(self._dbmap,NULL) #FIXME add destructor
-    return eval("mod.PTrie_"+libname+"(voidptr)")
+    mytrie = eval("mod.PTrie_"+libname+"()")
+    mytrie.get(voidptr)
+    return mytrie
+
+  def load(self,libname):
+    fname = self._folder+"/libs/trie_"+libname
+
+    os.system("cd "+fname+" && ./build.sh && cd - > /dev/null")
+
+    imp.acquire_lock()
+    lname = fname+"/PTrie_"+libname+".so"
+    mod = imp.load_dynamic("PTrie_"+libname,lname)
+    imp.release_lock()
+
+    voidptr = PyCObject_FromVoidPtr(self._dbmap,NULL) #FIXME add destructor
+    mod.c_load(voidptr)
 
   def create(self,relations,dbhash):
     imp.acquire_lock()

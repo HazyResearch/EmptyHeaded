@@ -4,6 +4,7 @@
 # us to reuse the declaration in multiple .pyx modules.
 from libcpp cimport bool
 from libcpp.string cimport string
+from libc.stdint cimport uint32_t, uint64_t, int32_t, int64_t
 
 cdef extern from "Trie.hpp":
   cdef cppclass Trie[A,M]:
