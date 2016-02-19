@@ -12,16 +12,18 @@ graph = Relation(
   name="graph",
   dataframe=ratings)
 
-db = Database.create(
-  Config(),
-  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
-  [graph])
-db.build()
+#db = Database.create(
+#  Config(),
+#  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
+#  [graph])
+#db.build()
 
 db = Database.from_existing("db")
 
-print "LOADING"
-db.load("graph")
+g = db.load("graph")
+print g.annotated
+print g.num_rows
+print g.num_columns
 
 comm="""
 rule = RULE(

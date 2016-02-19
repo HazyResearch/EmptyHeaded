@@ -18,11 +18,11 @@ dbhash = 0
 class Database:
   #pulls the data from EH into a pandas dataframe
   def load(self,name):
+    print name
     #code generation
-    #FIXME
+    self.qc.load(name)
     #execution
-    self.backend.load(name)
-    print "Return a dataframe from the DB"
+    return self.backend.load(name)
 
   #parses, codegens, and runs
   def sql(self,sql):
@@ -58,7 +58,7 @@ class Database:
     #clean up the previous build
     os.system("""rm -rf """+storage_engine+"""/build && mkdir """+storage_engine+"""/build""")
     #make the backend
-    os.system("""cd """+storage_engine+"/build && cmake -DNUM_THREADS="+str(self.config.num_threads)+" .. && make && cd -" )
+    os.system("""cd """+storage_engine+"/build && cmake -DNUM_THREADS="+str(self.config.num_threads)+" .. && make && cd - > /dev/null" )
 
   #Build the db in backend and save to disk
   def build(self):
@@ -68,7 +68,7 @@ class Database:
     self.qc.createDB()
     #compile the generated load query
     self.compile_backend()
-    os.system("""cd """+self.folder+"""/libs/createDB && ./build.sh && cd -""")
+    os.system("""cd """+self.folder+"""/libs/createDB && ./build.sh && cd - > /dev/null""")
     #execution
     self.backend.create(self.relations,self.dbhash)
 

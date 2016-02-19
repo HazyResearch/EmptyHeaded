@@ -4,6 +4,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 package duncecap
 
+import scala.collection.mutable.Map
 import scala.collection.mutable.ListBuffer
 import java.io.FileOutputStream
 import java.io.ObjectOutputStream
@@ -69,13 +70,17 @@ case class Config(
 //Creates an instance of database (needed to compile queries)
 case class DBInstance(val folder:String, val config:Config) extends Serializable {
   val relations:ListBuffer[Relation] = ListBuffer[Relation]()
+  //map from relation name to index in listbuffer
+  val name2relation:Map[String,Int] = Map[String,Int]()
   def addRelation(r:Relation){
+    name2relation += ((r.name,relations.length))
     relations += r
   }
   def getFolder():String = {folder}
   def getConfig():Config = {config}
   def getNumRelations():Int = {relations.length}
-  def getRelation(i:Int) = {relations(i)}
+  //kind of a hack but we make it look like a list
+  def getRelation(i:Int):Relation = {relations(i)}
 }
 
 //Main class which compilation runs out of
@@ -84,6 +89,11 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
 
   def createDB(){
     CreateDB.loadAndEncode(db,hash)
+  }
+
+  //Parse a datalog statement and code generate it.
+  def load(rel:String) {
+    Load.run(db,db.relations(db.name2relation(rel)))
   }
 
   //Parse a datalog statement and code generate it.

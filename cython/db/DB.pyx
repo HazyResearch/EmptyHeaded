@@ -21,7 +21,7 @@ cdef class DB:
     cdef string _folder
 
   def query(self,libname):
-    os.system("cd $EMPTYHEADED_HOME/cython/query && ./build.sh && cd -")
+    os.system("cd $EMPTYHEADED_HOME/cython/query && ./build.sh && cd - > /dev/null")
 
     imp.acquire_lock()
     fname = os.path.expandvars("$EMPTYHEADED_HOME/cython/query/Query")+".so"
@@ -32,15 +32,17 @@ cdef class DB:
     return mod.c_query(voidptr)
 
   def load(self,libname):
-    os.system("cd $EMPTYHEADED_HOME/cython/load && ./build.sh && cd -")
+    fname = self._folder+"/libs/load_"+libname
+
+    os.system("cd "+fname+" && ./build.sh && cd - > /dev/null")
 
     imp.acquire_lock()
-    fname = os.path.expandvars("$EMPTYHEADED_HOME/cython/load/PTrie")+".so"
-    mod = imp.load_dynamic("PTrie",fname)
+    lname = fname+"/PTrie_"+libname+".so"
+    mod = imp.load_dynamic("PTrie_"+libname,lname)
     imp.release_lock()
 
     voidptr = PyCObject_FromVoidPtr(self._dbmap,NULL) #FIXME add destructor
-    return mod.PTrie(voidptr)
+    return eval("mod.PTrie_"+libname+"(voidptr)")
 
   def create(self,relations,dbhash):
     imp.acquire_lock()

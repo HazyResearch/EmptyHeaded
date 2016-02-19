@@ -12,7 +12,7 @@ if platform.uname()[0] == "Darwin":
   largs = ["-arch","x86_64"]
 
 extensions = [
-    Extension("PTrie", ["PTrie.pyx"],
+    Extension("#PTrie#", ["#PTrie#.pyx"],
         include_dirs = [EH_PATH+"/storage_engine/include",numpy.get_include()],
         libraries = ["emptyheaded"],
         library_dirs = [EH_PATH+"/storage_engine/build/lib"],
