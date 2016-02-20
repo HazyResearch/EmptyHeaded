@@ -65,17 +65,17 @@ case class DBInstance(val folder:String, val config:Config) extends Serializable
   def addRelation(r:Relation){
     relations += r
   }
-  def getFolder():String = {folder}
-  def getConfig():Config = {config}
-  def getNumRelations():Int = {relations.length}
-  def getRelation(i:Int) = {relations(i)}
+  def getFolder():String = { folder }
+  def getConfig():Config = { config }
+  def getNumRelations():Int = { relations.length }
+  def getRelation(i:Int) = { relations(i) }
 }
 
 //Main class which compilation runs out of
 class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
-  def getDBInstance():DBInstance = {db}
+  def getDBInstance():DBInstance = { db }
 
-  def createDB(){
+  def createDB() {
     CreateDB.loadAndEncode(db,hash)
   }
 

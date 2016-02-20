@@ -3,7 +3,7 @@ package duncecap
 import scala.collection.mutable
 
 object GHDSolver {
-  def computeAJAR_GHD(rels: Set[OptimizerRel], output: Set[String]):List[GHDNode] = {
+  def computeAJAR_GHD(rels: Set[OptimizerRel], output: Set[String], selections:Array[Selection]):List[GHDNode] = {
     val components = getConnectedComponents(
       mutable.Set(rels.toList.filter(rel => !(rel.attrs.values.toSet subsetOf output)):_*), List(), output, Set())
     val componentsPlus = components.map(getAttrSet(_))
@@ -13,8 +13,8 @@ object GHDSolver {
       compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, output).toList
     })
 
-    val G_i_options = getMinFHWDecompositions(H_0_edges.toList)::characteristicHypergraphEdges
-      .map(H => getMinFHWDecompositions(H.toList.filter(!_.isImaginary), H.find(_.isImaginary)))
+    val G_i_options = getMinFHWDecompositions(H_0_edges.toList, selections)::characteristicHypergraphEdges
+      .map(H => getMinFHWDecompositions(H.toList.filter(!_.isImaginary), selections, H.find(_.isImaginary)))
 
     val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)//.take(1) // need to make some copies here
 
@@ -49,7 +49,7 @@ object GHDSolver {
         return Some(newRoot)
       }
     } else {
-      val newGHD = new GHDNode(realEdges)
+      val newGHD = new GHDNode(realEdges, validGHD.selections)
       newGHD.bagFractionalWidth = validGHD.bagFractionalWidth
       newGHD.children = validGHD.children.flatMap(deleteImaginaryEdges(_))
       return Some(newGHD)
@@ -163,9 +163,11 @@ object GHDSolver {
    * @param parentAttrs
    * @return Each list in the returned list could be the children of the parent that we got parentAttrs from
    */
-  private def getListsOfPossibleSubtrees(partitions: List[List[OptimizerRel]], parentAttrs: Set[String]): List[List[GHDNode]] = {
+  private def getListsOfPossibleSubtrees(partitions: List[List[OptimizerRel]],
+                                         parentAttrs: Set[String],
+                                         selections:Array[Selection]): List[List[GHDNode]] = {
     assert(!partitions.isEmpty)
-    val subtreesPerPartition: List[List[GHDNode]] = partitions.map((l: List[OptimizerRel]) => getDecompositions(l, None, parentAttrs))
+    val subtreesPerPartition: List[List[GHDNode]] = partitions.map((l: List[OptimizerRel]) => getDecompositions(l, None, parentAttrs, selections))
     return subtreesPerPartition.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)
   }
 
@@ -186,7 +188,7 @@ object GHDSolver {
   }
 
   private def duplicateTree(ghd: GHDNode): GHDNode = {
-    val newGHD = new GHDNode(ghd.rels)
+    val newGHD = new GHDNode(ghd.rels, ghd.selections)
     newGHD.bagFractionalWidth = ghd.bagFractionalWidth
     newGHD.children = ghd.children.map(duplicateTree(_))
     return newGHD
@@ -199,8 +201,9 @@ object GHDSolver {
   }
 
   private def getDecompositions(rels: List[OptimizerRel],
-                                imaginaryRel: Option[OptimizerRel],
-                                parentAttrs: Set[String]): List[GHDNode] =  {
+                                imaginaryRel:Option[OptimizerRel],
+                                parentAttrs:Set[String],
+                                selections:Array[Selection]): List[GHDNode] =  {
 
     val treesFound = mutable.ListBuffer[GHDNode]()
     for (tryNumRelationsTogether <- (1 to rels.size).toList) {
@@ -214,7 +217,7 @@ object GHDSolver {
         // If your edges cover attributes that a larger set of edges could cover, then
         // don't bother trying this bag
         val leftoverBags = rels.toSet[OptimizerRel] &~ bag.toSet[OptimizerRel]
-        val newNode = new GHDNode(bag)
+        val newNode = new GHDNode(bag, selections)
         if (bagCannotBeExpanded(newNode, leftoverBags)) {
           if (leftoverBags.toList.isEmpty) {
             treesFound.append(newNode)
@@ -223,7 +226,7 @@ object GHDSolver {
             val partitions = getPartitions(leftoverBags.toList, bag, parentAttrs, bagAttrSet)
             if (partitions.isDefined) {
               // lists of possible children for |bag|
-              val possibleSubtrees: List[List[GHDNode]] = getListsOfPossibleSubtrees(partitions.get, bagAttrSet)
+              val possibleSubtrees: List[List[GHDNode]] = getListsOfPossibleSubtrees(partitions.get, bagAttrSet, selections)
               for (subtrees <- possibleSubtrees) {
                 newNode.children = subtrees
                 treesFound.append(newNode)
@@ -236,12 +239,12 @@ object GHDSolver {
     return treesFound.toList
   }
 
-  def getDecompositions(rels: List[OptimizerRel], imaginaryRel:Option[OptimizerRel]): List[GHDNode] = {
-    return getDecompositions(rels, imaginaryRel, Set[String]())
+  def getDecompositions(rels: List[OptimizerRel], imaginaryRel:Option[OptimizerRel], selections:Array[Selection]): List[GHDNode] = {
+    return getDecompositions(rels, imaginaryRel, Set[String](), selections)
   }
 
-  def getMinFHWDecompositions(rels: List[OptimizerRel], imaginaryRel:Option[OptimizerRel] = None): List[GHDNode] = {
-    val decomps = getDecompositions(rels, imaginaryRel)
+  def getMinFHWDecompositions(rels: List[OptimizerRel], selections:Array[Selection], imaginaryRel:Option[OptimizerRel] = None): List[GHDNode] = {
+    val decomps = getDecompositions(rels, imaginaryRel, selections)
     val fhwsAndDecomps = decomps.map((root :GHDNode) => (root.fractionalScoreTree(), root))
     val minScore = fhwsAndDecomps.unzip._1.min
 

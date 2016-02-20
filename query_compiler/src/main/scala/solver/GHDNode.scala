@@ -3,11 +3,14 @@ package duncecap
 import java.util
 
 import duncecap.attr._
+import duncecap.serialized.Attribute
 import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
 
-class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with Iterable[GHDNode] {
+class GHDNode(override val rels: List[OptimizerRel],
+              override val selections:Array[Selection])
+  extends EHNode(rels, selections) with Iterable[GHDNode] {
   var subtreeRels = rels.toSet
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
@@ -41,7 +44,7 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
     case _ => false
   }
 
-  def attrNameAgnosticEquals(otherNode: GHDNode, joinAggregates:Map[String, ParsedAggregate]): Boolean = {
+  def attrNameAgnosticEquals(otherNode: GHDNode, joinAggregates:Map[String, Aggregation]): Boolean = {
     if (this.subtreeRels.size != otherNode.subtreeRels.size || !(attrSet & otherNode.attrSet).isEmpty) return false
     return matchRelations(this.subtreeRels.toSet, otherNode.subtreeRels.toSet, this, otherNode, Map[Attr, Attr](), joinAggregates) ;
   }
@@ -51,15 +54,16 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
                              thisNode:GHDNode,
                              otherNode:GHDNode,
                              attrMap: Map[Attr, Attr],
-                             joinAggregates:Map[String, ParsedAggregate]): Boolean = {
-    if (rels.isEmpty && otherRels.isEmpty) return true
+                             joinAggregates:Map[String, Aggregation]): Boolean = {
+    return false
+    /* if (rels.isEmpty && otherRels.isEmpty) return true
 
     val matches = otherRels.map(otherRel => (otherRels-otherRel, PlanUtil.attrNameAgnosticRelationEquals(otherNode.outputRelation, otherRel, thisNode.outputRelation, rels.head, attrMap, joinAggregates))).filter(m => {
       m._2.isDefined
     })
     return matches.exists(m => {
       matchRelations(rels.tail, m._1, this, otherNode, m._2.get, joinAggregates)
-    })
+    }) */
   }
 
   override def hashCode = 41 * rels.hashCode() + children.toSet.hashCode()
@@ -73,19 +77,20 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
    * Returns a new copy of the tree
    */
   def recursivelyPushOutSelections(): GHDNode = {
-    val (withoutSelects, withSelects) = rels.partition(rel => rel.nonSelectedAttrNames.size == rel.attrNames.size)
-    if (!withoutSelects.isEmpty) {
-      val newNode = new GHDNode(withoutSelects)
-      newNode.children = children.map(_.recursivelyPushOutSelections) ::: withSelects.map(rel => new GHDNode(List(rel)))
+    val (withoutSelections, withSelections) = rels.partition(
+      rel => (rel.attrs.values.toSet intersect selections.map(selection => selection.getAttr()).toSet).isEmpty)
+    if (!withoutSelections.isEmpty) {
+      val newNode = new GHDNode(withoutSelections, selections)
+      newNode.children = children.map(_.recursivelyPushOutSelections) ::: withSelections.map(rel => new GHDNode(List(rel), selections))
       return newNode
     } else {
-      val newNode = new GHDNode(rels)
+      val newNode = new GHDNode(rels, selections)
       children.map(_.recursivelyPushOutSelections)
       return newNode
     }
   }
 
-  def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, ParsedAggregate]): List[GHDNode] = {
+  def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, Aggregation]): List[GHDNode] = {
     var newSeen = seen
     children.foreach(c => {
       newSeen = c.eliminateDuplicateBagWork(newSeen, joinAggregates)
@@ -98,13 +103,13 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
     return newSeen
   }
 
-  def getBagInfo(joinAggregates:Map[String,ParsedAggregate]): QueryPlanBagInfo = {
+  def getBagInfo(joinAggregates:Map[String, Aggregation]): QueryPlanBagInfo = {
     val jsonRelInfo = getRelationInfo()
     new QueryPlanBagInfo(
       bagName,
       isDuplicateOf,
-      outputRelation.attrNames,
-      outputRelation.annotationType,
+      outputRelation.attrs.values,
+      outputRelation.anno.values.head, // TODO (sctu): in the future it may not be the case that it's the first one
       jsonRelInfo,
       getNPRRInfo(joinAggregates),
       None,
@@ -133,7 +138,8 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
 
   def recreateFromAttrMappings: Unit = {
     attrToRels = PlanUtil.createAttrToRelsMapping(attrSet, subtreeRels.toList)
-    attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
+    //attrToSelection = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
+    // TODO (sctu): fix this or delete it
     children.map(child => child.recreateFromAttrMappings)
   }
 
@@ -145,13 +151,23 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
   /**
    * Compute what is projected out in this bag, and what this bag's output relation is
    */
-  def computeProjectedOutAttrsAndOutputRelation(annotationType:String,outputAttrs:Set[Attr], attrsFromAbove:Set[Attr]): OptimizerRel = {
+  def computeProjectedOutAttrsAndOutputRelation(annotationType:String,
+                                                outputAttrs:Set[Attr],
+                                                attrsFromAbove:Set[Attr]): OptimizerRel = {
+
+    // how do I use Projected,
     projectedOutAttrs = attrSet -- (outputAttrs ++ attrsFromAbove)
     val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
     val equalitySelectedAttrs = attrSet.filter(attr => !getSelection(attr).isEmpty)
     // Right now we only allow a query to have one type of annotation, so
     // we take the annotation type from an arbitrary relation that was joined in this bag
-    outputRelation = new OptimizerRel(bagName, keptAttrs.map(attr =>(attr, "", "")).toList, annotationType)
+    outputRelation = new OptimizerRel(
+      bagName,
+      Attributes(keptAttrs.unzip._1.toList),
+      Annotations(List(annotationType)),
+      false,
+      keptAttrs.toSet
+    )
     val childrensOutputRelations = children.map(child => {
       child.computeProjectedOutAttrsAndOutputRelation(
         annotationType,
@@ -159,7 +175,7 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
         attrsFromAbove ++ attrSet -- equalitySelectedAttrs)
     })
     subtreeRels ++= childrensOutputRelations
-    scalars = childrensOutputRelations.filter(rel => rel.attrs.isEmpty)
+    scalars = childrensOutputRelations.filter(rel => rel.attrs.values.isEmpty)
     return outputRelation
   }
 
@@ -185,7 +201,7 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
   }
 
   private def getMatrixRow(attr : String, rels : List[OptimizerRel]): Array[Double] = {
-    val presence = rels.map((rel : OptimizerRel) => if (rel.attrNames.toSet.contains(attr)) 1.0 else 0)
+    val presence = rels.map((rel : OptimizerRel) => if (rel.attrs.values.toSet.contains(attr)) 1.0 else 0)
     return presence.toArray
   }
 
@@ -226,5 +242,53 @@ class GHDNode(override val rels: List[OptimizerRel]) extends EHNode(rels) with I
     bagFractionalWidth = fractionalScoreNode()
     return children.map((child: GHDNode) => child.fractionalScoreTree())
       .foldLeft(bagFractionalWidth)((accum: Double, x: Double) => if (x > accum) x else accum)
+  }
+
+  def getQueryPlan(aggMap:Map[String, Aggregation]): Rule = {
+    return Rule(
+      getResult(),
+      None /* TODO: handle recursion */,
+      getOperation(),
+      getOrder(),
+      getProject(),
+      getJoin(),
+      getAggregations(aggMap),
+      getFilters())
+  }
+
+  def recursivelyGetQueryPlan(aggMap:Map[String, Aggregation]): List[Rule] = {
+    getQueryPlan(aggMap)::children.flatMap(_.recursivelyGetQueryPlan(aggMap))
+  }
+
+  def getResult(): Result = {
+    Result(outputRelation)
+  }
+
+  def getFilters() = {
+    Filters(selections.toList)
+  }
+
+  def getOperation(): Operation = {
+    Operation("*")
+  }
+
+  def getOrder(): Order = {
+    Order(Attributes(attributeOrdering))
+  }
+
+  def getProject(): Project = {
+    Project(Attributes(List()))
+  }
+
+  def getJoin(): Join = {
+    Join(rels)
+  }
+
+  def getAggregations(aggMap:Map[String, Aggregation]) = {
+    Aggregations(attrSet.map(attr => {
+      val aggOption = aggMap.get(attr)
+      assert(aggOption.isDefined)
+      aggOption.get
+    }).toList)
   }
 }

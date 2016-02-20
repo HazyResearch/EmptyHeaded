@@ -4,7 +4,7 @@ import duncecap.attr._
 
 import scala.collection.immutable.TreeSet
 
-abstract class EHNode(val rels: List[OptimizerRel]) {
+abstract class EHNode(val rels: List[OptimizerRel], val selections:Array[Selection]) {
   val attrSet = rels.foldLeft(TreeSet[String]())(
     (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
   var attrToRels:Map[Attr,List[OptimizerRel]] = PlanUtil.createAttrToRelsMapping(attrSet, rels)
@@ -33,7 +33,7 @@ abstract class EHNode(val rels: List[OptimizerRel]) {
   }
 
   private def getNextAnnotatedForLastMaterialized(attr:Attr, joinAggregates:Map[String,Aggregation]): Option[Attr] = {
-    if (!outputRelation.attrNames.isEmpty && outputRelation.attrNames.last == attr) {
+    if (!outputRelation.attrs.values.isEmpty && outputRelation.attrs.values.last == attr) {
       val selectedAttrs = attributeOrdering.takeWhile(a => attrToSelection.contains(a) && !attrToSelection(a).isEmpty)
       if (!selectedAttrs.isEmpty) {
         Some(selectedAttrs.last)
@@ -45,15 +45,15 @@ abstract class EHNode(val rels: List[OptimizerRel]) {
     }
   }
 
-  protected def getNPRRInfo(joinAggregates:Map[String,ParsedAggregate]) = {
+  protected def getNPRRInfo(joinAggregates:Map[String, Aggregation]) = {
     val attrsWithAccessor = getOrderedAttrsWithAccessor()
     val firstAttr = attrsWithAccessor.head
     val prevAndNextAttrMaterialized = PlanUtil.getPrevAndNextAttrNames(
       attrsWithAccessor,
-      ((attr:Attr) => outputRelation.attrNames.contains(attr)))
+      ((attr:Attr) => outputRelation.attrs.values.contains(attr)))
     val prevAndNextAttrAggregated = PlanUtil.getPrevAndNextAttrNames(
       attrsWithAccessor,
-      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrNames.contains(attr)))
+      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrs.values.contains(attr)))
 
     attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
       val (attr, prevNextInfo) = attrAndPrevNextInfo
@@ -66,7 +66,7 @@ abstract class EHNode(val rels: List[OptimizerRel]) {
         Some(new QueryPlanAttrInfo(
           attr,
           accessor,
-          outputRelation.attrNames.contains(attr),
+          outputRelation.attrs.values.contains(attr),
           getSelection(attr),
           getNextAnnotatedForLastMaterialized(attr, joinAggregates),
           PlanUtil.getAggregation(joinAggregates, attr, aggregatedInfo),

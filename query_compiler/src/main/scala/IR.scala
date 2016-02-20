@@ -55,7 +55,7 @@ case class Recursion(
   def getCriteria():String = {
     criteria match {
       case i:ITERATIONS => "iterations"
-      case _ => throw new Exception("Convergance criteria not supported.")
+      case _ => throw new Exception("Convergence criterion not supported.")
     }
   }
   def getOperation():String = {operation.value}
