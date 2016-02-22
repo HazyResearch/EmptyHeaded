@@ -18,7 +18,7 @@ object CreateDB{
     val mvdir = s"""cp -rf ${ehhome}/cython/createDB ${db.folder}/libs/createDB"""
     mvdir.!
     Seq("sed","-i",
-      ".bak",s"s|#DFMap#|DFMap_${hash}|g",
+      s"s/#DFMap#/DFMap_${hash}/g",
       s"${db.folder}/libs/createDB/DFMap.pyx",
       s"${db.folder}/libs/createDB/setup.py").!
     s"""mv ${db.folder}/libs/createDB/DFMap.pyx ${db.folder}/libs/createDB/DFMap_${hash}.pyx""".!
