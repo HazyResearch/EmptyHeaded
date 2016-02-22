@@ -12,13 +12,13 @@ if platform.uname()[0] == "Darwin":
   largs = ["-arch","x86_64"]
 else:
   clibs = ["-std=c++0x"]
-  largs = ["-Wl,-rpath="+EH_PATH+"/runtime/queries","-Wl,--Bshareable"]
+  largs = ["-Wl,-rpath="+EH_PATH+"/storage_engine/build/lib","-Wl,--Bshareable"]
 
 extensions = [
     Extension("DB", ["DB.pyx"],
         include_dirs = [EH_PATH+"/storage_engine/include",numpy.get_include()],
-        #libraries = ["emptyheaded"],
-        #library_dirs = [EH_PATH+"/storage_engine/build/lib"],
+        libraries = ["emptyheaded"],
+        library_dirs = [EH_PATH+"/storage_engine/build/lib"],
         language="c++",
         extra_compile_args = clibs,
         extra_link_args = largs,

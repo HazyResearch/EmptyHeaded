@@ -12,7 +12,7 @@ if platform.uname()[0] == "Darwin":
   largs = ["-arch","x86_64"]
 else:
   clibs = ["-std=c++0x"]
-  largs = ["-Wl,-rpath="+EH_PATH+"/runtime/queries","-Wl,--Bshareable"]
+  largs = ["-Wl,-rpath="+EH_PATH+"/storage_engine/build/lib","-Wl,--Bshareable"]
 
 extensions = [
     Extension("#PTrie#", ["#PTrie#.pyx"],
