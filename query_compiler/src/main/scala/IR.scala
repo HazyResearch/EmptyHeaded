@@ -233,7 +233,7 @@ class JoinBuilder() {
     joins += Rel(name,Attributes(attrs.toList),Annotations(anno.toList))
   }
 
-  def build():Join ={
+  def build():Join = {
     Join(joins.toList)
   }
 }

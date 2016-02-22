@@ -5,7 +5,7 @@ import duncecap.attr.Attr
 class GHD(val root:GHDNode,
           val queryRelations:List[OptimizerRel],
           val joinAggregates:Map[String, Aggregation],
-          val outputRelation:OptimizerRel) extends QueryPlanPostProcessor {
+          val outputRelation:Rel) extends QueryPlanPostProcessor {
   val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation)
   var depth: Int = -1
   var numBags: Int = -1

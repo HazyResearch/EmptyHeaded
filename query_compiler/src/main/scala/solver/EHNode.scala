@@ -8,7 +8,8 @@ abstract class EHNode(val rels: List[OptimizerRel], val selections:Array[Selecti
   val attrSet = rels.foldLeft(TreeSet[String]())(
     (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
   var attrToRels:Map[Attr,List[OptimizerRel]] = PlanUtil.createAttrToRelsMapping(attrSet, rels)
-  var attrToSelection:Map[Attr,List[QueryPlanSelection]] = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, attrToRels))).toMap
+  var attrToSelection:Map[Attr,Array[Selection]]
+    = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, selections))).toMap
   var outputRelation:OptimizerRel = null
   var attributeOrdering: List[Attr] = null
   var children: List[GHDNode] = List()
@@ -16,8 +17,8 @@ abstract class EHNode(val rels: List[OptimizerRel], val selections:Array[Selecti
 
   def setAttributeOrdering(ordering: List[Attr] )
 
-  protected def getSelection(attr:Attr): List[QueryPlanSelection] = {
-    attrToSelection.getOrElse(attr, List())
+  protected def getSelection(attr:Attr): List[Selection] = {
+    attrToSelection.getOrElse(attr, Array()).toList
   }
 
   def getAccessor(attr:Attr): List[QueryPlanAccessor] = {
@@ -45,34 +46,4 @@ abstract class EHNode(val rels: List[OptimizerRel], val selections:Array[Selecti
     }
   }
 
-  protected def getNPRRInfo(joinAggregates:Map[String, Aggregation]) = {
-    val attrsWithAccessor = getOrderedAttrsWithAccessor()
-    val firstAttr = attrsWithAccessor.head
-    val prevAndNextAttrMaterialized = PlanUtil.getPrevAndNextAttrNames(
-      attrsWithAccessor,
-      ((attr:Attr) => outputRelation.attrs.values.contains(attr)))
-    val prevAndNextAttrAggregated = PlanUtil.getPrevAndNextAttrNames(
-      attrsWithAccessor,
-      ((attr:Attr) => joinAggregates.get(attr).isDefined && !outputRelation.attrs.values.contains(attr)))
-
-    attrsWithAccessor.zip(prevAndNextAttrMaterialized.zip(prevAndNextAttrAggregated)).flatMap(attrAndPrevNextInfo => {
-      val (attr, prevNextInfo) = attrAndPrevNextInfo
-      val (materializedInfo, aggregatedInfo) = prevNextInfo
-      val accessor = getAccessor(attr)
-      if (accessor.isEmpty) {
-        assert(false)
-        None // this should not happen
-      } else {
-        Some(new QueryPlanAttrInfo(
-          attr,
-          accessor,
-          outputRelation.attrs.values.contains(attr),
-          getSelection(attr),
-          getNextAnnotatedForLastMaterialized(attr, joinAggregates),
-          PlanUtil.getAggregation(joinAggregates, attr, aggregatedInfo),
-          materializedInfo._1,
-          materializedInfo._2))
-      }
-    })
-  }
 }

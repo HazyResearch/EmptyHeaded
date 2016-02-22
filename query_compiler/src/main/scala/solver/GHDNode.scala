@@ -103,19 +103,6 @@ class GHDNode(override val rels: List[OptimizerRel],
     return newSeen
   }
 
-  def getBagInfo(joinAggregates:Map[String, Aggregation]): QueryPlanBagInfo = {
-    val jsonRelInfo = getRelationInfo()
-    new QueryPlanBagInfo(
-      bagName,
-      isDuplicateOf,
-      outputRelation.attrs.values,
-      outputRelation.anno.values.head, // TODO (sctu): in the future it may not be the case that it's the first one
-      jsonRelInfo,
-      getNPRRInfo(joinAggregates),
-      None,
-      scalars.map(_.name))
-  }
-
   def setDescendantNames(level:Int): Unit = {
     children.map(childAndIndex => {
       val attrNames = childAndIndex.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
@@ -163,7 +150,7 @@ class GHDNode(override val rels: List[OptimizerRel],
     // we take the annotation type from an arbitrary relation that was joined in this bag
     outputRelation = new OptimizerRel(
       bagName,
-      Attributes(keptAttrs.unzip._1.toList),
+      Attributes(keptAttrs.toList),
       Annotations(List(annotationType)),
       false,
       keptAttrs.toSet

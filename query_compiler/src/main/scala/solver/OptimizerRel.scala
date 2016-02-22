@@ -2,7 +2,7 @@ package duncecap
 
 object OptimizerRel {
   def fromRel(rel:Rel, rule:Rule):OptimizerRel = {
-    OptimizerRel(
+    new OptimizerRel(
       rel.getName(),
       rel.attrs,
       rel.anno,
@@ -12,7 +12,7 @@ object OptimizerRel {
   }
 
   def createImaginaryOptimizerRelWithNoSelects(attrs:Iterable[String]) = {
-    OptimizerRel(
+    new OptimizerRel(
       "",
       Attributes(attrs.toList),
       Annotations(List("void*")),
@@ -29,7 +29,7 @@ object OptimizerRel {
  * @param isImaginary
  * @param nonSelectedAttrNames
  */
-case class OptimizerRel(override val name:String,
+class OptimizerRel(override val name:String,
                         override val attrs:Attributes,
                         override val anno:Annotations,
                         val isImaginary:Boolean,
