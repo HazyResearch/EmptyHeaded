@@ -19,7 +19,7 @@ graph = Relation(
 
 db = Database.create(
   Config(),
-  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
+  "/dfs/scratch0/caberger/systems/eh-2.0/EmptyHeaded/python/db",
   [graph])
 db.build()
 
