@@ -12,9 +12,8 @@ import scala.collection.mutable.Set
 object CreateDB{
   //loads the relations from disk (if nesc.)
   //and encodes them, then spills the encodings to disk
+  //next builds the tries and spills to disk
   def loadAndEncode(db:DBInstance,hash:String){
-    println("loading database.")
-
     val ehhome = sys.env("EMPTYHEADED_HOME")
     val mvdir = s"""cp -rf ${ehhome}/cython/createDB ${db.folder}/libs/createDB"""
     mvdir.!
@@ -26,6 +25,20 @@ object CreateDB{
   
     //generate code
     genLoadAndEncode(db)
+    genBuild(db)
+  }
+
+  private def genBuild(db:DBInstance){
+    val code = new StringBuilder()
+
+    code.append(buildWrapper(db))
+
+    val cppFilepath = db.folder+"/libs/createDB/build.hpp"
+    val file = new File(cppFilepath)
+    val bw = new BufferedWriter(new FileWriter(file))
+    bw.write(code.toString)
+    bw.close()
+    s"""clang-format -style=llvm -i ${cppFilepath}""" !
   }
 
   private def genLoadAndEncode(db:DBInstance){
@@ -116,7 +129,9 @@ ColumnStore_${r.name}.push_back((void*)v_${i}->data());""")
 timer::stop_clock("READING ${r.name}", start_time);
 }""")
     })
+    s"mkdir ${db.folder}/encodings".!
     encodings.foreach(e => {
+      s"mkdir ${db.folder}/encodings/${e}".!
       code.append(s"""
 {
   auto start_time = timer::start_clock();
@@ -184,6 +199,70 @@ void loadAndEncode(std::unordered_map<std::string,mypair>* map){
   thread_pool::initializeThreadPool();
   ${load(db)}
   ${encode(db)}
+  thread_pool::deleteThreadPool();
+}""")
+  code
+  }
+
+  private def build(db:DBInstance):StringBuilder = {
+    val code = new StringBuilder()
+    db.relations.foreach(r => {
+      val orderings = (0 until r.schema.attributeTypes.length).toList.permutations.toList
+      if(r.schema.annotationTypes.length > 1)
+        throw new Exception("EmptyHeaded currently only supports one annotation per relation.")
+      val annoType = if(r.schema.annotationTypes.length == 1) r.schema.annotationTypes(0) else "void*"
+      val annoIn = if(r.schema.annotationTypes.length == 1) "annotation.at(0)" else "annotation"
+
+      code.append(s"""{ //load encoded relation
+auto load_time = timer::start_clock();
+EncodedColumnStore* EncodedColumnStore_${r.name} = EncodedColumnStore::from_binary("${db.folder}/relations/${r.name}/");
+timer::stop_clock("LOADING ENCODED ${r.name}", load_time);""")
+      orderings.foreach(ordering => {
+        s"""mkdir ${db.folder}/relations/${r.name}/${r.name}_${ordering.mkString("_")}""".!
+        s"""mkdir ${db.folder}/relations/${r.name}/${r.name}_${ordering.mkString("_")}/ram""".!
+        code.append(s""" 
+////////////////////emitReorderEncodedColumnStore////////////////////
+{
+std::vector<size_t> order_${ordering.mkString("_")} = {${ordering.mkString(",")}};
+EncodedColumnStore *Encoded_${r.name}_${ordering.mkString("_")} =
+    new EncodedColumnStore(EncodedColumnStore_${r.name},order_${ordering.mkString("_")});
+Trie<${annoType},ParMemoryBuffer> *Trie_${r.name}_${ordering.mkString("_")} = NULL;
+{
+  auto start_time = timer::start_clock();
+  // buildTrie
+  Trie_${r.name}_${ordering.mkString("_")} = new Trie<${annoType},ParMemoryBuffer>( 
+      "${db.folder}/relations/${r.name}/${r.name}_${ordering.mkString("_")}",
+      &Encoded_${r.name}_${ordering.mkString("_")}->max_set_size,
+      &Encoded_${r.name}_${ordering.mkString("_")}->data, 
+      &Encoded_${r.name}_${ordering.mkString("_")}->${annoIn});
+  timer::stop_clock("BUILDING TRIE ${r.name}_${ordering.mkString("_")}", start_time);
+}
+////////////////////emitWriteBinaryTrie////////////////////
+{
+  auto start_time = timer::start_clock();
+  Trie_${r.name}_${ordering.mkString("_")}->save();
+  timer::stop_clock("WRITING BINARY TRIE ${r.name}_${ordering.mkString("_")}", start_time);
+}
+delete Trie_${r.name}_${ordering.mkString("_")};
+}""")
+      })
+      code.append(s"""}""")
+    })
+    code
+  }
+  private def buildWrapper(db:DBInstance):StringBuilder = {
+    val code = new StringBuilder()
+    code.append(s"""
+#include "Trie.hpp"
+#include "utils/timer.hpp"
+#include "intermediate/intermediate.hpp"
+
+typedef std::vector<void*> myvector;
+typedef std::pair<size_t,myvector> mypair;
+
+void build(std::unordered_map<std::string,mypair>* map){
+  thread_pool::initializeThreadPool();
+  ${build(db)}
   thread_pool::deleteThreadPool();
 }""")
   code

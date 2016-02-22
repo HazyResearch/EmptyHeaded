@@ -10,31 +10,6 @@ cimport cpython
 
 from libc.stdint cimport uint64_t, uint32_t, int64_t, int32_t
 
-###############################################
-##FIXME: Delete this block
-##Needed for PyArray_SimpleNewFromData
-np.import_array()
-
-#Class should just store a map from (name -> pair[vector[void*],size]) 
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def ndarray2vector(np.ndarray[int, ndim=1, mode='c'] input not None):
-  #method 1 dataframe to c++ just return input data & a size
-  ##maybe called 
-  cdef int n
-  n = input.shape[0]
-  a = <int *>input.data
-
-  #method 2 take a pointer to memory and return an nd array.
-  cdef np.npy_intp shape[1]
-  shape[0] = <np.npy_intp> n
-  # Create a 1D array, of length 'size'
-  ndarray = np.PyArray_SimpleNewFromData(1, shape,
-          np.NPY_INT, a)
-  print ndarray
-  #print ndarray 
-  return None
 ###############################################################################
 ###TO DO FILL ME OUT FOR ALL TYPES THAT WE WANT.
 #Pulls the pointer to the data and returns it as a void* for each type.
@@ -68,6 +43,9 @@ ctypedef pair[size_t,myvector] mypair
 
 cdef extern from "loadAndEncode.hpp":
     void loadAndEncode(unordered_map[string,mypair]* map)
+
+cdef extern from "build.hpp":
+    void build(unordered_map[string,mypair]* map)
 
 cdef pair[size_t,myvector] get_pair(size_t a, myvector v):
   cdef pair[size_t,myvector] p
@@ -136,6 +114,7 @@ cdef class #DFMap#:
         p = get_pair(length,v)
         self._dfmap.insert(get_final_pair(rel.name,p))
     loadAndEncode(self._dfmap)
+    build(self._dfmap)
 
   def __dealloc__(#DFMap# self):
     # Only call del if the C++ object is alive, 

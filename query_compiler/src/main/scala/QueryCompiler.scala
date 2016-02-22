@@ -1,7 +1,7 @@
 package duncecap
 
 import java.io._
-
+import scala.collection.mutable.Map
 import scala.collection.mutable.ListBuffer
 
 //Defines schema types for relations
@@ -62,13 +62,18 @@ case class Config(
 //Creates an instance of database (needed to compile queries)
 case class DBInstance(val folder:String, val config:Config) extends Serializable {
   val relations:ListBuffer[Relation] = ListBuffer[Relation]()
+  //map from relation name to index in listbuffer
+  val name2relation:Map[String,Int] = Map[String,Int]()
   def addRelation(r:Relation){
+    name2relation += ((r.name,relations.length))
     relations += r
   }
-  def getFolder():String = { folder }
-  def getConfig():Config = { config }
-  def getNumRelations():Int = { relations.length }
-  def getRelation(i:Int) = { relations(i) }
+
+  def getFolder():String = {folder}
+  def getConfig():Config = {config}
+  def getNumRelations():Int = {relations.length}
+  //kind of a hack but we make it look like a list
+  def getRelation(i:Int):Relation = {relations(i)}
 }
 
 //Main class which compilation runs out of
@@ -80,10 +85,38 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
   }
 
   //Parse a datalog statement and code generate it.
+  def genTrieWrapper(rel:String) {
+    Trie.run(db,db.relations(db.name2relation(rel)))
+  }
+
+  //Parse a datalog statement and code generate it.
   def datalog(query:String):String = {
     val ir = DatalogParser.run(query)
     println(ir)
     "Query.cpp"
+  }
+
+  def optimize(query:String):Unit = {
+    val ir = DatalogParser.run(query)
+    assert(ir.getNumRules() == 1) // for now
+    val rootNodes = GHDSolver.computeAJAR_GHD(
+      ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))).toSet,
+      ir.getRule(0).getResult().getRel().getAttributes().toSet,
+      ir.getRule(0).getFilters().selections.toArray)
+
+    val joinAggregates = ir.getRule(0).getAggregations().aggregations.flatMap(agg => {
+      val attrs = agg.attrs.values
+      attrs.map(attr => { (attr, agg) })
+    }).toMap
+
+    val candidates = rootNodes.map(r =>
+      new GHD(
+        r,
+        ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))),
+        joinAggregates,
+        ir.getRule(0).getResult().getRel()))
+    candidates.map(c => c.doPostProcessingPass())
+    candidates.foreach(candidate => println(candidate.getQueryPlan()))
   }
 }
 

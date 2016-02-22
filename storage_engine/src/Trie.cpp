@@ -15,7 +15,6 @@
 template<class A,class M>
 void Trie<A,M>::save(){
   std::ofstream *writefile = new std::ofstream();
-  //std::cout << memoryBuffers->path <<  " " << M::folder << std::endl;
   std::string file = memoryBuffers->path+M::folder+std::string("trieinfo.bin");
   writefile->open(file, std::ios::binary | std::ios::trunc);
   writefile->write((char *)&annotated, sizeof(annotated));
@@ -403,8 +402,9 @@ Trie<A,M>::Trie(
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
 
-  /*
   //DEBUG
+  /*
+  std::cout << "TRIEE BUULd" << std::endl;
   std::cout << num_columns << std::endl;
   for(size_t i = 0; i < num_rows; i++){
     for(size_t j = 0; j < num_columns; j++){
@@ -413,7 +413,7 @@ Trie<A,M>::Trie(
     std::cout << std::endl;
   }
   */
-
+  
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();
