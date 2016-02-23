@@ -10,6 +10,9 @@ EH_PATH=os.path.expandvars("$EMPTYHEADED_HOME")
 if platform.uname()[0] == "Darwin":
   clibs = ["-arch","x86_64","-std=c++0x","-mavx"]
   largs = ["-arch","x86_64"]
+else:
+  clibs = ["-std=c++0x"]
+  largs = ["-Wl,-rpath="+EH_PATH+"/storage_engine/build/lib","-Wl,--Bshareable"]
 
 extensions = [
     Extension("#DFMap#", ["#DFMap#.pyx"],

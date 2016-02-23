@@ -22,7 +22,7 @@ object Trie{
       val mvdir = s"""cp -rf ${ehhome}/cython/trie ${db.folder}/libs/trie_${rel.name}"""
       mvdir.!
       Seq("sed","-i",
-        ".bak",s"s|#PTrie#|PTrie_${rel.name}|g",
+        s"s/#PTrie#/PTrie_${rel.name}/g",
         s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx",
         s"${db.folder}/libs/trie_${rel.name}/setup.py").!
       s"""mv ${db.folder}/libs/trie_${rel.name}/PTrie.pyx ${db.folder}/libs/trie_${rel.name}/PTrie_${rel.name}.pyx""".!
