@@ -19,7 +19,7 @@ graph = Relation(
 
 db = Database.create(
   Config(),
-  "/dfs/scratch0/caberger/systems/eh-2.0/EmptyHeaded/python/db",
+  "db",
   [graph])
 db.build()
 
@@ -35,7 +35,7 @@ print g.getDF()
 
 #db.save("graph")
 
-ir = triangle() 
+ir = triangle()
 
 for rule in ir.rules:
   print rule

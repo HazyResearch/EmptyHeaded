@@ -3,17 +3,18 @@ package duncecap
 import java.io._
 import scala.collection.mutable.Map
 import scala.collection.mutable.ListBuffer
+import sys.process._
 
 //Defines schema types for relations
 case class Schema(
-  val externalAttributeTypes:List[String], 
+  val externalAttributeTypes:List[String],
   val externalAnnotationTypes:List[String]
   ) extends Serializable {
   val attributeTypes:List[String] = checkAttributes()
   val annotationTypes:List[String] = checkAnnotations()
   def getAttributeTypes:Array[String] = {externalAttributeTypes.toArray}
   def getAnnotationTypes:Array[String] = {externalAnnotationTypes.toArray}
-  
+
   //Checks that the schema has valid types.
   private def checkAttributes():List[String] = {
     externalAttributeTypes.map(a => {
@@ -33,7 +34,7 @@ case class Schema(
 
 //Defines relations
 case class Relation(
-  val name:String,  
+  val name:String,
   val schema:Schema,
   val filename:String,
   val df:Boolean
@@ -46,8 +47,8 @@ case class Relation(
 
 //Configuration for the db
 case class Config(
-  val system:String, 
-  val numThreads:Int, 
+  val system:String,
+  val numThreads:Int,
   val numSockets:Int,
   val layout:String,
   val memory:String
@@ -97,6 +98,7 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
   }
 
   def optimize(query:String):Unit = {
+    println("Running optimize: " + query)
     val ir = DatalogParser.run(query)
     assert(ir.getNumRules() == 1) // for now
     val rootNodes = GHDSolver.computeAJAR_GHD(
@@ -117,6 +119,29 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
         ir.getRule(0).getResult().getRel()))
     candidates.map(c => c.doPostProcessingPass())
     candidates.foreach(candidate => println(candidate.getQueryPlan()))
+  }
+
+  //code generate from an IR
+  //return name of the cpp file
+  def generate(ir:IR):String = {
+    println("Code generate")
+    "Query.cpp"
+  }
+
+  //saves the schema on disk
+  def toDisk(){
+    val result = s"""mkdir ${db.folder}""" !
+
+    if(result == 1){
+      throw new Exception("ERROR DATABASE FOLDER EXISTS OR IS AN INVALID PATH.")
+    }
+
+    val result2 = s"""mkdir ${db.folder}/libs""" !
+
+    val fos = new FileOutputStream(db.folder+"/schema.bin")
+    val oos = new ObjectOutputStream(fos)
+    oos.writeObject(this)
+    oos.close()
   }
 }
 
