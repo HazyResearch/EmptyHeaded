@@ -248,7 +248,7 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getResult(): Result = {
-    Result(outputRelation)
+    Result(OptimizerRel.toRel(outputRelation))
   }
 
   def getFilters() = {
@@ -260,7 +260,7 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getOrder(): Order = {
-    Order(Attributes(attributeOrdering))
+    Order(Attributes(attributeOrdering.filter(attr =>  attrSet.contains(attr))))
   }
 
   def getProject(): Project = {
@@ -268,14 +268,12 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getJoin(): Join = {
-    Join(rels)
+    Join(rels.map(rel => OptimizerRel.toRel(rel)))
   }
 
   def getAggregations(aggMap:Map[String, Aggregation]) = {
-    Aggregations(attrSet.map(attr => {
-      val aggOption = aggMap.get(attr)
-      assert(aggOption.isDefined)
-      aggOption.get
+    Aggregations(attrSet.flatMap(attr => {
+      aggMap.get(attr)
     }).toList)
   }
 }

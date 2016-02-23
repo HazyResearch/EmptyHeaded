@@ -39,7 +39,10 @@ class GHD(val root:GHDNode,
     root.setBagName("bag_0_"+attrNames)
     root.setDescendantNames(1)
 
-    root.computeProjectedOutAttrsAndOutputRelation(outputRelation.anno.values.head,outputRelation.attrs.values.toSet, Set())
+    root.computeProjectedOutAttrsAndOutputRelation(
+      if (outputRelation.anno.values.isEmpty) "" else outputRelation.anno.values.head,
+      outputRelation.attrs.values.toSet,
+      Set())
   //  root.recreateFromAttrMappings
     bagOutputs = getBagOutputRelations(root)
   }

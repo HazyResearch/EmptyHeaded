@@ -31,10 +31,17 @@ case class Attributes(val values:List[String])
 
 case class Annotations(val values:List[String])
 
+
+abstract trait RelBase {
+  val name:String
+  val attrs:Attributes
+  val anno:Annotations
+}
+
 case class Rel(
-  val name:String,
-  val attrs:Attributes,
-  val anno:Annotations=Annotations(List())) {
+  override val name:String,
+  override val attrs:Attributes,
+  override val anno:Annotations=Annotations(List())) extends RelBase {
   def getName():String = {name}
   def getAttributes():Array[String] = {attrs.values.toArray}
   def getAnnotations():Array[String] = {anno.values.toArray}

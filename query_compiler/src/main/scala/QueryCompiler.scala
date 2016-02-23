@@ -182,4 +182,28 @@ object QueryCompiler {
     oos.close()
     myqc
   }
+
+  def optimize(query:String) = {
+    println("Running optimize: " + query)
+    val ir = DatalogParser.run(query)
+    assert(ir.getNumRules() == 1) // for now
+    val rootNodes = GHDSolver.computeAJAR_GHD(
+        ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))).toSet,
+        ir.getRule(0).getResult().getRel().getAttributes().toSet,
+        ir.getRule(0).getFilters().selections.toArray)
+
+    val joinAggregates = ir.getRule(0).getAggregations().aggregations.flatMap(agg => {
+      val attrs = agg.attrs.values
+      attrs.map(attr => { (attr, agg) })
+    }).toMap
+
+    val candidates = rootNodes.map(r =>
+      new GHD(
+        r,
+        ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))),
+        joinAggregates,
+        ir.getRule(0).getResult().getRel()))
+    candidates.map(c => c.doPostProcessingPass())
+    candidates.map(candidate => candidate.getQueryPlan())
+  }
 }
