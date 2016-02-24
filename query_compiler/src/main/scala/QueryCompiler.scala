@@ -101,9 +101,9 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
     println("Running optimize: " + query)
     val ir = DatalogParser.run(query)
     assert(ir.getNumRules() == 1) // for now
-    val rootNodes = GHDSolver.computeAJAR_GHD(
-      ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))).toSet,
-      ir.getRule(0).getResult().getRel().getAttributes().toSet,
+    val rootNodes = GHDSolver.getMinFHWDecompositions(
+      ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))),
+      //ir.getRule(0).getResult().getRel().getAttributes().toSet,
       ir.getRule(0).getFilters().selections.toArray)
 
     val joinAggregates = ir.getRule(0).getAggregations().aggregations.flatMap(agg => {
@@ -204,6 +204,6 @@ object QueryCompiler {
         joinAggregates,
         ir.getRule(0).getResult().getRel()))
     candidates.map(c => c.doPostProcessingPass())
-    candidates.map(candidate => candidate.getQueryPlan())
+    HeuristicUtil.getGHDsOfMinHeight(candidates).map(candidate => candidate.getQueryPlan())
   }
 }

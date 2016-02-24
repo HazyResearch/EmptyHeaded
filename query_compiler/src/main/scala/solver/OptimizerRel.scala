@@ -7,8 +7,8 @@ object OptimizerRel {
       rel.attrs,
       rel.anno,
       false,
-      rel.getAnnotations()
-        .filter(attr => rule.getFilters().selections.find(selection => selection.getAttr() == attr).isDefined).toSet)
+      rel.getAttributes()
+        .filter(attr => rule.getFilters().selections.find(selection => selection.getAttr() == attr).isEmpty).toSet)
   }
 
   def toRel(rel:OptimizerRel): Rel = {
@@ -42,3 +42,9 @@ case class OptimizerRel(override val name:String,
                    override val anno:Annotations,
                    val isImaginary:Boolean,
                    val nonSelectedAttrNames:Set[String]) extends RelBase
+
+object OptimizerRelFactory {
+  def createOptimizerRelWithNoSelects(attrs:String*): OptimizerRel = {
+    OptimizerRel("", Attributes(attrs.toList), Annotations(List()), false, attrs.toSet)
+  }
+}

@@ -42,7 +42,7 @@ class GHD(val root:GHDNode,
     root.computeProjectedOutAttrsAndOutputRelation(
       if (outputRelation.anno.values.isEmpty) "" else outputRelation.anno.values.head,
       outputRelation.attrs.values.toSet,
-      Set())
+      outputRelation.attrs.values.toSet)
   //  root.recreateFromAttrMappings
     bagOutputs = getBagOutputRelations(root)
   }

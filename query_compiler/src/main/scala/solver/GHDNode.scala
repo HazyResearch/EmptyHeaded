@@ -7,11 +7,14 @@ import duncecap.serialized.Attribute
 import org.apache.commons.math3.optim.linear._
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
+import scala.collection.immutable.TreeSet
+
 
 class GHDNode(override val rels: List[OptimizerRel],
               override val selections:Array[Selection])
   extends EHNode(rels, selections) with Iterable[GHDNode] {
   var subtreeRels = rels.toSet
+  var subtreeAttrSet = attrSet
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
   var bagFractionalWidth: Double = 0
@@ -142,19 +145,8 @@ class GHDNode(override val rels: List[OptimizerRel],
                                                 outputAttrs:Set[Attr],
                                                 attrsFromAbove:Set[Attr]): OptimizerRel = {
 
-    // how do I use Projected,
-    projectedOutAttrs = attrSet -- (outputAttrs ++ attrsFromAbove)
-    val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
+
     val equalitySelectedAttrs = attrSet.filter(attr => !getSelection(attr).isEmpty)
-    // Right now we only allow a query to have one type of annotation, so
-    // we take the annotation type from an arbitrary relation that was joined in this bag
-    outputRelation = new OptimizerRel(
-      bagName,
-      Attributes(keptAttrs.toList),
-      Annotations(List(annotationType)),
-      false,
-      keptAttrs.toSet
-    )
     val childrensOutputRelations = children.map(child => {
       child.computeProjectedOutAttrsAndOutputRelation(
         annotationType,
@@ -162,6 +154,18 @@ class GHDNode(override val rels: List[OptimizerRel],
         attrsFromAbove ++ attrSet -- equalitySelectedAttrs)
     })
     subtreeRels ++= childrensOutputRelations
+    attrSet = subtreeRels.foldLeft(TreeSet[String]())(
+      (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
+
+    projectedOutAttrs = attrSet -- (outputAttrs ++ attrsFromAbove)
+    val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
+    outputRelation = new OptimizerRel(
+      bagName,
+      Attributes(keptAttrs.toList),
+      Annotations(List(annotationType)),
+      false,
+      keptAttrs.toSet
+    )
     scalars = childrensOutputRelations.filter(rel => rel.attrs.values.isEmpty)
     return outputRelation
   }
@@ -268,7 +272,7 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getJoin(): Join = {
-    Join(rels.map(rel => OptimizerRel.toRel(rel)))
+    Join(subtreeRels.map(rel => OptimizerRel.toRel(rel)).toList)
   }
 
   def getAggregations(aggMap:Map[String, Aggregation]) = {
