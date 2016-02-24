@@ -45,18 +45,18 @@ case class Result(val rel:Rel){
   def getRel():Rel = {rel}
 }
 
-abstract class ConverganceCriteria {}
+abstract class ConvergenceCriteria {}
 
-case class ITERATIONS() extends ConverganceCriteria {}
+case class ITERATIONS() extends ConvergenceCriteria {}
 
 case class Recursion(
-  val criteria:ConverganceCriteria, 
+  val criteria:ConvergenceCriteria, 
   val operation:Op, 
   val value:String) {
   def getCriteria():String = {
     criteria match {
       case i:ITERATIONS => "iterations"
-      case _ => throw new Exception("Convergance criteria not supported.")
+      case _ => throw new Exception("Convergence criteria not supported.")
     }
   }
   def getOperation():String = {operation.value}
@@ -71,8 +71,8 @@ case class Project(val attrs:Attributes){
   def getAttributes():Array[String] = {attrs.values.toArray}
 }
 
-case class Operation(val operation:String){
-  def getOperation():String = {operation}
+case class Operation(val value:String){
+  def getOperation():String = {value}
 }
 
 case class Join(val rels:List[Rel]){
@@ -97,9 +97,9 @@ case class EQUALS() extends Op {
   override val value = "="
 }
 
-case class Filters(val selections:List[Selection]){
-  def getNumFilters():Int = {selections.length}
-  def getSelect(i:Int):Selection = {selections(i)}
+case class Filters(val values:List[Selection]){
+  def getNumFilters():Int = {values.length}
+  def getSelect(i:Int):Selection = {values(i)}
 }
 
 abstract class AggOp {
@@ -122,14 +122,14 @@ case class Aggregation(
   val init:String,
   val expression:String)
 
-case class Aggregations(val aggregations:List[Aggregation]){
-  def getNumAggregations():Int = {aggregations.length}
-  def getAnnotation(i:Int):String = {aggregations(i).annotation}
-  def getDatatype(i:Int):String = {aggregations(i).datatype}
-  def getOperation(i:Int):String = {aggregations(i).operation.value}
-  def getAttributes(i:Int):Array[String] = {aggregations(i).attrs.values.toArray}
-  def getInit(i:Int):String = {aggregations(i).init}
-  def getExpression(i:Int):String = {aggregations(i).expression}
+case class Aggregations(val values:List[Aggregation]){
+  def getNumAggregations():Int = {values.length}
+  def getAnnotation(i:Int):String = {values(i).annotation}
+  def getDatatype(i:Int):String = {values(i).datatype}
+  def getOperation(i:Int):String = {values(i).operation.value}
+  def getAttributes(i:Int):Array[String] = {values(i).attrs.values.toArray}
+  def getInit(i:Int):String = {values(i).init}
+  def getExpression(i:Int):String = {values(i).expression}
 }
 
 ///////////////////////////////////////////////////////////

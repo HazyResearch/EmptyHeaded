@@ -41,11 +41,11 @@ object DatalogParser extends RegexParsers {
     case cc~co~cv => {
       val criteria = cc match {
         case "i" => ITERATIONS()
-        case _ => throw new Exception("Convergance criteria "+cc+" not supported.")
+        case _ => throw new Exception("Convergence criteria "+cc+" not supported.")
       }
       val operation = co match {
         case "=" => EQUALS()
-        case _ => throw new Exception("Convergance operation "+co+" not supported.")
+        case _ => throw new Exception("Convergence operation "+co+" not supported.")
       }
       Recursion(criteria,operation,cv)
     }
@@ -148,7 +148,7 @@ object DatalogParser extends RegexParsers {
           else agg.attrs
         if(!rslt.rel.anno.values.contains(agg.annotation))
           throw new Exception("If an aggregation is specified the annotation must appear in the head.")
-        val newinit = (agg.init,jt.operation) match {
+        val newinit = (agg.init,jt.value) match {
           case ("","*") => "1"
           case ("","+") => "0"
           case _ => agg.init

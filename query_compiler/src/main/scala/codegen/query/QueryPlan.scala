@@ -25,6 +25,7 @@ object QueryPlan{
   def build(ir:IR){
     println("creating DAG")
     println(ir2relationinfo(ir)) //List[QueryPlanRelationInfo]
+    println()
   }
 
   private def ir2relationinfo(ir:IR) : List[QueryPlanRelationInfo] = {
@@ -45,6 +46,7 @@ object QueryPlan{
       QueryPlanRelationInfo(relMap._1._1,relMap._1._2,Some(relMap._2.toList),"void*")
     }).toList
   }
+  //private def getqueryplanoutputinfo
 }
 
 object QP {
@@ -129,11 +131,11 @@ case class QueryPlanAttrInfo(val name:String,
 /**
  * @param input bag name
  * @param criteria epsilon or iterations
- * @param converganceValue a float (if epsilon) or int (if iterations)
+ * @param ConvergenceValue a float (if epsilon) or int (if iterations)
  */
 case class QueryPlanRecursion(val input:String,
                               val criteria:String,
-                              val converganceValue:String)
+                              val ConvergenceValue:String)
 
 /**
  * @param operation SUM, COUNT, etc.
