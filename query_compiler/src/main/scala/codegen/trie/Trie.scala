@@ -21,7 +21,10 @@ object Trie{
     if(Files.notExists(Paths.get(s"""${db.folder}/libs/trie_${rel.name}"""))){
       val mvdir = s"""cp -rf ${ehhome}/cython/trie ${db.folder}/libs/trie_${rel.name}"""
       mvdir.!
-      Seq("sed","-i",
+      
+      val os = System.getProperty("os.name").toLowerCase()
+      val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
+      Seq("sed","-i",bak,
         s"s/#PTrie#/PTrie_${rel.name}/g",
         s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx",
         s"${db.folder}/libs/trie_${rel.name}/setup.py").!

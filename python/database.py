@@ -45,6 +45,11 @@ class Database:
     jir = ir.python2java()
     self.qc.optimize(jir)
 
+  def generate(self,datalog):
+    global dbhash
+    self.qc.generate(datalog,str(dbhash))
+    dbhash += 1
+
   #codegen and execute a query
   def eval(self,ir):
     #code generation

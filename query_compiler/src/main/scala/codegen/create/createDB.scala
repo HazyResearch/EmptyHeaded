@@ -16,8 +16,12 @@ object CreateDB{
   def loadAndEncode(db:DBInstance,hash:String){
     val ehhome = sys.env("EMPTYHEADED_HOME")
     val mvdir = s"""cp -rf ${ehhome}/cython/createDB ${db.folder}/libs/createDB"""
+    
+    val os = System.getProperty("os.name").toLowerCase()
+    val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
+
     mvdir.!
-    Seq("sed","-i",
+    Seq("sed","-i",bak,
       s"s/#DFMap#/DFMap_${hash}/g",
       s"${db.folder}/libs/createDB/DFMap.pyx",
       s"${db.folder}/libs/createDB/setup.py").!

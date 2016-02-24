@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 from emptyheaded import *
 
-def triangle():
-  return datalog("""
+triangle = \
+  """
     Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).
-  """).ir
+  """
 
 start()
 ratings = pd.read_csv('test.csv',\
@@ -17,14 +17,17 @@ graph = Relation(
   name="graph",
   dataframe=ratings)
 
-db = Database.create(
-  Config(),
-  "/dfs/scratch0/caberger/systems/eh-2.0/EmptyHeaded/python/db",
-  [graph])
-db.build()
+#db = Database.create(
+#  Config(),
+#  "db",
+#  [graph])
+#db.build()
 
-db = Database.from_existing("db")
+db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
+db.generate(triangle)
+
+comm="""
 g = db.get("graph")
 print g.annotated
 print g.num_rows
@@ -39,6 +42,5 @@ ir = triangle()
 
 for rule in ir.rules:
   print rule
-
-
+"""
 stop()
