@@ -97,28 +97,8 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
     "Query.cpp"
   }
 
-  def optimize(query:String):Unit = {
-    println("Running optimize: " + query)
-    val ir = DatalogParser.run(query)
-    assert(ir.getNumRules() == 1) // for now
-    val rootNodes = GHDSolver.getMinFHWDecompositions(
-      ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))),
-      //ir.getRule(0).getResult().getRel().getAttributes().toSet,
-      ir.getRule(0).getFilters().selections.toArray)
-
-    val joinAggregates = ir.getRule(0).getAggregations().aggregations.flatMap(agg => {
-      val attrs = agg.attrs.values
-      attrs.map(attr => { (attr, agg) })
-    }).toMap
-
-    val candidates = rootNodes.map(r =>
-      new GHD(
-        r,
-        ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))),
-        joinAggregates,
-        ir.getRule(0).getResult().getRel()))
-    candidates.map(c => c.doPostProcessingPass())
-    candidates.foreach(candidate => println(candidate.getQueryPlan()))
+  def optimize(query:String):IR = {
+    QueryCompil///er.findOptimizedPlans(query).head
   }
 
   //code generate from an IR
@@ -183,8 +163,7 @@ object QueryCompiler {
     myqc
   }
 
-  def optimize(query:String) = {
-    println("Running optimize: " + query)
+  def findOptimizedPlans(query:String) = {
     val ir = DatalogParser.run(query)
     assert(ir.getNumRules() == 1) // for now
     val rootNodes = GHDSolver.computeAJAR_GHD(

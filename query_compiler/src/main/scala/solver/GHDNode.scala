@@ -21,7 +21,6 @@ class GHDNode(override val rels: List[OptimizerRel],
   var bagWidth: Int = 0
   var depth: Int = 0
   var level:Int = 0
-  var projectedOutAttrs: Set[Attr] = null
 
   /**
    * Iterator returns the nodes in the GHD in preorder traversal order
@@ -142,11 +141,9 @@ class GHDNode(override val rels: List[OptimizerRel],
    * Compute what is projected out in this bag, and what this bag's output relation is
    */
   def computeProjectedOutAttrsAndOutputRelation(annotationType:String,
-                                                outputAttrs:Set[Attr],
-                                                attrsFromAbove:Set[Attr]): OptimizerRel = {
-
-
-    val equalitySelectedAttrs = attrSet.filter(attr => !getSelection(attr).isEmpty)
+                                                outputAttrs:Set[String],
+                                                attrsFromAbove:Set[String]): OptimizerRel = {
+    val equalitySelectedAttrs:Set[String] = attrSet.filter(attr => !getSelection(attr).isEmpty)
     val childrensOutputRelations = children.map(child => {
       child.computeProjectedOutAttrsAndOutputRelation(
         annotationType,
@@ -157,14 +154,13 @@ class GHDNode(override val rels: List[OptimizerRel],
     attrSet = subtreeRels.foldLeft(TreeSet[String]())(
       (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
 
-    projectedOutAttrs = attrSet -- (outputAttrs ++ attrsFromAbove)
     val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
     outputRelation = new OptimizerRel(
       bagName,
       Attributes(keptAttrs.toList),
       Annotations(List(annotationType)),
       false,
-      keptAttrs.toSet
+      keptAttrs -- equalitySelectedAttrs
     )
     scalars = childrensOutputRelations.filter(rel => rel.attrs.values.isEmpty)
     return outputRelation
@@ -256,7 +252,7 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getFilters() = {
-    Filters(selections.toList)
+    Filters(selections.toList.filter(selection => attrSet.contains(selection.attr)))
   }
 
   def getOperation(): Operation = {
@@ -268,6 +264,7 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getProject(): Project = {
+    // TODO
     Project(Attributes(List()))
   }
 

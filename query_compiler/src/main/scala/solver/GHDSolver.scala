@@ -255,7 +255,6 @@ object GHDSolver {
     implicit def add_~=(d:Double) = new withAlmostEquals(d)
     implicit val precision = Precision(0.001)
 
-    println(s"""minScore: ${minScore}""")
     val minFhws = fhwsAndDecomps.filter((scoreAndNode : (Double, GHDNode)) => scoreAndNode._1 ~= minScore)
     return minFhws.unzip._2
   }

@@ -25,7 +25,7 @@ class QueryCompilerTest extends FunSuite {
     )
     val ir = IR(List(rule))
 
-    val optimized = QueryCompiler.optimize("Simple(a,b) :- Edge(a,b).").head
+    val optimized = QueryCompiler.findOptimizedPlans("Simple(a,b) :- Edge(a,b).").head
     assertResult(result)(optimized.statements.head.result)
     assertResult(operation)(optimized.statements.head.operation)
     assertResult(order)(optimized.statements.head.order)
@@ -50,7 +50,7 @@ class QueryCompilerTest extends FunSuite {
       Filters(List())
     )))
 
-    val optimized = QueryCompiler.optimize("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).").head
+    val optimized = QueryCompiler.findOptimizedPlans("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).").head
     assertResult(optimized)(ir)
   }
 
@@ -80,7 +80,7 @@ class QueryCompilerTest extends FunSuite {
       Aggregations(List()),
       Filters(List())
     )
-    val optimized = QueryCompiler.optimize("Lollipop(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d).").head
+    val optimized = QueryCompiler.findOptimizedPlans("Lollipop(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d).").head
     assertResult(IR(List(bag0, bag1)))(optimized)
   }
 
@@ -129,7 +129,32 @@ class QueryCompilerTest extends FunSuite {
       Filters(List())
     )
 
-    val optimized = QueryCompiler.optimize("Barbell(a,b,c,d,e,f) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(d,e),Edge(e,f),Edge(d,f),Edge(a,d).").head
+    val optimized = QueryCompiler.findOptimizedPlans("Barbell(a,b,c,d,e,f) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(d,e),Edge(e,f),Edge(d,f),Edge(a,d).").head
     assertResult(IR(List(bag0, bag1, bag2)))(optimized)
+  }
+
+  test("aggregation triangle query") {
+    val ir = IR(List(Rule(
+      Result(Rel("bag_0_a_b_c", Attributes(List("a", "b", "c")), Annotations(List()))),
+      None,
+      Operation("*"),
+      Order(Attributes(List("a", "b", "c"))),
+      Project(Attributes(List())),
+      Join(List(
+        Rel("Edge", Attributes(List("a", "b")), Annotations(List())),
+        Rel("Edge", Attributes(List("b", "c")), Annotations(List())),
+        Rel("Edge", Attributes(List("a", "c")), Annotations(List())))),
+      Aggregations(List()),
+      Filters(List())
+    )))
+
+    val optimized = QueryCompiler.findOptimizedPlans("Triangle(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)]").head
+    println(optimized)
+   // assertResult(optimized)(ir)
+  }
+
+  test("lollipop agg") {
+    val optimized = QueryCompiler.findOptimizedPlans("Lollipop(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(*)]").head
+    println(optimized)
   }
 }
