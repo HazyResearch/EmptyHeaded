@@ -98,7 +98,7 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
   }
 
   def optimize(query:String):IR = {
-    QueryCompil///er.findOptimizedPlans(query).head
+    QueryCompiler.findOptimizedPlans(query).head
   }
 
   //code generate from an IR

@@ -269,12 +269,23 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getJoin(): Join = {
-    Join(subtreeRels.map(rel => OptimizerRel.toRel(rel)).toList)
+    Join(subtreeRels.map(rel =>
+      OptimizerRel.toRel(rel)).toList)
   }
 
   def getAggregations(aggMap:Map[String, Aggregation]) = {
-    Aggregations(attrSet.flatMap(attr => {
+    val aggs = attrSet.flatMap(attr => {
       aggMap.get(attr)
-    }).toList)
+    }).toList
+    Aggregations(aggs.map(agg =>
+      Aggregation(
+        agg.annotation,
+        agg.datatype,
+        agg.operation,
+        Attributes(agg.attrs.values.filter(at => attrSet.contains(at))),
+        agg.init,
+        agg.expression
+      )
+    ))
   }
 }

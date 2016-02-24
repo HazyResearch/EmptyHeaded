@@ -150,11 +150,25 @@ class QueryCompilerTest extends FunSuite {
 
     val optimized = QueryCompiler.findOptimizedPlans("Triangle(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)]").head
     println(optimized)
-   // assertResult(optimized)(ir)
   }
 
   test("lollipop agg") {
+    val ir = IR(List(
+      Rule(Result(
+        Rel("bag_0_a_d",Attributes(List()),Annotations(List("z")))),None,Operation("*"),Order(Attributes(List("a", "d"))),Project(Attributes(List())),
+        Join(List(
+          Rel("Edge",Attributes(List("a", "d")),Annotations(List())),
+          Rel("bag_1_a_b_c",Attributes(List("a")),Annotations(List("z"))))),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "d")),"1","AGG"))),Filters(List())),
+      Rule(Result(
+        Rel("bag_1_a_b_c",Attributes(List("a")),Annotations(List("z")))),None,Operation("*"),Order(Attributes(List("a", "b", "c"))),Project(Attributes(List())),
+        Join(List(
+          Rel("Edge",Attributes(List("a", "c")),Annotations(List())),
+          Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
+          Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c")),"1","AGG"))),Filters(List()))))
+
     val optimized = QueryCompiler.findOptimizedPlans("Lollipop(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(*)]").head
-    println(optimized)
+    assertResult(ir)(optimized)
   }
 }
