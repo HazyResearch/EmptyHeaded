@@ -237,7 +237,7 @@ class GHDNode(override val rels: List[OptimizerRel],
       None /* TODO: handle recursion */,
       getOperation(),
       getOrder(),
-      getProject(),
+      getProject(aggMap),
       getJoin(),
       getAggregations(aggMap),
       getFilters())
@@ -263,9 +263,9 @@ class GHDNode(override val rels: List[OptimizerRel],
     Order(Attributes(attributeOrdering.filter(attr =>  attrSet.contains(attr))))
   }
 
-  def getProject(): Project = {
-    // TODO
-    Project(Attributes(List()))
+  def getProject(aggMap:Map[String, Aggregation]): Project = {
+    val projectedOutAttrs = attrSet -- outputRelation.attrs.values -- aggMap.keySet
+    Project(Attributes(projectedOutAttrs.toList))
   }
 
   def getJoin(): Join = {
@@ -282,7 +282,7 @@ class GHDNode(override val rels: List[OptimizerRel],
         agg.annotation,
         agg.datatype,
         agg.operation,
-        Attributes(agg.attrs.values.filter(at => attrSet.contains(at))),
+        Attributes(agg.attrs.values.filter(at => attrSet.contains(at) && aggMap.contains(at))),
         agg.init,
         agg.expression
       )

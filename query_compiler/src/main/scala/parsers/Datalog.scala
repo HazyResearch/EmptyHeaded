@@ -16,7 +16,7 @@ package object attr {
 case class ParserFailureException() extends Exception(s"""ParserFailureException""")
 
 /*
- A datalog parser which parsers EmptyHeaded datalog
+ A datalog parser which parses EmptyHeaded datalog
  into our intermediate representation (IR.scala).
 */
 object DatalogParser extends RegexParsers {
@@ -126,6 +126,7 @@ object DatalogParser extends RegexParsers {
         startexp+d)
       List((None,Some(agg),None))
   }
+
   def aggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = fullaggregation | emptyaggregation
 
 
