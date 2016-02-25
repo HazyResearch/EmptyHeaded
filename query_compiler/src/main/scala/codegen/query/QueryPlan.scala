@@ -28,6 +28,8 @@ object QueryPlan{
     //ordered fashion in the rules.
     val independentrules = getIndependentRules(ir)
     
+    println(independentrules.length)
+
     val ehhome = sys.env("EMPTYHEADED_HOME")
     val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/query_${hash}"""
     mvdir.!
@@ -47,7 +49,7 @@ object QueryPlan{
     val setupstring = setuplist.mkString(",")
     Seq("sed","-i",bak,
       s"s/#FILES#/${setupstring}/g",
-      s"${db.folder}/libs/query_${hash}/setup.py").!
+      s"${db.folder}/libs/Query_${hash}/setup.py").!
 
     Seq("sed","-i",bak,
       s"s/#QUERY#/query_${hash}/g",

@@ -7,15 +7,15 @@ from distutils.extension import Extension
 from Cython.Build import cythonize
 
 EH_PATH=os.path.expandvars("$EMPTYHEADED_HOME")
+clibs = ["-DNUM_THREADS_IN=1","-mavx2","-std=c++0x"]
 if platform.uname()[0] == "Darwin":
-  clibs = ["-arch","x86_64","-std=c++0x"]
+  clibs += ["-arch","x86_64",]
   largs = ["-arch","x86_64"]
 else:
-  clibs = ["-std=c++0x"]
   largs = ["-Wl,-rpath="+EH_PATH+"/storage_engine/build/lib","-Wl,--Bshareable"]
 
 extensions = [
-    Extension("#Query#", ["#FILES#"],
+    Extension("#QUERY#", ["#FILES#"],
         include_dirs = [EH_PATH+"/storage_engine/include",numpy.get_include()],
         libraries = ["emptyheaded"],
         library_dirs = [EH_PATH+"/storage_engine/build/lib"],

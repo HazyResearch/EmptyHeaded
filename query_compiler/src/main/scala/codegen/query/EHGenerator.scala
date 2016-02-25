@@ -140,15 +140,16 @@ object EHGenerator {
   private def getCode(includes:StringBuilder,run:StringBuilder,id:String) : String ={
     return s"""
       #include "utils/thread_pool.hpp"
-      #include "utils/parallel.hpp"
       #include "Trie.hpp"
       #include "TrieBuilder.hpp"
       #include "TrieIterator.hpp"
       #include "utils/timer.hpp"
-      #include "utils/ParMemoryBuffer.hpp"
       #include "Encoding.hpp"
       ${includes.toString}
-      void run_${id}(){
+
+      typedef std::unordered_map<std::string,void*> mymap;
+
+      void run(mymap* input_tries){
         thread_pool::initializeThreadPool();
         ${run}
         thread_pool::deleteThreadPool();

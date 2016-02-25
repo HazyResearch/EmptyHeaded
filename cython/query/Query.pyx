@@ -11,9 +11,9 @@ cdef extern from "Query_#HASHSTRING#.hpp":
   # Imports definitions from a c header file
   # Corresponding source file (cfunc.c) must be added to
   # the extension definition in setup.py for proper compiling & linking
-  void Query_#HASHSTRING#(unordered_map[string,void*]* _Triemap)
+  void run(unordered_map[string,void*]* _Triemap)
 
 def c_query(tm):
   _Triemap = \
     <unordered_map[string,void*]*>PyCObject_AsVoidPtr(tm)
-  Query_#HASHSTRING#(_Triemap)
+  run(_Triemap)
