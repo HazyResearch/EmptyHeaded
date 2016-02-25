@@ -84,6 +84,17 @@ case class Operation(val operation:String){
 case class Join(val rels:List[Rel]){
   def getNumRels():Int = { rels.length }
   def getRel(i:Int):Rel = { rels(i) }
+
+  override def equals(that:Any):Boolean = {
+    that match {
+      case that: Join => rels.toSet == that.rels.toSet
+      case _ => false
+    }
+  }
+
+  override def hashCode():Int = {
+    rels.toSet.hashCode()
+  }
 }
 
 case class Selection(val attr:String, 

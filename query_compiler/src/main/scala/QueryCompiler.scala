@@ -183,6 +183,9 @@ object QueryCompiler {
         joinAggregates,
         ir.getRule(0).getResult().getRel()))
     candidates.map(c => c.doPostProcessingPass())
-    HeuristicUtil.getGHDsOfMinHeight(candidates).map(candidate => candidate.getQueryPlan())
+
+    val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(
+      HeuristicUtil.getGHDsOfMinHeight(HeuristicUtil.getGHDsWithMinBags(candidates)))
+    chosen.map(candidate => candidate.getQueryPlan())
   }
 }
