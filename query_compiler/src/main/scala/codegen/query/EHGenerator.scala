@@ -43,7 +43,7 @@ object EHGenerator {
   }
   */
   
-  def run(qp:QueryPlan,dbIn:DBInstance,id:String) = {
+  def run(qp:QueryPlan,dbIn:DBInstance,id:String,filename:String) = {
     db = dbIn
     //get distinct relations we need to load
     //dump output at the end, rest just in a loop
@@ -129,7 +129,7 @@ object EHGenerator {
     val cpp = new StringBuilder()
     cpp.append(getCode(includeCode,cppCode,id))
 
-    val cppFilepath = sys.env("EMPTYHEADED_HOME")+s"/cython/query/Query_${id}.hpp"
+    val cppFilepath = filename
     val file = new File(cppFilepath)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(cpp.toString)

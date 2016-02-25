@@ -106,9 +106,9 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
 
   //code generate from an IR
   //return name of the cpp file
-  def generate(datalog:String,hash:String) {
+  def generate(datalog:String,hash:String) : Int = {
     val ir = DatalogParser.run(datalog)
-    QueryPlan.generate(ir,db)
+    QueryPlan.generate(ir,db,hash)
   }
 
   //saves the schema on disk

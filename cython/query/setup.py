@@ -15,7 +15,7 @@ else:
   largs = ["-Wl,-rpath="+EH_PATH+"/storage_engine/build/lib","-Wl,--Bshareable"]
 
 extensions = [
-    Extension("Query", ["Query.pyx"],
+    Extension("#Query#", ["#FILES#"],
         include_dirs = [EH_PATH+"/storage_engine/include",numpy.get_include()],
         libraries = ["emptyheaded"],
         library_dirs = [EH_PATH+"/storage_engine/build/lib"],

@@ -46,7 +46,11 @@ class Database:
 
   def generate(self,datalog):
     global dbhash
-    self.qc.generate(datalog,str(dbhash))
+    num = self.qc.generate(datalog,str(dbhash))
+    print num
+    os.system("""cd """+self.folder+"""/libs/query_"""+str(dbhash)+""" && ./build.sh && cd - > /dev/null""")
+    
+    self.backend.evaluate(self.relations,str(dbhash),num)
     dbhash += 1
 
   #codegen and execute a query

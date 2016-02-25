@@ -22,13 +22,43 @@ object QueryPlan{
   //loads the relations from disk (if nesc.)
   //and encodes them, then spills the encodings to disk
   //next builds the tries and spills to disk
-  def generate(ir:IR,db:DBInstance){
+  def generate(ir:IR,db:DBInstance,hash:String): Int = {
     //first split the rules apart into those that are connected
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
     val independentrules = getIndependentRules(ir)
+    
+    val ehhome = sys.env("EMPTYHEADED_HOME")
+    val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/query_${hash}"""
+    mvdir.!
+
+    val os = System.getProperty("os.name").toLowerCase()
+    val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
+
+    val setuplist = ListBuffer[String]()
+    (0 until independentrules.length).foreach(i => {
+      val cpfile = s"""cp -rf ${db.folder}/libs/query_${hash}/Query.pyx ${db.folder}/libs/query_${hash}/Query_${i}.pyx"""
+      cpfile.!
+      Seq("sed","-i",bak,
+        s"s/#HASHSTRING#/${i}/g",
+        s"${db.folder}/libs/query_${hash}/Query_${i}.pyx").!
+      setuplist += s"Query_${i}.pyx"
+    })
+    val setupstring = setuplist.mkString(",")
+    Seq("sed","-i",bak,
+      s"s/#FILES#/${setupstring}/g",
+      s"${db.folder}/libs/query_${hash}/setup.py").!
+
+    Seq("sed","-i",bak,
+      s"s/#QUERY#/query_${hash}/g",
+      s"${db.folder}/libs/query_${hash}/setup.py").!
+
+    s"rm -rf ${db.folder}/libs/query_${hash}/Query.pyx".!
+
     var i = 0
     independentrules.foreach(rules => {
+      val filename = s"${db.folder}/libs/query_${hash}/Query_${i}.hpp"
+
       //figure out what relations we need
       val rels = ir2relationinfo(rules)
       val ghd = rules.map(rule =>{
@@ -53,9 +83,10 @@ object QueryPlan{
       }).toList
       val topdown = List(TopDownPassIterator("",List()))
       val myplan = QueryPlan(rels,ghd,topdown)
-      EHGenerator.run(myplan,db,i.toString)
+      EHGenerator.run(myplan,db,i.toString,filename)
       i += 1
     })
+    return independentrules.length
   }
 
   private def getattrinfo(rule:Rule) : List[QueryPlanAttrInfo] = {
