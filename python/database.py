@@ -44,21 +44,13 @@ class Database:
   def optimize(self,datalog):
     self.qc.optimize(datalog)
 
-  def generate(self,datalog):
+  def eval(self,datalog):
     global dbhash
     num = self.qc.generate(datalog,str(dbhash))
     os.system("""cd """+self.folder+"""/libs/query_"""+str(dbhash)+""" && ./build.sh && cd - > /dev/null""")
     
     self.backend.evaluate(self.relations,str(dbhash),num)
     dbhash += 1
-
-  #codegen and execute a query
-  def eval(self,ir):
-    #code generation
-    #FIXME
-    #execution
-    self.backend.query("query")
-    print "Return a dataframe from the DB"
 
   #should return a (Trie,name,ordering)
   def execute(filename):

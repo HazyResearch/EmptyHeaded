@@ -30,8 +30,9 @@ db.build()
 
 db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
-db.generate(triangle)
+db.eval(triangle)
 
+comm="""
 g = db.get("Edge")
 print g.annotated
 print g.num_rows
@@ -46,5 +47,5 @@ ir = datalog(triangle_agg).ir
 
 for rule in ir.rules:
   print rule
-
+"""
 stop()
