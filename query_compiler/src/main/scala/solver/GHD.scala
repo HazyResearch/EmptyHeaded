@@ -55,9 +55,9 @@ class GHD(val root:GHDNode,
     root.recursivelyPushOutSelections()
   }
 
-  def getQueryPlan(): IR = {
+  def getQueryPlan(): List[Rule] = {
     // do a preorder traversal of the GHDNodes to get the queryplans
-    IR(root.recursivelyGetQueryPlan(joinAggregates))
+    root.recursivelyGetQueryPlan(joinAggregates)
   }
 }
 

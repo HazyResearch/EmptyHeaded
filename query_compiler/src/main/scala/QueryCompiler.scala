@@ -98,7 +98,7 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
   }
 
   def optimize(query:String):IR = {
-    QueryCompiler.findOptimizedPlans(query).head
+    QueryPlanner.findOptimizedPlans(query)
   }
 
   //code generate from an IR
@@ -161,35 +161,5 @@ object QueryCompiler {
     val myqc = oos.readObject().asInstanceOf[QueryCompiler]
     oos.close()
     myqc
-  }
-
-  def findOptimizedPlans(query:String) = {
-    val ir = DatalogParser.run(query)
-
-    //This should run the GHD optimizer on any number of rules.
-    //I would imagine the optimizer takes in potentially mutliple 
-    //rules for the same relation.
-    assert(ir.getNumRules() == 1) // for now
-    val rootNodes = GHDSolver.computeAJAR_GHD(
-        ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))).toSet,
-        ir.getRule(0).getResult().getRel().getAttributes().toSet,
-        ir.getRule(0).getFilters().values.toArray)
-
-    val joinAggregates = ir.getRule(0).getAggregations().values.flatMap(agg => {
-      val attrs = agg.attrs.values
-      attrs.map(attr => { (attr, agg) })
-    }).toMap
-
-    val candidates = rootNodes.map(r =>
-      new GHD(
-        r,
-        ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))),
-        joinAggregates,
-        ir.getRule(0).getResult().getRel()))
-    candidates.map(c => c.doPostProcessingPass())
-
-    val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(
-      HeuristicUtil.getGHDsOfMinHeight(HeuristicUtil.getGHDsWithMinBags(candidates)))
-    chosen.map(candidate => candidate.getQueryPlan())
   }
 }
