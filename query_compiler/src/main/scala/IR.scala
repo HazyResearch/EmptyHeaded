@@ -2,10 +2,10 @@ package duncecap
 
 import scala.collection.mutable.ListBuffer
 
-case class IR(val statements:List[Rule]) {
+case class IR(val rules:List[Rule]) {
   def this(){this(List())}
-  def getNumRules():Int = {statements.length}
-  def getRule(i:Int):Rule = {statements(i)}
+  def getNumRules():Int = {rules.length}
+  def getRule(i:Int):Rule = {rules(i)}
 }
 
 case class Rule(

@@ -30,7 +30,7 @@ graph = Relation(
 
 db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
-#db.generate(triangle)
+db.generate(triangle)
 
 #g = db.get("graph")
 #print g.annotated
@@ -42,9 +42,10 @@ db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded
 
 #db.save("graph")
 
+comm="""
 ir = datalog(triangle_agg).ir 
 
 for rule in ir.rules:
   print rule
-
+"""
 stop()

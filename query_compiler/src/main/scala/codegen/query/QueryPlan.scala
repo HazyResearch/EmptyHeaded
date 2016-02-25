@@ -23,14 +23,52 @@ object QueryPlan{
   //and encodes them, then spills the encodings to disk
   //next builds the tries and spills to disk
   def build(ir:IR){
-    println("creating DAG")
-    println(ir2relationinfo(ir)) //List[QueryPlanRelationInfo]
-    println()
+    //first split the rules apart into those that are connected
+    //and those that are not. the dependencies should come in an 
+    //ordered fashion in the rules.
+    val independentrules = getIndependentRules(ir)
+
+    //Next build a Query plan for each list of rules
+    //each independent list of rules is an executable
+    independentrules.foreach(rules => {
+      //figure out what relations we need
+      println(ir2relationinfo(rules)) //List[QueryPlanRelationInfo]
+    })
   }
 
-  private def ir2relationinfo(ir:IR) : List[QueryPlanRelationInfo] = {
+  private def getIndependentRules(ir:IR): List[List[Rule]] = {
+    //set of relation names -> rules
+    val rules = ListBuffer[ListBuffer[Rule]]()
+    val rulenames = ListBuffer[ListBuffer[String]]()
+    val rel = Map[String,Int]() //map from relation name to index in rules buffer
+    ir.rules.foreach(rule => {
+      var rulesindex = -1
+      var rulesindex2 = -1
+      rule.join.rels.foreach(r => {
+        if(rel.contains(r.name)){
+          if(rulesindex != -1 && rulesindex != rel(r.name))
+            throw new Exception("Multiply dependencies should never occur.")
+          rulesindex = rel(r.name)
+          if(rules(rulesindex).indexOf(r.name) > rulesindex2)
+            rulesindex2 = rules(rulesindex).indexOf(r.name)
+        }
+      })
+
+      if(rulesindex == -1){
+        rel += (rule.result.rel.name -> rules.length)
+        rulenames.append(ListBuffer(rule.result.rel.name))
+        rules.append(ListBuffer(rule))
+      } else{
+        rules(rulesindex).append(rule)
+        rulenames(rulesindex).append(rule.result.rel.name)
+      }
+    })
+    rules.map(_.toList).toList
+  }
+
+  private def ir2relationinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
     val relations = Map[(String,List[Int]),ListBuffer[Attributes]]()
-    ir.statements.foreach(rule => {
+    rules.foreach(rule => {
       val globalorder = rule.order.attrs.values
       rule.join.rels.foreach(rel => {
         val order = (0 until rel.attrs.values.length).
@@ -46,7 +84,6 @@ object QueryPlan{
       QueryPlanRelationInfo(relMap._1._1,relMap._1._2,Some(relMap._2.toList),"void*")
     }).toList
   }
-  //private def getqueryplanoutputinfo
 }
 
 object QP {
@@ -77,9 +114,8 @@ case class QueryPlans(val queryPlans:List[QueryPlan]) {
  * @param ghd the ghd, for the bottom up pass
  * @param topdown information for the topdown pass of yannakakis
  */
-case class QueryPlan(val query_type:String,
+case class QueryPlan(
                 val relations:List[QueryPlanRelationInfo],
-                val output:QueryPlanOutputInfo,
                 val ghd:List[QueryPlanBagInfo],
                 val topdown:List[TopDownPassIterator])
 
