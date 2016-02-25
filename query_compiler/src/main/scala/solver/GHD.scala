@@ -29,14 +29,13 @@ class GHD(val root:GHDNode,
    * You should call this before calling getQueryPlan
    */
   def doPostProcessingPass() = {
-
     root.computeDepth
     depth = root.depth
     numBags = root.getNumBags()
     root.setAttributeOrdering(attributeOrdering)
 
     val attrNames = root.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
-    root.setBagName("bag_0_"+attrNames)
+    root.setBagName(outputRelation.name)
     root.setDescendantNames(1)
 
     root.computeProjectedOutAttrsAndOutputRelation(

@@ -5,7 +5,7 @@ import org.scalatest.FunSuite
 
 class QueryPlannerTest extends FunSuite {
   test("Test that query optimizer can return a single relation in 1 bag") {
-    val result = Result(Rel("bag_0_a_b", Attributes(List("a", "b")), Annotations(List())))
+    val result = Result(Rel("Simple", Attributes(List("a", "b")), Annotations(List())))
     val operation = Operation("*")
     val order =  Order(Attributes(List("a", "b")))
     val project = Project(Attributes(List()))
@@ -37,7 +37,7 @@ class QueryPlannerTest extends FunSuite {
 
   test("Test that query optimizer can return triangle query in 1 bag") {
     val ir = IR(List(Rule(
-      Result(Rel("bag_0_a_b_c", Attributes(List("a", "b", "c")), Annotations(List()))),
+      Result(Rel("Triangle", Attributes(List("a", "b", "c")), Annotations(List()))),
       None,
       Operation("*"),
       Order(Attributes(List("a", "b", "c"))),
@@ -69,7 +69,7 @@ class QueryPlannerTest extends FunSuite {
       Filters(List())
     )
     val bag0 = Rule(
-      Result(Rel("bag_0_a_d", Attributes(List("a", "b", "c", "d")), Annotations(List()))),
+      Result(Rel("Lollipop", Attributes(List("a", "b", "c", "d")), Annotations(List()))),
       None,
       Operation("*"),
       Order(Attributes(List("a", "d", "b", "c"))),
@@ -116,7 +116,7 @@ class QueryPlannerTest extends FunSuite {
     )
 
     val bag0 = Rule(
-      Result(Rel("bag_0_a_d", Attributes(List("a", "b", "c", "d", "e", "f")), Annotations(List()))),
+      Result(Rel("Barbell", Attributes(List("a", "b", "c", "d", "e", "f")), Annotations(List()))),
       None,
       Operation("*"),
       Order(Attributes(List("a", "d", "e", "f", "b", "c"))),
@@ -136,7 +136,7 @@ class QueryPlannerTest extends FunSuite {
   test("lollipop agg") {
     val ir = IR(List(
       Rule(Result(
-        Rel("bag_0_a_d",Attributes(List()),Annotations(List("z")))),None,Operation("*"),Order(Attributes(List("a", "d"))),Project(Attributes(List())),
+        Rel("Lollipop",Attributes(List()),Annotations(List("z")))),None,Operation("*"),Order(Attributes(List("a", "d"))),Project(Attributes(List())),
         Join(List(
           Rel("Edge",Attributes(List("a", "d")),Annotations(List())),
           Rel("bag_1_a_b_c",Attributes(List("a")),Annotations(List("z"))))),
@@ -155,7 +155,7 @@ class QueryPlannerTest extends FunSuite {
   test("lollipop partial agg with project") {
     val ir = IR(List(
       Rule(Result(
-        Rel("bag_0_a_b_c",Attributes(List("a")),Annotations(List("z")))),None,Operation("*"),Order(Attributes(List("a", "b", "c"))),Project(Attributes(List("b"))),
+        Rel("Lollipop",Attributes(List("a")),Annotations(List("z")))),None,Operation("*"),Order(Attributes(List("a", "b", "c"))),Project(Attributes(List("b"))),
         Join(List(
           Rel("Edge",Attributes(List("a", "c")),Annotations(List())),
           Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
