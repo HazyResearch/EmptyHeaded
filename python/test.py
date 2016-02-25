@@ -24,7 +24,7 @@ graph = Relation(
 
 db = Database.create(
   Config(),
-  "db",
+  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
   [graph])
 db.build()
 
@@ -32,13 +32,13 @@ db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded
 
 db.generate(triangle)
 
-#g = db.get("graph")
-#print g.annotated
-#print g.num_rows
-#print g.num_columns
+g = db.get("Edge")
+print g.annotated
+print g.num_rows
+print g.num_columns
 
-#db.load("graph")
-#print g.getDF()
+db.load("Edge")
+print g.getDF()
 
 #db.save("graph")
 
