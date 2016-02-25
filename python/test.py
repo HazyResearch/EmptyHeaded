@@ -42,10 +42,9 @@ db.generate(triangle)
 
 #db.save("graph")
 
-comm="""
 ir = datalog(triangle_agg).ir 
 
 for rule in ir.rules:
   print rule
-"""
+
 stop()

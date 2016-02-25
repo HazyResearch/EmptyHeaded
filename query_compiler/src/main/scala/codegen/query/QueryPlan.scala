@@ -33,7 +33,66 @@ object QueryPlan{
     independentrules.foreach(rules => {
       //figure out what relations we need
       println(ir2relationinfo(rules)) //List[QueryPlanRelationInfo]
+      /*
+      val name:String,
+      val duplicateOf:Option[String],
+      val attributes:List[Attributes],
+      val annotation:String,
+      val relations:List[QueryPlanRelationInfo],
+      val nprr:List[QueryPlanAttrInfo],
+      val recursion:Option[QueryPlanRecursion]
+      */
+      val baginfos = ListBuffer[QueryPlanBagInfo]()
+      rules.foreach(rule =>{
+        //fixme figure out anno type
+        val name = rule.result.rel.name
+        val duplicateOf = None
+        val attributes = rule.order.attrs
+        val annotation = "void*"
+        
+        val recursion = rule.recursion match{
+          case Some(rec) => {
+            val input = rec.criteria match {
+              case a:ITERATIONS => "i"
+              case _ =>
+                throw new Exception("not valid recursion")
+            }
+            QueryPlanRecursion(
+              input,
+              rec.operation.value,
+              rec.value
+            )
+          }
+          case None => None
+        }
+        /*
+        QueryPlanBagInfo(
+          rule.result.rel.name,
+          None,
+          order.attrs,
+          "void*",
+        )*/
+      })
     })
+  }
+
+  private def ir2relationinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
+    val relations = Map[(String,List[Int]),ListBuffer[Attributes]]()
+    rules.foreach(rule => {
+      val globalorder = rule.order.attrs.values
+      rule.join.rels.foreach(rel => {
+        val order = (0 until rel.attrs.values.length).
+          sortBy(i => globalorder.indexOf(rel.attrs.values(i))).toList
+        if(!relations.contains((rel.name,order)))
+          relations += ((rel.name,order) -> ListBuffer(rel.attrs))
+        else
+          relations(((rel.name,order))) += rel.attrs
+      })
+    })
+    //FIX ME Look up relations in DB and get annotation
+    relations.map(relMap => {
+      QueryPlanRelationInfo(relMap._1._1,relMap._1._2,Some(relMap._2.toList),"void*")
+    }).toList
   }
 
   private def getIndependentRules(ir:IR): List[List[Rule]] = {
@@ -64,25 +123,6 @@ object QueryPlan{
       }
     })
     rules.map(_.toList).toList
-  }
-
-  private def ir2relationinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
-    val relations = Map[(String,List[Int]),ListBuffer[Attributes]]()
-    rules.foreach(rule => {
-      val globalorder = rule.order.attrs.values
-      rule.join.rels.foreach(rel => {
-        val order = (0 until rel.attrs.values.length).
-          sortBy(i => globalorder.indexOf(rel.attrs.values(i))).toList
-        if(!relations.contains((rel.name,order)))
-          relations += ((rel.name,order) -> ListBuffer(rel.attrs))
-        else
-          relations(((rel.name,order))) += rel.attrs
-      })
-    })
-    //FIX ME Look up relations in DB and get annotation
-    relations.map(relMap => {
-      QueryPlanRelationInfo(relMap._1._1,relMap._1._2,Some(relMap._2.toList),"void*")
-    }).toList
   }
 }
 
