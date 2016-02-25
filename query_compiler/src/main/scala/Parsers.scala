@@ -13,6 +13,7 @@ class SQL(val query:String) {
     new IR()
   }
 }
+
 //Wrapper class to parse Datalog
 class Datalog(val query:String) {
   def parse():IR = {

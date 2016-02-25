@@ -8,7 +8,7 @@ from Cython.Build import cythonize
 
 EH_PATH=os.path.expandvars("$EMPTYHEADED_HOME")
 if platform.uname()[0] == "Darwin":
-  clibs = ["-arch","x86_64","-std=c++0x"]
+  clibs = ["-arch","x86_64","-std=c++11"]
   largs = ["-arch","x86_64"]
 else:
   clibs = ["-std=c++0x"]

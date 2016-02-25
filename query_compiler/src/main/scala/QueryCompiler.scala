@@ -1,27 +1,20 @@
-///////////////////////////////////////////////////////////////////////////////
-// Wrapper classes for the query compiler.
-// The query compiler needs to know the schema of every relation in the db.
-///////////////////////////////////////////////////////////////////////////////
 package duncecap
 
+import java.io._
 import scala.collection.mutable.Map
 import scala.collection.mutable.ListBuffer
-import java.io.FileOutputStream
-import java.io.ObjectOutputStream
-import java.io.FileInputStream
-import java.io.ObjectInputStream
 import sys.process._
 
 //Defines schema types for relations
 case class Schema(
-  val externalAttributeTypes:List[String], 
+  val externalAttributeTypes:List[String],
   val externalAnnotationTypes:List[String]
   ) extends Serializable {
   val attributeTypes:List[String] = checkAttributes()
   val annotationTypes:List[String] = checkAnnotations()
   def getAttributeTypes:Array[String] = {externalAttributeTypes.toArray}
   def getAnnotationTypes:Array[String] = {externalAnnotationTypes.toArray}
-  
+
   //Checks that the schema has valid types.
   private def checkAttributes():List[String] = {
     externalAttributeTypes.map(a => {
@@ -41,7 +34,7 @@ case class Schema(
 
 //Defines relations
 case class Relation(
-  val name:String,  
+  val name:String,
   val schema:Schema,
   val filename:String,
   val df:Boolean
@@ -54,8 +47,8 @@ case class Relation(
 
 //Configuration for the db
 case class Config(
-  val system:String, 
-  val numThreads:Int, 
+  val system:String,
+  val numThreads:Int,
   val numSockets:Int,
   val layout:String,
   val memory:String
@@ -76,6 +69,7 @@ case class DBInstance(val folder:String, val config:Config) extends Serializable
     name2relation += ((r.name,relations.length))
     relations += r
   }
+
   def getFolder():String = {folder}
   def getConfig():Config = {config}
   def getNumRelations():Int = {relations.length}
@@ -84,10 +78,10 @@ case class DBInstance(val folder:String, val config:Config) extends Serializable
 }
 
 //Main class which compilation runs out of
-class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
-  def getDBInstance():DBInstance = {db}
+class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
+  def getDBInstance():DBInstance = { db }
 
-  def createDB(){
+  def createDB() {
     CreateDB.loadAndEncode(db,hash)
   }
 
@@ -103,20 +97,8 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
     "Query.cpp"
   }
 
-  //Parse a SQL statement and code generate it.
-  def sql(query:String):String = {
-    println("PARSING SQL")
-    println(query)
-    //run SQL parser
-    //return IR
-    "Query.cpp"
-  }
-
-  //run the GHD optimizer over an IR
-  def optimize(ir:IR):IR = {
-    println("running GHD optimizer")
-    println(ir)
-    ir
+  def optimize(query:String):IR = {
+    QueryCompiler.findOptimizedPlans(query).head
   }
 
   //code generate from an IR
@@ -168,9 +150,9 @@ object QueryCompiler {
     "float64" -> "double"
   )
 
-  //Special builder to conver arrays to lists 
+  //Special builder to convert arrays to lists
   def buildSchema(attrTypes:Array[String],annoTypes:Array[String]) : Schema = {
-    Schema(attrTypes.toList,annoTypes.toList)
+    Schema(attrTypes.toList, annoTypes.toList)
   }
   //Build from a schema saved on disk
   def fromDisk(filename:String) : QueryCompiler = {
@@ -179,5 +161,35 @@ object QueryCompiler {
     val myqc = oos.readObject().asInstanceOf[QueryCompiler]
     oos.close()
     myqc
+  }
+
+  def findOptimizedPlans(query:String) = {
+    val ir = DatalogParser.run(query)
+
+    //This should run the GHD optimizer on any number of rules.
+    //I would imagine the optimizer takes in potentially mutliple 
+    //rules for the same relation.
+    assert(ir.getNumRules() == 1) // for now
+    val rootNodes = GHDSolver.computeAJAR_GHD(
+        ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))).toSet,
+        ir.getRule(0).getResult().getRel().getAttributes().toSet,
+        ir.getRule(0).getFilters().values.toArray)
+
+    val joinAggregates = ir.getRule(0).getAggregations().values.flatMap(agg => {
+      val attrs = agg.attrs.values
+      attrs.map(attr => { (attr, agg) })
+    }).toMap
+
+    val candidates = rootNodes.map(r =>
+      new GHD(
+        r,
+        ir.getRule(0).join.rels.map(rel => OptimizerRel.fromRel(rel, ir.getRule(0))),
+        joinAggregates,
+        ir.getRule(0).getResult().getRel()))
+    candidates.map(c => c.doPostProcessingPass())
+
+    val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(
+      HeuristicUtil.getGHDsOfMinHeight(HeuristicUtil.getGHDsWithMinBags(candidates)))
+    chosen.map(candidate => candidate.getQueryPlan())
   }
 }

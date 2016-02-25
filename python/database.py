@@ -41,9 +41,8 @@ class Database:
 
   #runs GHD optimizer
   #returns an IR
-  def optimize(self,ir):
-    jir = ir.python2java()
-    self.qc.optimize(jir)
+  def optimize(self,datalog):
+    self.qc.optimize(datalog)
 
   def generate(self,datalog):
     global dbhash
@@ -83,14 +82,14 @@ class Database:
     self.backend.create(self.relations,self.dbhash)
 
   #reads files from an existing database on disk
-  #takes java QC and translates it to respective python classes 
+  #takes java QC and translates it to respective python classes
   @staticmethod
   def from_existing(folder):
     self = Database()
     self.duncecap = jpype.JPackage('duncecap')
     self.folder = folder #string
     self.qc = self.duncecap.QueryCompiler.fromDisk(self.folder+"/schema.bin")
-    
+
     dbInstance = self.qc.getDBInstance()
     self.folder = dbInstance.getFolder()
     self.config = Config.java2python(dbInstance.getConfig())

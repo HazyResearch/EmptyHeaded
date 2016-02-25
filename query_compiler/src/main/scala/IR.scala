@@ -8,16 +8,15 @@ case class IR(val rules:List[Rule]) {
   def getRule(i:Int):Rule = {rules(i)}
 }
 
-case class Rule(
-  val result:Result,
-  val recursion:Option[Recursion],
-  val operation:Operation,
-  val order:Order,
-  val project:Project,
-  val join:Join,
-  val aggregations:Aggregations,
-  val filters:Filters
-) {
+case class Rule(val result:Result,
+                val recursion:Option[Recursion],
+                val operation:Operation,
+                val order:Order,
+                val project:Project,
+                val join:Join,
+                val aggregations:Aggregations,
+                val filters:Filters) {
+
   def getResult():Result = {result}
   def getRecursion():Option[Recursion] = {recursion}
   def getOperation():Operation = {operation}
@@ -32,17 +31,24 @@ case class Attributes(val values:List[String])
 
 case class Annotations(val values:List[String])
 
+
+abstract trait RelBase {
+  val name:String
+  val attrs:Attributes
+  val anno:Annotations
+}
+
 case class Rel(
-  val name:String,
-  val attrs:Attributes,
-  val anno:Annotations=Annotations(List())) {
+  override val name:String,
+  override val attrs:Attributes,
+  override val anno:Annotations=Annotations(List())) extends RelBase {
   def getName():String = {name}
   def getAttributes():Array[String] = {attrs.values.toArray}
   def getAnnotations():Array[String] = {anno.values.toArray}
 }
 
 case class Result(val rel:Rel){
-  def getRel():Rel = {rel}
+  def getRel():Rel = { rel }
 }
 
 abstract class ConvergenceCriteria {}
@@ -56,7 +62,7 @@ case class Recursion(
   def getCriteria():String = {
     criteria match {
       case i:ITERATIONS => "iterations"
-      case _ => throw new Exception("Convergence criteria not supported.")
+      case _ => throw new Exception("Convergence criterion not supported.")
     }
   }
   def getOperation():String = {operation.value}
@@ -64,11 +70,11 @@ case class Recursion(
 }
 
 case class Order(val attrs:Attributes){
-  def getAttributes():Array[String] = {attrs.values.toArray}
+  def getAttributes():Array[String] = { attrs.values.toArray }
 }
 
 case class Project(val attrs:Attributes){
-  def getAttributes():Array[String] = {attrs.values.toArray}
+  def getAttributes():Array[String] = { attrs.values.toArray }
 }
 
 case class Operation(val value:String){
@@ -76,19 +82,30 @@ case class Operation(val value:String){
 }
 
 case class Join(val rels:List[Rel]){
-  def getNumRels():Int = {rels.length}
-  def getRel(i:Int):Rel = {rels(i)}
+  def getNumRels():Int = { rels.length }
+  def getRel(i:Int):Rel = { rels(i) }
+
+  override def equals(that:Any):Boolean = {
+    that match {
+      case that: Join => rels.toSet == that.rels.toSet
+      case _ => false
+    }
+  }
+
+  override def hashCode():Int = {
+    rels.toSet.hashCode()
+  }
 }
 
 case class Selection(val attr:String, 
   val operation:Op,
   val value:String) {
-  def getAttr():String = {attr}
-  def getOperation():String = {operation.value}
-  def getValue():String = {value}
+  def getAttr():String = { attr }
+  def getOperation():String = { operation.value }
+  def getValue():String = { value }
 }
 
-abstract class Op{
+abstract class Op {
   val value:String = ""
 }
 
@@ -137,11 +154,12 @@ case class Aggregations(val values:List[Aggregation]){
 //Should not need to use unless you are modifying the python
 //jpype bindings.
 ///////////////////////////////////////////////////////////
-object IR{
-  //Special builder to conver arrays to lists & check
+object IR {
+  //Special builder to convert arrays to lists & check
   //that everything is consistent with what is in DB  
-  def buildRel(name:String,attrs:Array[String],
-    anno:Array[String]) : Rel = {
+  def buildRel(name:String,
+               attrs:Array[String],
+               anno:Array[String]) : Rel = {
     return Rel(name,
       Attributes(attrs.toList),
       Annotations(anno.toList))
@@ -152,21 +170,25 @@ object IR{
   }
 }
 
-class IRBuilder(){
+class IRBuilder() {
   val rules = ListBuffer[Rule]()
+
   def addRule(rule:Rule) {
     rules += rule
   }
+
   def addRules(rule:List[Rule]) {
     rules ++= rule
   }
+
   def build():IR = {
     IR(rules.toList)
   }
 }
 
-class AggregationsBuilder(){
+class AggregationsBuilder() {
   val aggregations = ListBuffer[Aggregation]()
+
   def getOp(op:String) : AggOp = {
     op match {
       case "SUM" => SUM()
@@ -175,6 +197,7 @@ class AggregationsBuilder(){
         throw new Exception("Aggregation operation " + op + " not supported.")
     }
   }
+
   def addAggregation(
     annotation:String,
     datatype:String,
@@ -190,13 +213,15 @@ class AggregationsBuilder(){
       init,
       expression)
   }
+
   def build():Aggregations = {
     Aggregations(aggregations.toList)
   }
 }
 
-class FilterBuilder(){
+class FilterBuilder() {
   val filters = ListBuffer[Selection]()
+
   private def getOp(op:String) : Op = {
     op match {
       case "=" => EQUALS()
@@ -204,28 +229,33 @@ class FilterBuilder(){
         throw new Exception("Selection operation " + op + " not supported.")
     }
   }
+
   def buildSelection(attr:String,operation:String,value:String):Selection = {
     Selection(attr,getOp(operation),value)
   }
+
   def addSelection(sel:Selection) {
     filters += sel
   }
+
   def build():Filters = {
     Filters(filters.toList)
   }
 }
 
-class JoinBuilder(){
+class JoinBuilder() {
   val joins = ListBuffer[Rel]()
+
   def addRel(name:String,attrs:Array[String],anno:Array[String]) {
     joins += Rel(name,Attributes(attrs.toList),Annotations(anno.toList))
   }
-  def build():Join ={
+
+  def build():Join = {
     Join(joins.toList)
   }
 }
 
-class RecursionBuilder(){
+class RecursionBuilder() {
   def build(criteria:String,op:String,value:String):Option[Recursion] = {
     (criteria,op,value) match {
       case ("","","") => None
