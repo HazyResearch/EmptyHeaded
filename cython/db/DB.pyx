@@ -68,13 +68,13 @@ cdef class DB:
 
   def evaluate(self,relations,dbhash,num):
     imp.acquire_lock()
-    fname = self._folder+"/libs/query_"+dbhash+"/query_"+dbhash+".so"
+    fname = self._folder+"/libs/query_"+dbhash+"/Query_"+dbhash+".so"
     mod = imp.load_dynamic("Query_"+dbhash,fname)
     imp.release_lock()
 
     voidptr = PyCObject_FromVoidPtr(self._dbmap,NULL) #FIXME add destructor
     for i in range(num):
-      mod.c_query(voidptr)
+      eval("mod.c_query_"+str(i)+"(voidptr)")
 
   def __cinit__(DB self):
   # Initialize the "this pointer" to NULL so __dealloc__

@@ -22,14 +22,27 @@ object QueryPlan{
   //loads the relations from disk (if nesc.)
   //and encodes them, then spills the encodings to disk
   //next builds the tries and spills to disk
+  def genCythonFile(id:String) : StringBuilder = {
+    val code = new StringBuilder()
+    code.append(s"""
+cdef extern from "query_${id}.hpp":
+  # Imports definitions from a c header file
+  # Corresponding source file (cfunc.c) must be added to
+  # the extension definition in setup.py for proper compiling & linking
+  void run_${id}(unordered_map[string,void*]* _Triemap)
+
+def c_query_${id}(tm):
+  _Triemap = <unordered_map[string,void*]*>PyCObject_AsVoidPtr(tm) 
+  run_${id}(_Triemap)
+""")
+    code
+  }
+
   def generate(ir:IR,db:DBInstance,hash:String): Int = {
     //first split the rules apart into those that are connected
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
     val independentrules = getIndependentRules(ir)
-    
-    println(independentrules.length)
-
     val ehhome = sys.env("EMPTYHEADED_HOME")
     val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/query_${hash}"""
     mvdir.!
@@ -38,28 +51,30 @@ object QueryPlan{
     val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
 
     val setuplist = ListBuffer[String]()
+    val cpfile = s"""mv ${db.folder}/libs/query_${hash}/Query.pyx ${db.folder}/libs/query_${hash}/Query_${hash}.pyx"""
+    cpfile.!
+
+    val cythoncode = new StringBuilder()
     (0 until independentrules.length).foreach(i => {
-      val cpfile = s"""cp -rf ${db.folder}/libs/query_${hash}/Query.pyx ${db.folder}/libs/query_${hash}/Query_${i}.pyx"""
-      cpfile.!
-      Seq("sed","-i",bak,
-        s"s/#HASHSTRING#/${i}/g",
-        s"${db.folder}/libs/query_${hash}/Query_${i}.pyx").!
-      setuplist += s"Query_${i}.pyx"
+      cythoncode.append(genCythonFile(i.toString))
     })
+    val fw = new FileWriter(s"${db.folder}/libs/query_${hash}/Query_${hash}.pyx", true)
+    fw.write(s"\n${cythoncode}") 
+    fw.close()
+
     val setupstring = setuplist.mkString(",")
-    Seq("sed","-i",bak,
-      s"s/#FILES#/${setupstring}/g",
-      s"${db.folder}/libs/Query_${hash}/setup.py").!
 
     Seq("sed","-i",bak,
-      s"s/#QUERY#/query_${hash}/g",
+      s"s/#FILES#/Query_${hash}.pyx/g",
       s"${db.folder}/libs/query_${hash}/setup.py").!
 
-    s"rm -rf ${db.folder}/libs/query_${hash}/Query.pyx".!
+    Seq("sed","-i",bak,
+      s"s/#QUERY#/Query_${hash}/g",
+      s"${db.folder}/libs/query_${hash}/setup.py").!
 
     var i = 0
     independentrules.foreach(rules => {
-      val filename = s"${db.folder}/libs/query_${hash}/Query_${i}.hpp"
+      val filename = s"${db.folder}/libs/query_${hash}/query_${i}.hpp"
 
       //figure out what relations we need
       val rels = ir2relationinfo(rules)
@@ -299,7 +314,7 @@ case class QueryPlanAttrInfo(val name:String,
  */
 case class QueryPlanRecursion(val input:String,
                               val criteria:String,
-                              val ConvergenceValue:String)
+                              val convergenceValue:String)
 
 /**
  * @param operation SUM, COUNT, etc.
