@@ -27,6 +27,7 @@ object QueryPlan{
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
     val independentrules = getIndependentRules(ir)
+    var i = 0
     independentrules.foreach(rules => {
       //figure out what relations we need
       val rels = ir2relationinfo(rules)
@@ -52,7 +53,8 @@ object QueryPlan{
       }).toList
       val topdown = List(TopDownPassIterator("",List()))
       val myplan = QueryPlan(rels,ghd,topdown)
-      EHGenerator.run(myplan,db)
+      EHGenerator.run(myplan,db,i.toString)
+      i += 1
     })
   }
 

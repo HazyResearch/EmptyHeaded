@@ -12,6 +12,7 @@ object EHGenerator {
   type Attribute = String
 
   var db:DBInstance = null
+  var memory:String = "ParMemoryBuffer"
 
   private def GHDFromJSON(filename:String):Map[String,Any] = {
     val fileContents = Source.fromFile(filename).getLines.mkString
@@ -42,7 +43,7 @@ object EHGenerator {
   }
   */
   
-  def run(qp:QueryPlan,dbIn:DBInstance) = {
+  def run(qp:QueryPlan,dbIn:DBInstance,id:String) = {
     db = dbIn
     //get distinct relations we need to load
     //dump output at the end, rest just in a loop
@@ -126,9 +127,9 @@ object EHGenerator {
     Environment.config.resultOrdering = qp.output.ordering
     */
     val cpp = new StringBuilder()
-    cpp.append(getCode(includeCode,cppCode))
+    cpp.append(getCode(includeCode,cppCode,id))
 
-    val cppFilepath = sys.env("EMPTYHEADED_HOME")+"/cython/query/Query.hpp"
+    val cppFilepath = sys.env("EMPTYHEADED_HOME")+s"/cython/query/Query_${id}.hpp"
     val file = new File(cppFilepath)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(cpp.toString)
@@ -136,7 +137,7 @@ object EHGenerator {
     s"""clang-format -style=llvm -i ${cppFilepath}""" !
   } 
 
-  private def getCode(includes:StringBuilder,run:StringBuilder) : String ={
+  private def getCode(includes:StringBuilder,run:StringBuilder,id:String) : String ={
     return s"""
       #include "utils/thread_pool.hpp"
       #include "utils/parallel.hpp"
@@ -147,7 +148,7 @@ object EHGenerator {
       #include "utils/ParMemoryBuffer.hpp"
       #include "Encoding.hpp"
       ${includes.toString}
-      void run(){
+      void run_${id}(){
         thread_pool::initializeThreadPool();
         ${run}
         thread_pool::deleteThreadPool();
@@ -161,10 +162,10 @@ object EHGenerator {
   private def emitLoadRelations(relations:List[QueryPlanRelationInfo]) : StringBuilder = {
     val code = new StringBuilder()
     code.append(relations.map(r => {
-      s"""Trie<${r.annotation},${db.config.memory}>* Trie_${r.name}_${r.ordering.mkString("_")} = NULL;
+      s"""Trie<${r.annotation},${memory}>* Trie_${r.name}_${r.ordering.mkString("_")} = NULL;
       {
         auto start_time = timer::start_clock();
-        Trie_${r.name}_${r.ordering.mkString("_")} = Trie<${r.annotation},${db.config.memory}>::load( 
+        Trie_${r.name}_${r.ordering.mkString("_")} = Trie<${r.annotation},${memory}>::load( 
           "${db.folder}/relations/${r.name}/${r.name}_${r.ordering.mkString("_")}"
         );
         timer::stop_clock("LOADING Trie ${r.name}_${r.ordering.mkString("_")}", start_time);      
