@@ -105,13 +105,13 @@ class GHDNode(override val rels: List[OptimizerRel],
     return newSeen
   }
 
-  def setDescendantNames(level:Int): Unit = {
+  def setDescendantNames(level:Int, suffix:String): Unit = {
     children.map(childAndIndex => {
       val attrNames = childAndIndex.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
-      childAndIndex.setBagName(s"bag_${level}_${attrNames}")
+      childAndIndex.setBagName(s"bag_${level}_${attrNames}_${suffix}")
       childAndIndex.level = level
     })
-    children.map(child => {child.setDescendantNames(level + 1)})
+    children.map(child => {child.setDescendantNames(level + 1, suffix)})
   }
 
   def recreateFromAttrMappings: Unit = {

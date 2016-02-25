@@ -36,7 +36,7 @@ class GHD(val root:GHDNode,
 
     val attrNames = root.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
     root.setBagName(outputRelation.name)
-    root.setDescendantNames(1)
+    root.setDescendantNames(1, outputRelation.name)
 
     root.computeProjectedOutAttrsAndOutputRelation(
       if (outputRelation.anno.values.isEmpty) "" else outputRelation.anno.values.head,
