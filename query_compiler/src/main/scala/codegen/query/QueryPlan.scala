@@ -22,58 +22,111 @@ object QueryPlan{
   //loads the relations from disk (if nesc.)
   //and encodes them, then spills the encodings to disk
   //next builds the tries and spills to disk
-  def build(ir:IR){
+  def generate(ir:IR,db:DBInstance){
     //first split the rules apart into those that are connected
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
     val independentrules = getIndependentRules(ir)
-
-    //Next build a Query plan for each list of rules
-    //each independent list of rules is an executable
     independentrules.foreach(rules => {
       //figure out what relations we need
-      println(ir2relationinfo(rules)) //List[QueryPlanRelationInfo]
-      /*
-      val name:String,
-      val duplicateOf:Option[String],
-      val attributes:List[Attributes],
-      val annotation:String,
-      val relations:List[QueryPlanRelationInfo],
-      val nprr:List[QueryPlanAttrInfo],
-      val recursion:Option[QueryPlanRecursion]
-      */
-      val baginfos = ListBuffer[QueryPlanBagInfo]()
-      rules.foreach(rule =>{
+      val rels = ir2relationinfo(rules)
+      val ghd = rules.map(rule =>{
         //fixme figure out anno type
         val name = rule.result.rel.name
         val duplicateOf = None
         val attributes = rule.order.attrs
         val annotation = "void*"
-        
-        val recursion = rule.recursion match{
-          case Some(rec) => {
-            val input = rec.criteria match {
-              case a:ITERATIONS => "i"
-              case _ =>
-                throw new Exception("not valid recursion")
-            }
-            QueryPlanRecursion(
-              input,
-              rec.operation.value,
-              rec.value
-            )
-          }
-          case None => None
-        }
-        /*
+        val relations = ir2relationinfo(List(rule))
+        val nprr = getattrinfo(rule)
+        val recursion = getbagrecursion(rule)
+
         QueryPlanBagInfo(
-          rule.result.rel.name,
-          None,
-          order.attrs,
-          "void*",
-        )*/
+          name,
+          duplicateOf,
+          attributes,
+          annotation,
+          relations,
+          nprr,
+          recursion
+        )
+      }).toList
+      val topdown = List(TopDownPassIterator("",List()))
+      val myplan = QueryPlan(rels,ghd,topdown)
+      EHGenerator.run(myplan,db)
+    })
+  }
+
+  private def getattrinfo(rule:Rule) : List[QueryPlanAttrInfo] = {
+    //create accessors for each attribute
+    val accessorMap = Map[String,ListBuffer[QueryPlanAccessor]]()
+    val selectionMap = Map[String,ListBuffer[QueryPlanSelection]]()
+    rule.order.attrs.values.foreach(a => {
+      accessorMap += (a -> ListBuffer())
+      selectionMap += (a -> ListBuffer())
+    })
+
+    //build up accessors
+    rule.join.rels.foreach(r => {
+      r.attrs.values.foreach(a => {
+        accessorMap(a) += QueryPlanAccessor(r.name,r.attrs,false)
       })
     })
+    //build up selections
+    rule.filters.values.foreach(sel => {
+      selectionMap(sel.attr) += QueryPlanSelection(sel.operation.value,sel.value)
+    })
+
+    //build up aggreations
+    val aggregationMap = Map[String,QueryPlanAggregation]()
+    assert(rule.aggregations.values.length <= 1)
+    if(rule.aggregations.values.length == 1){
+      val agg = rule.aggregations.values.head
+      val aggattrs = agg.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))
+      aggattrs.foreach(a => {
+        val prev = if(aggattrs.indexOf(a) == 0) None else Some(aggattrs(aggattrs.indexOf(a)-1))
+        val next = if((aggattrs.indexOf(a)+1) == aggattrs.length) None else Some(aggattrs(aggattrs.indexOf(a)+1))
+        aggregationMap += (a -> QueryPlanAggregation(
+          agg.operation.value,
+          agg.init,
+          agg.expression,
+          prev,
+          next))
+      })
+    }
+
+    val materializedattrs = rule.order.attrs.values.filter(a => rule.result.rel.attrs.values.contains(a))
+
+    //finally build the attribute info
+    rule.order.attrs.values.map(a => {
+      val name = a
+      val accessors = accessorMap(a).toList
+      val materialize = rule.result.rel.attrs.values.contains(a)
+      val selection = selectionMap(a).toList
+      val annotation = None
+      val aggregation = if(aggregationMap.contains(a)) Some(aggregationMap(a)) else None
+      val prevMaterialized = if(materializedattrs.indexOf(a) <= 0) None else Some(materializedattrs(materializedattrs.indexOf(a)-1))
+      val nextMaterialized = if((materializedattrs.indexOf(a)+1) == materializedattrs.length) None else Some(materializedattrs(materializedattrs.indexOf(a)+1))
+
+      QueryPlanAttrInfo(name,accessors,materialize,selection,annotation,aggregation,prevMaterialized,nextMaterialized)
+    }).toList
+  }
+
+  private def getbagrecursion(rule:Rule):Option[QueryPlanRecursion] = {
+    rule.recursion match {
+      case Some(rec) => {
+        val input = rec.criteria match {
+          case a:ITERATIONS => "i"
+          case _ =>
+            throw new Exception("not valid recursion")
+        }
+        Some(QueryPlanRecursion(
+          input,
+          rec.operation.value,
+          rec.value
+        ))
+      }
+      case None => None
+    }
   }
 
   private def ir2relationinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
@@ -184,7 +237,7 @@ case class QueryPlanOutputInfo(val name:String,
  */
 case class QueryPlanBagInfo(val name:String,
                             val duplicateOf:Option[String],
-                            val attributes:List[Attributes],
+                            val attributes:Attributes,
                             val annotation:String,
                             val relations:List[QueryPlanRelationInfo],
                             val nprr:List[QueryPlanAttrInfo],
@@ -201,8 +254,8 @@ case class QueryPlanAttrInfo(val name:String,
                         val annotation:Option[Attributes],
                         val aggregation:Option[QueryPlanAggregation],
                         /* The last two here are never filled out in the top down pass*/
-                        val prevMaterialized:Option[Attributes],
-                        val nextMaterialized:Option[Attributes])
+                        val prevMaterialized:Option[String],
+                        val nextMaterialized:Option[String])
 
 /**
  * @param input bag name
@@ -223,8 +276,8 @@ case class QueryPlanRecursion(val input:String,
 case class QueryPlanAggregation(val operation:String,
                            val init:String,
                            val expression:String,
-                           val prev:Option[Attributes],
-                           val next:Option[Attributes])
+                           val prev:Option[String],
+                           val next:Option[String])
 
 /**
  * @param operation we only support equality (=) right now
@@ -234,7 +287,7 @@ case class QueryPlanSelection(val operation:String,
                               val expression:String)
 
 case class QueryPlanAccessor(val name:String,
-                        val attrs:List[Attributes],
+                        val attrs:Attributes,
                         val annotated:Boolean)
 
 /**

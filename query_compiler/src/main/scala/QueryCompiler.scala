@@ -63,10 +63,13 @@ case class Config(
 //Creates an instance of database (needed to compile queries)
 case class DBInstance(val folder:String, val config:Config) extends Serializable {
   val relations:ListBuffer[Relation] = ListBuffer[Relation]()
+  val relationMap:Map[String,Relation] = Map[String,Relation]()
+
   //map from relation name to index in listbuffer
   val name2relation:Map[String,Int] = Map[String,Int]()
   def addRelation(r:Relation){
     name2relation += ((r.name,relations.length))
+    relationMap += (r.name -> r)
     relations += r
   }
 
@@ -105,7 +108,7 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
   //return name of the cpp file
   def generate(datalog:String,hash:String) {
     val ir = DatalogParser.run(datalog)
-    QueryPlan.build(ir)
+    QueryPlan.generate(ir,db)
   }
 
   //saves the schema on disk

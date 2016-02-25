@@ -19,7 +19,7 @@ ratings = pd.read_csv('test.csv',\
   dtype={"0":np.uint32,"1":np.uint32})
 
 graph = Relation(
-  name="graph",
+  name="Edge",
   dataframe=ratings)
 
 #db = Database.create(
