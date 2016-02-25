@@ -237,7 +237,7 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getResult(): Result = {
-    Result(OptimizerRel.toRel(outputRelation))
+    Result(OptimizerRel.toRel(outputRelation), level != 0)
   }
 
   def getFilters() = {
