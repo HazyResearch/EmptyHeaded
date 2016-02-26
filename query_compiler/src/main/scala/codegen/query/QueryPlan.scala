@@ -106,6 +106,10 @@ def c_query_${id}(tm):
     return independentrules.length
   }
 
+  private def ir2outputinfo(rules:List[Rule]) = {
+    println("IR 2 OUTPUT")
+  } 
+
   private def getattrinfo(rule:Rule) : List[QueryPlanAttrInfo] = {
     //create accessors for each attribute
     val accessorMap = Map[String,ListBuffer[QueryPlanAccessor]]()
@@ -118,7 +122,10 @@ def c_query_${id}(tm):
     //build up accessors
     rule.join.rels.foreach(r => {
       r.attrs.values.foreach(a => {
-        accessorMap(a) += QueryPlanAccessor(r.name,r.attrs,false)
+        accessorMap(a) += QueryPlanAccessor(
+          r.name,
+          Attributes(r.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))),
+          false)
       })
     })
     //build up selections
