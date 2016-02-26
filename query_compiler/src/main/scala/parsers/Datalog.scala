@@ -40,7 +40,7 @@ object DatalogParser extends RegexParsers {
   def aggStatement = ((";" ~> attrList) | emptyStatement)
 
   def result: Parser[Result] = identifierName ~ ("(" ~> attrList) ~ (aggStatement <~ ")") ^^ {case id~attrNames~annoNames =>
-   Result(Rel(id,Attributes(attrNames),Annotations(annoNames)))
+   Result(Rel(id,Attributes(attrNames),Annotations(annoNames)), false)
   }
 
   def convergenceCriteria:Parser[String] = """i|c""".r

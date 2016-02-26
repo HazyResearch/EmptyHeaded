@@ -47,7 +47,7 @@ case class Rel(
   def getAnnotations():Array[String] = {anno.values.toArray}
 }
 
-case class Result(val rel:Rel){
+case class Result(val rel:Rel, val isIntermediate:Boolean){
   def getRel():Rel = { rel }
 }
 
