@@ -9,7 +9,7 @@ from Cython.Build import cythonize
 EH_PATH=os.path.expandvars("$EMPTYHEADED_HOME")
 clibs = ["-DNUM_THREADS_IN=1","-mavx2","-std=c++0x"]
 if platform.uname()[0] == "Darwin":
-  clibs += ["-arch","x86_64",]
+  clibs += ["-arch","x86_64"]
   largs = ["-arch","x86_64"]
 else:
   largs = ["-Wl,-rpath="+EH_PATH+"/storage_engine/build/lib","-Wl,--Bshareable"]

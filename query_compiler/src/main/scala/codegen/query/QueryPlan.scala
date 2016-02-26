@@ -25,41 +25,41 @@ object QueryPlan{
   def genCythonFile(id:String) : StringBuilder = {
     val code = new StringBuilder()
     code.append(s"""
-cdef extern from "query_${id}.hpp":
+cdef extern from "run_${id}.hpp":
   # Imports definitions from a c header file
   # Corresponding source file (cfunc.c) must be added to
   # the extension definition in setup.py for proper compiling & linking
   void run_${id}(unordered_map[string,void*]* _Triemap)
 
-def c_query_${id}(tm):
+def c_run_${id}(tm):
   _Triemap = <unordered_map[string,void*]*>PyCObject_AsVoidPtr(tm) 
   run_${id}(_Triemap)
 """)
     code
   }
 
-  def generate(ir:IR,db:DBInstance,hash:String): Int = {
+  def generate(ir:IR,db:DBInstance,hash:String,folder:String): Int = {
     //first split the rules apart into those that are connected
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
     val independentrules = getIndependentRules(ir)
 
     val ehhome = sys.env("EMPTYHEADED_HOME")
-    val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/query_${hash}"""
+    val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/${folder}"""
     mvdir.!
 
     val os = System.getProperty("os.name").toLowerCase()
     val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
 
     val setuplist = ListBuffer[String]()
-    val cpfile = s"""mv ${db.folder}/libs/query_${hash}/Query.pyx ${db.folder}/libs/query_${hash}/Query_${hash}.pyx"""
+    val cpfile = s"""mv ${db.folder}/libs/${folder}/Query.pyx ${db.folder}/libs/${folder}/Query_${hash}.pyx"""
     cpfile.!
 
     val cythoncode = new StringBuilder()
     (0 until independentrules.length).foreach(i => {
       cythoncode.append(genCythonFile(i.toString))
     })
-    val fw = new FileWriter(s"${db.folder}/libs/query_${hash}/Query_${hash}.pyx", true)
+    val fw = new FileWriter(s"${db.folder}/libs/${folder}/Query_${hash}.pyx", true)
     fw.write(s"\n${cythoncode}") 
     fw.close()
 
@@ -67,20 +67,17 @@ def c_query_${id}(tm):
 
     Seq("sed","-i",bak,
       s"s/#FILES#/Query_${hash}.pyx/g",
-      s"${db.folder}/libs/query_${hash}/setup.py").!
+      s"${db.folder}/libs/${folder}/setup.py").!
 
     Seq("sed","-i",bak,
       s"s/#QUERY#/Query_${hash}/g",
-      s"${db.folder}/libs/query_${hash}/setup.py").!
+      s"${db.folder}/libs/${folder}/setup.py").!
 
     println(independentrules.length)
 
     var i = 0
     independentrules.foreach(rules => {
-
-      println("RULE GROUPING")
-
-      val filename = s"${db.folder}/libs/query_${hash}/query_${i}.hpp"
+      val filename = s"${db.folder}/libs/${folder}/run_${i}.hpp"
 
       //figure out what relations we need
       val rels = ir2relationinfo(rules)
@@ -113,7 +110,7 @@ def c_query_${id}(tm):
 
       val topdown = List(TopDownPassIterator("",List()))
       val myplan = QueryPlan(output,rels,ghd,topdown)
-      //EHGenerator.run(myplan,db,i.toString,filename)
+      EHGenerator.run(myplan,db,i.toString,filename)
       i += 1
     })
     return independentrules.length
@@ -249,13 +246,11 @@ def c_query_${id}(tm):
         rules(rulesindex) += (rule)
         rulenames(rulesindex) += (rule.result.rel.name)
       }
-      
       rule.join.rels.foreach(r => {
         if(headrules.contains(r.name)){
           rel += (r.name -> rulesindex)
         }
       })
-
     })
     rules.map(_.toList).toList.reverse
   }

@@ -81,7 +81,7 @@ case class DBInstance(val folder:String, val config:Config) extends Serializable
 }
 
 //Main class which compilation runs out of
-class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
+class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
   def getDBInstance():DBInstance = { db }
 
   def createDB() {
@@ -107,14 +107,15 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
 
   //code generate from an IR
   //return name of the cpp file
-  def generate(datalog:String,hash:String) : Int = {
+  def generate(datalog:String,hash:String,folder:String) : Int = {
     val ir = DatalogParser.run(datalog)
     val optir = QueryPlanner.findOptimizedPlans(ir)
     optir.rules.foreach(rule => {
       println()
       println(rule)
     })
-    QueryPlan.generate(optir,db,hash)
+    val num = QueryPlan.generate(optir,db,hash,folder)
+    num
   }
 
   //saves the schema on disk
