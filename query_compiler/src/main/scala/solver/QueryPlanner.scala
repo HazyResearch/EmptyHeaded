@@ -1,9 +1,7 @@
 package duncecap
 
 object QueryPlanner {
-  def findOptimizedPlans(query:String) = {
-    val ir = DatalogParser.run(query)
-
+  def findOptimizedPlans(ir:IR) = {
     //This should run the GHD optimizer on any number of rules.
     //I would imagine the optimizer takes in potentially multiple
     //rules for the same relation.

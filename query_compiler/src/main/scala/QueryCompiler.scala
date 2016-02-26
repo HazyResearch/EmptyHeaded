@@ -101,14 +101,20 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
   }
 
   def optimize(query:String):IR = {
-    QueryPlanner.findOptimizedPlans(query)
+    val ir = DatalogParser.run(query)
+    QueryPlanner.findOptimizedPlans(ir)
   }
 
   //code generate from an IR
   //return name of the cpp file
   def generate(datalog:String,hash:String) : Int = {
     val ir = DatalogParser.run(datalog)
-    QueryPlan.generate(ir,db,hash)
+    val optir = QueryPlanner.findOptimizedPlans(ir)
+    optir.rules.foreach(rule => {
+      println()
+      println(rule)
+    })
+    QueryPlan.generate(optir,db,hash)
   }
 
   //saves the schema on disk

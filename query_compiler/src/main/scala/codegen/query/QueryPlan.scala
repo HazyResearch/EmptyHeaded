@@ -72,12 +72,17 @@ def c_query_${id}(tm):
       s"s/#QUERY#/Query_${hash}/g",
       s"${db.folder}/libs/query_${hash}/setup.py").!
 
+    println(independentrules.length)
+
     var i = 0
     independentrules.foreach(rules => {
       val filename = s"${db.folder}/libs/query_${hash}/query_${i}.hpp"
 
       //figure out what relations we need
       val rels = ir2relationinfo(rules)
+      val output = ir2outputinfo(rules)
+      //getTopDownIterators(rules)
+
       val ghd = rules.map(rule =>{
         //fixme figure out anno type
         val name = rule.result.rel.name
@@ -98,16 +103,28 @@ def c_query_${id}(tm):
           recursion
         )
       }).toList
+
+      println(ghd.length)
+
       val topdown = List(TopDownPassIterator("",List()))
-      val myplan = QueryPlan(rels,ghd,topdown)
+      val myplan = QueryPlan(output,rels,ghd,topdown)
       EHGenerator.run(myplan,db,i.toString,filename)
       i += 1
     })
     return independentrules.length
   }
 
-  private def ir2outputinfo(rules:List[Rule]) = {
-    println("IR 2 OUTPUT")
+  private def ir2outputinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
+    rules.filter(rule => {
+      !rule.result.isIntermediate
+    }).map(rule => {
+      val order = rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))
+      QueryPlanRelationInfo(
+        rule.result.rel.name,
+        rule.result.rel.attrs.values.map(order.indexOf(_)),
+        Some(List(rule.result.rel.attrs)),
+        "void*")
+    }).toList
   } 
 
   private def getattrinfo(rule:Rule) : List[QueryPlanAttrInfo] = {
@@ -210,7 +227,7 @@ def c_query_${id}(tm):
     val rules = ListBuffer[ListBuffer[Rule]]()
     val rulenames = ListBuffer[ListBuffer[String]]()
     val rel = Map[String,Int]() //map from relation name to index in rules buffer
-    ir.rules.foreach(rule => {
+    ir.rules.reverse.foreach(rule => {
       var rulesindex = -1
       var rulesindex2 = -1
       rule.join.rels.foreach(r => {
@@ -223,17 +240,58 @@ def c_query_${id}(tm):
         }
       })
 
+      println("RULES INDEX: " + rulesindex)
       if(rulesindex == -1){
         rel += (rule.result.rel.name -> rules.length)
-        rulenames.append(ListBuffer(rule.result.rel.name))
-        rules.append(ListBuffer(rule))
+        rulenames += (ListBuffer(rule.result.rel.name))
+        rules += (ListBuffer(rule))
       } else{
-        rules(rulesindex).append(rule)
-        rulenames(rulesindex).append(rule.result.rel.name)
+        rules(rulesindex) += (rule)
+        rulenames(rulesindex) += (rule.result.rel.name)
       }
     })
     rules.map(_.toList).toList
   }
+/*
+case class TopDownPassIterator(val iterator:String,
+                               val attributeInfo:List[QueryPlanAttrInfo])
+
+
+case class QueryPlanAttrInfo(val name:String,
+                        val accessors:List[QueryPlanAccessor],
+                        val materialize:Boolean,
+                        val selection:List[QueryPlanSelection],
+                        val annotation:Option[Attributes],
+                        val aggregation:Option[QueryPlanAggregation],
+                        /* The last two here are never filled out in the top down pass*/
+                        val prevMaterialized:Option[String],
+                        val nextMaterialized:Option[String])
+*/
+/*
+  private def getTopDownIterators(rules:List[Rule]) {
+    val seenAttrs = Set[String]()
+    val iterators = ListBuffer[TopDownPassIterator]()
+    rules.foreach(rule => {
+      val iterator = rule.result.rel.name
+      val attrs = ListBuffer[QueryPlanAttrInfo]
+      rule.result.rel.attrs.values.foreach(attr => {
+        if(!seenAttrs.contains(attr)){
+          attrs += QueryPlanAttrInfo(
+            attr,
+            ,
+
+          )
+          seenAttrs += attr
+        }
+      })
+      if(attrs.length > 0){
+        println("TOP DOWN ITERATOR: " + iterator + " " + attrs)
+        iterators += TopDownPassIterator(iterator,attrs.toList)
+      }
+    })
+  }
+*/
+
 }
 
 object QP {
@@ -265,6 +323,7 @@ case class QueryPlans(val queryPlans:List[QueryPlan]) {
  * @param topdown information for the topdown pass of yannakakis
  */
 case class QueryPlan(
+                val outputs:List[QueryPlanRelationInfo],
                 val relations:List[QueryPlanRelationInfo],
                 val ghd:List[QueryPlanBagInfo],
                 val topdown:List[TopDownPassIterator])

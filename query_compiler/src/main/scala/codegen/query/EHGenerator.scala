@@ -56,24 +56,24 @@ object EHGenerator {
 
     //spit out output for each query in global vars
     val topDown = qp.topdown.length > 0      
-    //cppCode.append(emitInitializeOutput(qp.output))
     //find all distinct relations
     val single_source_tc = false//detectTransitiveClosure(qp,db)
     qp.relations.foreach( r => {
-      val loadTC = !single_source_tc || (r.ordering == (0 until r.ordering.length).toList)
-      if(loadTC && !distinctLoadRelations.contains(s"""${r.name}_${r.ordering.mkString("_")}"""))
-        distinctLoadRelations += ((s"""${r.name}_${r.ordering.mkString("_")}""" -> r))
+      if(db.relationMap.contains(r.name)){
+        val loadTC = !single_source_tc || (r.ordering == (0 until r.ordering.length).toList)
+        if(loadTC && !distinctLoadRelations.contains(s"""${r.name}_${r.ordering.mkString("_")}"""))
+          distinctLoadRelations += ((s"""${r.name}_${r.ordering.mkString("_")}""" -> r))
+      }
     })
     cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList))
 
     cppCode.append("par::reducer<size_t> num_rows_reducer(0,[](size_t a, size_t b) { return a + b; });")
     cppCode.append("\n//\n//query plan\n//\n")
-    cppCode.append("{")
     cppCode.append("auto query_timer = timer::start_clock();")
     var i = 1
     if(!single_source_tc){
       qp.ghd.foreach(bag => {
-        val (bagCode,bagOutput) = emitNPRR(None,bag,intermediateRelations.toMap,outputAttributes)
+        val (bagCode,bagOutput) = emitNPRR(bag,intermediateRelations.toMap,outputAttributes)
         intermediateRelations += ((bag.name -> bagOutput))
         outputAttributes = bagOutput
         cppCode.append(bagCode)
@@ -112,7 +112,6 @@ object EHGenerator {
         */
     }
     cppCode.append(emitEndQuery())
-    cppCode.append("}")
 
     /*
     val newSchema = ((qp.output.name -> Schema(outputAttributes,List(qp.output.ordering),qp.output.annotation)))
@@ -171,11 +170,7 @@ object EHGenerator {
     }).reduce((a,b) => a+b))
 
     val encodings = relations.flatMap(r => {
-      println(db.relationMap + " " + r.name)
-      if(!db.relationMap.contains(r.name))
-        throw new IllegalArgumentException("Schema not found.")
-      else 
-        db.relationMap(r.name).schema.attributeTypes
+      db.relationMap(r.name).schema.attributeTypes
     }).distinct
 
     code.append(encodings.map(enc => {
@@ -241,24 +236,26 @@ object EHGenerator {
   /////////////////////////////////////////////////////////////////////////////
   //Initialize the output trie for the query.
   /////////////////////////////////////////////////////////////////////////////
-  def emitInitializeOutput(output:QueryPlanOutputInfo) : StringBuilder = {
+  def emitInitializeOutput(outputs:List[QueryPlanRelationInfo]) : StringBuilder = {
     val code = new StringBuilder()
 
-    s"""mkdir -p ${db.folder}/relations/${output.name}""" !
+    outputs.foreach(output => {
+      s"""mkdir -p ${db.folder}/relations/${output.name}""" !
 
-    s"""mkdir -p ${db.folder}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}""" !
+      s"""mkdir -p ${db.folder}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}""" !
 
-    val memFolder = if(memory == "ParMMapBuffer") "mmap"
-      else "ram"
+      val memFolder = if(memory == "ParMMapBuffer") "mmap"
+        else "ram"
 
-    s"""mkdir -p ${db.folder}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}/${memFolder}""" !
+      s"""mkdir -p ${db.folder}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}/${memFolder}""" !
 
-    code.append(s"""
-      Trie<${output.annotation},${memory}> *Trie_${output.name}_${output.ordering.mkString("_")} = new Trie<${output.annotation},${memory}>("${db.folder}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}",${output.ordering.length},${output.annotation != "void*"});
-    """)
-    if(output.annotation != "void*" && output.ordering.length == 0)
-      code.append(s"""${output.annotation} ${output.name};""")
-
+      code.append(s"""
+        //output output 
+        Trie<${output.annotation},${memory}> *Trie_${output.name}_${output.ordering.mkString("_")} = new Trie<${output.annotation},${memory}>("${db.folder}/relations/${output.name}/${output.name}_${output.ordering.mkString("_")}",${output.ordering.length},${output.annotation != "void*"});
+      """)
+      if(output.annotation != "void*" && output.ordering.length == 0)
+        code.append(s"""${output.annotation} ${output.name};""")
+    })
     return code
   }
 
@@ -826,7 +823,6 @@ object EHGenerator {
   }
 
   def emitNPRR(
-    output:Option[String],
     bag:QueryPlanBagInfo,
     intermediateRelations:Map[String,List[Attribute]],
     outputAttributes:List[Attribute]) : (StringBuilder,List[Attribute]) = {
@@ -834,15 +830,8 @@ object EHGenerator {
     val code = new StringBuilder()
     var oa = outputAttributes
     //Emit the output trie for the bag.
-    val outputName = output match {
-      case None => {
-        code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
-        bag.name
-      } case Some(s) => {
-        code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,output))
-        s
-      }
-    }
+    val outputName = bag.name
+    code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
 
     bag.duplicateOf match {
       case None => {
@@ -900,14 +889,10 @@ object EHGenerator {
         
         //copy the buffers, needed if recursive
         val recordering = (0 until bag.attributes.values.length).toList.mkString("_")
-        output match {
-          case None => 
-          case Some(s) => {
-            code.append(s"""Trie_${s}_${recordering}->memoryBuffers = Builders.trie->memoryBuffers;""")
-            code.append(s"""Trie_${s}_${recordering}->num_rows = Builders.trie->num_rows;""")
-            code.append(s"""Trie_${s}_${recordering}->encodings = Builders.trie->encodings;""")
-          }
-        }
+
+        code.append(s"""Trie_${outputName}_${recordering}->memoryBuffers = Builders.trie->memoryBuffers;""")
+        code.append(s"""Trie_${outputName}_${recordering}->num_rows = Builders.trie->num_rows;""")
+        code.append(s"""Trie_${outputName}_${recordering}->encodings = Builders.trie->encodings;""")
 
         bag.recursion match {
           case Some(rec) => 

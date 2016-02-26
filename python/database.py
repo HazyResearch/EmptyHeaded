@@ -47,10 +47,10 @@ class Database:
   def eval(self,datalog):
     global dbhash
     num = self.qc.generate(datalog,str(dbhash))
-    os.system("""cd """+self.folder+"""/libs/query_"""+str(dbhash)+""" && ./build.sh && cd - > /dev/null""")
+    #os.system("""cd """+self.folder+"""/libs/query_"""+str(dbhash)+""" && ./build.sh && cd - > /dev/null""")
     
-    self.backend.evaluate(self.relations,str(dbhash),num)
-    dbhash += 1
+    #self.backend.evaluate(self.relations,str(dbhash),num)
+    #dbhash += 1
 
   #should return a (Trie,name,ordering)
   def execute(filename):
