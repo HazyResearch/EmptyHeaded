@@ -4,12 +4,12 @@ from emptyheaded import *
 
 triangle = \
 """
-  Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).
+Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).
 """
 
 triangle_agg = \
 """
-TriangleAgg(a) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)].
+TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)].
 """
 
 fourclique = \
@@ -62,6 +62,13 @@ lollipop_agg = \
 LollipopAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),z:uint64<-[COUNT(*)].
 """
 
+pagerank = \
+"""
+N(;w) :- Edge(x,y),w:uint64<-[SUM(x;1)].
+PageRank(x;y) :- Edge(x,z),y:float32<-[(1.0/N)].
+PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float32 <- [0.15+0.85*SUM(z;1.0)].
+"""
+
 start()
 ratings = pd.read_csv('test.csv',\
   sep=',',\
@@ -80,9 +87,22 @@ graph = Relation(
 
 db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
-#db.eval(barbell_agg)
+print "TRIANGLE"
+db.eval(triangle)
 
-db.eval(fourclique_sel)
+print "4CLIQUE"
+db.eval(fourclique)
+
+print "TRIANGLE AGG"
+db.eval(triangle_agg)
+
+print "LOLLIPOP AGG"
+db.eval(lollipop_agg)
+
+print "BARBELL AGG"
+db.eval(barbell_agg)
+
+#db.eval(pagerank)
 
 comm="""
 g = db.get("Edge")

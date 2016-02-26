@@ -27,6 +27,6 @@ object QueryPlanner {
       val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(
         HeuristicUtil.getGHDsOfMinHeight(HeuristicUtil.getGHDsWithMinBags(candidates)))
       chosen.head.getQueryPlan()
-    }))
+    }).reverse)
   }
 }

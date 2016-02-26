@@ -43,6 +43,7 @@ def c_query_${id}(tm):
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
     val independentrules = getIndependentRules(ir)
+
     val ehhome = sys.env("EMPTYHEADED_HOME")
     val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/query_${hash}"""
     mvdir.!
@@ -76,6 +77,9 @@ def c_query_${id}(tm):
 
     var i = 0
     independentrules.foreach(rules => {
+
+      println("RULE GROUPING")
+
       val filename = s"${db.folder}/libs/query_${hash}/query_${i}.hpp"
 
       //figure out what relations we need
@@ -84,6 +88,7 @@ def c_query_${id}(tm):
       //getTopDownIterators(rules)
 
       val ghd = rules.map(rule =>{
+        println(rule)
         //fixme figure out anno type
         val name = rule.result.rel.name
         val duplicateOf = None
@@ -108,7 +113,7 @@ def c_query_${id}(tm):
 
       val topdown = List(TopDownPassIterator("",List()))
       val myplan = QueryPlan(output,rels,ghd,topdown)
-      EHGenerator.run(myplan,db,i.toString,filename)
+      //EHGenerator.run(myplan,db,i.toString,filename)
       i += 1
     })
     return independentrules.length
@@ -227,30 +232,29 @@ def c_query_${id}(tm):
     val rules = ListBuffer[ListBuffer[Rule]]()
     val rulenames = ListBuffer[ListBuffer[String]]()
     val rel = Map[String,Int]() //map from relation name to index in rules buffer
+
+    val headrules = ir.rules.map(_.result.rel.name).toSet
     ir.rules.reverse.foreach(rule => {
       var rulesindex = -1
-      var rulesindex2 = -1
-      rule.join.rels.foreach(r => {
-        if(rel.contains(r.name)){
-          if(rulesindex != -1 && rulesindex != rel(r.name))
-            throw new Exception("Multiply dependencies should never occur.")
-          rulesindex = rel(r.name)
-          if(rules(rulesindex).indexOf(r.name) > rulesindex2)
-            rulesindex2 = rules(rulesindex).indexOf(r.name)
-        }
-      })
-
-      println("RULES INDEX: " + rulesindex)
-      if(rulesindex == -1){
+      if(!rel.contains(rule.result.rel.name)){
+        rulesindex = rules.length
         rel += (rule.result.rel.name -> rules.length)
         rulenames += (ListBuffer(rule.result.rel.name))
         rules += (ListBuffer(rule))
       } else{
+        rulesindex = rel(rule.result.rel.name)
         rules(rulesindex) += (rule)
         rulenames(rulesindex) += (rule.result.rel.name)
       }
+      
+      rule.join.rels.foreach(r => {
+        if(headrules.contains(r.name)){
+          rel += (r.name -> rulesindex)
+        }
+      })
+
     })
-    rules.map(_.toList).toList
+    rules.map(_.toList).toList.reverse
   }
 /*
 case class TopDownPassIterator(val iterator:String,
