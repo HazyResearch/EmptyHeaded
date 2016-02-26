@@ -79,11 +79,11 @@ graph = Relation(
   name="Edge",
   dataframe=ratings)
 
-#db = Database.create(
-#  Config(),
-#  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
-#  [graph])
-#db.build()
+db = Database.create(
+  Config(),
+  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
+  [graph])
+db.build()
 
 db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
