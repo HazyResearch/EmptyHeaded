@@ -233,6 +233,9 @@ def c_query_${id}(tm):
     val rulenames = ListBuffer[ListBuffer[String]]()
     val rel = Map[String,Int]() //map from relation name to index in rules buffer
 
+    //flip the order of the rules
+    //add head rules to a queue
+    //make sure all dependencies are in the same queue
     val headrules = ir.rules.map(_.result.rel.name).toSet
     ir.rules.reverse.foreach(rule => {
       var rulesindex = -1
