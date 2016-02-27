@@ -459,9 +459,8 @@ object EHGenerator {
             s"""intermediate_${head.name}"""
         }
         (a.operation,isHead) match {
-          case ("SUM",false) => code.append(s"""annotation_${head.name} += ${rhs};""")
-          case ("SUM",true) => code.append(s"""annotation_${head.name}.update(0,${rhs});""")
-          case ("CONST",_) => //do nothing
+          case ("+",false) => code.append(s"""annotation_${head.name} += ${rhs};""")
+          case ("+",true) => code.append(s"""annotation_${head.name}.update(0,${rhs});""")
           case _ => throw new IllegalArgumentException("OPERATION NOT YET SUPPORTED")
         } 
       } 
@@ -722,10 +721,8 @@ object EHGenerator {
     (head.aggregation,head.materialize) match {
       case (Some(a),false) =>
         a.operation match {
-          case "SUM" =>
+          case "+" =>
             code.append(s"""par::reducer<${annotationType}> annotation_${head.name}(0,[&](${annotationType} a, ${annotationType} b) { return a + b; });""")
-          case "CONST" =>
-            code.append(s"""${annotationType} annotation_${head.name} = (${annotationType})0;""")
           case _ =>
             throw new IllegalArgumentException("AGGREGATION NOT YET SUPPORTED.")
         }
@@ -810,13 +807,16 @@ object EHGenerator {
   def emitIntermediateTrie(name:String,annotation:String,num:Int,bagDuplicate:Option[String]) : StringBuilder = {
     val code = new StringBuilder()
     val ordering = (0 until num).toList.mkString("_")
+    println("NUM: " + num + " " + annotation)
     bagDuplicate match {
       case Some(bd) => {
         code.append(s"""Trie<${annotation},${memory}> *Trie_${name}_${ordering} = Trie_${bd}_${ordering};""")
         if(annotation != "void*" && num == 0)
-          code.append(s"""${annotation} ${name};""")
+          code.append(s"""${annotation} ${name} = ${bd};""")
       } case None => {
         code.append(s"""Trie<${annotation},${memory}> *Trie_${name}_${ordering} = new Trie<${annotation},${memory}>("${db.folder}/relations/${name}",${num},${annotation != "void*"});""")
+        if(annotation != "void*" && num == 0)
+          code.append(s"""${annotation} ${name};""")
       }
     }
     return code

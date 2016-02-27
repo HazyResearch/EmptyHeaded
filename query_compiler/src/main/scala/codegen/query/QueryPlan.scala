@@ -73,8 +73,6 @@ def c_run_${id}(tm):
       s"s/#QUERY#/Query_${hash}/g",
       s"${db.folder}/libs/${folder}/setup.py").!
 
-    println(independentrules.length)
-
     var i = 0
     independentrules.foreach(rules => {
       val filename = s"${db.folder}/libs/${folder}/run_${i}.hpp"
@@ -89,8 +87,14 @@ def c_run_${id}(tm):
         //fixme figure out anno type
         val name = rule.result.rel.name
         val duplicateOf = None
-        val attributes = rule.order.attrs
-        val annotation = "void*"
+        val attributes = Attributes(rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)))
+ 
+        val aggregation = getAggregation(rule)
+        val annotation = aggregation match {
+          case None => "void*"
+          case Some(a) => a.datatype
+        }
+
         val relations = ir2relationinfo(List(rule))
         val nprr = getattrinfo(rule)
         val recursion = getbagrecursion(rule)
@@ -106,8 +110,6 @@ def c_run_${id}(tm):
         )
       }).toList
 
-      println(ghd.length)
-
       val topdown = List(TopDownPassIterator("",List()))
       val myplan = QueryPlan(output,rels,ghd,topdown)
       EHGenerator.run(myplan,db,i.toString,filename)
@@ -116,7 +118,27 @@ def c_run_${id}(tm):
     return independentrules.length
   }
 
+  private def getAggregation(rule:Rule) : Option[Aggregation] = {
+    if(rule.result.rel.anno.values.length > 0){
+      if(rule.result.rel.anno.values.length == 1){
+        assert(rule.result.rel.anno.values.head == rule.aggregations.values.head.annotation)
+        Some(rule.aggregations.values.head)
+      }
+      else 
+        throw new Exception("Only single annotation accepted currently.")
+    }
+    else None
+  }
+
   private def ir2outputinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
+    if(rules.length == 0)
+      throw new Exception("No work to do.")
+    val aggregation = getAggregation(rules.last)
+    val annotation = aggregation match {
+      case None => "void*"
+      case Some(a) => a.datatype
+    }
+
     rules.filter(rule => {
       !rule.result.isIntermediate
     }).map(rule => {
@@ -125,7 +147,7 @@ def c_run_${id}(tm):
         rule.result.rel.name,
         rule.result.rel.attrs.values.map(order.indexOf(_)),
         Some(List(rule.result.rel.attrs)),
-        "void*")
+        annotation)
     }).toList
   } 
 
@@ -161,10 +183,11 @@ def c_run_${id}(tm):
       aggattrs.foreach(a => {
         val prev = if(aggattrs.indexOf(a) == 0) None else Some(aggattrs(aggattrs.indexOf(a)-1))
         val next = if((aggattrs.indexOf(a)+1) == aggattrs.length) None else Some(aggattrs(aggattrs.indexOf(a)+1))
+        val expression = if(agg.expression == "AGG") "" else agg.expression 
         aggregationMap += (a -> QueryPlanAggregation(
           agg.operation.value,
           agg.init,
-          agg.expression,
+          expression,
           prev,
           next))
       })
