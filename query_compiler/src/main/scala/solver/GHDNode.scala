@@ -14,7 +14,7 @@ class GHDNode(override val rels: List[OptimizerRel],
               override val selections:Array[Selection])
   extends EHNode(rels, selections) with Iterable[GHDNode] {
   var subtreeRels = rels.toSet
-  var subtreeAttrSet = attrSet
+  var noChildAttrSet = attrSet
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
   var bagFractionalWidth: Double = 0
@@ -70,7 +70,17 @@ class GHDNode(override val rels: List[OptimizerRel],
 
   override def hashCode = 41 * rels.hashCode() + children.toSet.hashCode()
 
-  def setBagName(name:String): Unit = { bagName = name }
+  def setBagName(name:String): Unit = {
+    bagName = name
+    if (outputRelation != null) {
+    outputRelation = OptimizerRel(
+      name,
+      outputRelation.attrs,
+      outputRelation.anno,
+      outputRelation.isImaginary,
+      outputRelation.nonSelectedAttrNames)
+    }
+  }
 
   /**
    * Does not change execution, but for clarity/cosmetic reasons we push rels w/ selections out from each bag B
@@ -129,12 +139,12 @@ class GHDNode(override val rels: List[OptimizerRel],
   /**
    * Compute what is projected out in this bag, and what this bag's output relation is
    */
-  def computeProjectedOutAttrsAndOutputRelation(annotationType:String,
-                                                outputAttrs:Set[String],
-                                                attrsFromAbove:Set[String]): OptimizerRel = {
+  def recursivelyComputeProjectedOutAttrsAndOutputRelation(annotationType:String,
+                                                           outputAttrs:Set[String],
+                                                           attrsFromAbove:Set[String]): OptimizerRel = {
     val equalitySelectedAttrs:Set[String] = attrSet.filter(attr => !getSelection(attr).isEmpty)
     val childrensOutputRelations = children.map(child => {
-      child.computeProjectedOutAttrsAndOutputRelation(
+      child.recursivelyComputeProjectedOutAttrsAndOutputRelation(
         annotationType,
         outputAttrs,
         attrsFromAbove ++ attrSet -- equalitySelectedAttrs)
@@ -143,7 +153,7 @@ class GHDNode(override val rels: List[OptimizerRel],
     attrSet = subtreeRels.foldLeft(TreeSet[String]())(
       (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
 
-    val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
+    val keptAttrs = noChildAttrSet intersect (outputAttrs ++ attrsFromAbove)
     outputRelation = new OptimizerRel(
       bagName,
       Attributes(keptAttrs.toList),
@@ -220,9 +230,9 @@ class GHDNode(override val rels: List[OptimizerRel],
       .foldLeft(bagFractionalWidth)((accum: Double, x: Double) => if (x > accum) x else accum)
   }
 
-  def getQueryPlan(aggMap:Map[String, Aggregation]): Rule = {
+  def getQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean): Rule = {
     return Rule(
-      getResult(),
+      getResult(queryHasTopDownPass),
       None /* TODO: handle recursion */,
       getOperation(),
       getOrder(),
@@ -232,12 +242,12 @@ class GHDNode(override val rels: List[OptimizerRel],
       getFilters())
   }
 
-  def recursivelyGetQueryPlan(aggMap:Map[String, Aggregation]): List[Rule] = {
-    getQueryPlan(aggMap)::children.flatMap(_.recursivelyGetQueryPlan(aggMap))
+  def recursivelyGetQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean): List[Rule] = {
+    getQueryPlan(aggMap, queryHasTopDownPass)::children.flatMap(_.recursivelyGetQueryPlan(aggMap, queryHasTopDownPass))
   }
 
-  def getResult(): Result = {
-    Result(OptimizerRel.toRel(outputRelation), level != 0)
+  def getResult(queryHasTopDownPass:Boolean): Result = {
+    Result(OptimizerRel.toRel(outputRelation), if (queryHasTopDownPass) true else level != 0)
   }
 
   def getFilters() = {
@@ -276,5 +286,12 @@ class GHDNode(override val rels: List[OptimizerRel],
         agg.expression
       )
     ))
+  }
+
+  def getDescendantNames(attrs:Attributes):List[Rel] = {
+    val rels:List[Rel] = children
+      .filter(child => !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty)
+      .map(_.getResult(false).rel)
+    rels:::children.flatMap(_.getDescendantNames(attrs))
   }
 }
