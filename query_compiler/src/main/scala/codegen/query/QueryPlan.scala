@@ -42,7 +42,7 @@ def c_run_${id}(tm):
     //first split the rules apart into those that are connected
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
-    val independentrules = getIndependentRules(ir)
+    val (independentrules,headrelations) = getIndependentRules(db,ir)
 
     val ehhome = sys.env("EMPTYHEADED_HOME")
     val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/${folder}"""
@@ -78,12 +78,11 @@ def c_run_${id}(tm):
       val filename = s"${db.folder}/libs/${folder}/run_${i}.hpp"
 
       //figure out what relations we need
-      val rels = ir2relationinfo(rules)
+      val rels = ir2relationinfo(rules).filter(r => !headrelations.contains(r.name))
       val output = ir2outputinfo(rules)
       //getTopDownIterators(rules)
 
       val ghd = rules.map(rule =>{
-        println(rule)
         //fixme figure out anno type
         val name = rule.result.rel.name
         val duplicateOf = None
@@ -112,6 +111,7 @@ def c_run_${id}(tm):
 
       val topdown = List(TopDownPassIterator("",List()))
       val myplan = QueryPlan(output,rels,ghd,topdown)
+      println(myplan)
       EHGenerator.run(myplan,db,i.toString,filename)
       i += 1
     })
@@ -179,10 +179,10 @@ def c_run_${id}(tm):
     assert(rule.aggregations.values.length <= 1)
     if(rule.aggregations.values.length == 1){
       val agg = rule.aggregations.values.head
-      val aggattrs = agg.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))
+      val aggattrs = agg.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)).filter(a => !rule.result.rel.attrs.values.contains(a))
       aggattrs.foreach(a => {
-        val prev = if(aggattrs.indexOf(a) == 0) None else Some(aggattrs(aggattrs.indexOf(a)-1))
-        val next = if((aggattrs.indexOf(a)+1) == aggattrs.length) None else Some(aggattrs(aggattrs.indexOf(a)+1))
+        val prev = if(aggattrs.indexOf(a) <= 0) None else Some(aggattrs(aggattrs.indexOf(a)-1))
+        val next = if((aggattrs.indexOf(a)+1) == aggattrs.length || aggattrs.indexOf(a) == -1) None else Some(aggattrs(aggattrs.indexOf(a)+1))
         val expression = if(agg.expression == "AGG") "" else agg.expression 
         aggregationMap += (a -> QueryPlanAggregation(
           agg.operation.value,
@@ -193,18 +193,22 @@ def c_run_${id}(tm):
       })
     }
 
-    val materializedattrs = rule.order.attrs.values.filter(a => rule.result.rel.attrs.values.contains(a))
-
+    val materializedattrs = rule.result.rel.attrs.values
     //finally build the attribute info
     rule.order.attrs.values.map(a => {
       val name = a
       val accessors = accessorMap(a).toList
       val materialize = rule.result.rel.attrs.values.contains(a)
       val selection = selectionMap(a).toList
-      val annotation = None
+      val annotation = if(aggregationMap.size > 0 && materializedattrs.length > 0 && (materializedattrs.length-1) == (materializedattrs.indexOf(a))){
+        assert(aggregationMap.contains(rule.order.attrs.values(rule.order.attrs.values.indexOf(a)+1)))
+        Some(rule.order.attrs.values(rule.order.attrs.values.indexOf(a)+1))
+      } else None
       val aggregation = if(aggregationMap.contains(a)) Some(aggregationMap(a)) else None
-      val prevMaterialized = if(materializedattrs.indexOf(a) <= 0) None else Some(materializedattrs(materializedattrs.indexOf(a)-1))
-      val nextMaterialized = if((materializedattrs.indexOf(a)+1) == materializedattrs.length) None else Some(materializedattrs(materializedattrs.indexOf(a)+1))
+      val prevMaterialized = if(materializedattrs.indexOf(a) <= 0) None 
+        else Some(materializedattrs(materializedattrs.indexOf(a)-1))
+      val nextMaterialized = if((materializedattrs.indexOf(a)+1) == materializedattrs.length || materializedattrs.indexOf(a) == -1) None 
+        else Some(materializedattrs(materializedattrs.indexOf(a)+1))
 
       QueryPlanAttrInfo(name,accessors,materialize,selection,annotation,aggregation,prevMaterialized,nextMaterialized)
     }).toList
@@ -229,25 +233,32 @@ def c_run_${id}(tm):
   }
 
   private def ir2relationinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
-    val relations = Map[(String,List[Int]),ListBuffer[Attributes]]()
+    val relations = Map[(String,List[Int]),(ListBuffer[Attributes],String)]()
     rules.foreach(rule => {
       val globalorder = rule.order.attrs.values
       rule.join.rels.foreach(rel => {
         val order = (0 until rel.attrs.values.length).
           sortBy(i => globalorder.indexOf(rel.attrs.values(i))).toList
+        val anno = if(rel.anno.values.length == 0)
+            "void*"
+          else if(rel.anno.values.length == 1)
+            rule.aggregations.values.head.datatype
+          else 
+            throw new Exception("1 anno per relation")
         if(!relations.contains((rel.name,order)))
-          relations += ((rel.name,order) -> ListBuffer(rel.attrs))
+          relations += ((rel.name,order) -> (ListBuffer(rel.attrs),anno) ) 
         else
-          relations(((rel.name,order))) += rel.attrs
+          relations(((rel.name,order)))._1 += rel.attrs
       })
     })
     //FIX ME Look up relations in DB and get annotation
     relations.map(relMap => {
-      QueryPlanRelationInfo(relMap._1._1,relMap._1._2,Some(relMap._2.toList),"void*")
+      val (key,value) = relMap
+      QueryPlanRelationInfo(key._1,key._2,Some(value._1.toList),value._2)
     }).toList
   }
 
-  private def getIndependentRules(ir:IR): List[List[Rule]] = {
+  private def getIndependentRules(db:DBInstance,ir:IR): (List[List[Rule]],scala.collection.immutable.Map[String,Rel]) = {
     //set of relation names -> rules
     val rules = ListBuffer[ListBuffer[Rule]]()
     val rulenames = ListBuffer[ListBuffer[String]]()
@@ -256,7 +267,8 @@ def c_run_${id}(tm):
     //flip the order of the rules
     //add head rules to a queue
     //make sure all dependencies are in the same queue
-    val headrules = ir.rules.map(_.result.rel.name).toSet
+    val headrules = ir.rules.map(r => ((r.result.rel.name -> r.result.rel))).toMap
+
     ir.rules.reverse.foreach(rule => {
       var rulesindex = -1
       if(!rel.contains(rule.result.rel.name)){
@@ -275,22 +287,12 @@ def c_run_${id}(tm):
         }
       })
     })
-    rules.map(_.toList).toList.reverse
+    (rules.map(_.toList.reverse).toList,headrules)
   }
 /*
 case class TopDownPassIterator(val iterator:String,
                                val attributeInfo:List[QueryPlanAttrInfo])
 
-
-case class QueryPlanAttrInfo(val name:String,
-                        val accessors:List[QueryPlanAccessor],
-                        val materialize:Boolean,
-                        val selection:List[QueryPlanSelection],
-                        val annotation:Option[Attributes],
-                        val aggregation:Option[QueryPlanAggregation],
-                        /* The last two here are never filled out in the top down pass*/
-                        val prevMaterialized:Option[String],
-                        val nextMaterialized:Option[String])
 */
 /*
   private def getTopDownIterators(rules:List[Rule]) {
@@ -351,7 +353,17 @@ case class QueryPlan(
                 val outputs:List[QueryPlanRelationInfo],
                 val relations:List[QueryPlanRelationInfo],
                 val ghd:List[QueryPlanBagInfo],
-                val topdown:List[TopDownPassIterator])
+                val topdown:List[TopDownPassIterator]) {
+  def toJSON(): Unit = {
+    val filename = "query.json"
+    implicit val formats = Serialization.formats(NoTypeHints)
+    scala.tools.nsc.io.File(filename).writeAll(writePretty(this))
+  }
+  override def toString(): String = {
+    implicit val formats = DefaultFormats
+    writePretty(this)
+  }
+}
 
 /**
  * @param name relation's name
@@ -392,7 +404,7 @@ case class QueryPlanAttrInfo(val name:String,
                         val accessors:List[QueryPlanAccessor],
                         val materialize:Boolean,
                         val selection:List[QueryPlanSelection],
-                        val annotation:Option[Attributes],
+                        val annotation:Option[String],
                         val aggregation:Option[QueryPlanAggregation],
                         /* The last two here are never filled out in the top down pass*/
                         val prevMaterialized:Option[String],

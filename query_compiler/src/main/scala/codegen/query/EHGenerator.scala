@@ -47,8 +47,7 @@ object EHGenerator {
     db = dbIn
     //get distinct relations we need to load
     //dump output at the end, rest just in a loop
-    var outputAttributes:List[Attribute] = List()
-    val intermediateRelations:mutable.Map[String,List[Attribute]] = mutable.Map()
+    var outputEncodings:mutable.Map[String,List[String]] = mutable.Map()
     val distinctLoadRelations:mutable.Map[String,QueryPlanRelationInfo] = mutable.Map()
 
     val cppCode = new StringBuilder()
@@ -73,9 +72,8 @@ object EHGenerator {
     var i = 1
     if(!single_source_tc){
       qp.ghd.foreach(bag => {
-        val (bagCode,bagOutput) = emitNPRR(bag,intermediateRelations.toMap,outputAttributes)
-        intermediateRelations += ((bag.name -> bagOutput))
-        outputAttributes = bagOutput
+        val (bagCode,bagOutput) = emitNPRR(bag,outputEncodings.toMap)
+        outputEncodings += (bag.name -> bagOutput)
         cppCode.append(bagCode)
         i += 1
       })
@@ -193,25 +191,19 @@ object EHGenerator {
     return code
   }
 
-  def emitParallelIterators(relations:List[QueryPlanRelationInfo],intermediateRelations:Map[String,List[Attribute]]) : (StringBuilder,IteratorAccessors,Encodings) = {
+  def emitParallelIterators(relations:List[QueryPlanRelationInfo],headencodings:Map[String,List[String]]) : (StringBuilder,IteratorAccessors,Encodings) = {
     val code = new StringBuilder()
     val dependers = mutable.ListBuffer[(String,(String,Int,Int))]()
     val encodings = mutable.ListBuffer[(String,Attribute)]()
     relations.foreach(r => {
       val name = r.name + "_" + r.ordering.mkString("_")
-
-      val relSchema = if(db.relationMap.contains(r.name)) Some(db.relationMap(r.name).schema.attributeTypes) else None
-      val interSchema = intermediateRelations.get(r.name)
-
-      val enc = (relSchema,interSchema) match {
-        case (Some(s),None) => {
-          s
-        } case (None,Some(a)) => {
-          a
-        } case _ => 
+      val enc = 
+        if(db.relationMap.contains(r.name)) 
+          db.relationMap(r.name).schema.attributeTypes
+       else if(headencodings.contains(r.name))
+          headencodings(r.name)
+        else
           throw new IllegalArgumentException("Schema not found.");
-      }
-
 
       r.attributes.get.foreach(attr => {
         val a = attr.values
@@ -807,7 +799,6 @@ object EHGenerator {
   def emitIntermediateTrie(name:String,annotation:String,num:Int,bagDuplicate:Option[String]) : StringBuilder = {
     val code = new StringBuilder()
     val ordering = (0 until num).toList.mkString("_")
-    println("NUM: " + num + " " + annotation)
     bagDuplicate match {
       case Some(bd) => {
         code.append(s"""Trie<${annotation},${memory}> *Trie_${name}_${ordering} = Trie_${bd}_${ordering};""")
@@ -824,11 +815,10 @@ object EHGenerator {
 
   def emitNPRR(
     bag:QueryPlanBagInfo,
-    intermediateRelations:Map[String,List[Attribute]],
-    outputAttributes:List[Attribute]) : (StringBuilder,List[Attribute]) = {
+    headencodings:Map[String,List[String]]) : (StringBuilder,List[String]) = {
     
     val code = new StringBuilder()
-    var oa = outputAttributes
+    var oa = List[String]()
     //Emit the output trie for the bag.
     val outputName = bag.name
     code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
@@ -852,7 +842,7 @@ object EHGenerator {
         }
         code.append("auto bag_timer = timer::start_clock();")
         code.append("num_rows_reducer.clear();")
-        val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,intermediateRelations)
+        val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,headencodings)
         val pbname = bag.name+"_"+(0 until bag.attributes.values.length).toList.mkString("_")
         code.append(emitParallelBuilder(pbname,bag.attributes.values,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)

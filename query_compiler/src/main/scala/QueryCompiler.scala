@@ -96,7 +96,6 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
   //Parse a datalog statement and code generate it.
   def datalog(query:String):String = {
     val ir = DatalogParser.run(query)
-    println(ir)
     "Query.cpp"
   }
 
@@ -110,10 +109,6 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
   def generate(datalog:String,hash:String,folder:String) : Int = {
     val ir = DatalogParser.run(datalog)
     val optir = QueryPlanner.findOptimizedPlans(ir)
-    optir.rules.foreach(rule => {
-      println()
-      println(rule)
-    })
     val num = QueryPlan.generate(optir,db,hash,folder)
     num
   }
