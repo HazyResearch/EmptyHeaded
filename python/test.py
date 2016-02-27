@@ -88,13 +88,13 @@ graph = Relation(
 db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
 print "TRIANGLE"
-#db.eval(triangle)
+db.eval(triangle)
 
 print "4CLIQUE"
-#db.eval(fourclique)
+db.eval(fourclique)
 
 print "TRIANGLE AGG"
-#db.eval(triangle_agg)
+db.eval(triangle_agg)
 
 print "LOLLIPOP AGG"
 db.eval(lollipop_agg)

@@ -111,7 +111,6 @@ def c_run_${id}(tm):
 
       val topdown = List(TopDownPassIterator("",List()))
       val myplan = QueryPlan(output,rels,ghd,topdown)
-      println(myplan)
       EHGenerator.run(myplan,db,i.toString,filename)
       i += 1
     })
