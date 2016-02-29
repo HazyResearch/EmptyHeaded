@@ -72,6 +72,8 @@ object EHGenerator {
     var i = 1
     if(!single_source_tc){
       qp.ghd.foreach(bag => {
+        //println()
+        //println("BAG: " + bag)
         val (bagCode,bagOutput) = emitNPRR(bag,outputEncodings.toMap)
         outputEncodings += (bag.name -> bagOutput)
         cppCode.append(bagCode)

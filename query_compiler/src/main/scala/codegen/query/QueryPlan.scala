@@ -98,6 +98,8 @@ def c_run_${id}(tm):
         val nprr = getattrinfo(rule)
         val recursion = getbagrecursion(rule)
 
+        //println(rule)
+
         QueryPlanBagInfo(
           name,
           duplicateOf,
@@ -165,7 +167,7 @@ def c_run_${id}(tm):
         accessorMap(a) += QueryPlanAccessor(
           r.name,
           Attributes(r.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))),
-          false)
+          r.anno.values.length > 0)
       })
     })
     //build up selections
@@ -210,8 +212,20 @@ def c_run_${id}(tm):
         else Some(materializedattrs(materializedattrs.indexOf(a)+1))
 
       QueryPlanAttrInfo(name,accessors,materialize,selection,annotation,aggregation,prevMaterialized,nextMaterialized)
-    }).toList
+    }).toList.filter(qpa => !(!qpa.materialize && qpa.selection.length == 0 && qpa.aggregation == None))
   }
+
+/*
+case class QueryPlanAttrInfo(val name:String,
+                        val accessors:List[QueryPlanAccessor],
+                        val materialize:Boolean,
+                        val selection:List[QueryPlanSelection],
+                        val annotation:Option[String],
+                        val aggregation:Option[QueryPlanAggregation],
+                        /* The last two here are never filled out in the top down pass*/
+                        val prevMaterialized:Option[String],
+                        val nextMaterialized:Option[String])
+*/
 
   private def getbagrecursion(rule:Rule):Option[QueryPlanRecursion] = {
     rule.recursion match {
