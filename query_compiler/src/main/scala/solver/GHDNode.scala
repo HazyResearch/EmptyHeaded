@@ -14,7 +14,8 @@ class GHDNode(override val rels: List[OptimizerRel],
               override val selections:Array[Selection])
   extends EHNode(rels, selections) with Iterable[GHDNode] {
   var subtreeRels = rels.toSet
-  var noChildAttrSet = attrSet
+  val noChildAttrSet = rels.foldLeft(TreeSet[String]())(
+    (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
   var bagFractionalWidth: Double = 0
@@ -192,10 +193,10 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   private def fractionalScoreNode(): Double = { // TODO: catch UnboundedSolutionException
-  val myRealRels = rels.filter(!_.isImaginary)
-    val unselectedAttrSet = attrSet -- attrToSelection.keys.filter(attr => {
-      attrToSelection.get(attr).isDefined && !attrToSelection.get(attr).get.isEmpty
-    }) // don't bother covering attributes that are equality selected
+    val myRealRels = rels.filter(!_.isImaginary)
+    val unselectedAttrSet = noChildAttrSet -- attrToSelection.keys.filter(attr => {
+            attrToSelection.get(attr).isDefined && !attrToSelection.get(attr).get.isEmpty
+          }) // don't bother covering attributes that are equality selected
     val realRels = myRealRels:::children.flatMap(child => child.rels.filter(!_.isImaginary))
     if (realRels.isEmpty) {
       return 1 // just return 1 because we're going to delete this node anyways

@@ -227,4 +227,12 @@ class QueryPlannerTest extends FunSuite {
       "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)].")
     assertResult(ir)(optimized)
   }
+
+  test("Barbell with selection") {
+    // TODO
+    val optimized = QueryPlanner.findOptimizedPlans("""
+        BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0.
+    """)
+    println(optimized)
+  }
 }

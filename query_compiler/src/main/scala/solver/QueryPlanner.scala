@@ -8,10 +8,18 @@ object QueryPlanner {
     //I would imagine the optimizer takes in potentially multiple
     //rules for the same relation.
     IR(ir.rules.flatMap(rule => {
-      val rootNodes = GHDSolver.computeAJAR_GHD(
-        rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)).toSet,
-        rule.getResult().getRel().getAttributes().toSet,
-        rule.getFilters().values.toArray)
+      val rootNodes =
+      if (!rule.aggregations.values.isEmpty) {
+        GHDSolver.computeAJAR_GHD(
+          rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)).toSet,
+          rule.getResult().getRel().getAttributes().toSet,
+          rule.getFilters().values.toArray)
+      } else {
+        GHDSolver.getMinFHWDecompositions(
+          rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)),
+          rule.getFilters().values.toArray,
+          None)
+      }
 
       val joinAggregates = rule.getAggregations().values.flatMap(agg => {
         val attrs = agg.attrs.values
