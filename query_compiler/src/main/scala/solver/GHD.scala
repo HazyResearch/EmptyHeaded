@@ -74,7 +74,7 @@ class GHD(val root:GHDNode,
   }
 
   def getTopDownPass():Rule = {
-    val relationsInTopDownPass = root.getResult(true).rel::root.getDescendantNames(outputRelation.attrs)
+    val relationsInTopDownPass = root.getResult(true, joinAggregates).rel::root.getDescendantNames(outputRelation.attrs, joinAggregates)
     return Rule(
       Result(outputRelation, false),
       None,

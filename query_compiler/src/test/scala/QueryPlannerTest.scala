@@ -216,9 +216,9 @@ class QueryPlannerTest extends FunSuite {
         None,
         Operation("*"),
         Order(Attributes(List("x", "a"))),
-        Project(Attributes(List("x"))),
+        Project(Attributes(List())),
         Join(List(Rel("Edge",Attributes(List("a", "x")),Annotations(List())))),
-        Aggregations(List()),Filters(List(Selection("x",EQUALS(),"0")))),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("x")),"1","AGG"))),Filters(List(Selection("x",EQUALS(),"0")))),
       Rule(Result(
         Rel("FliqueSelAgg",Attributes(List()),Annotations(List("z"))),false),
         None,
@@ -239,7 +239,6 @@ class QueryPlannerTest extends FunSuite {
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
       "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)]."))
     assertResult(ir)(optimized)
-    //println(optimized)
   }
 
   test("Barbell with selection") {

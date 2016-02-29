@@ -158,7 +158,7 @@ class GHDNode(override val rels: List[OptimizerRel],
     outputRelation = new OptimizerRel(
       bagName,
       Attributes(keptAttrs.toList),
-      Annotations(List(annotationType)),
+      if (annotationType == "") Annotations(List()) else Annotations(List(annotationType)),
       false,
       keptAttrs -- equalitySelectedAttrs
     )
@@ -233,7 +233,7 @@ class GHDNode(override val rels: List[OptimizerRel],
 
   def getQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean): Rule = {
     return Rule(
-      getResult(queryHasTopDownPass),
+      getResult(queryHasTopDownPass, aggMap),
       None /* TODO: handle recursion */,
       getOperation(),
       getOrder(),
@@ -247,8 +247,8 @@ class GHDNode(override val rels: List[OptimizerRel],
     getQueryPlan(aggMap, queryHasTopDownPass)::children.flatMap(_.recursivelyGetQueryPlan(aggMap, queryHasTopDownPass))
   }
 
-  def getResult(queryHasTopDownPass:Boolean): Result = {
-    Result(OptimizerRel.toRel(outputRelation), if (queryHasTopDownPass) true else level != 0)
+  def getResult(queryHasTopDownPass:Boolean, aggMap:Map[String, Aggregation]): Result = {
+    Result(Rel(outputRelation.name, outputRelation.attrs, if (getAggregations(aggMap).values.isEmpty) Annotations(List()) else outputRelation.anno), if (queryHasTopDownPass) true else level != 0)
   }
 
   def getFilters() = {
@@ -278,8 +278,6 @@ class GHDNode(override val rels: List[OptimizerRel],
   def getAggregations(aggMap:Map[String, Aggregation]) = {
     // If the attribute is being processed in this bag, isn't materialized,
     // and is in aggMap
-    // Note that selections also satisfy these criteria, but are treated correctly
-    // because of the '!selections.exists...' line below
     val aggs = (attrSet -- outputRelation.attrs.values).flatMap(attr => {
       aggMap.get(attr)
     }).toList
@@ -294,7 +292,7 @@ class GHDNode(override val rels: List[OptimizerRel],
             at =>
               (attrSet -- outputRelation.attrs.values).contains(at)
                 && aggMap.contains(at)
-                && !selections.exists(select => select.attr == at))),
+                /*&& !selections.exists(select => select.attr == at)*/)),
         agg.init,
         agg.expression
       )
@@ -306,10 +304,10 @@ class GHDNode(override val rels: List[OptimizerRel],
     }))
   }
 
-  def getDescendantNames(attrs:Attributes):List[Rel] = {
+  def getDescendantNames(attrs:Attributes, aggMap:Map[String, Aggregation]):List[Rel] = {
     val rels:List[Rel] = children
       .filter(child => !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty)
-      .map(_.getResult(false).rel)
-    rels:::children.flatMap(_.getDescendantNames(attrs))
+      .map(_.getResult(false, aggMap).rel)
+    rels:::children.flatMap(_.getDescendantNames(attrs, aggMap))
   }
 }
