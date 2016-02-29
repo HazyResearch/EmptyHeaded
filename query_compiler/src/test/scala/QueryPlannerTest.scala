@@ -69,19 +69,34 @@ class QueryPlannerTest extends FunSuite {
       Filters(List())
     )
     val bag0 = Rule(
-      Result(Rel("Lollipop", Attributes(List("a", "b", "c", "d")), Annotations(List())), false),
+      Result(Rel("Lollipop_root", Attributes(List("a", "d")), Annotations(List())), true),
       None,
       Operation("*"),
       Order(Attributes(List("a", "d", "b", "c"))),
-      Project(Attributes(List())),
+      Project(Attributes(List("b", "c"))),
       Join(List(
         Rel("Edge", Attributes(List("a", "d")), Annotations(List())),
         Rel("bag_1_a_b_c_Lollipop", Attributes(List("a", "b", "c")), Annotations(List())))),
       Aggregations(List()),
       Filters(List())
     )
+
+    val topdownPass = Rule(
+      Result(Rel("Lollipop", Attributes(List("a", "b", "c", "d")), Annotations(List())), false),
+      None,
+      Operation("*"),
+      Order(Attributes(List("a", "d", "b", "c"))),
+      Project(Attributes(List())),
+      Join(List(
+        Rel("Lollipop_root", Attributes(List("a", "d")), Annotations(List())),
+        Rel("bag_1_a_b_c_Lollipop", Attributes(List("a", "b", "c")), Annotations(List()))
+      )),
+      Aggregations(List()),
+      Filters(List())
+    )
+
     val optimized = QueryPlanner.findOptimizedPlans("Lollipop(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d).")
-    assertResult(IR(List(bag0, bag1)))(optimized)
+    assertResult(IR(List(topdownPass, bag0, bag1)))(optimized)
   }
 
   test("barbell query") {
@@ -116,11 +131,11 @@ class QueryPlannerTest extends FunSuite {
     )
 
     val bag0 = Rule(
-      Result(Rel("Barbell", Attributes(List("a", "b", "c", "d", "e", "f")), Annotations(List())), false),
+      Result(Rel("Barbell_root", Attributes(List("a", "d")), Annotations(List())), true),
       None,
       Operation("*"),
       Order(Attributes(List("a", "d", "e", "f", "b", "c"))),
-      Project(Attributes(List())),
+      Project(Attributes(List("b", "c", "e", "f"))),
       Join(List(
         Rel("Edge", Attributes(List("a", "d")), Annotations(List())),
         Rel("bag_1_a_b_c_Barbell", Attributes(List("a", "b", "c")), Annotations(List())),
@@ -129,8 +144,28 @@ class QueryPlannerTest extends FunSuite {
       Filters(List())
     )
 
-    val optimized = QueryPlanner.findOptimizedPlans("Barbell(a,b,c,d,e,f) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(d,e),Edge(e,f),Edge(d,f),Edge(a,d).")
-    assertResult(IR(List(bag0, bag1, bag2)))(optimized)
+    val topdownPass = Rule(
+      Result(Rel("Barbell", Attributes(List("a", "b", "c", "d", "e","f")), Annotations(List())), false),
+      None,
+      Operation("*"),
+      Order(Attributes(List("a", "d", "e", "f", "b", "c"))),
+      Project(Attributes(List())),
+      Join(List(
+        Rel("Barbell_root", Attributes(List("a", "d")), Annotations(List())),
+        Rel("bag_1_a_b_c_Barbell", Attributes(List("a", "b", "c")), Annotations(List())),
+        Rel("bag_1_d_e_f_Barbell", Attributes(List("d", "e", "f")), Annotations(List()))
+      )),
+      Aggregations(List()),
+      Filters(List())
+    )
+
+    val optimized = QueryPlanner.findOptimizedPlans(
+      "Barbell(a,b,c,d,e,f) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(d,e),Edge(e,f),Edge(d,f),Edge(a,d).")
+    assertResult(topdownPass)(optimized.rules(0))
+    assertResult(bag0)(optimized.rules(1))
+    assertResult(bag1)(optimized.rules(2))
+    assertResult(bag2)(optimized.rules(3))
+    assertResult(IR(List(topdownPass, bag0, bag1, bag2)))(optimized)
   }
 
   test("lollipop agg") {
@@ -167,7 +202,37 @@ class QueryPlannerTest extends FunSuite {
         Join(List(
           Rel("Edge", Attributes(List("a", "d")),Annotations(List())))),
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("d")),"1","AGG"))),Filters(List()))))
-    val optimized = QueryPlanner.findOptimizedPlans("Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(c,d)]")
+    val optimized = QueryPlanner.findOptimizedPlans(
+      "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(c,d)]")
     assertResult(ir)(optimized)
+  }
+
+  test("4 clique with selection and aggregation") {
+    val ir = IR(List(
+      Rule(Result(
+        Rel("FliqueSelAgg",Attributes(List()),Annotations(List("z"))),false),None,Operation("*"),
+        Order(Attributes(List("x", "a", "b", "c", "d"))),
+        Project(Attributes(List())),
+        Join(List(
+          Rel("Edge",Attributes(List("c", "d")),Annotations(List())),
+          Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
+          Rel("Edge",Attributes(List("b", "d")),Annotations(List())),
+          Rel("Edge",Attributes(List("a", "c")),Annotations(List())),
+          Rel("Edge",Attributes(List("a", "d")),Annotations(List())),
+          Rel("Edge",Attributes(List("a", "b")),Annotations(List())),
+          Rel("Edge",Attributes(List("a", "x")),Annotations(List())))),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG"))),
+        Filters(List(Selection("x",EQUALS(),"0"))))))
+    val optimized = QueryPlanner.findOptimizedPlans(
+      "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)].")
+    assertResult(ir)(optimized)
+  }
+
+  test("Barbell with selection") {
+    // TODO
+    val optimized = QueryPlanner.findOptimizedPlans("""
+        BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0.
+    """)
+    println(optimized)
   }
 }

@@ -14,7 +14,8 @@ class GHDNode(override val rels: List[OptimizerRel],
               override val selections:Array[Selection])
   extends EHNode(rels, selections) with Iterable[GHDNode] {
   var subtreeRels = rels.toSet
-  var subtreeAttrSet = attrSet
+  val noChildAttrSet = rels.foldLeft(TreeSet[String]())(
+    (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
   var bagFractionalWidth: Double = 0
@@ -70,7 +71,17 @@ class GHDNode(override val rels: List[OptimizerRel],
 
   override def hashCode = 41 * rels.hashCode() + children.toSet.hashCode()
 
-  def setBagName(name:String): Unit = { bagName = name }
+  def setBagName(name:String): Unit = {
+    bagName = name
+    if (outputRelation != null) {
+    outputRelation = OptimizerRel(
+      name,
+      outputRelation.attrs,
+      outputRelation.anno,
+      outputRelation.isImaginary,
+      outputRelation.nonSelectedAttrNames)
+    }
+  }
 
   /**
    * Does not change execution, but for clarity/cosmetic reasons we push rels w/ selections out from each bag B
@@ -129,12 +140,12 @@ class GHDNode(override val rels: List[OptimizerRel],
   /**
    * Compute what is projected out in this bag, and what this bag's output relation is
    */
-  def computeProjectedOutAttrsAndOutputRelation(annotationType:String,
-                                                outputAttrs:Set[String],
-                                                attrsFromAbove:Set[String]): OptimizerRel = {
+  def recursivelyComputeProjectedOutAttrsAndOutputRelation(annotationType:String,
+                                                           outputAttrs:Set[String],
+                                                           attrsFromAbove:Set[String]): OptimizerRel = {
     val equalitySelectedAttrs:Set[String] = attrSet.filter(attr => !getSelection(attr).isEmpty)
     val childrensOutputRelations = children.map(child => {
-      child.computeProjectedOutAttrsAndOutputRelation(
+      child.recursivelyComputeProjectedOutAttrsAndOutputRelation(
         annotationType,
         outputAttrs,
         attrsFromAbove ++ attrSet -- equalitySelectedAttrs)
@@ -143,7 +154,7 @@ class GHDNode(override val rels: List[OptimizerRel],
     attrSet = subtreeRels.foldLeft(TreeSet[String]())(
       (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
 
-    val keptAttrs = attrSet intersect (outputAttrs ++ attrsFromAbove)
+    val keptAttrs = noChildAttrSet intersect (outputAttrs ++ attrsFromAbove)
     outputRelation = new OptimizerRel(
       bagName,
       Attributes(keptAttrs.toList),
@@ -182,10 +193,10 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   private def fractionalScoreNode(): Double = { // TODO: catch UnboundedSolutionException
-  val myRealRels = rels.filter(!_.isImaginary)
-    val unselectedAttrSet = attrSet -- attrToSelection.keys.filter(attr => {
-      attrToSelection.get(attr).isDefined && !attrToSelection.get(attr).get.isEmpty
-    }) // don't bother covering attributes that are equality selected
+    val myRealRels = rels.filter(!_.isImaginary)
+    val unselectedAttrSet = noChildAttrSet -- attrToSelection.keys.filter(attr => {
+            attrToSelection.get(attr).isDefined && !attrToSelection.get(attr).get.isEmpty
+          }) // don't bother covering attributes that are equality selected
     val realRels = myRealRels:::children.flatMap(child => child.rels.filter(!_.isImaginary))
     if (realRels.isEmpty) {
       return 1 // just return 1 because we're going to delete this node anyways
@@ -220,9 +231,9 @@ class GHDNode(override val rels: List[OptimizerRel],
       .foldLeft(bagFractionalWidth)((accum: Double, x: Double) => if (x > accum) x else accum)
   }
 
-  def getQueryPlan(aggMap:Map[String, Aggregation]): Rule = {
+  def getQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean): Rule = {
     return Rule(
-      getResult(),
+      getResult(queryHasTopDownPass),
       None /* TODO: handle recursion */,
       getOperation(),
       getOrder(),
@@ -232,12 +243,12 @@ class GHDNode(override val rels: List[OptimizerRel],
       getFilters())
   }
 
-  def recursivelyGetQueryPlan(aggMap:Map[String, Aggregation]): List[Rule] = {
-    getQueryPlan(aggMap)::children.flatMap(_.recursivelyGetQueryPlan(aggMap))
+  def recursivelyGetQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean): List[Rule] = {
+    getQueryPlan(aggMap, queryHasTopDownPass)::children.flatMap(_.recursivelyGetQueryPlan(aggMap, queryHasTopDownPass))
   }
 
-  def getResult(): Result = {
-    Result(OptimizerRel.toRel(outputRelation), level != 0)
+  def getResult(queryHasTopDownPass:Boolean): Result = {
+    Result(OptimizerRel.toRel(outputRelation), if (queryHasTopDownPass) true else level != 0)
   }
 
   def getFilters() = {
@@ -271,10 +282,18 @@ class GHDNode(override val rels: List[OptimizerRel],
         agg.annotation,
         agg.datatype,
         agg.operation,
-        Attributes(agg.attrs.values.filter(at => attrSet.contains(at) && aggMap.contains(at))),
+        Attributes(agg.attrs.values
+          .filter(at => attrSet.contains(at) && aggMap.contains(at) && !selections.exists(select => select.attr == at))),
         agg.init,
         agg.expression
       )
     ))
+  }
+
+  def getDescendantNames(attrs:Attributes):List[Rel] = {
+    val rels:List[Rel] = children
+      .filter(child => !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty)
+      .map(_.getResult(false).rel)
+    rels:::children.flatMap(_.getDescendantNames(attrs))
   }
 }

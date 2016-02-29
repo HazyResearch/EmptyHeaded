@@ -5,8 +5,9 @@ import duncecap.attr.Attr
 class GHD(val root:GHDNode,
           val queryRelations:List[OptimizerRel],
           val joinAggregates:Map[String, Aggregation],
-          val outputRelation:Rel) extends QueryPlanPostProcessor {
-  val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation)
+          val outputRelation:Rel,
+          val selections:List[Selection]) extends QueryPlanPostProcessor {
+  val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation, selections)
   var depth: Int = -1
   var numBags: Int = -1
   var bagOutputs:List[OptimizerRel] = null
@@ -35,14 +36,17 @@ class GHD(val root:GHDNode,
     root.setAttributeOrdering(attributeOrdering)
 
     val attrNames = root.attrSet.toList.sortBy(attributeOrdering.indexOf(_)).mkString("_")
+
     root.setBagName(outputRelation.name)
     root.setDescendantNames(1, outputRelation.name)
 
-    root.computeProjectedOutAttrsAndOutputRelation(
+    root.recursivelyComputeProjectedOutAttrsAndOutputRelation(
       if (outputRelation.anno.values.isEmpty) "" else outputRelation.anno.values.head,
       outputRelation.attrs.values.toSet,
       outputRelation.attrs.values.toSet)
-  //  root.recreateFromAttrMappings
+    if (needTopDownPass()){
+      root.setBagName(s"""${outputRelation.name}_root""")
+    }
     bagOutputs = getBagOutputRelations(root)
   }
 
@@ -55,8 +59,32 @@ class GHD(val root:GHDNode,
   }
 
   def getQueryPlan(): List[Rule] = {
-    // do a preorder traversal of the GHDNodes to get the queryplans
-    root.recursivelyGetQueryPlan(joinAggregates)
+    // do a preorder traversal of the GHDNodes to get the query plans
+    val plan = root.recursivelyGetQueryPlan(joinAggregates, needTopDownPass())
+    if(needTopDownPass()) {
+      getTopDownPass()::plan
+    } else {
+      plan
+    }
+  }
+
+  def needTopDownPass():Boolean = {
+    // no need to do the top down pass since the root has all the materialized attrs
+    return !outputRelation.attrs.values.forall(root.noChildAttrSet.contains(_))
+  }
+
+  def getTopDownPass():Rule = {
+    val relationsInTopDownPass = root.getResult(true).rel::root.getDescendantNames(outputRelation.attrs)
+    return Rule(
+      Result(outputRelation, false),
+      None,
+      Operation("*"),
+      Order(Attributes(attributeOrdering.filter(attr => outputRelation.attrs.values.toSet.contains(attr)))),
+      Project(Attributes(List())),
+      Join(relationsInTopDownPass),
+      Aggregations(List()),
+      Filters(List())
+    )
   }
 }
 
