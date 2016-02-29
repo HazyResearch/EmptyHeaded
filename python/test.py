@@ -28,7 +28,7 @@ graph = Relation(
 #  [graph])
 #db.build()
 
-# db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
+db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
 db.generate(triangle)
 
