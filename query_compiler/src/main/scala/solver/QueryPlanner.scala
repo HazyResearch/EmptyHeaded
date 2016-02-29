@@ -33,11 +33,21 @@ object QueryPlanner {
           joinAggregates,
           rule.getResult().getRel(),
           rule.getFilters().values
-        ))
+        )
+      )
       candidates.map(c => c.doPostProcessingPass())
 
-      val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(
-        HeuristicUtil.getGHDsOfMinHeight(HeuristicUtil.getGHDsWithMinBags(candidates)))
+      val filteredCandidates = HeuristicUtil.getGHDsOfMinHeight(HeuristicUtil.getGHDsWithMinBags(candidates))
+      val ghdsWithPushedOutSelections = filteredCandidates.map(ghd => new GHD(
+        ghd.pushOutSelections(),
+        rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)),
+        joinAggregates,
+        rule.getResult().getRel(),
+        rule.getFilters().values
+      ))
+      ghdsWithPushedOutSelections.map(_.doPostProcessingPass)
+      val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(HeuristicUtil.getGHDsWithSelectionsPushedDown(
+        ghdsWithPushedOutSelections))
       chosen.head.getQueryPlan()
     }))
   }

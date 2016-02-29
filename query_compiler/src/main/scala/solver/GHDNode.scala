@@ -264,7 +264,9 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getProject(aggMap:Map[String, Aggregation]): Project = {
-    val projectedOutAttrs = attrSet -- outputRelation.attrs.values -- aggMap.keySet
+    val projectedOutAttrs = attrSet --
+      outputRelation.attrs.values --
+      getAggregations(aggMap).values.flatMap(agg => agg.attrs.values)
     Project(Attributes(projectedOutAttrs.toList))
   }
 
@@ -274,20 +276,34 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   def getAggregations(aggMap:Map[String, Aggregation]) = {
-    val aggs = attrSet.flatMap(attr => {
+    // If the attribute is being processed in this bag, isn't materialized,
+    // and is in aggMap
+    // Note that selections also satisfy these criteria, but are treated correctly
+    // because of the '!selections.exists...' line below
+    val aggs = (attrSet -- outputRelation.attrs.values).flatMap(attr => {
       aggMap.get(attr)
     }).toList
-    Aggregations(aggs.map(agg =>
-      Aggregation(
+
+    Aggregations(aggs.flatMap(agg => {
+      val newAgg = Aggregation(
         agg.annotation,
         agg.datatype,
         agg.operation,
         Attributes(agg.attrs.values
-          .filter(at => attrSet.contains(at) && aggMap.contains(at) && !selections.exists(select => select.attr == at))),
+          .filter(
+            at =>
+              (attrSet -- outputRelation.attrs.values).contains(at)
+                && aggMap.contains(at)
+                && !selections.exists(select => select.attr == at))),
         agg.init,
         agg.expression
       )
-    ))
+      if (newAgg.attrs.values.isEmpty) {
+        None
+      } else {
+        Some(newAgg)
+      }
+    }))
   }
 
   def getDescendantNames(attrs:Attributes):List[Rel] = {

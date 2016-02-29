@@ -24,4 +24,15 @@ object HeuristicUtil {
     val minNumBags = candidates.map(_.numBags).min
     candidates.filter(c => {c.numBags == minNumBags})
   }
+
+  def getGHDsWithSelectionsPushedDown(candidates:List[GHD]): List[GHD] = {
+    val candidateAndSelectDepth = candidates.map(c => {
+      val selectDepth = c.root.map(node => {
+        node.level * node.getSelectedAttrs().size
+      }).sum
+      (c, selectDepth)
+    })
+    val maxSelectDepth = candidateAndSelectDepth.unzip._2.max
+    candidateAndSelectDepth.filter(c => (c._2 == maxSelectDepth)).unzip._1
+  }
 }
