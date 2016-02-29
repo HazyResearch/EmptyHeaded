@@ -182,7 +182,7 @@ class QueryPlannerTest extends FunSuite {
           Rel("Edge",Attributes(List("a", "c")),Annotations(List())),
           Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
           Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c")),"1","AGG"))),Filters(List()))))
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("b", "c")),"1","AGG"))),Filters(List()))))
     val optimized = QueryPlanner.findOptimizedPlans("Lollipop(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(*)]")
     assertResult(ir)(optimized)
   }
@@ -210,22 +210,33 @@ class QueryPlannerTest extends FunSuite {
   test("4 clique with selection and aggregation") {
     val ir = IR(List(
       Rule(Result(
-        Rel("FliqueSelAgg",Attributes(List()),Annotations(List("z"))),false),None,Operation("*"),
-        Order(Attributes(List("x", "a", "b", "c", "d"))),
+        Rel("FliqueSelAgg",Attributes(List()),Annotations(List("z"))),false),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "b", "c", "d"))),
         Project(Attributes(List())),
         Join(List(
           Rel("Edge",Attributes(List("c", "d")),Annotations(List())),
           Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
           Rel("Edge",Attributes(List("b", "d")),Annotations(List())),
           Rel("Edge",Attributes(List("a", "c")),Annotations(List())),
+          Rel("bag_1_x_a_FliqueSelAgg",Attributes(List("a")),Annotations(List("z"))),
           Rel("Edge",Attributes(List("a", "d")),Annotations(List())),
-          Rel("Edge",Attributes(List("a", "b")),Annotations(List())),
-          Rel("Edge",Attributes(List("a", "x")),Annotations(List())))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG"))),
-        Filters(List(Selection("x",EQUALS(),"0"))))))
+          Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG"))),Filters(List())),
+      Rule(Result(
+        Rel("bag_1_x_a_FliqueSelAgg",Attributes(List("a")),Annotations(List("z"))),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("x", "a"))),
+        Project(Attributes(List("x"))),
+        Join(List(Rel("Edge",Attributes(List("a", "x")),Annotations(List())))),
+        Aggregations(List()),Filters(List(Selection("x",EQUALS(),"0"))))))
+
     val optimized = QueryPlanner.findOptimizedPlans(
       "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)].")
     assertResult(ir)(optimized)
+    //println(optimized)
   }
 
   test("Barbell with selection") {
