@@ -22,108 +22,302 @@ object QueryPlan{
   //loads the relations from disk (if nesc.)
   //and encodes them, then spills the encodings to disk
   //next builds the tries and spills to disk
-  def build(ir:IR){
+  def genCythonFile(id:String) : StringBuilder = {
+    val code = new StringBuilder()
+    code.append(s"""
+cdef extern from "run_${id}.hpp":
+  # Imports definitions from a c header file
+  # Corresponding source file (cfunc.c) must be added to
+  # the extension definition in setup.py for proper compiling & linking
+  void run_${id}(unordered_map[string,void*]* _Triemap)
+
+def c_run_${id}(tm):
+  _Triemap = <unordered_map[string,void*]*>PyCObject_AsVoidPtr(tm) 
+  run_${id}(_Triemap)
+""")
+    code
+  }
+
+  def generate(ir:IR,db:DBInstance,hash:String,folder:String): Int = {
     //first split the rules apart into those that are connected
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
-    val independentrules = getIndependentRules(ir)
+    val (independentrules,headrelations) = getIndependentRules(db,ir)
 
-    //Next build a Query plan for each list of rules
-    //each independent list of rules is an executable
+    val ehhome = sys.env("EMPTYHEADED_HOME")
+    val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/${folder}"""
+    mvdir.!
+
+    val os = System.getProperty("os.name").toLowerCase()
+    val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
+
+    val setuplist = ListBuffer[String]()
+    val cpfile = s"""mv ${db.folder}/libs/${folder}/Query.pyx ${db.folder}/libs/${folder}/Query_${hash}.pyx"""
+    cpfile.!
+
+    val cythoncode = new StringBuilder()
+    (0 until independentrules.length).foreach(i => {
+      cythoncode.append(genCythonFile(i.toString))
+    })
+    val fw = new FileWriter(s"${db.folder}/libs/${folder}/Query_${hash}.pyx", true)
+    fw.write(s"\n${cythoncode}") 
+    fw.close()
+
+    val setupstring = setuplist.mkString(",")
+
+    Seq("sed","-i",bak,
+      s"s/#FILES#/Query_${hash}.pyx/g",
+      s"${db.folder}/libs/${folder}/setup.py").!
+
+    Seq("sed","-i",bak,
+      s"s/#QUERY#/Query_${hash}/g",
+      s"${db.folder}/libs/${folder}/setup.py").!
+
+    var i = 0
     independentrules.foreach(rules => {
+      val filename = s"${db.folder}/libs/${folder}/run_${i}.hpp"
+
       //figure out what relations we need
-      println(ir2relationinfo(rules)) //List[QueryPlanRelationInfo]
-      /*
-      val name:String,
-      val duplicateOf:Option[String],
-      val attributes:List[Attributes],
-      val annotation:String,
-      val relations:List[QueryPlanRelationInfo],
-      val nprr:List[QueryPlanAttrInfo],
-      val recursion:Option[QueryPlanRecursion]
-      */
-      val baginfos = ListBuffer[QueryPlanBagInfo]()
-      rules.foreach(rule =>{
+      val rels = ir2relationinfo(rules).filter(r => !headrelations.contains(r.name))
+      val output = ir2outputinfo(rules)
+      //getTopDownIterators(rules)
+
+      val ghd = rules.map(rule =>{
         //fixme figure out anno type
         val name = rule.result.rel.name
         val duplicateOf = None
-        val attributes = rule.order.attrs
-        val annotation = "void*"
-        
-        val recursion = rule.recursion match{
-          case Some(rec) => {
-            val input = rec.criteria match {
-              case a:ITERATIONS => "i"
-              case _ =>
-                throw new Exception("not valid recursion")
-            }
-            QueryPlanRecursion(
-              input,
-              rec.operation.value,
-              rec.value
-            )
-          }
-          case None => None
+        val attributes = Attributes(rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)))
+ 
+        val aggregation = getAggregation(rule)
+        val annotation = aggregation match {
+          case None => "void*"
+          case Some(a) => a.datatype
         }
-        /*
+
+        val relations = ir2relationinfo(List(rule))
+        val nprr = getattrinfo(rule)
+        val recursion = getbagrecursion(rule)
+
         QueryPlanBagInfo(
-          rule.result.rel.name,
-          None,
-          order.attrs,
-          "void*",
-        )*/
+          name,
+          duplicateOf,
+          attributes,
+          annotation,
+          relations,
+          nprr,
+          recursion
+        )
+      }).toList
+
+      val topdown = List(TopDownPassIterator("",List()))
+      val myplan = QueryPlan(output,rels,ghd,topdown)
+      EHGenerator.run(myplan,db,i.toString,filename)
+      i += 1
+    })
+    return independentrules.length
+  }
+
+  private def getAggregation(rule:Rule) : Option[Aggregation] = {
+    if(rule.result.rel.anno.values.length > 0){
+      if(rule.result.rel.anno.values.length == 1){
+        assert(rule.result.rel.anno.values.head == rule.aggregations.values.head.annotation)
+        Some(rule.aggregations.values.head)
+      }
+      else 
+        throw new Exception("Only single annotation accepted currently.")
+    }
+    else None
+  }
+
+  private def ir2outputinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
+    if(rules.length == 0)
+      throw new Exception("No work to do.")
+    val aggregation = getAggregation(rules.last)
+    val annotation = aggregation match {
+      case None => "void*"
+      case Some(a) => a.datatype
+    }
+
+    rules.filter(rule => {
+      !rule.result.isIntermediate
+    }).map(rule => {
+      val order = rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))
+      QueryPlanRelationInfo(
+        rule.result.rel.name,
+        rule.result.rel.attrs.values.map(order.indexOf(_)),
+        Some(List(rule.result.rel.attrs)),
+        annotation)
+    }).toList
+  } 
+
+  private def getattrinfo(rule:Rule) : List[QueryPlanAttrInfo] = {
+    //create accessors for each attribute
+    val accessorMap = Map[String,ListBuffer[QueryPlanAccessor]]()
+    val selectionMap = Map[String,ListBuffer[QueryPlanSelection]]()
+    rule.order.attrs.values.foreach(a => {
+      accessorMap += (a -> ListBuffer())
+      selectionMap += (a -> ListBuffer())
+    })
+
+    //build up accessors
+    rule.join.rels.foreach(r => {
+      r.attrs.values.foreach(a => {
+        accessorMap(a) += QueryPlanAccessor(
+          r.name,
+          Attributes(r.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))),
+          false)
       })
     })
+    //build up selections
+    rule.filters.values.foreach(sel => {
+      selectionMap(sel.attr) += QueryPlanSelection(sel.operation.value,sel.value)
+    })
+
+    //build up aggreations
+    val aggregationMap = Map[String,QueryPlanAggregation]()
+    assert(rule.aggregations.values.length <= 1)
+    if(rule.aggregations.values.length == 1){
+      val agg = rule.aggregations.values.head
+      val aggattrs = agg.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)).filter(a => !rule.result.rel.attrs.values.contains(a))
+      aggattrs.foreach(a => {
+        val prev = if(aggattrs.indexOf(a) <= 0) None else Some(aggattrs(aggattrs.indexOf(a)-1))
+        val next = if((aggattrs.indexOf(a)+1) == aggattrs.length || aggattrs.indexOf(a) == -1) None else Some(aggattrs(aggattrs.indexOf(a)+1))
+        val expression = if(agg.expression == "AGG") "" else agg.expression 
+        aggregationMap += (a -> QueryPlanAggregation(
+          agg.operation.value,
+          agg.init,
+          expression,
+          prev,
+          next))
+      })
+    }
+
+    val materializedattrs = rule.result.rel.attrs.values
+    //finally build the attribute info
+    rule.order.attrs.values.map(a => {
+      val name = a
+      val accessors = accessorMap(a).toList
+      val materialize = rule.result.rel.attrs.values.contains(a)
+      val selection = selectionMap(a).toList
+      val annotation = if(aggregationMap.size > 0 && materializedattrs.length > 0 && (materializedattrs.length-1) == (materializedattrs.indexOf(a))){
+        assert(aggregationMap.contains(rule.order.attrs.values(rule.order.attrs.values.indexOf(a)+1)))
+        Some(rule.order.attrs.values(rule.order.attrs.values.indexOf(a)+1))
+      } else None
+      val aggregation = if(aggregationMap.contains(a)) Some(aggregationMap(a)) else None
+      val prevMaterialized = if(materializedattrs.indexOf(a) <= 0) None 
+        else Some(materializedattrs(materializedattrs.indexOf(a)-1))
+      val nextMaterialized = if((materializedattrs.indexOf(a)+1) == materializedattrs.length || materializedattrs.indexOf(a) == -1) None 
+        else Some(materializedattrs(materializedattrs.indexOf(a)+1))
+
+      QueryPlanAttrInfo(name,accessors,materialize,selection,annotation,aggregation,prevMaterialized,nextMaterialized)
+    }).toList
+  }
+
+  private def getbagrecursion(rule:Rule):Option[QueryPlanRecursion] = {
+    rule.recursion match {
+      case Some(rec) => {
+        val input = rec.criteria match {
+          case a:ITERATIONS => "i"
+          case _ =>
+            throw new Exception("not valid recursion")
+        }
+        Some(QueryPlanRecursion(
+          input,
+          rec.operation.value,
+          rec.value
+        ))
+      }
+      case None => None
+    }
   }
 
   private def ir2relationinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
-    val relations = Map[(String,List[Int]),ListBuffer[Attributes]]()
+    val relations = Map[(String,List[Int]),(ListBuffer[Attributes],String)]()
     rules.foreach(rule => {
       val globalorder = rule.order.attrs.values
       rule.join.rels.foreach(rel => {
         val order = (0 until rel.attrs.values.length).
           sortBy(i => globalorder.indexOf(rel.attrs.values(i))).toList
+        val anno = if(rel.anno.values.length == 0)
+            "void*"
+          else if(rel.anno.values.length == 1)
+            rule.aggregations.values.head.datatype
+          else 
+            throw new Exception("1 anno per relation")
         if(!relations.contains((rel.name,order)))
-          relations += ((rel.name,order) -> ListBuffer(rel.attrs))
+          relations += ((rel.name,order) -> (ListBuffer(rel.attrs),anno) ) 
         else
-          relations(((rel.name,order))) += rel.attrs
+          relations(((rel.name,order)))._1 += rel.attrs
       })
     })
     //FIX ME Look up relations in DB and get annotation
     relations.map(relMap => {
-      QueryPlanRelationInfo(relMap._1._1,relMap._1._2,Some(relMap._2.toList),"void*")
+      val (key,value) = relMap
+      QueryPlanRelationInfo(key._1,key._2,Some(value._1.toList),value._2)
     }).toList
   }
 
-  private def getIndependentRules(ir:IR): List[List[Rule]] = {
+  private def getIndependentRules(db:DBInstance,ir:IR): (List[List[Rule]],scala.collection.immutable.Map[String,Rel]) = {
     //set of relation names -> rules
     val rules = ListBuffer[ListBuffer[Rule]]()
     val rulenames = ListBuffer[ListBuffer[String]]()
     val rel = Map[String,Int]() //map from relation name to index in rules buffer
-    ir.rules.foreach(rule => {
+
+    //flip the order of the rules
+    //add head rules to a queue
+    //make sure all dependencies are in the same queue
+    val headrules = ir.rules.map(r => ((r.result.rel.name -> r.result.rel))).toMap
+
+    ir.rules.reverse.foreach(rule => {
       var rulesindex = -1
-      var rulesindex2 = -1
+      if(!rel.contains(rule.result.rel.name)){
+        rulesindex = rules.length
+        rel += (rule.result.rel.name -> rules.length)
+        rulenames += (ListBuffer(rule.result.rel.name))
+        rules += (ListBuffer(rule))
+      } else{
+        rulesindex = rel(rule.result.rel.name)
+        rules(rulesindex) += (rule)
+        rulenames(rulesindex) += (rule.result.rel.name)
+      }
       rule.join.rels.foreach(r => {
-        if(rel.contains(r.name)){
-          if(rulesindex != -1 && rulesindex != rel(r.name))
-            throw new Exception("Multiply dependencies should never occur.")
-          rulesindex = rel(r.name)
-          if(rules(rulesindex).indexOf(r.name) > rulesindex2)
-            rulesindex2 = rules(rulesindex).indexOf(r.name)
+        if(headrules.contains(r.name)){
+          rel += (r.name -> rulesindex)
         }
       })
+    })
+    (rules.map(_.toList.reverse).toList,headrules)
+  }
+/*
+case class TopDownPassIterator(val iterator:String,
+                               val attributeInfo:List[QueryPlanAttrInfo])
 
-      if(rulesindex == -1){
-        rel += (rule.result.rel.name -> rules.length)
-        rulenames.append(ListBuffer(rule.result.rel.name))
-        rules.append(ListBuffer(rule))
-      } else{
-        rules(rulesindex).append(rule)
-        rulenames(rulesindex).append(rule.result.rel.name)
+*/
+/*
+  private def getTopDownIterators(rules:List[Rule]) {
+    val seenAttrs = Set[String]()
+    val iterators = ListBuffer[TopDownPassIterator]()
+    rules.foreach(rule => {
+      val iterator = rule.result.rel.name
+      val attrs = ListBuffer[QueryPlanAttrInfo]
+      rule.result.rel.attrs.values.foreach(attr => {
+        if(!seenAttrs.contains(attr)){
+          attrs += QueryPlanAttrInfo(
+            attr,
+            ,
+
+          )
+          seenAttrs += attr
+        }
+      })
+      if(attrs.length > 0){
+        println("TOP DOWN ITERATOR: " + iterator + " " + attrs)
+        iterators += TopDownPassIterator(iterator,attrs.toList)
       }
     })
-    rules.map(_.toList).toList
   }
+*/
+
 }
 
 object QP {
@@ -155,9 +349,20 @@ case class QueryPlans(val queryPlans:List[QueryPlan]) {
  * @param topdown information for the topdown pass of yannakakis
  */
 case class QueryPlan(
+                val outputs:List[QueryPlanRelationInfo],
                 val relations:List[QueryPlanRelationInfo],
                 val ghd:List[QueryPlanBagInfo],
-                val topdown:List[TopDownPassIterator])
+                val topdown:List[TopDownPassIterator]) {
+  def toJSON(): Unit = {
+    val filename = "query.json"
+    implicit val formats = Serialization.formats(NoTypeHints)
+    scala.tools.nsc.io.File(filename).writeAll(writePretty(this))
+  }
+  override def toString(): String = {
+    implicit val formats = DefaultFormats
+    writePretty(this)
+  }
+}
 
 /**
  * @param name relation's name
@@ -184,7 +389,7 @@ case class QueryPlanOutputInfo(val name:String,
  */
 case class QueryPlanBagInfo(val name:String,
                             val duplicateOf:Option[String],
-                            val attributes:List[Attributes],
+                            val attributes:Attributes,
                             val annotation:String,
                             val relations:List[QueryPlanRelationInfo],
                             val nprr:List[QueryPlanAttrInfo],
@@ -198,11 +403,11 @@ case class QueryPlanAttrInfo(val name:String,
                         val accessors:List[QueryPlanAccessor],
                         val materialize:Boolean,
                         val selection:List[QueryPlanSelection],
-                        val annotation:Option[Attributes],
+                        val annotation:Option[String],
                         val aggregation:Option[QueryPlanAggregation],
                         /* The last two here are never filled out in the top down pass*/
-                        val prevMaterialized:Option[Attributes],
-                        val nextMaterialized:Option[Attributes])
+                        val prevMaterialized:Option[String],
+                        val nextMaterialized:Option[String])
 
 /**
  * @param input bag name
@@ -211,7 +416,7 @@ case class QueryPlanAttrInfo(val name:String,
  */
 case class QueryPlanRecursion(val input:String,
                               val criteria:String,
-                              val ConvergenceValue:String)
+                              val convergenceValue:String)
 
 /**
  * @param operation SUM, COUNT, etc.
@@ -223,8 +428,8 @@ case class QueryPlanRecursion(val input:String,
 case class QueryPlanAggregation(val operation:String,
                            val init:String,
                            val expression:String,
-                           val prev:Option[Attributes],
-                           val next:Option[Attributes])
+                           val prev:Option[String],
+                           val next:Option[String])
 
 /**
  * @param operation we only support equality (=) right now
@@ -234,7 +439,7 @@ case class QueryPlanSelection(val operation:String,
                               val expression:String)
 
 case class QueryPlanAccessor(val name:String,
-                        val attrs:List[Attributes],
+                        val attrs:Attributes,
                         val annotated:Boolean)
 
 /**

@@ -12,6 +12,7 @@ from parsers import *
 from relation import Relation
 from DB import DB
 import os
+import time
 
 dbhash = 0
 
@@ -44,18 +45,14 @@ class Database:
   def optimize(self,datalog):
     self.qc.optimize(datalog)
 
-  def generate(self,datalog):
+  def eval(self,datalog):
     global dbhash
-    self.qc.generate(datalog,str(dbhash))
-    dbhash += 1
 
-  #codegen and execute a query
-  def eval(self,ir):
-    #code generation
-    #FIXME
-    #execution
-    self.backend.query("query")
-    print "Return a dataframe from the DB"
+    folder = time.strftime("D%d_%m_%Y_T%H_%M_%S") + "_Q" + str(self.dbhash) 
+    num = self.qc.generate(datalog,str(self.dbhash),folder)
+    os.system("""cd """+self.folder+"""/libs/"""+folder+""" && ./build.sh >compilation.log 2>&1 && cd - > /dev/null""")
+    self.backend.evaluate(self.relations,folder,str(self.dbhash),num)
+    self.dbhash += num
 
   #should return a (Trie,name,ordering)
   def execute(filename):
@@ -79,7 +76,7 @@ class Database:
     self.compile_backend()
     os.system("""cd """+self.folder+"""/libs/createDB && ./build.sh && cd - > /dev/null""")
     #execution
-    self.backend.create(self.relations,self.dbhash)
+    self.backend.create(self.relations,str(self.dbhash))
 
   #reads files from an existing database on disk
   #takes java QC and translates it to respective python classes
@@ -100,7 +97,7 @@ class Database:
       self.relations.append(
         Relation.java2python(dbInstance.getRelation(i)))
     self.backend = DB(self.folder)
-    self.dbhash = str(dbhash)
+    self.dbhash = dbhash
 
     return self
 
@@ -123,9 +120,8 @@ class Database:
     javaDB = self.duncecap.DBInstance(folder,javaConfig)
     for relation in relations:
       javaDB.addRelation(relation.python2java(self.duncecap))
-    self.dbhash = str(dbhash)
+    self.dbhash = dbhash
     self.qc = self.duncecap.QueryCompiler(javaDB,str(dbhash))
-    dbhash += 1
 
     #execution
     self.backend = DB(self.folder)

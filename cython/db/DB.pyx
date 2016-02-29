@@ -66,6 +66,16 @@ cdef class DB:
     imp.release_lock()
     return eval("mod.DFMap_"+dbhash+"(relations)")
 
+  def evaluate(self,relations,folder,dbhash,num):
+    imp.acquire_lock()
+    fname = self._folder+"/libs/"+folder+"/Query_"+dbhash+".so"
+    mod = imp.load_dynamic("Query_"+dbhash,fname)
+    imp.release_lock()
+
+    voidptr = PyCObject_FromVoidPtr(self._dbmap,NULL) #FIXME add destructor
+    for i in range(num):
+      eval("mod.c_run_"+str(i)+"(voidptr)")
+
   def __cinit__(DB self):
   # Initialize the "this pointer" to NULL so __dealloc__
   # knows if there is something to deallocate. Do not 

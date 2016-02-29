@@ -63,10 +63,13 @@ case class Config(
 //Creates an instance of database (needed to compile queries)
 case class DBInstance(val folder:String, val config:Config) extends Serializable {
   val relations:ListBuffer[Relation] = ListBuffer[Relation]()
+  val relationMap:Map[String,Relation] = Map[String,Relation]()
+
   //map from relation name to index in listbuffer
   val name2relation:Map[String,Int] = Map[String,Int]()
   def addRelation(r:Relation){
     name2relation += ((r.name,relations.length))
+    relationMap += (r.name -> r)
     relations += r
   }
 
@@ -78,7 +81,7 @@ case class DBInstance(val folder:String, val config:Config) extends Serializable
 }
 
 //Main class which compilation runs out of
-class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
+class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
   def getDBInstance():DBInstance = { db }
 
   def createDB() {
@@ -93,19 +96,21 @@ class QueryCompiler(val db:DBInstance, val hash:String) extends Serializable{
   //Parse a datalog statement and code generate it.
   def datalog(query:String):String = {
     val ir = DatalogParser.run(query)
-    println(ir)
     "Query.cpp"
   }
 
   def optimize(query:String):IR = {
-    QueryPlanner.findOptimizedPlans(query)
+    val ir = DatalogParser.run(query)
+    QueryPlanner.findOptimizedPlans(ir)
   }
 
   //code generate from an IR
   //return name of the cpp file
-  def generate(datalog:String,hash:String) {
+  def generate(datalog:String,hash:String,folder:String) : Int = {
     val ir = DatalogParser.run(datalog)
-    QueryPlan.build(ir)
+    val optir = QueryPlanner.findOptimizedPlans(ir)
+    val num = QueryPlan.generate(optir,db,hash,folder)
+    num
   }
 
   //saves the schema on disk
