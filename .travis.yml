@@ -3,7 +3,7 @@ sudo: false
 language: scala
 
 scala:
-  - 2.11.2
+  - 2.11.7
 
 addons:
   apt:
@@ -11,7 +11,7 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - clang-format-3.4
-    - g++-4.9
+    - g++-5
     - libtbb-dev
     - libgtest-dev
     - libjemalloc-dev
@@ -25,7 +25,7 @@ before_install:
   - ./miniconda.sh -b -p /home/travis/mc
   - export PATH=/home/travis/mc/bin:$PATH
 
-script: "source ./tests/testAll.sh"
+script: "source ./test/testAll.sh"
 
 notifications:
   email:
@@ -33,4 +33,4 @@ notifications:
 
 branches:
   only:
-    - master
+    - eh-2.0 
