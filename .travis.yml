@@ -12,9 +12,12 @@ addons:
     packages:
     - clang-format-3.4
     - g++-5
+    - gcc-5
     - libtbb-dev
     - libgtest-dev
     - libjemalloc-dev
+    - cython
+    - jpype
 
 install:
   - conda install -y pandas
