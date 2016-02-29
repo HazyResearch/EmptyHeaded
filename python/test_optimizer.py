@@ -44,7 +44,12 @@ def barbell_sel():
 
 def barbell_agg():
   return optimize("""
-    BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:uint64<-[COUNT(*)]..
+    BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:uint64<-[COUNT(*)].
+""").ir
+
+def barbell_sel_agg():
+  return optimize("""
+    BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:uint64<-[COUNT(*)].
 """).ir
 
 def pagerank():
@@ -76,7 +81,8 @@ queries = {
   "fourclique_agg":fourclique_agg,
   "fourclique_sel":fourclique_sel,
   "fourclique_sel_agg":fourclique_sel_agg,
-  "barbell_sel":barbell_sel
+  "barbell_sel":barbell_sel,
+  "barbell_sel_agg":barbell_sel_agg
 }
 
 for query in queries:
