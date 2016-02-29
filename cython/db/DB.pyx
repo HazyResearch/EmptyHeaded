@@ -21,8 +21,6 @@ cdef class DB:
     cdef string _folder
 
   def query(self,libname):
-    os.system("cd $EMPTYHEADED_HOME/cython/query && ./build.sh && cd - > /dev/null")
-
     imp.acquire_lock()
     fname = os.path.expandvars("$EMPTYHEADED_HOME/cython/query/Query")+".so"
     mod = imp.load_dynamic("Query",fname)
@@ -33,9 +31,6 @@ cdef class DB:
 
   def get(self,libname):
     fname = self._folder+"/libs/trie_"+libname
-
-    os.system("cd "+fname+" && ./build.sh && cd - > /dev/null")
-
     imp.acquire_lock()
     lname = fname+"/PTrie_"+libname+".so"
     mod = imp.load_dynamic("PTrie_"+libname,lname)
@@ -48,9 +43,6 @@ cdef class DB:
 
   def load(self,libname):
     fname = self._folder+"/libs/trie_"+libname
-
-    os.system("cd "+fname+" && ./build.sh && cd - > /dev/null")
-
     imp.acquire_lock()
     lname = fname+"/PTrie_"+libname+".so"
     mod = imp.load_dynamic("PTrie_"+libname,lname)

@@ -22,12 +22,16 @@ class Database:
     #code generation
     self.qc.genTrieWrapper(name)
     #execution
+    fname = self.folder+"/libs/trie_"+name
+    os.system("cd "+fname+" && ./build.sh >compilation.log 2>&1 && cd - > /dev/null")
     return self.backend.get(name)
 
   def load(self,name):
     #code generation
     self.qc.genTrieWrapper(name)
     #execution
+    fname = self.folder+"/libs/trie_"+name
+    os.system("cd "+fname+" && ./build.sh >compilation.log 2>&1 && cd - > /dev/null")
     self.backend.load(name)
 
   #parses, codegens, and runs
@@ -74,7 +78,7 @@ class Database:
     self.qc.createDB()
     #compile the generated load query
     self.compile_backend()
-    os.system("""cd """+self.folder+"""/libs/createDB && ./build.sh && cd - > /dev/null""")
+    os.system("""cd """+self.folder+"""/libs/createDB && ./build.sh >compilation.log 2>&1 && cd - > /dev/null""")
     #execution
     self.backend.create(self.relations,str(self.dbhash))
 
