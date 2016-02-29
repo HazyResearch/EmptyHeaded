@@ -281,7 +281,8 @@ class GHDNode(override val rels: List[OptimizerRel],
         agg.annotation,
         agg.datatype,
         agg.operation,
-        Attributes(agg.attrs.values.filter(at => attrSet.contains(at) && aggMap.contains(at))),
+        Attributes(agg.attrs.values
+          .filter(at => attrSet.contains(at) && aggMap.contains(at) && !selections.exists(select => select.attr == at))),
         agg.init,
         agg.expression
       )

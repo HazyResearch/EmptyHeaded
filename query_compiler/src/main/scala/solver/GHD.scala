@@ -5,8 +5,9 @@ import duncecap.attr.Attr
 class GHD(val root:GHDNode,
           val queryRelations:List[OptimizerRel],
           val joinAggregates:Map[String, Aggregation],
-          val outputRelation:Rel) extends QueryPlanPostProcessor {
-  val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation)
+          val outputRelation:Rel,
+          val selections:List[Selection]) extends QueryPlanPostProcessor {
+  val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation, selections)
   var depth: Int = -1
   var numBags: Int = -1
   var bagOutputs:List[OptimizerRel] = null
@@ -69,7 +70,6 @@ class GHD(val root:GHDNode,
 
   def needTopDownPass():Boolean = {
     // no need to do the top down pass since the root has all the materialized attrs
-    // println(root.outputRelation)
     return !outputRelation.attrs.values.forall(root.noChildAttrSet.contains(_))
   }
 

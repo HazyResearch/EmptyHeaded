@@ -23,7 +23,9 @@ object QueryPlanner {
           r,
           rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)),
           joinAggregates,
-          rule.getResult().getRel()))
+          rule.getResult().getRel(),
+          rule.getFilters().values
+        ))
       candidates.map(c => c.doPostProcessingPass())
 
       val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(

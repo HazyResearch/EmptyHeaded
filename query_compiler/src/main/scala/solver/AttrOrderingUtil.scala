@@ -11,13 +11,11 @@ object AttrOrderingUtil {
    * keeping the ordering between attrs with equality selection,
    * keeping the ordering and between attrs without
    */
-  /*def partition_equality_selected(attrNames:List[Attr],
-                                  attrInfo:List[(Attr, SelectionOp, SelectionVal)]): List[Attr] = {
-    val attrsWithEqualitySelection = attrInfo.filter(info => info._2 == "=").unzip3._1.toSet
-    val (attrsWithEqSelect, attrsWithoutEqSelect) = attrNames.partition(
-      attrName => attrsWithEqualitySelection.contains(attrName))
-    attrsWithEqSelect:::attrsWithoutEqSelect
-  }*/
+  def partition_equality_selected(attrs:List[Attr],
+                                  selections:List[Selection]): List[Attr] = {
+    val (hasSelect, noSelect) = attrs.partition(attr => selections.exists(selection => selection.attr == attr))
+    return hasSelect:::noSelect
+  }
 
   def partition_materialized(attrNames:List[Attr], outputRelation:Rel): List[Attr] = {
     val (materialized, notMaterialized) = attrNames.partition(outputRelation.attrs.values.contains(_))
@@ -59,12 +57,12 @@ object AttrOrderingUtil {
 
   def getAttributeOrdering(node:EHNode,
                            queryRelations:List[OptimizerRel],
-                           outputRelation:Rel) : List[String] = {
+                           outputRelation:Rel,
+                           selections:List[Selection]) : List[String] = {
     val ordering = get_attribute_ordering(
       mutable.LinkedHashSet[EHNode](node),
       outputRelation
     )
-   // partition_equality_selected(ordering, queryRelations.flatMap(queryRelation => queryRelation.attrs.values))
-    return ordering
+    return partition_equality_selected(ordering, selections)
   }
 }
