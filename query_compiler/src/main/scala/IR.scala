@@ -97,9 +97,9 @@ case class Join(val rels:List[Rel]){
   }
 }
 
-case class Selection(val attr:String, 
-  val operation:Op,
-  val value:String) {
+case class Selection(val attr:String,
+                     val operation:Op,
+                     val value:String) {
   def getAttr():String = { attr }
   def getOperation():String = { operation.value }
   def getValue():String = { value }
