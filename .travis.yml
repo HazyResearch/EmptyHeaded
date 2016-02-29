@@ -17,7 +17,6 @@ addons:
     - libgtest-dev
     - libjemalloc-dev
     - cython
-    - jpype
 
 install:
   - conda install -y pandas

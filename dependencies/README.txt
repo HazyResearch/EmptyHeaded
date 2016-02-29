@@ -3,4 +3,4 @@ You must have sudo to install this (or you are left to your own devices).
 
 Example:
 
-sudo ./install.sh
+./install.sh
