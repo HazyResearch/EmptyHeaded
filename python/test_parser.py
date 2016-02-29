@@ -9,7 +9,33 @@ def triangle():
 
 def triangle_counting():
   return datalog("""
-    Triangle(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)].
+    Triangle(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(b,c)].
+  """).ir
+
+def triangle_agg():
+  return datalog("""
+    TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)].
+  """).ir
+
+def fourclique():
+  return datalog("""
+    Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).
+    """).ir
+
+def fourclique_agg():
+  return datalog("""
+    FliqueAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),z:uint64<-[COUNT(*)].
+  """).ir
+
+
+def fourclique_sel_agg():
+  return datalog("""
+    FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)].
+  """).ir
+
+def fourclique_sel():
+  return datalog("""
+    FliqueSel(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0.
   """).ir
 
 def pagerank():
@@ -21,7 +47,7 @@ def pagerank():
 
 def lubm1():
   return datalog("""
-    lubm1(a) :- 
+    lubm1(a) :-
       takesCourse(a,b),
       b='http://www.Department0.University0.edu/GraduateCourse0',
       rdftype(a,c),
@@ -35,12 +61,17 @@ queries = {
   "triangle":triangle,
   "triangle_counting":triangle_counting,
   "pagerank":pagerank,
-  "lubm1":lubm1
+  "lubm1":lubm1,
+  "triangle_agg":triangle_agg,
+  "fourclique":fourclique,
+  "fourclique_agg":fourclique_agg,
+  "fourclique_sel":fourclique_sel,
+  "fourclique_sel_agg":fourclique_sel_agg
 }
 
 for query in queries:
   print "\n\n"+query
-  ir = queries[query]() 
+  ir = queries[query]()
   for rule in ir.rules:
     print rule
 

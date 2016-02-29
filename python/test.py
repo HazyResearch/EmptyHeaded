@@ -28,7 +28,7 @@ graph = Relation(
 #  [graph])
 #db.build()
 
-db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
+# db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
 db.generate(triangle)
 
@@ -42,7 +42,7 @@ db.generate(triangle)
 
 #db.save("graph")
 
-ir = datalog(triangle_agg).ir 
+ir = datalog(triangle_agg).ir
 
 for rule in ir.rules:
   print rule
