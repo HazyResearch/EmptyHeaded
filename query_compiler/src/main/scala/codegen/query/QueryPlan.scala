@@ -79,6 +79,10 @@ def c_run_${id}(tm):
       s"${db.folder}/libs/${folder}/setup.py").!
 
     Seq("sed","-i",bak,
+      s"s/#NUMTHREADS#/${db.config.numThreads}/g",
+      s"${db.folder}/libs/${folder}/setup.py").!
+
+    Seq("sed","-i",bak,
       s"s/#QUERY#/Query_${hash}/g",
       s"${db.folder}/libs/${folder}/setup.py").!
 
