@@ -98,7 +98,7 @@ def c_run_${id}(tm):
         val nprr = getattrinfo(rule)
         val recursion = getbagrecursion(rule)
 
-        //println(rule)
+        println(rule)
 
         QueryPlanBagInfo(
           name,
@@ -259,14 +259,15 @@ case class QueryPlanAttrInfo(val name:String,
           else 
             throw new Exception("1 anno per relation")
         if(!relations.contains((rel.name,order)))
-          relations += ((rel.name,order) -> (ListBuffer(rel.attrs),anno) ) 
+          relations += ((rel.name,order) -> (ListBuffer(Attributes(order.map(i => rel.attrs.values(i)))),anno) ) 
         else
-          relations(((rel.name,order)))._1 += rel.attrs
+          relations(((rel.name,order)))._1 += Attributes(order.map(i => rel.attrs.values(i)))
       })
     })
     //FIX ME Look up relations in DB and get annotation
     relations.map(relMap => {
       val (key,value) = relMap
+      println(relMap)
       QueryPlanRelationInfo(key._1,key._2,Some(value._1.toList),value._2)
     }).toList
   }

@@ -100,17 +100,30 @@ print "4CLIQUE AGG"
 #db.eval(fourclique_agg)
 
 print "LOLLIPOP"
-db.eval(lollipop)
+#db.eval(lollipop)
 
 print "LOLLIPOP AGG"
-db.eval(lollipop_agg)
+#db.eval(lollipop_agg)
 
 print "BARBELL"
-db.eval(barbell)
+#db.eval(barbell)
 
 print "BARBELL AGG"
-db.eval(barbell_agg)
+#db.eval(barbell_agg)
 
+print "4CLIQUE SELECTION"
+db.eval(fourclique_sel)
+
+print "4CLIQUE SELECTION AGG"
+db.eval(fourclique_sel_agg)
+
+print "BARBELL SELECTION"
+db.eval(barbell_sel)
+
+print "BARBELL SELECTION AGG"
+db.eval(barbell_sel_agg)
+
+print "PAGERANK"
 #db.eval(pagerank)
 
 comm="""
