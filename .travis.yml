@@ -1,6 +1,4 @@
-sudo: true
-
-language: ruby
+sudo: false
 
 services:
   - docker
