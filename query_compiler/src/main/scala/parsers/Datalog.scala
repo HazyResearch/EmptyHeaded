@@ -100,7 +100,7 @@ object DatalogParser extends RegexParsers {
     (identifierName <~ ":") ~ (annoTypes <~ "<-") ~ ("[" ~> endaggexpression <~ "]") ^^ {case a~t~b => 
       //map COUNT to a SUM with an init value of 1
       val (opin,initin) = ("CONST",b)
-      
+
       val ab = new AggregationsBuilder()
       val agg = Aggregation(a,
         QueryCompiler.validAnnotationTypes(t),
@@ -119,7 +119,7 @@ object DatalogParser extends RegexParsers {
       
       val ab = new AggregationsBuilder()
       val agg = Aggregation(a,
-        "long",
+        QueryCompiler.validAnnotationTypes(t),
         ab.getOp(opin),
         Attributes(attrs),
         initin,
