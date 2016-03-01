@@ -7,7 +7,7 @@ before_install:
 script:
   - docker run $DOCKER_REPO /bin/bash -c "./test/testAll.sh"
 after_success:
-  - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$COMMIT
+  - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TAG
   - docker push $DOCKER_REPO
 notifications:
   email:
