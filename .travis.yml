@@ -7,9 +7,12 @@ script:
   - docker run $DOCKER_REPO:$COMMIT /bin/bash -c "./test/testAll.sh"
 after_success:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-  - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TAG
+  - if [ $TRAVIS_BRANCH == 'master' ];
+  	then docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:latest;
+  	else docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TRAVIS_BRANCH;
+  	fi
   - docker push $DOCKER_REPO
-  - echo ${TAG}
+  - echo ${COMMIT}
 after_failure:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - docker push $DOCKER_REPO
@@ -27,4 +30,3 @@ env:
   - secure: SPpZKUwK7f5Lq7VR+iZwyCneFL9ZuIApQW26NC213rYgOST5Hxl1bYlDTC4anvTtqh/oAR3V44iyWK/5kwDhF+SBhnkAECFyV2u2gz4/hLcaEoAOBt34mMKKrIOJrLTVf4DryzF682dc5r02TWiS7kadmqvou/lXus/TtytLqPmnNHmTpO638XA6azgwLvVEi4bmpGxcy9xvGIP78Cu1bhU/C4vjE+zfTjSWw/4iXXfOtXeM5dJT3zC66VNCPABrpm8Mi5PnTbY78Qwuu06wjpLnKk6vI6lMnMLHtiTvEA/cPRT4MFFsgA5zTal021ywhrIwIhQXNLBwlroGbha0EGRLFtYfKosWLWMxRteYEBDTQaxfZRB2TRNX1udAWVXZEhrMbDwUynMYHsBEIu0LUnFhrR0H38dv1ETaYAZpTK80XIet7A6UpyEU+n6yzpWVo8ToxlsmkfHqH7fOD+FM8ld7+Jv4S+HOIobT+/YVYdPiSi0ETHCPwBUdAvR6OuflZOB6Qiqw/ci3qIs+GVk/CAl1ov6+jff22GyTuhDNLlXwqdzmZ94YMWHVlfL9MMCZ4QNLx4jApgTJL4MtancNqXK3Yfa5YsmIg+c/AdVFJetYRseT/8KJy3N3GtOpsouHzkzRy1R8Z6ZYwfh6Dnx+VDKXYzHnrcdCoK2PaVamFTs=
   - DOCKER_REPO=craberger/emptyheaded
   - COMMIT=${TRAVIS_COMMIT::8}
-  - TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
