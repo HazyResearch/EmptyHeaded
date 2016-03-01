@@ -277,14 +277,14 @@ class FILTERS:
 
 #Aggregations over attributes.
 class AGGREGATE:
-  def __init__(self,annotation="",datatype="",operation="",attributes=[],init="",expression="",dependsOn=[]):
+  def __init__(self,annotation="",datatype="",operation="",attributes=[],init="",expression="",usedScalars=[]):
     self.annotation = annotation
     self.datatype = datatype
     self.operation = operation
     self.attributes = attributes
     self.init = init
     self.expression = expression
-    self.dependsOn = dependsOn
+    self.usedScalars = usedScalars
 
   def __repr__(self):
     return """(%s,%s,%s,%s,%s,%s,%s)""" % (
@@ -294,7 +294,7 @@ class AGGREGATE:
       self.attributes,
       self.init,
       self.expression,
-      self.dependsOn)
+      self.usedScalars)
 
 
 class AGGREGATES:
@@ -314,7 +314,7 @@ class AGGREGATES:
         agg.attributes,
         agg.init,
         agg.expression,
-        agg.dependsOn)
+        agg.usedScalars)
     return aggBuilder.build()
 
   @staticmethod

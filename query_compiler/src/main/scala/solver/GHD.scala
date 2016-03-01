@@ -4,7 +4,7 @@ import duncecap.attr.Attr
 
 class GHD(val root:GHDNode,
           val queryRelations:List[OptimizerRel],
-          val joinAggregates:Map[String, Aggregation],
+          var joinAggregates:Map[String, Aggregation],
           val outputRelation:Rel,
           val selections:List[Selection]) extends QueryPlanPostProcessor {
   val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation, selections)
@@ -13,8 +13,6 @@ class GHD(val root:GHDNode,
   var bagOutputs:List[OptimizerRel] = null
   var attrToRels: Map[Attr, List[OptimizerRel]] = null
   var attrToAnnotation:Map[Attr, String] = null
-  var lastMaterializedAttr:Option[Attr] = None
-  var nextAggregatedAttr:Option[Attr] = None
 
   private def getAttrsToRelationsMap(): Map[Attr, List[OptimizerRel]] = {
     PlanUtil.createAttrToRelsMapping(attributeOrdering.toSet, bagOutputs)
@@ -24,6 +22,9 @@ class GHD(val root:GHDNode,
     node.outputRelation::node.children.flatMap(child => getBagOutputRelations(child))
   }
 
+  def setJoinAggregates(joinAggregates:Map[String, Aggregation]) = {
+    this.joinAggregates = joinAggregates
+  }
 
   /**
    * Do a post-processiing pass to fill out some of the other vars in this class
@@ -58,9 +59,9 @@ class GHD(val root:GHDNode,
     root.recursivelyPushOutSelections()
   }
 
-  def getQueryPlan(): List[Rule] = {
+  def getQueryPlan(prevRules:List[Rule]): List[Rule] = {
     // do a preorder traversal of the GHDNodes to get the query plans
-    val plan = root.recursivelyGetQueryPlan(joinAggregates, needTopDownPass())
+    val plan = root.recursivelyGetQueryPlan(joinAggregates, needTopDownPass(), prevRules)
     if(needTopDownPass()) {
       getTopDownPass()::plan
     } else {
@@ -74,7 +75,13 @@ class GHD(val root:GHDNode,
   }
 
   def getTopDownPass():Rule = {
-    val relationsInTopDownPass = root.getResult(true, joinAggregates).rel::root.getDescendantNames(outputRelation.attrs, joinAggregates)
+    /**
+     * TODO:
+     * You don't need to include a bag here if it is subsumed by a higher bag,
+     * i.e., all the attributes it outputs are also output by a higher bag
+     */
+    val relationsInTopDownPass = root.getResult(true, joinAggregates).rel::root.getDescendants(outputRelation.attrs, joinAggregates)
+
     return Rule(
       Result(outputRelation, false),
       None,

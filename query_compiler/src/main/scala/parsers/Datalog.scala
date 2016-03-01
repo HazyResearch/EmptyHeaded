@@ -112,7 +112,7 @@ object DatalogParser extends RegexParsers {
   }
   //normal case
   def fullaggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
-    (identifierName <~ ":") ~ (annoTypes <~ "<-") ~ ("[" ~> aggOp) ~ aggregateStatement ~ (endaggexpression <~ "]") ^^ {case a~t~b~(attrs~init)~d => 
+    (identifierName <~ ":") ~ (annoTypes <~ "<-") ~ ("[" ~> aggOp) ~ aggregateStatement ~ (endaggexpression <~ "]") ^^ {case a~t~b~(attrs~init)~d =>
       val (startexp,op) = b
       //map COUNT to a SUM with an init value of 1
       val (opin,initin) = if(op=="COUNT") ("SUM","1") else (op,init)
@@ -134,7 +134,9 @@ object DatalogParser extends RegexParsers {
 
   def clauses:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = notlastclause | clause
   def notlastclause:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
-    clause ~ ("," ~> clauses) ^^ {case a~rest => a ++: rest}
+    clause ~ ("," ~> clauses) ^^ {case a~rest => {
+      a ++: rest
+    }}
 
   def datalogRule:Parser[Rule] = result ~ opt(recursion) ~ (":-" ~> operation) ~ clauses ^^ {
     case rslt~ce~jt~clse => {

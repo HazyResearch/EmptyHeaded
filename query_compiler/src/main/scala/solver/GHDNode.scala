@@ -231,7 +231,7 @@ class GHDNode(override val rels: List[OptimizerRel],
       .foldLeft(bagFractionalWidth)((accum: Double, x: Double) => if (x > accum) x else accum)
   }
 
-  def getQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean): Rule = {
+  def getQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean, prevRules:List[Rule]): Rule = {
     return Rule(
       getResult(queryHasTopDownPass, aggMap),
       None /* TODO: handle recursion */,
@@ -239,16 +239,20 @@ class GHDNode(override val rels: List[OptimizerRel],
       getOrder(),
       getProject(aggMap),
       getJoin(),
-      getAggregations(aggMap),
+      getAggregations(aggMap, prevRules),
       getFilters())
   }
 
-  def recursivelyGetQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean): List[Rule] = {
-    getQueryPlan(aggMap, queryHasTopDownPass)::children.flatMap(_.recursivelyGetQueryPlan(aggMap, queryHasTopDownPass))
+  def recursivelyGetQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean, prevRules:List[Rule]): List[Rule] = {
+    getQueryPlan(aggMap, queryHasTopDownPass, prevRules)::children.flatMap(_.recursivelyGetQueryPlan(aggMap, queryHasTopDownPass, prevRules))
   }
 
   def getResult(queryHasTopDownPass:Boolean, aggMap:Map[String, Aggregation]): Result = {
-    Result(Rel(outputRelation.name, outputRelation.attrs, if (getAggregations(aggMap).values.isEmpty) Annotations(List()) else outputRelation.anno), if (queryHasTopDownPass) true else level != 0)
+    Result(Rel(
+      outputRelation.name,
+      outputRelation.attrs,
+      if (getAggregations(aggMap).values.isEmpty) Annotations(List()) else outputRelation.anno),
+      if (queryHasTopDownPass) true else level != 0)
   }
 
   def getFilters() = {
@@ -275,7 +279,15 @@ class GHDNode(override val rels: List[OptimizerRel],
       OptimizerRel.toRel(rel)).toList)
   }
 
-  def getAggregations(aggMap:Map[String, Aggregation]) = {
+  def computePrevRulesDependedOn(expression:String,
+                                 prevRules:List[Rule]): List[Rel] = {
+    val dependedOnRules = prevRules.filter(rule => expression.indexOf(rule.result.rel.name) != -1)
+    // you should only ever depend on scalars
+    assert(dependedOnRules.forall(rule => rule.result.rel.attrs.values.isEmpty))
+    return dependedOnRules.map(rule => rule.result.rel)
+  }
+
+  def getAggregations(aggMap:Map[String, Aggregation], prevRules:List[Rule] = List()) = {
     // If the attribute is being processed in this bag, isn't materialized,
     // and is in aggMap
     val aggs = (attrSet -- outputRelation.attrs.values).flatMap(attr => {
@@ -294,7 +306,8 @@ class GHDNode(override val rels: List[OptimizerRel],
                 && aggMap.contains(at)
                 /*&& !selections.exists(select => select.attr == at)*/)),
         agg.init,
-        agg.expression
+        agg.expression,
+        computePrevRulesDependedOn(agg.expression, prevRules)
       )
       if (newAgg.attrs.values.isEmpty) {
         None
@@ -304,10 +317,10 @@ class GHDNode(override val rels: List[OptimizerRel],
     }))
   }
 
-  def getDescendantNames(attrs:Attributes, aggMap:Map[String, Aggregation]):List[Rel] = {
+  def getDescendants(attrs:Attributes, aggMap:Map[String, Aggregation]):List[Rel] = {
     val rels:List[Rel] = children
       .filter(child => !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty)
       .map(_.getResult(false, aggMap).rel)
-    rels:::children.flatMap(_.getDescendantNames(attrs, aggMap))
+    rels:::children.flatMap(_.getDescendants(attrs, aggMap))
   }
 }

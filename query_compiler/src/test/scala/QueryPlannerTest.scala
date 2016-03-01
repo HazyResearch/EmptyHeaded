@@ -1,6 +1,5 @@
-package scala
+package duncecap
 
-import duncecap._
 import org.scalatest.FunSuite
 
 class QueryPlannerTest extends FunSuite {
@@ -246,5 +245,14 @@ class QueryPlannerTest extends FunSuite {
         BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0.
     """))
     println(optimized)
+  }
+
+  test("Pagerank, test that usedScalar field is filled out properly") {
+    val pgrank = """
+      N(;w) :- Edge(x,y),w:uint64<-[SUM(x;1)].
+      PageRank(x;y) :- Edge(x,z),y:float32<-[(1.0/N)].
+      PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float32 <- [0.15+0.85*SUM(z;1.0)]."""
+    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(pgrank))
+    optimized.rules.foreach(rule => println(rule))
   }
 }
