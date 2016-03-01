@@ -19,6 +19,7 @@ addons:
     - cython
 
 install:
+  - pip install -y cython
   - conda install -y pandas
   - conda install -y setuptools
 
