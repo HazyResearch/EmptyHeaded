@@ -9,7 +9,7 @@ before_install:
   - docker pull craberger/eh-2.0
 
 script: 
-  - docker run -d -p 127.0.0.1:80:4567 craberger/eh-2.0 /bin/sh -c "./test/testAll.sh"
+  - docker run craberger/eh-2.0 /bin/bash -c "./test/testAll.sh"
 
 notifications:
   email:
