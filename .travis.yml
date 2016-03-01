@@ -1,35 +1,15 @@
-sudo: false
+sudo: true
 
-language: scala
+language: ruby
 
-scala:
-  - 2.11.7
-
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - clang-format-3.4
-    - g++-5
-    - gcc-5
-    - cmake
-    - libtbb-dev
-    - libgtest-dev
-    - libjemalloc-dev
-
-install:
-  - conda install -y cython
-  - conda install -y pandas
-  - conda install -y setuptools
+services:
+  - docker
 
 before_install:
-  - wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p /home/travis/mc
-  - export PATH=/home/travis/mc/bin:$PATH
+- docker pull craberger/eh-2.0
+- docker run -d -p 127.0.0.1:80:4567 craberger/eh-2.0 /bin/sh -c "./test/testAll.sh"
 
-script: "source ./test/testAll.sh"
+script: "./test/testAll.sh"
 
 notifications:
   email:
