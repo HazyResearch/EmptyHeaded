@@ -4,12 +4,14 @@ services:
 before_install:
   - docker build -t $DOCKER_REPO:$COMMIT . 
 script:
-  - docker run $DOCKER_REPO /bin/bash -c "./test/testAll.sh"
+  - docker run $DOCKER_REPO:$COMMIT /bin/bash -c "./test/testAll.sh"
 after_success:
+  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TAG
   - docker push $DOCKER_REPO
   - echo ${TAG}
 after_failure:
+  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$COMMIT
   - docker push $DOCKER_REPO
   - echo ${COMMIT}
