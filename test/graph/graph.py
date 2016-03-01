@@ -6,7 +6,7 @@ from emptyheaded import *
 def triangle_agg(db):
   tri_agg = \
 """
-TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)].
+TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:long<-[COUNT(*)].
 """
   print "\nTRIANGLE AGG"
   db.eval(tri_agg)
@@ -18,8 +18,11 @@ TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)].
   df = tri.getDF()
   print df
 
-  if tri.num_rows != 1612010L:
+  if tri.num_rows != 0:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(numRows))
+
+  if df.iloc[0][0] != 1612010L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(numRows))
 
 def triangle_materialized(db):
   triangle = \
@@ -43,7 +46,7 @@ Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).
 
 
 def test_pruned():
-  build = True
+  build = False
   ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/facebook_pruned.tsv",\
   sep='\t',\
   names=["0","1"],\

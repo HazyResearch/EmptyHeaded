@@ -20,7 +20,7 @@ case class Schema(
     externalAttributeTypes.map(a => {
       if(!QueryCompiler.validAttributeTypes.contains(a))
         throw new Exception("Attribute type " + a + " in schema is not valid.")
-      QueryCompiler.validAnnotationTypes(a)
+      QueryCompiler.validAttributeTypes(a)
     })
   }
   private def checkAnnotations():List[String] = {
@@ -146,7 +146,7 @@ object QueryCompiler {
     //"Date"
     )
 
-  val internalToExternal = Map(
+  val internalAttrToExternal = Map(
     //"Boolean" -> ,
     //"Byte",
     "uint32_t" -> "uint32",
@@ -163,17 +163,15 @@ object QueryCompiler {
 
   //All numeric types
   val validAnnotationTypes = Map(
-    "uint32" -> "uint32_t",
-    "int32" -> "int32_t",
-    "int64" -> "int64_t",
-    "uint64" -> "uint64_t",
-    "float32" -> "float",
-    "float64" -> "double"
+    "int" -> "int",
+    "long" -> "long",
+    "float" -> "float",
+    "double" -> "double"
   )
 
   //Special builder to convert arrays to lists
   def buildInternalSchema(attrTypes:List[String],annoTypes:List[String]) : Schema = {
-    Schema(attrTypes.map(internalToExternal(_)),annoTypes.map(internalToExternal(_)))
+    Schema(attrTypes.map(internalAttrToExternal(_)),annoTypes.map(validAnnotationTypes(_)))
   }
 
   //Special builder to convert arrays to lists

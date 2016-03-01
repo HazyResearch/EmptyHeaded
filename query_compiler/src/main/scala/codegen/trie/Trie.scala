@@ -22,18 +22,25 @@ object Trie{
       val mvdir = s"""cp -rf ${ehhome}/cython/trie ${db.folder}/libs/trie_${rel.name}"""
       mvdir.!
       
+      val annoType = if(rel.schema.annotationTypes.length == 1) rel.schema.annotationTypes(0) else "void*"
       val os = System.getProperty("os.name").toLowerCase()
       if(os.indexOf("mac") >= 0){
         Seq("sed","-i",".bak",
           s"s/#PTrie#/PTrie_${rel.name}/g",
           s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx",
           s"${db.folder}/libs/trie_${rel.name}/setup.py").!
+        Seq("sed","-i",".bak",
+          s"s/#ANNOTYPE#/${annoType}/g",
+          s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx").!
         s"""mv ${db.folder}/libs/trie_${rel.name}/PTrie.pyx ${db.folder}/libs/trie_${rel.name}/PTrie_${rel.name}.pyx""".!
       } else{
         Seq("sed","-i",
           s"s/#PTrie#/PTrie_${rel.name}/g",
           s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx",
           s"${db.folder}/libs/trie_${rel.name}/setup.py").!
+        Seq("sed","-i",
+          s"s/#ANNOTYPE#/${annoType}/g",
+          s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx").!
         s"""mv ${db.folder}/libs/trie_${rel.name}/PTrie.pyx ${db.folder}/libs/trie_${rel.name}/PTrie_${rel.name}.pyx""".!   
       }
 
@@ -59,6 +66,24 @@ cdef inline convert(vector[void*] data, length):
   col = floatc2np(data.at(${i}),length)""")
         case "double" => pythonappendcode.append(s""" 
   col = doublec2np(data.at(${i}),length)""")
+        case _ => 
+          throw new Exception("Could not find type to transfer to dataframe.")
+      }
+      pythonappendcode.append(s"""
+  df[${i}] = col""")
+      i+=1
+    })
+    val rellen = if(rel.schema.attributeTypes.length == 0) "1" else "length"
+    rel.schema.annotationTypes.foreach(anno => {
+      anno match {
+        case "int" => pythonappendcode.append(s""" 
+  col = int32c2np(data.at(${i}),${rellen})""")
+        case "long" => pythonappendcode.append(s""" 
+  col = int64c2np(data.at(${i}),${rellen})""")
+        case "float" => pythonappendcode.append(s""" 
+  col = floatc2np(data.at(${i}),${rellen})""")
+        case "double" => pythonappendcode.append(s""" 
+  col = doublec2np(data.at(${i}),${rellen})""")
         case _ => 
           throw new Exception("Could not find type to transfer to dataframe.")
       }
@@ -172,6 +197,13 @@ std::vector<void*> getDF(Trie<${annoType},ParMemoryBuffer>* mytrie){
       """)
       i += 1
     })
+    val num_rows = if(rel.schema.attributeTypes.length == 0) "1" else "mytrie->num_rows"
+    rel.schema.annotationTypes.foreach(anno => {
+      code.append(s"""std::vector<${anno}>* result_${i} = new std::vector<${anno}>();
+      result_${i}->resize(${num_rows});
+      """)
+      i += 1
+    })
     //fill in those buffers
     code.append(s"""
   size_t i = 0;
@@ -183,10 +215,19 @@ std::vector<void*> getDF(Trie<${annoType},ParMemoryBuffer>* mytrie){
         result_${i}->at(i) = Encoding_${i}->key_to_value.at(v->at(${i}));""")
       i += 1
     })
+    rel.schema.annotationTypes.foreach(anno => {
+      code.append(s"""
+        result_${i}->at(i) = a;""")
+      i += 1
+    })
     code.append("""i++;});""")
     //pack buffers into the result
     i = 0
     rel.schema.attributeTypes.foreach( attr => {
+      code.append(s"""result.push_back((void*)(result_${i}->data()));""")
+      i += 1
+    })
+    rel.schema.annotationTypes.foreach( anno => {
       code.append(s"""result.push_back((void*)(result_${i}->data()));""")
       i += 1
     })

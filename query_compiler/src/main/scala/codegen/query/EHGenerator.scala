@@ -886,7 +886,10 @@ object EHGenerator {
         val recordering = (0 until bag.attributes.values.length).toList.mkString("_")
 
         code.append(s"""Trie_${outputName}_${recordering}->memoryBuffers = Builders.trie->memoryBuffers;""")
-        code.append(s"""Trie_${outputName}_${recordering}->num_rows = Builders.trie->num_rows;""")
+        if(bag.attributes.values.length == 0)
+          code.append(s"""Trie_${outputName}_${recordering}->num_rows = 0;""")
+        else
+          code.append(s"""Trie_${outputName}_${recordering}->num_rows = Builders.trie->num_rows;""")
         code.append(s"""Trie_${outputName}_${recordering}->encodings = Builders.trie->encodings;""")
 
         bag.recursion match {

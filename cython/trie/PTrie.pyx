@@ -15,7 +15,7 @@ from libc.stdint cimport uint32_t, uint64_t, int32_t, int64_t
 from cpython.cobject cimport PyCObject_AsVoidPtr
 cimport #PTrie#
 
-ctypedef Trie[void*,ParMemoryBuffer]* trietype
+ctypedef Trie[#ANNOTYPE#,ParMemoryBuffer]* trietype
 
 cdef extern from "TrieWrapper.hpp":
   # Imports definitions from a c header file

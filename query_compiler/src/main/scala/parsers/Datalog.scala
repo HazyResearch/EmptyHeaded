@@ -80,7 +80,7 @@ object DatalogParser extends RegexParsers {
   def findStar = """\*""".r ^^ {case a => List[String](a)}
   def aggregateStatement = ("(" ~> (findStar | attrList)) ~ (aggInit <~ ")")
 
-  def annoTypes = """uint32|int32|int64|uint64|float32|float64""".r
+  def annoTypes = """long|int|float|double""".r
 
   //ughh, I couldn't get scala to just match everything BUT these strings
   def aggOp:Parser[(String,String)] = sumagg | countagg | minagg //"""SUM|COUNT|MIN""".r
