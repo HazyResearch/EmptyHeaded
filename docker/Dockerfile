@@ -38,6 +38,7 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test && apt-get update && apt-get 
     cmake \
     libjemalloc-dev 
 
+RUN mv /usr/bin/clang-format-3.4 /usr/bin/clang-format
 RUN apt-get install -y firefox
 
 #install scala
@@ -56,5 +57,4 @@ RUN /mc/bin/conda install -y setuptools
 
 RUN git clone https://github.com/HazyResearch/EmptyHeaded.git
 RUN sbt #pulls sbt which is timely
-RUN cd EmptyHeaded/dependencies && ./install.sh
-RUN mv /usr/bin/clang-format-3.4 /usr/bin/clang-format
+RUN cd /EmptyHeaded/dependencies && ./install.sh
