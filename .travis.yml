@@ -9,7 +9,7 @@ script:
 after_success:
   - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TAG
   - docker push $DOCKER_REPO
-  - echo "TAG: " $TAG
+  - echo $TAG
 notifications:
   email:
   - craberger@gmail.com
