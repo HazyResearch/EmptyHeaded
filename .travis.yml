@@ -12,7 +12,6 @@ after_success:
   - echo ${TAG}
 after_failure:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-  - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$COMMIT
   - docker push $DOCKER_REPO
   - echo ${COMMIT}
 notifications:
