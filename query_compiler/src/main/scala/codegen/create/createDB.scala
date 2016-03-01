@@ -16,17 +16,23 @@ object CreateDB{
   def loadAndEncode(db:DBInstance,hash:String){
     val ehhome = sys.env("EMPTYHEADED_HOME")
     val mvdir = s"""cp -rf ${ehhome}/cython/createDB ${db.folder}/libs/createDB"""
-    
-    val os = System.getProperty("os.name").toLowerCase()
-    val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
-
     mvdir.!
-    Seq("sed","-i",bak,
-      s"s/#DFMap#/DFMap_${hash}/g",
-      s"${db.folder}/libs/createDB/DFMap.pyx",
-      s"${db.folder}/libs/createDB/setup.py").!
-    s"""mv ${db.folder}/libs/createDB/DFMap.pyx ${db.folder}/libs/createDB/DFMap_${hash}.pyx""".!
-  
+
+    val os = System.getProperty("os.name").toLowerCase()
+    if(os.indexOf("mac") >= 0){
+      Seq("sed","-i",".bak",
+        s"s/#DFMap#/DFMap_${hash}/g",
+        s"${db.folder}/libs/createDB/DFMap.pyx",
+        s"${db.folder}/libs/createDB/setup.py").!
+      s"""mv ${db.folder}/libs/createDB/DFMap.pyx ${db.folder}/libs/createDB/DFMap_${hash}.pyx""".!
+    } else{
+      Seq("sed","-i",
+        s"s/#DFMap#/DFMap_${hash}/g",
+        s"${db.folder}/libs/createDB/DFMap.pyx",
+        s"${db.folder}/libs/createDB/setup.py").!
+      s"""mv ${db.folder}/libs/createDB/DFMap.pyx ${db.folder}/libs/createDB/DFMap_${hash}.pyx""".!  
+    }
+
     //generate code
     genLoadAndEncode(db)
     genBuild(db)

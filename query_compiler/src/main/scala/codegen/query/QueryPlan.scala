@@ -57,9 +57,6 @@ def c_run_${id}(tm):
     val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/${folder}"""
     mvdir.!
 
-    val os = System.getProperty("os.name").toLowerCase()
-    val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
-
     val setuplist = ListBuffer[String]()
     val cpfile = s"""mv ${db.folder}/libs/${folder}/Query.pyx ${db.folder}/libs/${folder}/Query_${hash}.pyx"""
     cpfile.!
@@ -74,17 +71,35 @@ def c_run_${id}(tm):
 
     val setupstring = setuplist.mkString(",")
 
-    Seq("sed","-i",bak,
-      s"s/#FILES#/Query_${hash}.pyx/g",
-      s"${db.folder}/libs/${folder}/setup.py").!
+    val os = System.getProperty("os.name").toLowerCase()
+    val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
+    if(os.indexOf("mac") >= 0){
+      Seq("sed","-i",".bak",
+        s"s/#FILES#/Query_${hash}.pyx/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
 
-    Seq("sed","-i",bak,
-      s"s/#NUMTHREADS#/${db.config.numThreads}/g",
-      s"${db.folder}/libs/${folder}/setup.py").!
+      Seq("sed","-i",".bak",
+        s"s/#NUMTHREADS#/${db.config.numThreads}/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
 
-    Seq("sed","-i",bak,
-      s"s/#QUERY#/Query_${hash}/g",
-      s"${db.folder}/libs/${folder}/setup.py").!
+      Seq("sed","-i",".bak",
+        s"s/#QUERY#/Query_${hash}/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+    } else{
+      Seq("sed","-i",
+        s"s/#FILES#/Query_${hash}.pyx/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+      Seq("sed","-i",
+        s"s/#NUMTHREADS#/${db.config.numThreads}/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+      Seq("sed","-i",
+        s"s/#QUERY#/Query_${hash}/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+    }
 
     var i = 0
     independentrules.foreach(rules => {

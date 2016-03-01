@@ -23,13 +23,20 @@ object Trie{
       mvdir.!
       
       val os = System.getProperty("os.name").toLowerCase()
-      val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
-      Seq("sed","-i",bak,
-        s"s/#PTrie#/PTrie_${rel.name}/g",
-        s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx",
-        s"${db.folder}/libs/trie_${rel.name}/setup.py").!
-      s"""mv ${db.folder}/libs/trie_${rel.name}/PTrie.pyx ${db.folder}/libs/trie_${rel.name}/PTrie_${rel.name}.pyx""".!
-      
+      if(os.indexOf("mac") >= 0){
+        Seq("sed","-i",".bak",
+          s"s/#PTrie#/PTrie_${rel.name}/g",
+          s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx",
+          s"${db.folder}/libs/trie_${rel.name}/setup.py").!
+        s"""mv ${db.folder}/libs/trie_${rel.name}/PTrie.pyx ${db.folder}/libs/trie_${rel.name}/PTrie_${rel.name}.pyx""".!
+      } else{
+        Seq("sed","-i",
+          s"s/#PTrie#/PTrie_${rel.name}/g",
+          s"${db.folder}/libs/trie_${rel.name}/PTrie.pyx",
+          s"${db.folder}/libs/trie_${rel.name}/setup.py").!
+        s"""mv ${db.folder}/libs/trie_${rel.name}/PTrie.pyx ${db.folder}/libs/trie_${rel.name}/PTrie_${rel.name}.pyx""".!   
+      }
+
       s"""mv ${db.folder}/libs/trie_${rel.name}/PTrie.pxd ${db.folder}/libs/trie_${rel.name}/PTrie_${rel.name}.pxd""".!
      
     //some code to get the right types for the dataframe
