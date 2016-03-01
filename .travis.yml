@@ -20,6 +20,7 @@ addons:
 
 install:
   - conda install -y pandas
+  - conda install -y setuptools
 
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
