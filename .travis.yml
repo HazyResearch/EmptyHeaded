@@ -4,6 +4,7 @@ services:
 before_install:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=craberger/EmptyHeaded
+  - echo $REPO
   - docker build -t $REPO:$COMMIT . 
 script:
   - docker run $REPO:$COMMIT /bin/bash -c "./test/testAll.sh"
