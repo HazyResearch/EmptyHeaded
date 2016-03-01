@@ -6,7 +6,7 @@ before_install:
   - export REPO=craberger/EmptyHeaded
   - docker build -t $REPO:$COMMIT . 
 script:
-  - docker run craberger/eh-2.0 /bin/bash -c "./test/testAll.sh"
+  - docker run $REPO:$COMMIT /bin/bash -c "./test/testAll.sh"
 notifications:
   email:
   - craberger@gmail.com
