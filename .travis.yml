@@ -8,11 +8,11 @@ script:
 after_success:
   - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TAG
   - docker push $DOCKER_REPO
-  - echo $TAG
+  - echo ${TAG}
 after_failure:
   - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$COMMIT
   - docker push $DOCKER_REPO
-  - echo $COMMIT
+  - echo ${COMMIT}
 notifications:
   email:
   - craberger@gmail.com
