@@ -2,8 +2,7 @@ sudo: required
 services:
   - docker
 before_install:
-  - docker pull $DOCKER_REPO
-  - docker build -t $DOCKER_REPO . 
+  - docker build -t $DOCKER_REPO:$COMMIT . 
 script:
   - docker run $DOCKER_REPO /bin/bash -c "./test/testAll.sh"
 after_success:
