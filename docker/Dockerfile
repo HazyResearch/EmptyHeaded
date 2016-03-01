@@ -45,6 +45,7 @@ RUN apt-get install -y firefox
 RUN wget https://dl.bintray.com/sbt/debian/sbt-0.13.7.deb
 RUN dpkg -i sbt-0.13.7.deb
 RUN apt-get install sbt
+RUN sbt #pulls sbt which is timely
 
 #install python add ons
 RUN wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
@@ -56,5 +57,10 @@ RUN /mc/bin/conda install -y pandas
 RUN /mc/bin/conda install -y setuptools
 
 RUN git clone https://github.com/HazyResearch/EmptyHeaded.git
-RUN sbt #pulls sbt which is timely
-RUN cd /EmptyHeaded/dependencies && ./install.sh
+
+WORKDIR "/EmptyHeaded"
+RUN git checkout eh-2.0 
+RUN git pull
+WORKDIR "/EmptyHeaded/dependencies"
+RUN ./install.sh
+WORKDIR "/EmptyHeaded"
