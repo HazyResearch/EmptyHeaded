@@ -7,10 +7,7 @@ script:
   - docker run $DOCKER_REPO:$COMMIT /bin/bash -c "./test/testAll.sh"
 after_success:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-  - if [[ $TRAVIS_BRANCH == 'master' ]]
-  	then docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:latest;
-  	else docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TRAVIS_BRANCH;
-  	fi
+  - if [[ $TRAVIS_BRANCH == 'master' ]]; then docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:latest; else docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TRAVIS_BRANCH; fi
   - docker push $DOCKER_REPO
   - echo ${COMMIT}
 after_failure:
