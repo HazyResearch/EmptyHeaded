@@ -56,11 +56,7 @@ RUN /mc/bin/conda install -y cython
 RUN /mc/bin/conda install -y pandas
 RUN /mc/bin/conda install -y setuptools
 
-RUN git clone https://github.com/HazyResearch/EmptyHeaded.git
-
-WORKDIR "/EmptyHeaded"
-RUN git checkout eh-2.0 
-RUN git pull
+ADD . /EmptyHeaded
 WORKDIR "/EmptyHeaded/dependencies"
 RUN ./install.sh
 WORKDIR "/EmptyHeaded"
