@@ -1,10 +1,12 @@
-sudo: false
+sudo: required
 
 services:
   - docker
 
 before_install:
   - docker pull craberger/eh-2.0
+  - docker run craberger/eh-2.0 /bin/bash -c "git pull"
+
 
 script: 
   - docker run craberger/eh-2.0 /bin/bash -c "./test/testAll.sh"
