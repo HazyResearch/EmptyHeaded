@@ -1,11 +1,12 @@
 ## Stores the configuration of the database
 
 class Config:
-  system = "emptyheaded" #delite/spark
-  num_threads = 1
-  num_sockets = 4
-  layout = "hybrid" #EmptyHeaded only
-  memory = "RAM" #EmptyHeaded only
+  def __init__(self,system="emptyheaded",num_threads=1,num_sockets=4,layout="hybrid",memory="RAM"):
+    self.system = system#delite/spark
+    self.num_threads = num_threads
+    self.num_sockets = num_sockets
+    self.layout = layout #EmptyHeaded only
+    self.memory = memory #EmptyHeaded only
 
   @staticmethod
   def java2python(jobject):
