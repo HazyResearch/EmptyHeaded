@@ -13,7 +13,7 @@ class RELATION:
     self.name = name
     self.attributes = attributes
     self.annotations = annotations
-  
+
   def __repr__(self):
     return """[%s %s,%s]""" % (self.name,\
       self.attributes,\
@@ -52,7 +52,7 @@ class RULE:
     aggregates,
     filters,
     ):
-    
+
     if not isinstance(result,RESULT) or \
       not isinstance(recursion,RECURSION) or \
       not isinstance(operation,OPERATION) or \
@@ -103,7 +103,7 @@ class RULE:
     filters = FILTERS.java2python(jobject.getFilters())
     aggregates = AGGREGATES.java2python(jobject.getAggregations())
     return RULE(result,recursion,operation,order,project,join,aggregates,filters)
-  
+
   def __repr__(self):
     return """RULE :-\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s>""" \
       % (self.result,\
@@ -277,16 +277,24 @@ class FILTERS:
 
 #Aggregations over attributes.
 class AGGREGATE:
-  def __init__(self,annotation="",datatype="",operation="",attributes=[],init="",expression=""):
+  def __init__(self,annotation="",datatype="",operation="",attributes=[],init="",expression="",dependsOn=[]):
     self.annotation = annotation
     self.datatype = datatype
     self.operation = operation
     self.attributes = attributes
     self.init = init
     self.expression = expression
+    self.dependsOn = dependsOn
 
   def __repr__(self):
-    return """(%s,%s,%s,%s,%s,%s)""" % (self.annotation,self.datatype,self.operation,self.attributes,self.init,self.expression)
+    return """(%s,%s,%s,%s,%s,%s,%s)""" % (
+      self.annotation,
+      self.datatype,
+      self.operation,
+      self.attributes,
+      self.init,
+      self.expression,
+      self.dependsOn)
 
 
 class AGGREGATES:
@@ -305,7 +313,8 @@ class AGGREGATES:
         agg.operation,
         agg.attributes,
         agg.init,
-        agg.expression)
+        agg.expression,
+        agg.dependsOn)
     return aggBuilder.build()
 
   @staticmethod
@@ -319,7 +328,8 @@ class AGGREGATES:
         jobject.getOperation(i),
         strip_unicode(jobject.getAttributes(i)),
         jobject.getInit(i),
-        jobject.getExpression(i)))
+        jobject.getExpression(i),
+        jobject.getDependedOnRels(i)))
     return AGGREGATES(aggs)
 
   def __repr__(self):

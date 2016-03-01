@@ -46,7 +46,7 @@ object QueryPlanner {
       ghdsWithPushedOutSelections.map(_.doPostProcessingPass)
       val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(HeuristicUtil.getGHDsWithSelectionsPushedDown(
         ghdsWithPushedOutSelections))
-      chosen.head.getQueryPlan()
+      chosen.head.getQueryPlan(/* pass in the previous statements here*/)
     }).reverse)
   }
 }

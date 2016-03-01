@@ -137,7 +137,8 @@ case class Aggregation(
   val operation:AggOp, 
   val attrs:Attributes,
   val init:String,
-  val expression:String)
+  val expression:String,
+  val dependsOn:List[Rel] = List())
 
 case class Aggregations(val values:List[Aggregation]){
   def getNumAggregations():Int = {values.length}
@@ -147,6 +148,7 @@ case class Aggregations(val values:List[Aggregation]){
   def getAttributes(i:Int):Array[String] = {values(i).attrs.values.toArray}
   def getInit(i:Int):String = {values(i).init}
   def getExpression(i:Int):String = {values(i).expression}
+  def getDependedOnRels(i:Int):List[Rel] = {values(i).dependsOn}
 }
 
 ///////////////////////////////////////////////////////////
@@ -204,14 +206,16 @@ class AggregationsBuilder() {
     operation:String,
     attrs:Array[String],
     init:String,
-    expression:String) {
+    expression:String,
+    dependsOn:List[Rel]) {
     aggregations += Aggregation(
       annotation,
       datatype:String,
       getOp(operation),
       Attributes(attrs.toList),
       init,
-      expression)
+      expression,
+      dependsOn)
   }
 
   def build():Aggregations = {

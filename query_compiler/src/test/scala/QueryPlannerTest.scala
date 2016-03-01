@@ -235,7 +235,6 @@ class QueryPlannerTest extends FunSuite {
           Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG"))),Filters(List()))
       ))
-
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
       "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)]."))
     assertResult(ir)(optimized)
