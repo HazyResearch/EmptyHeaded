@@ -16,7 +16,6 @@ addons:
     - libtbb-dev
     - libgtest-dev
     - libjemalloc-dev
-    - cython
 
 install:
   - conda install -y cython
