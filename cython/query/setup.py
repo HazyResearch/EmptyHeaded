@@ -23,6 +23,8 @@ if platform.uname()[0] == "Darwin":
   largs = ["-arch","x86_64"]
 else:
   largs = ["-Wl,-rpath="+EH_PATH+"/storage_engine/build/lib","-Wl,--Bshareable"]
+  os.environ["CC"] = "g++-5" 
+  os.environ["CXX"] = "g++-5"
 
 extensions = [
     Extension("#QUERY#", ["#FILES#"],

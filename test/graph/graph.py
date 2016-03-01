@@ -46,7 +46,7 @@ Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).
 
 
 def test_pruned():
-  build = False
+  build = True
   ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/facebook_pruned.tsv",\
   sep='\t',\
   names=["0","1"],\

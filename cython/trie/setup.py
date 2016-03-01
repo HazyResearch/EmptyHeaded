@@ -13,6 +13,8 @@ if platform.uname()[0] == "Darwin":
 else:
   clibs = ["-std=c++0x"]
   largs = ["-Wl,-rpath="+EH_PATH+"/storage_engine/build/lib","-Wl,--Bshareable"]
+  os.environ["CC"] = "g++-5" 
+  os.environ["CXX"] = "g++-5"
 
 extensions = [
     Extension("#PTrie#", ["#PTrie#.pyx"],
