@@ -13,6 +13,7 @@ from relation import Relation
 from DB import DB
 import os
 import time
+from sys import platform as _platform
 
 dbhash = 0
 
@@ -68,7 +69,11 @@ class Database:
     #clean up the previous build
     os.system("""rm -rf """+storage_engine+"""/build && mkdir """+storage_engine+"""/build""")
     #make the backend
-    os.system("""cd """+storage_engine+"/build && cmake -DNUM_THREADS="+str(self.config.num_threads)+" .. && make && cd - > /dev/null" )
+    buildtools=""
+    if _platform == "linux" or _platform == "linux2":
+    # linux we use gcc 5
+      buildtools=" -DCMAKE_C_COMPILER=gcc-5 -CMAKE_CXX_COMPILER=g++-5 "
+    os.system("""cd """+storage_engine+"/build && cmake -DNUM_THREADS="+str(self.config.num_threads)+buildtools+" .. && make && cd - > /dev/null" )
 
   #Build the db in backend and save to disk
   def build(self):
