@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from emptyheaded import *
 
+class ResultError(Exception):
+    pass
 
 def triangle_agg(db):
   tri_agg = \
