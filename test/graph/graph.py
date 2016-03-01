@@ -23,7 +23,7 @@ TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:long<-[COUNT(*)].
   if tri.num_rows != 0:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(numRows))
 
-  if df.iloc[0][0] != 161201099L:
+  if df.iloc[0][0] != 1612010L:
     raise ResultError("ANNOTATION INCORRECT: " + str(numRows))
 
 def triangle_materialized(db):
