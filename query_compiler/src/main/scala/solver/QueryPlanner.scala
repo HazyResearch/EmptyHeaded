@@ -11,7 +11,13 @@ object QueryPlanner {
       rule.operation,
       rule.order,
       rule.project,
-      rule.join,
+      Join(rule.join.rels.map(rel => {
+        if (rel.name == rule.result.rel.name ) {
+          Rel(newName, rel.attrs, rel.anno)
+        } else {
+          rel
+        }
+      })),
       rule.aggregations,
       rule.filters
     )
