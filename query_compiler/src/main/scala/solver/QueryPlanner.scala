@@ -1,5 +1,7 @@
 package duncecap
 
+import scala.collection.mutable.ListBuffer
+
 object QueryPlanner {
   private def rewriteRecursiveRule(rule:Rule): Rule = {
     val newName = rule.result.rel.name + "_recursive"
@@ -28,6 +30,25 @@ object QueryPlanner {
     )
   }
 
+  private def markBaseCasesAsIntermediate(rules:List[Rule], recursiveRels:Set[String]): List[Rule] = {
+    rules.map(rule => {
+      if (recursiveRels.contains(rule.result.rel.name)) {
+        Rule(
+          Result(rule.result.rel, true),
+          rule.recursion,
+          rule.operation,
+          rule.order,
+          rule.project,
+          rule.join,
+          rule.aggregations,
+          rule.filters
+        )
+      } else {
+        rule
+      }
+    })
+  }
+
   private def isRecursiveRule(rule:Rule): Boolean = {
     val joinNames = rule.join.rels.map(_.name)
     return joinNames.contains(rule.result.rel.name)
@@ -37,9 +58,11 @@ object QueryPlanner {
     // This should run the GHD optimizer on any number of rules.
     // I would imagine the optimizer takes in potentially multiple
     // rules for the same relation.
-    IR(ir.rules.foldLeft(List[Rule]())((accum:List[Rule], origRule:Rule) => {
+    val recursiveRels = new ListBuffer[String]()
+    val irRules = ir.rules.foldLeft(List[Rule]())((accum:List[Rule], origRule:Rule) => {
       val isRecursive = isRecursiveRule(origRule)
       val rule = if (isRecursive) {
+        recursiveRels += origRule.result.rel.name
         rewriteRecursiveRule(origRule)
       } else {
         origRule
@@ -112,6 +135,8 @@ object QueryPlanner {
         rules
       }
       rules:::accum
-    }).reverse)
+    }).reverse
+    val finalRules = markBaseCasesAsIntermediate(irRules, recursiveRels.toSet)
+    IR(finalRules)
   }
 }
