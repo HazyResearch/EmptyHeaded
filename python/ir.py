@@ -295,7 +295,10 @@ class AGGREGATE:
       self.attributes,
       self.init,
       self.expression,
-      self.usedScalars)
+      [RELATION(
+          jobject.getName(),
+          strip_unicode(jobject.getAttributes()),
+          strip_unicode(jobject.getAnnotations())) for jobject in self.usedScalars])
 
 
 class AGGREGATES:
