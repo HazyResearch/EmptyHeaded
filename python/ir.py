@@ -13,7 +13,7 @@ class RELATION:
     self.name = name
     self.attributes = attributes
     self.annotations = annotations
-  
+
   def __repr__(self):
     return """[%s %s,%s]""" % (self.name,\
       self.attributes,\
@@ -52,7 +52,7 @@ class RULE:
     aggregates,
     filters,
     ):
-    
+
     if not isinstance(result,RESULT) or \
       not isinstance(recursion,RECURSION) or \
       not isinstance(operation,OPERATION) or \
@@ -103,7 +103,7 @@ class RULE:
     filters = FILTERS.java2python(jobject.getFilters())
     aggregates = AGGREGATES.java2python(jobject.getAggregations())
     return RULE(result,recursion,operation,order,project,join,aggregates,filters)
-  
+
   def __repr__(self):
     return """RULE :-\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s \n\t %s>""" \
       % (self.result,\
@@ -117,23 +117,24 @@ class RULE:
 
 #Relation for the result
 class RESULT:
-  def __init__(self,rel):
+  def __init__(self,rel,isIntermediate):
     self.rel = rel
+    self.isIntermediate = isIntermediate
 
   def python2java(self,duncecap):
     return duncecap.Result(duncecap.IR.buildRel(self.rel.name,
       strip_unicode(self.rel.attributes),
-      strip_unicode(self.rel.annotations)))
+      strip_unicode(self.rel.annotations)), self.isIntermediate)
 
   @staticmethod
   def java2python(jobject):
     return RESULT(RELATION(
       jobject.getRel().getName(),
       strip_unicode(jobject.getRel().getAttributes()),
-      strip_unicode(jobject.getRel().getAnnotations())))
+      strip_unicode(jobject.getRel().getAnnotations())), jobject.getIsIntermediate())
 
   def __repr__(self):
-    return """RESULT: %s """ % (self.rel)
+    return """RESULT: %s %s""" % (self.rel, self.isIntermediate)
 
 #Holder for recursive statements
 class RECURSION:
@@ -277,16 +278,27 @@ class FILTERS:
 
 #Aggregations over attributes.
 class AGGREGATE:
-  def __init__(self,annotation="",datatype="",operation="",attributes=[],init="",expression=""):
+  def __init__(self,annotation="",datatype="",operation="",attributes=[],init="",expression="",usedScalars=[]):
     self.annotation = annotation
     self.datatype = datatype
     self.operation = operation
     self.attributes = attributes
     self.init = init
     self.expression = expression
+    self.usedScalars = usedScalars
 
   def __repr__(self):
-    return """(%s,%s,%s,%s,%s,%s)""" % (self.annotation,self.datatype,self.operation,self.attributes,self.init,self.expression)
+    return """(%s,%s,%s,%s,%s,%s,%s)""" % (
+      self.annotation,
+      self.datatype,
+      self.operation,
+      self.attributes,
+      self.init,
+      self.expression,
+      [RELATION(
+          jobject.getName(),
+          strip_unicode(jobject.getAttributes()),
+          strip_unicode(jobject.getAnnotations())) for jobject in self.usedScalars])
 
 
 class AGGREGATES:
@@ -305,7 +317,8 @@ class AGGREGATES:
         agg.operation,
         agg.attributes,
         agg.init,
-        agg.expression)
+        agg.expression,
+        agg.usedScalars)
     return aggBuilder.build()
 
   @staticmethod
@@ -319,7 +332,8 @@ class AGGREGATES:
         jobject.getOperation(i),
         strip_unicode(jobject.getAttributes(i)),
         jobject.getInit(i),
-        jobject.getExpression(i)))
+        jobject.getExpression(i),
+        jobject.getDependedOnRels(i)))
     return AGGREGATES(aggs)
 
   def __repr__(self):

@@ -25,5 +25,6 @@ class datalog(Parser):
 class optimize(Parser):
   def __init__(self,query):
     Parser.__init__(self)
-    self.jir = self.duncecap.QueryPlanner.findOptimizedPlans(query)
+    self.jir = self.duncecap.Datalog(query).parse()
+    self.jir = self.duncecap.QueryPlanner.findOptimizedPlans(self.jir)
     self.ir = IR.java2python(self.jir)

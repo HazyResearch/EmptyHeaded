@@ -49,6 +49,7 @@ case class Rel(
 
 case class Result(val rel:Rel, val isIntermediate:Boolean){
   def getRel():Rel = { rel }
+  def getIsIntermediate():Boolean = { isIntermediate }
 }
 
 abstract class ConvergenceCriteria {}
@@ -56,8 +57,8 @@ abstract class ConvergenceCriteria {}
 case class ITERATIONS() extends ConvergenceCriteria {}
 
 case class Recursion(
-  val criteria:ConvergenceCriteria, 
-  val operation:Op, 
+  val criteria:ConvergenceCriteria,
+  val operation:Op,
   val value:String) {
   def getCriteria():String = {
     criteria match {
@@ -134,10 +135,11 @@ case class CONST() extends AggOp {
 case class Aggregation(
   val annotation:String,
   val datatype:String,
-  val operation:AggOp, 
+  val operation:AggOp,
   val attrs:Attributes,
   val init:String,
-  val expression:String)
+  val expression:String,
+  val usedScalars:List[Rel])
 
 case class Aggregations(val values:List[Aggregation]){
   def getNumAggregations():Int = {values.length}
@@ -147,6 +149,7 @@ case class Aggregations(val values:List[Aggregation]){
   def getAttributes(i:Int):Array[String] = {values(i).attrs.values.toArray}
   def getInit(i:Int):String = {values(i).init}
   def getExpression(i:Int):String = {values(i).expression}
+  def getDependedOnRels(i:Int):Array[Rel] = {values(i).usedScalars.toArray}
 }
 
 ///////////////////////////////////////////////////////////
@@ -156,7 +159,7 @@ case class Aggregations(val values:List[Aggregation]){
 ///////////////////////////////////////////////////////////
 object IR {
   //Special builder to convert arrays to lists & check
-  //that everything is consistent with what is in DB  
+  //that everything is consistent with what is in DB
   def buildRel(name:String,
                attrs:Array[String],
                anno:Array[String]) : Rel = {
@@ -164,7 +167,7 @@ object IR {
       Attributes(attrs.toList),
       Annotations(anno.toList))
   }
-  
+
   def buildAttributes(attrs:Array[String]): Attributes = {
     return Attributes(attrs.toList)
   }
@@ -204,14 +207,16 @@ class AggregationsBuilder() {
     operation:String,
     attrs:Array[String],
     init:String,
-    expression:String) {
+    expression:String,
+    dependsOn:List[Rel]) {
     aggregations += Aggregation(
       annotation,
       datatype:String,
       getOp(operation),
       Attributes(attrs.toList),
       init,
-      expression)
+      expression,
+      dependsOn)
   }
 
   def build():Aggregations = {

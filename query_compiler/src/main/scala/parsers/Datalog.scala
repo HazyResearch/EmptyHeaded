@@ -1,7 +1,5 @@
 package duncecap
 
-import scala.util.parsing.json._
-import scala.io._
 import scala.util.parsing.combinator.RegexParsers
 
 package object attr {
@@ -107,12 +105,13 @@ object DatalogParser extends RegexParsers {
         ab.getOp(opin),
         Attributes(List()),
         initin,
-        b+"AGG")
+        b+"AGG",
+        List())
       List((None,Some(agg),None))
   }
   //normal case
   def fullaggregation:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
-    (identifierName <~ ":") ~ (annoTypes <~ "<-") ~ ("[" ~> aggOp) ~ aggregateStatement ~ (endaggexpression <~ "]") ^^ {case a~t~b~(attrs~init)~d => 
+    (identifierName <~ ":") ~ (annoTypes <~ "<-") ~ ("[" ~> aggOp) ~ aggregateStatement ~ (endaggexpression <~ "]") ^^ {case a~t~b~(attrs~init)~d =>
       val (startexp,op) = b
       //map COUNT to a SUM with an init value of 1
       val (opin,initin) = if(op=="COUNT") ("SUM","1") else (op,init)
@@ -123,7 +122,8 @@ object DatalogParser extends RegexParsers {
         ab.getOp(opin),
         Attributes(attrs),
         initin,
-        startexp+d)
+        startexp+d,
+        List())
       List((None,Some(agg),None))
   }
 
@@ -134,7 +134,9 @@ object DatalogParser extends RegexParsers {
 
   def clauses:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = notlastclause | clause
   def notlastclause:Parser[List[(Option[Rel],Option[Aggregation],Option[Selection])]] = 
-    clause ~ ("," ~> clauses) ^^ {case a~rest => a ++: rest}
+    clause ~ ("," ~> clauses) ^^ {case a~rest => {
+      a ++: rest
+    }}
 
   def datalogRule:Parser[Rule] = result ~ opt(recursion) ~ (":-" ~> operation) ~ clauses ^^ {
     case rslt~ce~jt~clse => {
@@ -163,7 +165,7 @@ object DatalogParser extends RegexParsers {
           case ("","+") => "0"
           case _ => agg.init
         }
-        Aggregation(agg.annotation,agg.datatype,agg.operation,newAttrs,newinit,agg.expression)
+        Aggregation(agg.annotation,agg.datatype,agg.operation,newAttrs,newinit,agg.expression, List())
       })
 
       //a little logic to figure out which attrs are projected
