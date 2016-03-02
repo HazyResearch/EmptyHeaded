@@ -1,7 +1,5 @@
 package duncecap
 
-import scala.util.parsing.json._
-import scala.io._
 import scala.util.parsing.combinator.RegexParsers
 
 package object attr {

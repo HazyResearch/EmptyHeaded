@@ -1,11 +1,50 @@
 package duncecap
 
 object QueryPlanner {
+  private def rewriteRecursiveRule(rule:Rule): Rule = {
+    val newName = rule.result.rel.name + "_recursive"
+    Rule(
+      Result(Rel(newName,rule.result.rel.attrs, rule.result.rel.anno), false),
+      rule.recursion,
+      rule.operation,
+      rule.order,
+      rule.project,
+      rule.join,
+      rule.aggregations,
+      rule.filters
+    )
+  }
+
+  private def markStatementAsRecursive(origRule:Rule, rule:Rule): Rule = {
+    Rule(
+      rule.result,
+      origRule.recursion,
+      rule.operation,
+      rule.order,
+      rule.project,
+      rule.join,
+      rule.aggregations,
+      rule.filters
+    )
+  }
+
+  private def isRecursiveRule(rule:Rule): Boolean = {
+    val joinNames = rule.join.rels.map(_.name)
+    return joinNames.contains(rule.result.rel.name)
+  }
+
   def findOptimizedPlans(ir:IR): IR = {
     // This should run the GHD optimizer on any number of rules.
     // I would imagine the optimizer takes in potentially multiple
     // rules for the same relation.
-    IR(ir.rules.foldLeft(List[Rule]())((accum:List[Rule], rule:Rule) => {
+    IR(ir.rules.foldLeft(List[Rule]())((accum:List[Rule], origRule:Rule) => {
+      val isRecursive = isRecursiveRule(origRule)
+      val rule = if (isRecursive) {
+        rewriteRecursiveRule(origRule)
+      } else {
+        origRule
+      }
+
       val rootNodes =
         if (!rule.aggregations.values.isEmpty) {
           GHDSolver.computeAJAR_GHD(
@@ -66,7 +105,13 @@ object QueryPlanner {
       ghdsWithPushedOutSelections.map(_.doPostProcessingPass)
       val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(HeuristicUtil.getGHDsWithSelectionsPushedDown(
         ghdsWithPushedOutSelections))
-      chosen.head.getQueryPlan(accum):::accum
+      var rules = chosen.head.getQueryPlan(accum)
+      rules = if (isRecursive) {
+        markStatementAsRecursive(origRule, rules.head)::rules.tail
+      } else {
+        rules
+      }
+      rules:::accum
     }).reverse)
   }
 }
