@@ -117,23 +117,24 @@ class RULE:
 
 #Relation for the result
 class RESULT:
-  def __init__(self,rel):
+  def __init__(self,rel,isIntermediate):
     self.rel = rel
+    self.isIntermediate = isIntermediate
 
   def python2java(self,duncecap):
     return duncecap.Result(duncecap.IR.buildRel(self.rel.name,
       strip_unicode(self.rel.attributes),
-      strip_unicode(self.rel.annotations)))
+      strip_unicode(self.rel.annotations)), self.isIntermediate)
 
   @staticmethod
   def java2python(jobject):
     return RESULT(RELATION(
       jobject.getRel().getName(),
       strip_unicode(jobject.getRel().getAttributes()),
-      strip_unicode(jobject.getRel().getAnnotations())))
+      strip_unicode(jobject.getRel().getAnnotations())), jobject.getIsIntermediate())
 
   def __repr__(self):
-    return """RESULT: %s """ % (self.rel)
+    return """RESULT: %s %s""" % (self.rel, self.isIntermediate)
 
 #Holder for recursive statements
 class RECURSION:
