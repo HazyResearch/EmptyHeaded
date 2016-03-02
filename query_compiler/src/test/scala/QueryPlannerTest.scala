@@ -176,13 +176,13 @@ class QueryPlannerTest extends FunSuite {
           Rel("Edge",Attributes(List("a", "c")),Annotations(List())),
           Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
           Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("b", "c")),"1","AGG"))),Filters(List())),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("b", "c")),"1","AGG", List()))),Filters(List())),
       Rule(Result(
         Rel("Lollipop",Attributes(List()),Annotations(List("z"))), false),None,Operation("*"),Order(Attributes(List("a", "d"))),Project(Attributes(List())),
         Join(List(
           Rel("Edge",Attributes(List("a", "d")),Annotations(List())),
           Rel("bag_1_a_b_c_Lollipop",Attributes(List("a")),Annotations(List("z"))))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "d")),"1","AGG"))),Filters(List()))
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "d")),"1","AGG", List()))),Filters(List()))
       ))
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Lollipop(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(*)]"))
     assertResult(ir)(optimized)
@@ -194,7 +194,7 @@ class QueryPlannerTest extends FunSuite {
         Rel("bag_1_a_d_Lollipop",Attributes(List("a")),Annotations(List("z"))), true),None,Operation("*"),Order(Attributes(List("a", "d"))),Project(Attributes(List())),
         Join(List(
           Rel("Edge", Attributes(List("a", "d")),Annotations(List())))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("d")),"1","AGG"))),Filters(List())),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("d")),"1","AGG", List()))),Filters(List())),
       Rule(Result(
         Rel("Lollipop",Attributes(List("a")),Annotations(List("z"))), false),None,Operation("*"),Order(Attributes(List("a", "b", "c"))),Project(Attributes(List("b"))),
         Join(List(
@@ -202,7 +202,7 @@ class QueryPlannerTest extends FunSuite {
           Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
           Rel("Edge",Attributes(List("a", "b")),Annotations(List())),
           Rel("bag_1_a_d_Lollipop",Attributes(List("a")),Annotations(List("z"))))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("c")),"1","AGG"))),Filters(List()))))
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("c")),"1","AGG", List()))),Filters(List()))))
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
       "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(c,d)]"))
     assertResult(ir)(optimized)
@@ -217,7 +217,7 @@ class QueryPlannerTest extends FunSuite {
         Order(Attributes(List("x", "a"))),
         Project(Attributes(List())),
         Join(List(Rel("Edge",Attributes(List("a", "x")),Annotations(List())))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("x")),"1","AGG"))),Filters(List(Selection("x",EQUALS(),"0")))),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("x")),"1","AGG", List()))),Filters(List(Selection("x",EQUALS(),"0")))),
       Rule(Result(
         Rel("FliqueSelAgg",Attributes(List()),Annotations(List("z"))),false),
         None,
@@ -232,7 +232,7 @@ class QueryPlannerTest extends FunSuite {
           Rel("bag_1_x_a_FliqueSelAgg",Attributes(List("a")),Annotations(List("z"))),
           Rel("Edge",Attributes(List("a", "d")),Annotations(List())),
           Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG"))),Filters(List()))
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG", List()))),Filters(List()))
       ))
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
       "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)]."))

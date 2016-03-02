@@ -105,7 +105,8 @@ object DatalogParser extends RegexParsers {
         ab.getOp(opin),
         Attributes(List()),
         initin,
-        b+"AGG")
+        b+"AGG",
+        List())
       List((None,Some(agg),None))
   }
   //normal case
@@ -121,7 +122,8 @@ object DatalogParser extends RegexParsers {
         ab.getOp(opin),
         Attributes(attrs),
         initin,
-        startexp+d)
+        startexp+d,
+        List())
       List((None,Some(agg),None))
   }
 
@@ -163,7 +165,7 @@ object DatalogParser extends RegexParsers {
           case ("","+") => "0"
           case _ => agg.init
         }
-        Aggregation(agg.annotation,agg.datatype,agg.operation,newAttrs,newinit,agg.expression)
+        Aggregation(agg.annotation,agg.datatype,agg.operation,newAttrs,newinit,agg.expression, List())
       })
 
       //a little logic to figure out which attrs are projected

@@ -138,7 +138,7 @@ case class Aggregation(
   val attrs:Attributes,
   val init:String,
   val expression:String,
-  val usedScalars:List[Rel] = List())
+  val usedScalars:List[Rel])
 
 case class Aggregations(val values:List[Aggregation]){
   def getNumAggregations():Int = {values.length}
