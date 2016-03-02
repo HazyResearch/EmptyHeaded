@@ -184,7 +184,7 @@ class QueryPlannerTest extends FunSuite {
           Rel("bag_1_a_b_c_Lollipop",Attributes(List("a")),Annotations(List("z"))))),
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "d")),"1","AGG", List()))),Filters(List()))
       ))
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Lollipop(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(*)]"))
+    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Lollipop(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(*)]"))
     assertResult(ir)(optimized)
   }
 
@@ -204,7 +204,7 @@ class QueryPlannerTest extends FunSuite {
           Rel("bag_1_a_d_Lollipop",Attributes(List("a")),Annotations(List("z"))))),
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("c")),"1","AGG", List()))),Filters(List()))))
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:uint64<-[COUNT(c,d)]"))
+      "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(c,d)]"))
     assertResult(ir)(optimized)
   }
 
@@ -235,7 +235,7 @@ class QueryPlannerTest extends FunSuite {
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG", List()))),Filters(List()))
       ))
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)]."))
+      "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:long<-[COUNT(*)]."))
     assertResult(ir)(optimized)
   }
 
@@ -244,15 +244,15 @@ class QueryPlannerTest extends FunSuite {
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("""
         BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0.
     """))
-    println(optimized)
+    //println(optimized)
   }
 
   test("Pagerank, test that usedScalar field is filled out properly") {
     val pgrank = """
-      N(;w) :- Edge(x,y),w:uint64<-[SUM(x;1)].
-      PageRank(x;y) :- Edge(x,z),y:float32<-[(1.0/N)].
-      PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float32 <- [0.15+0.85*SUM(z;1.0)]."""
-    println(DatalogParser.run(pgrank))
+      N(;w) :- Edge(x,y),w:long<-[SUM(x;1)].
+      PageRank(x;y) :- Edge(x,z),y:float<-[(1.0/N)].
+      PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SUM(z;1.0)]."""
+    //println(DatalogParser.run(pgrank))
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(pgrank))
     optimized.rules.foreach(rule => println(rule))
   }

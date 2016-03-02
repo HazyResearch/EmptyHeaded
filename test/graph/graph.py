@@ -75,6 +75,44 @@ FliqueSel(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d
   if row0[0] != 1l or row0[1] != 0l or row0[2] != 48l or row0[3]!=53l: #(6l,5l,2l)
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
+def barbell_agg_sel(db):
+  barbell_sel_agg = \
+"""
+BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=6,w:long<-[COUNT(*)].
+"""
+  print "BARBELL SELECTION AGG"
+  db.eval(barbell_sel_agg)
+
+  bs = db.get("BarbellSelAgg")
+  df = bs.getDF()
+
+  if bs.num_rows != 0:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(foursel.num_rows))
+
+  print df.iloc[0][0]
+
+  #if df.iloc[0][0] != 3759972L:
+  #  raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
+def barbell_sel(db):
+  barbell_sel_agg = \
+"""
+BarbellSel(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=6,w:long<-[COUNT(*)].
+"""
+  print "BARBELL SELECTION"
+  db.eval(barbell_sel)
+
+  bs = db.get("BarbellSel")
+  df = bs.getDF()
+
+  print df.iloc[0]
+
+  if bs.num_rows != 0:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(foursel.num_rows))
+
+  if df.iloc[0][0] != 3759972L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
 def test_pruned():
   build = True
   ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/facebook_pruned.tsv",\
@@ -88,7 +126,7 @@ def test_pruned():
 
   if build:
     db = Database.create(
-      Config(num_threads=4),
+      Config(num_threads=1),
       os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_pruned",
       [graph])
     db.build()
@@ -110,7 +148,7 @@ def test_duplicated():
 
   if build:
     db = Database.create(
-      Config(num_threads=4),
+      Config(num_threads=1),
       os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated",
       [graph])
     db.build()
@@ -118,8 +156,11 @@ def test_duplicated():
 
   four_clique_agg_sel(db)
   four_clique_sel(db)
+  barbell_agg_sel(db)
+  barbell_sel(db)
+
 
 start()
-test_pruned()
+#test_pruned()
 test_duplicated()
 stop()
