@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <errno.h>
+#include <atomic>
 
 typedef int pthread_barrierattr_t;
 typedef struct
@@ -11,8 +12,8 @@ typedef struct
     pthread_cond_t cond;
     int count;
     int tripCount;
+    std::atomic<int> check;
 } pthread_barrier_t;
-
 
 static int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, unsigned int count)
 {
@@ -31,6 +32,7 @@ static int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrie
         pthread_mutex_destroy(&barrier->mutex);
         return -1;
     }
+    barrier->check = count;
     barrier->tripCount = count;
     barrier->count = 0;
 
@@ -39,6 +41,7 @@ static int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrie
 
 static int pthread_barrier_destroy(pthread_barrier_t *barrier)
 {
+    while(barrier->check != 0){}
     pthread_cond_destroy(&barrier->cond);
     pthread_mutex_destroy(&barrier->mutex);
     return 0;
@@ -53,12 +56,14 @@ static int pthread_barrier_wait(pthread_barrier_t *barrier)
         barrier->count = 0;
         pthread_cond_broadcast(&barrier->cond);
         pthread_mutex_unlock(&barrier->mutex);
+        barrier->check.fetch_sub(1,std::memory_order_relaxed);
         return 1;
     }
     else
     {
         pthread_cond_wait(&barrier->cond, &(barrier->mutex));
         pthread_mutex_unlock(&barrier->mutex);
+        barrier->check.fetch_sub(1,std::memory_order_relaxed);
         return 0;
     }
 }
