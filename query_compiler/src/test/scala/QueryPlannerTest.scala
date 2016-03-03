@@ -263,7 +263,7 @@ class QueryPlannerTest extends FunSuite {
         Rel("SSSP",Attributes(List("x")),Annotations(List("y"))),true),None,Operation("*"),Order(Attributes(List("w", "x"))),
         Project(Attributes(List())),
         Join(List(Rel("Edge",Attributes(List("w", "x")),Annotations(List())))),
-        Aggregations(List(Aggregation("y","uint64_t",CONST(),Attributes(List("w")),"1","1",List()))),
+        Aggregations(List(Aggregation("y","long",CONST(),Attributes(List("w")),"1","1",List()))),
         Filters(List(Selection("w",EQUALS(),"0")))),
       Rule(Result(Rel("SSSP_recursive",Attributes(List("x")),Annotations(List("y"))),false),
         Some(Recursion(EPSILON(),EQUALS(),"0")),Operation("*"),Order(Attributes(List("x", "w"))),
@@ -271,8 +271,8 @@ class QueryPlannerTest extends FunSuite {
         Join(List(Rel("SSSP",Attributes(List("w")),Annotations(List())), Rel("Edge",Attributes(List("w", "x")),Annotations(List())))),
         Aggregations(List(Aggregation("y","long",MIN(),Attributes(List("w")),"1","1+AGG",List()))),Filters(List()))))
     val sssp =
-      """SSSP(x;y) :- Edge(w,x),w=0,y:uint64 <- [1].
-         SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:uint64 <- [1+MIN(w;1)]."""
+      """SSSP(x;y) :- Edge(w,x),w=0,y:long <- [1].
+         SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)]."""
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(sssp))
     assertResult(ir)(optimized)
   }
