@@ -12,6 +12,7 @@ Table of Contents
   * [Installing from Source](#installing-from-source)
    * [Dependencies](#dependencies)
    * [Setting up Environment](#setting-up-environment)
+   * [Compilation](#compilation)
    * [Docker Containers](#docker)
   * [Running Queries](#running-queries)
   * [Contact](#contact)
@@ -34,8 +35,9 @@ The query compiler and code generator are written in Scala and the storage engin
 Installing from Source
 -----------------
 To install EmptyHeaded from source ensure that your system:
-- meets all dependencies detailed below
-- has setup the EmptyHeaded environment
+1. Meets all [dependencies](#dependencies) detailed below (or you are in our [Docker](#docker) contatiner)
+2. Has [setup the EmptyHeaded environment](#setting-up-environment)
+3. Has [compiled the QueryCompiler and Cython bindings](#compilation).
 
 Dependencies
 -----------------
@@ -97,6 +99,15 @@ EmptyHeaded relies on two environment variables being set.
 -`EMPTYHEADED_HOME/python` must be in the python search path
 
 The easiest way to meet these dependencies is to run `source env.sh` provided in the root of this repository. Note: This script will set the `PYTHON_PATH` variable.
+
+Compilation
+-----------------
+
+```
+./compile.sh
+```
+
+The compiler needs to be compiled. (wrap your head around that). 
 
 Running Queries
 -----------------
