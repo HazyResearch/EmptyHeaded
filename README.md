@@ -90,7 +90,11 @@ Docker
 -----------------
 Make your life easier and use our [Docker images](https://hub.docker.com/r/craberger/emptyheaded/) which are *always* up to date. 
 
-Unfortunately iPython notebooks and Docker containers do not interact easily but you can run python queries just fine in these containers! Simply inspect our iPython notebooks in this repository (can view on github) and make corresponding python programs. Or checkout our test python scripts in the `test` folder.
+Unfortunately iPython notebooks and Docker containers do not interact easily, but you can run standard python scripts just fine in these containers! 
+
+Two easy ways to get started in a container:
+1. Simply inspect our iPython notebook tutorials in this repository (can view on github) and make the corresponding python programs. 
+2. Checkout our python test scripts in the `test` folder, `./test/testAll.sh` kick them it all off.
 
 Setting up Environment
 -----------------
