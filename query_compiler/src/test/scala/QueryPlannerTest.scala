@@ -276,4 +276,70 @@ class QueryPlannerTest extends FunSuite {
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(sssp))
     assertResult(ir)(optimized)
   }
+
+  test("lubm1, 2 join w/ 2 selects") {
+    val ir = IR(List(
+      Rule(Result(Rel("lubm1",Attributes(List("a")),Annotations(List())),false),
+        None,
+        Operation("*"),
+        Order(Attributes(List("b", "c", "a"))),Project(Attributes(List("b", "c"))),
+        Join(List(
+          Rel("takesCourse",Attributes(List("a", "b")),Annotations(List())),
+          Rel("rdftype",Attributes(List("a", "c")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List(Selection("b",EQUALS(),"'http://www.Department0.University0.edu/GraduateCourse0'"),
+          Selection("c",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'")
+        )))))
+    val lubm1 = """
+        lubm1(a) :- takesCourse(a,b),rdftype(a,c),b='http://www.Department0.University0.edu/GraduateCourse0',c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'."""
+    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm1))
+    assertResult(ir)(optimized)
+  }
+
+  test("lumb2, triangle with a selected rel at each corner") {
+    val ir = IR(List(
+      Rule(Result(Rel("bag_1_y_b_lubm2",Attributes(List("b")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("y", "b"))),
+        Project(Attributes(List("y"))),
+        Join(List(Rel("rdftype",Attributes(List("b", "y")), Annotations(List())))),Aggregations(List()),
+        Filters(List(Selection("y",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'")))),
+      Rule(Result(Rel("bag_1_z_c_lubm2",Attributes(List("c")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("z", "c"))),
+        Project(Attributes(List("z"))),Join(List(Rel("rdftype",Attributes(List("c", "z")),Annotations(List())))),Aggregations(List()),
+        Filters(List(Selection("z",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University'")))),
+      Rule(Result(Rel("bag_1_x_a_lubm2",Attributes(List("a")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("x", "a"))),
+        Project(Attributes(List("x"))),Join(List(Rel("rdftype",Attributes(List("a", "x")),Annotations(List())))),Aggregations(List()),
+        Filters(List(Selection("x",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'")))),
+      Rule(Result(Rel("lubm2",Attributes(List("a", "b", "c")),Annotations(List())),false),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "b", "c"))),Project(Attributes(List())),
+        Join(List(
+          Rel("memberOf",Attributes(List("a", "b")),Annotations(List())),
+          Rel("bag_1_z_c_lubm2",Attributes(List("c")),Annotations(List())),
+          Rel("undegraduateDegreeFrom",Attributes(List("a", "c")),Annotations(List())),
+          Rel("subOrganizationOf",Attributes(List("b", "c")),Annotations(List())),
+          Rel("bag_1_x_a_lubm2",Attributes(List("a")),Annotations(List())),
+          Rel("bag_1_y_b_lubm2",Attributes(List("b")), Annotations(List())))),
+        Aggregations(List()),
+        Filters(List()))))
+    val lubm2 = """ |lubm2(a,b,c) :- memberOf(a,b),
+        |subOrganizationOf(b,c),
+        |undegraduateDegreeFrom(a,c),
+        |rdftype(a,x),
+        |x='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent',
+        |rdftype(c,z),
+        |z='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University',
+        |rdftype(b,y),
+        |y='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'.""".stripMargin.replaceAll("\n", "")
+    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm2))
+    assertResult(ir)(optimized)
+  }
 }
