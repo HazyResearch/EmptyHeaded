@@ -55,6 +55,7 @@ case class Result(val rel:Rel, val isIntermediate:Boolean){
 abstract class ConvergenceCriteria {}
 
 case class ITERATIONS() extends ConvergenceCriteria {}
+case class EPSILON() extends ConvergenceCriteria {}
 
 case class Recursion(
   val criteria:ConvergenceCriteria,
@@ -131,6 +132,9 @@ case class SUM() extends AggOp {
 case class CONST() extends AggOp {
   override val value = ""
 }
+case class MIN() extends AggOp {
+  override val value = "<"
+}
 
 case class Aggregation(
   val annotation:String,
@@ -196,6 +200,7 @@ class AggregationsBuilder() {
     op match {
       case "SUM" => SUM()
       case "CONST" => CONST()
+      case "MIN" => MIN()
       case _ =>
         throw new Exception("Aggregation operation " + op + " not supported.")
     }

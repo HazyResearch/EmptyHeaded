@@ -23,8 +23,7 @@ object DatalogParser extends RegexParsers {
     this.parseAll(this.rule, line) match {
       case DatalogParser.Success(parsedRules, _) => {
         irbuilder.addRules(parsedRules)
-      } case _ => 
-        throw new ParserFailureException()
+      }
     }
     irbuilder.build()
   }
@@ -48,6 +47,7 @@ object DatalogParser extends RegexParsers {
     case cc~co~cv => {
       val criteria = cc match {
         case "i" => ITERATIONS()
+        case "c" => EPSILON()
         case _ => throw new Exception("Convergence criteria "+cc+" not supported.")
       }
       val operation = co match {
@@ -105,7 +105,7 @@ object DatalogParser extends RegexParsers {
         ab.getOp(opin),
         Attributes(List()),
         initin,
-        b+"AGG",
+        b,
         List())
       List((None,Some(agg),None))
   }
@@ -177,7 +177,7 @@ object DatalogParser extends RegexParsers {
       //lets check that annotations in the head appear in the body
       rslt.rel.anno.values.foreach(a => {
         if(!annotations.contains(a))
-          throw new Exception("Annotations specified in the head must appear in the body.")
+          throw new Exception(s"""Annotations ${a} specified in the head must appear in the body.""")
       })
       //lets check that attributes in the head appear in the body
       rslt.rel.attrs.values.foreach(a => {
