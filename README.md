@@ -119,7 +119,7 @@ Compilation
 ./compile.sh
 ```
 
-The compiler needs to be compiled (but who compiled the first compiler?). This compiles our Scala code and a few static cython bindings.
+The compiler needs to be compiled (which makes me wonder who compiled the first compiler?). This compiles our Scala code and a few static cython bindings.
 
 Running Queries
 -----------------
