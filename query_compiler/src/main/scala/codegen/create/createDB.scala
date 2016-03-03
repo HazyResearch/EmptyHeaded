@@ -268,22 +268,8 @@ delete Trie_${r.name}_${ordering.mkString("_")};
   private def buildWrapper(db:DBInstance):StringBuilder = {
     val code = new StringBuilder()
     code.append(s"""
-#include "Trie.hpp"
-#include "utils/timer.hpp"
-#include "intermediate/intermediate.hpp"
-#include "utils/thread_pool.hpp"
-
-typedef std::vector<void*> myvector;
-typedef std::pair<size_t,myvector> mypair;
-
 void build(std::unordered_map<std::string,mypair>* map){
   /*
-    std::cout << "BUILDING" << std::endl;
-  thread_pool::initializeThreadPool();
-  std::cout << "BUILDING" << std::endl;
-
-  ${build(db)}
-  thread_pool::deleteThreadPool();
   */
 }""")
   code

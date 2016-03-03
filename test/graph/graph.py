@@ -192,7 +192,7 @@ BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y)
   df = bs.getDF()
 
   if bs.num_rows != 0:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(foursel.num_rows))
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
 
   if df.iloc[0][0] != 26936100L:
     raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
@@ -207,7 +207,7 @@ BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edg
 
   bs = db.get("BarbellSel")
   if bs.num_rows != 26936100L:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
 
 def test_pruned():
   build = True
