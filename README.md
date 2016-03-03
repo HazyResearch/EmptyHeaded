@@ -11,9 +11,9 @@ Table of Contents
   * [Overview](#overview)  
   * [Installing from Source](#installing-from-source)
    * [Dependencies](#dependencies)
+   * [Docker Containers](#docker)
    * [Setting up Environment](#setting-up-environment)
    * [Compilation](#compilation)
-   * [Docker Containers](#docker)
   * [Running Queries](#running-queries)
   * [Contact](#contact)
 
@@ -41,6 +41,7 @@ To install EmptyHeaded from source ensure that your system:
 
 Dependencies
 -----------------
+Behind the scenes a lot goes on in our engine. This is no walk in the park library based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized code for hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Use our Docker images where everything is taken care of for you already.
 
 **AVX**
 
@@ -85,6 +86,12 @@ Writing an efficient parallel-sort is a challenging task. Why re-invent the whee
 
 JPype is our bridge between python and java. We provide this one in our `dependencies` folder along with a simple install script.
 
+Docker
+-----------------
+Make your life easier and use our [Docker images](https://hub.docker.com/r/craberger/emptyheaded/) which are *always* up to date. 
+
+Unfortunately iPython notebooks and Docker containers do not interact easily but you can run python queries just fine in these containers!
+
 Setting up Environment
 -----------------
 
@@ -114,12 +121,6 @@ Running Queries
 We provide demos of EmptyHeaded in iPython notebooks. 
 
 We provide a tutorial of how to get started running your first EmptyHeaded query in the `examples/graph` folder. In this folder is a `Graph Tutorial` iPython notebook which can be loaded after executing `iPython notebook`
-
-Docker
------------------
-Make your life easier and use our [Docker images](https://hub.docker.com/r/craberger/emptyheaded/) which are *always* up to date. 
-
-Behind the scenes a lot goes on in our engine. This is no walk in the park library based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized code for hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Use our Docker images where everything is taken care of for you already.
 
 Contact
 -----------------
