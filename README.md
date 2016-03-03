@@ -39,23 +39,26 @@ To install EmptyHeaded from source ensure that your system:
 Dependencies
 -----------------
 
-* AVX
-* GCC 4.9 (Linux) or Clang (Mac)
-* SBT 0.13.8
+**AVX**
+
+A fundamental dependency of our system is that it is designed for machines that support the Advanced Vector Extensions (AVX) instruction set which is standard in modern and future hardware generations. Our performance is highly dependent on this instruction set being available. We currenlty DO NOT support old hardware generations without AVX. 
+
+* Mac or Linux operating system
+* GCC 5.3 (Linux) or Apple LLVM version 7.0.2 (Mac)
+* cmake 2.8 or higher
+* SBT
 * Clang-format
 * jemalloc
 * Intel TBB
 * iPython Notebook
+* cython
+* jpype 0.6.1
+* pandas
 * C++11
-* Mac or Linux operating system
 
-The instructions below detail our dependencies and how to install them on a Linux machine with sudo privileges. For Macs try `brew` (homebrew) instead of `apt-get`. A complete list of our dependencies as well as how to install them is in our `.travis.yml` file.
+The instructions below detail our dependencies and how to install them on a Linux machine with sudo privileges. For Macs try `brew` (homebrew) instead of `apt-get`. A complete list of our dependencies as well as how to install them is in our `Dockerfile`.
 
 We support Mac and Linux operating systems. If you are running on a Mac you must use the default Clang installation. If you are running on a Linux machine we support GCC v4.9. 
-
-**Why AVX?**
-
-A fundamental dependency of our system is that it is designed for machines that support the Advanced Vector Extensions (AVX) instruction set which is standard in modern and future hardware generations. Our performance is highly dependent on this instruction set being available.
 
 **Why iPython Notebook?**
 
@@ -77,6 +80,13 @@ sudo apt-get install libjemalloc-dev
 
 Writing an efficient parallel-sort is a challenging task. Why re-invent the wheel? Use TBB.
 
+**Why Pandas?**
+
+Pandas DataFrames provides a nice and highly used front-end for EmptyHeaded to accept tables from. We can also run without DataFrames but who doesn't love DataFrames?
+
+**Why JPype?**
+
+JPype is our bridge between python and java. We provide this one in our `dependencies` folder along with a simple install script.
 
 Setting up Environment
 -----------------
