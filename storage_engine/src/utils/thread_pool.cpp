@@ -25,7 +25,7 @@ void* thread_pool::general_body(void *args_in){
 
 //init a thread barrier
 void thread_pool::init_threads(){
-  pthread_barrier_init (&barrier, NULL, NUM_THREADS+1);
+  //pthread_barrier_init (&barrier, NULL, NUM_THREADS+1);
 }
 
 //join threads on the thread barrier
