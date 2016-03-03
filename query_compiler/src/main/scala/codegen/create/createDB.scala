@@ -199,6 +199,7 @@ timer::stop_clock("ENCODING ${r.name}", start_time);}""")
 #include "utils/thread_pool.hpp"
 #include "intermediate/intermediate.hpp"
 #include "Encoding.hpp"
+#include "Trie.hpp"
 #include "utils/timer.hpp"
 #include "utils/io.hpp"
 
@@ -209,6 +210,7 @@ void loadAndEncode(std::unordered_map<std::string,mypair>* map){
   thread_pool::initializeThreadPool();
   ${load(db)}
   ${encode(db)}
+  ${build(db)}
   thread_pool::deleteThreadPool();
 }""")
   code
@@ -260,20 +262,29 @@ delete Trie_${r.name}_${ordering.mkString("_")};
     })
     code
   }
+
+  //TODO DELETE THIS IT IS NO LONGER USED.
+  //DO EVERYTHING IN ONE METHOD JUST MANAGE MEMORY PROPERLY
   private def buildWrapper(db:DBInstance):StringBuilder = {
     val code = new StringBuilder()
     code.append(s"""
 #include "Trie.hpp"
 #include "utils/timer.hpp"
 #include "intermediate/intermediate.hpp"
+#include "utils/thread_pool.hpp"
 
 typedef std::vector<void*> myvector;
 typedef std::pair<size_t,myvector> mypair;
 
 void build(std::unordered_map<std::string,mypair>* map){
+  /*
+    std::cout << "BUILDING" << std::endl;
   thread_pool::initializeThreadPool();
+  std::cout << "BUILDING" << std::endl;
+
   ${build(db)}
   thread_pool::deleteThreadPool();
+  */
 }""")
   code
   }

@@ -3,7 +3,7 @@
 int main()
 {
   std::unordered_map<std::string, void *>* input = new std::unordered_map<std::string, void *>();
-  loadAndEncode(NULL);
+  build(NULL);
   //run(input);
   return 0;
 }

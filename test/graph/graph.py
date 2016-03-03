@@ -285,5 +285,5 @@ def test_simple():
 start()
 test_pruned()
 test_duplicated()
-#test_simple()
+test_simple()
 stop()
