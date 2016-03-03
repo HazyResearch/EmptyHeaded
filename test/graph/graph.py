@@ -89,29 +89,20 @@ BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y)
   if bs.num_rows != 0:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(foursel.num_rows))
 
-  print df.iloc[0][0]
-
-  #if df.iloc[0][0] != 3759972L:
-  #  raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+  if df.iloc[0][0] != 26936100L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
 
 def barbell_sel(db):
-  barbell_sel_agg = \
+  barbell_s = \
 """
-BarbellSel(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=6,w:long<-[COUNT(*)].
+BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=6.
 """
   print "BARBELL SELECTION"
-  db.eval(barbell_sel)
+  db.eval(barbell_s)
 
   bs = db.get("BarbellSel")
-  df = bs.getDF()
-
-  print df.iloc[0]
-
-  if bs.num_rows != 0:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(foursel.num_rows))
-
-  if df.iloc[0][0] != 3759972L:
-    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+  if bs.num_rows != 26936100L:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
 
 def test_pruned():
   build = True
@@ -126,7 +117,7 @@ def test_pruned():
 
   if build:
     db = Database.create(
-      Config(num_threads=1),
+      Config(num_threads=4),
       os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_pruned",
       [graph])
     db.build()
@@ -148,7 +139,7 @@ def test_duplicated():
 
   if build:
     db = Database.create(
-      Config(num_threads=1),
+      Config(num_threads=4),
       os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated",
       [graph])
     db.build()
@@ -161,6 +152,6 @@ def test_duplicated():
 
 
 start()
-#test_pruned()
+test_pruned()
 test_duplicated()
 stop()

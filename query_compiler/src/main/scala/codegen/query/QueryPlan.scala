@@ -112,13 +112,11 @@ def c_run_${id}(tm):
         val name = rule.result.rel.name
         val duplicateOf = None
         val attributes = Attributes(rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)))
- 
         val aggregation = getAggregation(rule)
         val annotation = aggregation match {
           case None => "void*"
           case Some(a) => a.datatype
         }
-
         val relations = ir2relationinfo(List(rule))
         val nprr = getattrinfo(rule)
         val recursion = getbagrecursion(rule)
@@ -215,7 +213,6 @@ def c_run_${id}(tm):
           next))
       })
     }
-
     val materializedattrs = rule.result.rel.attrs.values
     //finally build the attribute info
     rule.order.attrs.values.map(a => {
@@ -224,15 +221,15 @@ def c_run_${id}(tm):
       val materialize = rule.result.rel.attrs.values.contains(a)
       val selection = selectionMap(a).toList
       val annotation = if(aggregationMap.size > 0 && materializedattrs.length > 0 && (materializedattrs.length-1) == (materializedattrs.indexOf(a))){
-        assert(aggregationMap.contains(rule.order.attrs.values(rule.order.attrs.values.indexOf(a)+1)))
-        Some(rule.order.attrs.values(rule.order.attrs.values.indexOf(a)+1))
+        if(rule.order.attrs.values.indexOf(a)+1 < rule.order.attrs.values.length)
+          Some(rule.order.attrs.values(rule.order.attrs.values.indexOf(a)+1))
+        else Some(rule.order.attrs.values(0)) //selection is the first attr
       } else None
       val aggregation = if(aggregationMap.contains(a)) Some(aggregationMap(a)) else None
       val prevMaterialized = if(materializedattrs.indexOf(a) <= 0) None 
         else Some(materializedattrs(materializedattrs.indexOf(a)-1))
       val nextMaterialized = if((materializedattrs.indexOf(a)+1) == materializedattrs.length || materializedattrs.indexOf(a) == -1) None 
         else Some(materializedattrs(materializedattrs.indexOf(a)+1))
-
       QueryPlanAttrInfo(name,accessors,materialize,selection,annotation,aggregation,prevMaterialized,nextMaterialized)
     }).toList.filter(qpa => !(!qpa.materialize && qpa.selection.length == 0 && qpa.aggregation == None))
   }
