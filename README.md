@@ -37,12 +37,6 @@ To install EmptyHeaded from source ensure that your system:
 - meets all dependencies detailed below
 - has setup the EmptyHeaded environment
 
-Docker
------------------
-Behind the scenes a lot goes on in our engine. This is no walk in the park library based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized C++ code for the hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Make your life easier and use our Docker images which are *always* up to date.
-
-
-
 Dependencies
 -----------------
 
@@ -98,13 +92,17 @@ JPype is our bridge between python and java. We provide this one in our `depende
 Setting up Environment
 -----------------
 
+```
+source env.sh
+```
+
 EmptyHeaded relies on two environment variables being set.
 
 -`EMPTYHEADED_HOME` the root directory for the EmptyHeaded project
 
--`EMPTYHEADED_HOME/runtime` must be in the python search path
+-`EMPTYHEADED_HOME/python` must be in the python search path
 
-The easiest way to meet these dependencies is to run `source setup.sh` provided in the root of this repository. Note: This script will set the `PYTHON_PATH` variable.
+The easiest way to meet these dependencies is to run `source env.sh` provided in the root of this repository. Note: This script will set the `PYTHON_PATH` variable.
 
 Running Queries
 -----------------
@@ -112,7 +110,13 @@ We provide demos of EmptyHeaded in iPython notebooks.
 
 We provide a tutorial of how to get started running your first EmptyHeaded query in the `examples/graph` folder. In this folder is a `Graph Tutorial` iPython notebook which can be loaded after executing `iPython notebook`
 
+Docker
+-----------------
+Make your life easier and use our [Docker images](https://hub.docker.com/r/craberger/emptyheaded/) which are *always* up to date. 
+
+Behind the scenes a lot goes on in our engine. This is no walk in the park library based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized code for hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Use our Docker images where everything is taken care of for you already.
+
 Contact
 -----------------
 
-Chris Aberger
+[Christopher Aberger](http://web.stanford.edu/~caberger/)
