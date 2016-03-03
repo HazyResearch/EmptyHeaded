@@ -213,7 +213,7 @@ def c_run_${id}(tm):
           next))
       })
     }
-    val materializedattrs = rule.result.rel.attrs.values
+    val materializedattrs = rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))
     //finally build the attribute info
     rule.order.attrs.values.map(a => {
       val name = a

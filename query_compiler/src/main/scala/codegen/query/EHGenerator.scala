@@ -147,7 +147,7 @@ object EHGenerator {
       s"""mkdir -p ${db.folder}/relations/${r.name}/${r.name}_${r.ordering.mkString("_")}""" .!
 
       code.append(s"""
-      input_tries->insert(std::make_pair("${r.name}_${r.ordering.mkString("_")}",Trie_${r.name}_${r.ordering.mkString("_")}));
+      input_tries->insert(std::make_pair("${r.name}_${r.ordering.mkString("_")}",Trie_${r.name}_${(0 until r.ordering.length).toList.mkString("_")}));
       """)
     })
     code
