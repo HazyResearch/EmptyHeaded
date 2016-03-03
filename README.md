@@ -10,6 +10,7 @@ Table of Contents
 
   * [Overview](#overview)  
   * [Installing from Source](#installing-from-source)
+   * [Docker](#docker)
    * [Dependencies](#dependencies)
    * [Setting up Environment](#setting-up-environment)
   * [Running Queries](#running-queries)
@@ -35,6 +36,12 @@ Installing from Source
 To install EmptyHeaded from source ensure that your system:
 - meets all dependencies detailed below
 - has setup the EmptyHeaded environment
+
+Docker
+-----------------
+Behind the scenes a lot goes on in our engine. This is no walk in the park library based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized C++ code for the hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Make your life easier and use our Docker images which are *always* up to date.
+
+
 
 Dependencies
 -----------------
