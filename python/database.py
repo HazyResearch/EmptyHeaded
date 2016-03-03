@@ -13,6 +13,7 @@ from relation import Relation
 from DB import DB
 import os
 import time
+from sys import platform as _platform
 
 dbhash = 0
 
@@ -22,12 +23,16 @@ class Database:
     #code generation
     self.qc.genTrieWrapper(name)
     #execution
+    fname = self.folder+"/libs/trie_"+name
+    os.system("cd "+fname+" && ./build.sh >compilation.log 2>&1 && cd - > /dev/null")
     return self.backend.get(name)
 
   def load(self,name):
     #code generation
     self.qc.genTrieWrapper(name)
     #execution
+    fname = self.folder+"/libs/trie_"+name
+    os.system("cd "+fname+" && ./build.sh >compilation.log 2>&1 && cd - > /dev/null")
     self.backend.load(name)
 
   #parses, codegens, and runs
@@ -64,7 +69,13 @@ class Database:
     #clean up the previous build
     os.system("""rm -rf """+storage_engine+"""/build && mkdir """+storage_engine+"""/build""")
     #make the backend
-    os.system("""cd """+storage_engine+"/build && cmake -DNUM_THREADS="+str(self.config.num_threads)+" .. && make && cd - > /dev/null" )
+    buildtools=""
+    # linux we use gcc 5    
+    if _platform == "linux" or _platform == "linux2":
+      buildtools=" -DCMAKE_C_COMPILER=gcc-5 -DCMAKE_CXX_COMPILER=g++-5 "
+    cmd="""cd """+storage_engine+"/build && cmake -DNUM_THREADS="+str(self.config.num_threads)+buildtools+" .. && make && cd - > /dev/null"
+    print cmd
+    os.system(cmd)
 
   #Build the db in backend and save to disk
   def build(self):
@@ -74,7 +85,7 @@ class Database:
     self.qc.createDB()
     #compile the generated load query
     self.compile_backend()
-    os.system("""cd """+self.folder+"""/libs/createDB && ./build.sh && cd - > /dev/null""")
+    os.system("""cd """+self.folder+"""/libs/createDB && ./build.sh >compilation.log 2>&1 && cd - > /dev/null""")
     #execution
     self.backend.create(self.relations,str(self.dbhash))
 

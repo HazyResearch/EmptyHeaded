@@ -118,6 +118,8 @@ void recursive_foreach(
 
 template<class A,class M>
 TrieBlock<layout,M>* Trie<A,M>::getHead(){
+  if(num_columns == 0)
+    return NULL;
   TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)(memoryBuffers->get_address(NUM_THREADS,0));
   return head; 
 }
@@ -129,7 +131,7 @@ template<class A,class M>
 void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body){
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
   TrieBlock<layout,M>* head = this->getHead();
-  if(head->get_set()->cardinality > 0){
+  if(head != NULL && head->get_set()->cardinality > 0){
     head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
       tuple->push_back(a_d);
       if(num_columns > 1){

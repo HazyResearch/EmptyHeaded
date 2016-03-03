@@ -43,18 +43,18 @@ object EHGenerator {
   }
   */
   
-  def run(qp:QueryPlan,dbIn:DBInstance,id:String,filename:String) = {
+  def run(qp:QueryPlan,dbIn:DBInstance,id:String,filename:String): List[Relation] = {
     db = dbIn
+
     //get distinct relations we need to load
     //dump output at the end, rest just in a loop
-    var outputEncodings:mutable.Map[String,List[String]] = mutable.Map()
+    var outputEncodings:mutable.Map[String,Schema] = mutable.Map()
     val distinctLoadRelations:mutable.Map[String,QueryPlanRelationInfo] = mutable.Map()
 
     val cppCode = new StringBuilder()
     val includeCode = new StringBuilder()
 
     //spit out output for each query in global vars
-    val topDown = qp.topdown.length > 0      
     //find all distinct relations
     val single_source_tc = false//detectTransitiveClosure(qp,db)
     qp.relations.foreach( r => {
@@ -77,13 +77,6 @@ object EHGenerator {
         cppCode.append(bagCode)
         i += 1
       })
-      /*
-      if(topDown){
-        val (bagCode,bagOutput) = emitTopDown(qp.output.name,qp.output.ordering,qp.output.annotation,qp.topdown,intermediateRelations.toMap)
-        cppCode.append(bagCode)
-        outputAttributes = bagOutput
-      }
-      */
     } else{
       val base_case = qp.ghd.head
       val input = base_case.relations.head.name + "_" + base_case.relations.head.ordering.mkString("_")
@@ -109,16 +102,10 @@ object EHGenerator {
         """)
         */
     }
+    cppCode.append(emitOutputs(db,qp.outputs))
     cppCode.append(emitEndQuery())
 
-    /*
-    val newSchema = ((qp.output.name -> Schema(outputAttributes,List(qp.output.ordering),qp.output.annotation)))
-    val newRelation = ((qp.output.name+"_"+qp.output.ordering.mkString("_"))->"disk")
-    Environment.config.schemas = Environment.config.schemas+newSchema
-    Environment.config.relations = Environment.config.relations+newRelation
-    Environment.config.resultName = qp.output.name
-    Environment.config.resultOrdering = qp.output.ordering
-    */
+    val outRels = qp.outputs.map(o => Relation(o.name,outputEncodings(o.name),"",false))
     val cpp = new StringBuilder()
     cpp.append(getCode(includeCode,cppCode,id))
 
@@ -128,6 +115,8 @@ object EHGenerator {
     bw.write(cpp.toString)
     bw.close()
     s"""clang-format -style=llvm -i ${cppFilepath}""" !
+
+    outRels
   } 
 
   private def getCode(includes:StringBuilder,run:StringBuilder,id:String) : String ={
@@ -150,6 +139,19 @@ object EHGenerator {
     """
   }
 
+  private def emitOutputs(db:DBInstance,outputs:List[QueryPlanRelationInfo]) : StringBuilder = {
+    val code = new StringBuilder()
+    outputs.foreach(r => { 
+      s"""mkdir -p ${db.folder}/relations/${r.name}""" .!
+
+      s"""mkdir -p ${db.folder}/relations/${r.name}/${r.name}_${r.ordering.mkString("_")}""" .!
+
+      code.append(s"""
+      input_tries->insert(std::make_pair("${r.name}_${r.ordering.mkString("_")}",Trie_${r.name}_${r.ordering.mkString("_")}));
+      """)
+    })
+    code
+  }
   /////////////////////////////////////////////////////////////////////////////
   //Loads the relations and encodings needed for a query.
   /////////////////////////////////////////////////////////////////////////////
@@ -191,7 +193,7 @@ object EHGenerator {
     return code
   }
 
-  def emitParallelIterators(relations:List[QueryPlanRelationInfo],headencodings:Map[String,List[String]]) : (StringBuilder,IteratorAccessors,Encodings) = {
+  def emitParallelIterators(relations:List[QueryPlanRelationInfo],headencodings:Map[String,Schema]) : (StringBuilder,IteratorAccessors,Encodings) = {
     val code = new StringBuilder()
     val dependers = mutable.ListBuffer[(String,(String,Int,Int))]()
     val encodings = mutable.ListBuffer[(String,Attribute)]()
@@ -201,7 +203,7 @@ object EHGenerator {
         if(db.relationMap.contains(r.name)) 
           db.relationMap(r.name).schema.attributeTypes
        else if(headencodings.contains(r.name))
-          headencodings(r.name)
+          headencodings(r.name).attributeTypes
         else
           throw new IllegalArgumentException("Schema not found.");
 
@@ -815,10 +817,12 @@ object EHGenerator {
 
   def emitNPRR(
     bag:QueryPlanBagInfo,
-    headencodings:Map[String,List[String]]) : (StringBuilder,List[String]) = {
+    headencodings:Map[String,Schema]) : (StringBuilder,Schema) = {
     
     val code = new StringBuilder()
-    var oa = List[String]()
+    var oattrs = List[String]()
+    var oanno = List[String]()
+
     //Emit the output trie for the bag.
     val outputName = bag.name
     code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
@@ -847,7 +851,8 @@ object EHGenerator {
         code.append(emitParallelBuilder(pbname,bag.attributes.values,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)
 
-        oa = bag.attributes.values.map(a => encodings(a))
+        oattrs = bag.attributes.values.map(a => encodings(a))
+        oanno = if(bag.annotation == "void*") List() else List(bag.annotation)
         if(bag.nprr.length > 0){
           code.append(emitSelectionValues(bag.nprr,encodings))
           val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr)
@@ -881,7 +886,10 @@ object EHGenerator {
         val recordering = (0 until bag.attributes.values.length).toList.mkString("_")
 
         code.append(s"""Trie_${outputName}_${recordering}->memoryBuffers = Builders.trie->memoryBuffers;""")
-        code.append(s"""Trie_${outputName}_${recordering}->num_rows = Builders.trie->num_rows;""")
+        if(bag.attributes.values.length == 0)
+          code.append(s"""Trie_${outputName}_${recordering}->num_rows = 0;""")
+        else
+          code.append(s"""Trie_${outputName}_${recordering}->num_rows = Builders.trie->num_rows;""")
         code.append(s"""Trie_${outputName}_${recordering}->encodings = Builders.trie->encodings;""")
 
         bag.recursion match {
@@ -898,6 +906,6 @@ object EHGenerator {
       }
       case _ =>
     }
-    return (code,oa)
+    return (code,QueryCompiler.buildInternalSchema(oattrs,oanno))
   }
 }

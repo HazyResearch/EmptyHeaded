@@ -38,18 +38,24 @@ def c_run_${id}(tm):
     code
   }
 
-  def generate(ir:IR,db:DBInstance,hash:String,folder:String): Int = {
+  def generate(ir:IR,db:DBInstance,hash:String,folder:String): (Int,List[Relation]) = {
     //first split the rules apart into those that are connected
     //and those that are not. the dependencies should come in an 
     //ordered fashion in the rules.
+    val outputRelations = ListBuffer[Relation]()
     val (independentrules,headrelations) = getIndependentRules(db,ir)
+
+    /*
+    //DEBUG
+    independentrules.foreach(r => { 
+      println("INDEPENDENT GROUP")
+      r.foreach(println(_))
+    })
+    */
 
     val ehhome = sys.env("EMPTYHEADED_HOME")
     val mvdir = s"""cp -rf ${ehhome}/cython/query ${db.folder}/libs/${folder}"""
     mvdir.!
-
-    val os = System.getProperty("os.name").toLowerCase()
-    val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
 
     val setuplist = ListBuffer[String]()
     val cpfile = s"""mv ${db.folder}/libs/${folder}/Query.pyx ${db.folder}/libs/${folder}/Query_${hash}.pyx"""
@@ -65,13 +71,35 @@ def c_run_${id}(tm):
 
     val setupstring = setuplist.mkString(",")
 
-    Seq("sed","-i",bak,
-      s"s/#FILES#/Query_${hash}.pyx/g",
-      s"${db.folder}/libs/${folder}/setup.py").!
+    val os = System.getProperty("os.name").toLowerCase()
+    val bak = if(os.indexOf("mac") >= 0) ".bak" else ""
+    if(os.indexOf("mac") >= 0){
+      Seq("sed","-i",".bak",
+        s"s/#FILES#/Query_${hash}.pyx/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
 
-    Seq("sed","-i",bak,
-      s"s/#QUERY#/Query_${hash}/g",
-      s"${db.folder}/libs/${folder}/setup.py").!
+      Seq("sed","-i",".bak",
+        s"s/#NUMTHREADS#/${db.config.numThreads}/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+      Seq("sed","-i",".bak",
+        s"s/#QUERY#/Query_${hash}/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+    } else{
+      Seq("sed","-i",
+        s"s/#FILES#/Query_${hash}.pyx/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+      Seq("sed","-i",
+        s"s/#NUMTHREADS#/${db.config.numThreads}/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+      Seq("sed","-i",
+        s"s/#QUERY#/Query_${hash}/g",
+        s"${db.folder}/libs/${folder}/setup.py").!
+
+    }
 
     var i = 0
     independentrules.foreach(rules => {
@@ -80,10 +108,7 @@ def c_run_${id}(tm):
       //figure out what relations we need
       val rels = ir2relationinfo(rules).filter(r => !headrelations.contains(r.name))
       val output = ir2outputinfo(rules)
-      //getTopDownIterators(rules)
-
       val ghd = rules.map(rule =>{
-        //fixme figure out anno type
         val name = rule.result.rel.name
         val duplicateOf = None
         val attributes = Attributes(rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)))
@@ -109,12 +134,11 @@ def c_run_${id}(tm):
         )
       }).toList
 
-      val topdown = List(TopDownPassIterator("",List()))
-      val myplan = QueryPlan(output,rels,ghd,topdown)
-      EHGenerator.run(myplan,db,i.toString,filename)
+      val myplan = QueryPlan(output,rels,ghd)
+      outputRelations ++= EHGenerator.run(myplan,db,i.toString,filename)
       i += 1
     })
-    return independentrules.length
+    return (independentrules.length,outputRelations.toList)
   }
 
   private def getAggregation(rule:Rule) : Option[Aggregation] = {
@@ -165,7 +189,7 @@ def c_run_${id}(tm):
         accessorMap(a) += QueryPlanAccessor(
           r.name,
           Attributes(r.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))),
-          false)
+          r.anno.values.length > 0)
       })
     })
     //build up selections
@@ -210,8 +234,20 @@ def c_run_${id}(tm):
         else Some(materializedattrs(materializedattrs.indexOf(a)+1))
 
       QueryPlanAttrInfo(name,accessors,materialize,selection,annotation,aggregation,prevMaterialized,nextMaterialized)
-    }).toList
+    }).toList.filter(qpa => !(!qpa.materialize && qpa.selection.length == 0 && qpa.aggregation == None))
   }
+
+/*
+case class QueryPlanAttrInfo(val name:String,
+                        val accessors:List[QueryPlanAccessor],
+                        val materialize:Boolean,
+                        val selection:List[QueryPlanSelection],
+                        val annotation:Option[String],
+                        val aggregation:Option[QueryPlanAggregation],
+                        /* The last two here are never filled out in the top down pass*/
+                        val prevMaterialized:Option[String],
+                        val nextMaterialized:Option[String])
+*/
 
   private def getbagrecursion(rule:Rule):Option[QueryPlanRecursion] = {
     rule.recursion match {
@@ -245,12 +281,11 @@ def c_run_${id}(tm):
           else 
             throw new Exception("1 anno per relation")
         if(!relations.contains((rel.name,order)))
-          relations += ((rel.name,order) -> (ListBuffer(rel.attrs),anno) ) 
+          relations += ((rel.name,order) -> (ListBuffer(Attributes(order.map(i => rel.attrs.values(i)))),anno) ) 
         else
-          relations(((rel.name,order)))._1 += rel.attrs
+          relations(((rel.name,order)))._1 += Attributes(order.map(i => rel.attrs.values(i)))
       })
     })
-    //FIX ME Look up relations in DB and get annotation
     relations.map(relMap => {
       val (key,value) = relMap
       QueryPlanRelationInfo(key._1,key._2,Some(value._1.toList),value._2)
@@ -351,8 +386,7 @@ case class QueryPlans(val queryPlans:List[QueryPlan]) {
 case class QueryPlan(
                 val outputs:List[QueryPlanRelationInfo],
                 val relations:List[QueryPlanRelationInfo],
-                val ghd:List[QueryPlanBagInfo],
-                val topdown:List[TopDownPassIterator]) {
+                val ghd:List[QueryPlanBagInfo]) {
   def toJSON(): Unit = {
     val filename = "query.json"
     implicit val formats = Serialization.formats(NoTypeHints)

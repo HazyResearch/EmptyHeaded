@@ -65,7 +65,7 @@ LollipopAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),z:uint64<-[COUNT(*)].
 pagerank = \
 """
 N(;w) :- Edge(x,y),w:uint64<-[SUM(x;1)].
-PageRank(x;y) :- Edge(x,z),y:float32<-[(1.0/N)].
+PageRank(x;y) :- N(),Edge(x,z),y:float32<-[(1.0/N)].
 PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float32 <- [0.15+0.85*SUM(z;1.0)].
 """
 
@@ -79,30 +79,61 @@ graph = Relation(
   name="Edge",
   dataframe=ratings)
 
-#db = Database.create(
-#  Config(),
-#  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
-#  [graph])
-#db.build()
+db = Database.create(
+  Config(),
+  "/Users/caberger/Documents/Research/code/EmptyHeaded/python/db",
+  [graph])
+db.build()
 
 db = Database.from_existing("/Users/caberger/Documents/Research/code/EmptyHeaded/python/db")
 
-print "TRIANGLE"
+print "\nTRIANGLE"
 db.eval(triangle)
 
-print "4CLIQUE"
-db.eval(fourclique)
-
-print "TRIANGLE AGG"
+comm="""
+print "\nTRIANGLE AGG"
 db.eval(triangle_agg)
 
-print "LOLLIPOP AGG"
+print "\n4CLIQUE"
+db.eval(fourclique)
+
+print "\n4CLIQUE AGG"
+db.eval(fourclique_agg)
+
+print "\nLOLLIPOP"
+db.eval(lollipop)
+
+print "\nLOLLIPOP AGG"
 db.eval(lollipop_agg)
 
-print "BARBELL AGG"
+print "\nBARBELL"
+db.eval(barbell)
+
+print "\nBARBELL AGG"
 db.eval(barbell_agg)
 
-#db.eval(pagerank)
+print "\n4CLIQUE SELECTION"
+db.eval(fourclique_sel)
+
+print "\n4CLIQUE SELECTION AGG"
+db.eval(fourclique_sel_agg)
+
+print "\nBARBELL SELECTION"
+db.eval(barbell_sel)
+
+print "\nBARBELL SELECTION AGG"
+db.eval(barbell_sel_agg)
+
+print "PAGERANK"
+db.eval(pagerank)
+"""
+
+tri = db.get("Triangle")
+print tri.annotated
+print tri.num_rows
+print tri.num_columns
+#db.load("Triangle")
+print tri.getDF()
 
 comm="""
 g = db.get("Edge")

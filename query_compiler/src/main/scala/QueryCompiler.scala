@@ -20,7 +20,7 @@ case class Schema(
     externalAttributeTypes.map(a => {
       if(!QueryCompiler.validAttributeTypes.contains(a))
         throw new Exception("Attribute type " + a + " in schema is not valid.")
-      QueryCompiler.validAnnotationTypes(a)
+      QueryCompiler.validAttributeTypes(a)
     })
   }
   private def checkAnnotations():List[String] = {
@@ -109,7 +109,8 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
   def generate(datalog:String,hash:String,folder:String) : Int = {
     val ir = DatalogParser.run(datalog)
     val optir = QueryPlanner.findOptimizedPlans(ir)
-    val num = QueryPlan.generate(optir,db,hash,folder)
+    val (num,rels) = QueryPlan.generate(optir,db,hash,folder)
+    rels.foreach(db.addRelation(_))
     num
   }
 
@@ -145,15 +146,33 @@ object QueryCompiler {
     //"Date"
     )
 
+  val internalAttrToExternal = Map(
+    //"Boolean" -> ,
+    //"Byte",
+    "uint32_t" -> "uint32",
+    "int32_t" -> "int32",
+    "uint64_t" -> "uint64",
+    "int64_t" -> "int64",
+    "float" -> "float32",
+    "double" -> "float64"
+    //"String",
+    //"Float",
+    //"Double",
+    //"Date"
+    )
+
   //All numeric types
   val validAnnotationTypes = Map(
-    "uint32" -> "uint32_t",
-    "int32" -> "int32_t",
-    "int64" -> "int64_t",
-    "uint64" -> "uint64_t",
-    "float32" -> "float",
-    "float64" -> "double"
+    "int" -> "int",
+    "long" -> "long",
+    "float" -> "float",
+    "double" -> "double"
   )
+
+  //Special builder to convert arrays to lists
+  def buildInternalSchema(attrTypes:List[String],annoTypes:List[String]) : Schema = {
+    Schema(attrTypes.map(internalAttrToExternal(_)),annoTypes.map(validAnnotationTypes(_)))
+  }
 
   //Special builder to convert arrays to lists
   def buildSchema(attrTypes:Array[String],annoTypes:Array[String]) : Schema = {

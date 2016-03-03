@@ -78,7 +78,7 @@ object DatalogParser extends RegexParsers {
   def findStar = """\*""".r ^^ {case a => List[String](a)}
   def aggregateStatement = ("(" ~> (findStar | attrList)) ~ (aggInit <~ ")")
 
-  def annoTypes = """uint32|int32|int64|uint64|float32|float64""".r
+  def annoTypes = """long|int|float|double""".r
 
   //ughh, I couldn't get scala to just match everything BUT these strings
   def aggOp:Parser[(String,String)] = sumagg | countagg | minagg //"""SUM|COUNT|MIN""".r
@@ -98,7 +98,7 @@ object DatalogParser extends RegexParsers {
     (identifierName <~ ":") ~ (annoTypes <~ "<-") ~ ("[" ~> endaggexpression <~ "]") ^^ {case a~t~b => 
       //map COUNT to a SUM with an init value of 1
       val (opin,initin) = ("CONST",b)
-      
+
       val ab = new AggregationsBuilder()
       val agg = Aggregation(a,
         QueryCompiler.validAnnotationTypes(t),
@@ -118,7 +118,7 @@ object DatalogParser extends RegexParsers {
       
       val ab = new AggregationsBuilder()
       val agg = Aggregation(a,
-        "long",
+        QueryCompiler.validAnnotationTypes(t),
         ab.getOp(opin),
         Attributes(attrs),
         initin,
