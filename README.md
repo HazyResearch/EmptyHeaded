@@ -107,7 +107,7 @@ Compilation
 ./compile.sh
 ```
 
-The compiler needs to be compiled. (wrap your head around that). 
+The compiler needs to be compiled. (wrap your head around that). This compiles our Scala code and a few static cython bindings.
 
 Running Queries
 -----------------
