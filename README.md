@@ -93,6 +93,7 @@ Make your life easier and use our [Docker images](https://hub.docker.com/r/crabe
 Unfortunately iPython notebooks and Docker containers do not interact easily, but you can run standard python scripts just fine in these containers! 
 
 Two easy ways to get started in a container:
+
 1. Simply inspect our iPython notebook tutorials in this repository (can view on github) and make the corresponding python programs. 
 2. Checkout our python test scripts in the `test` folder, `./test/testAll.sh` kick them it all off.
 
