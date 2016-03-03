@@ -41,7 +41,7 @@ To install EmptyHeaded from source ensure that your system:
 
 Dependencies
 -----------------
-Behind the scenes a lot goes on in our engine. This is no walk in the park library based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized code for hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Use our Docker images where everything is taken care of for you already.
+Behind the scenes a lot goes on in our engine. This is no walk in the park library based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized code for hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Try using our [Docker images](#docker) where everything is taken care of for you already.
 
 **AVX**
 
@@ -90,7 +90,7 @@ Docker
 -----------------
 Make your life easier and use our [Docker images](https://hub.docker.com/r/craberger/emptyheaded/) which are *always* up to date. 
 
-Unfortunately iPython notebooks and Docker containers do not interact easily but you can run python queries just fine in these containers!
+Unfortunately iPython notebooks and Docker containers do not interact easily but you can run python queries just fine in these containers! Simply inspect our iPython notebooks in this repository (can view on github) and make corresponding python programs. Or checkout our test python scripts in the `test` folder.
 
 Setting up Environment
 -----------------
