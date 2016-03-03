@@ -10,9 +10,9 @@ Table of Contents
 
   * [Overview](#overview)  
   * [Installing from Source](#installing-from-source)
-   * [Docker](#docker)
    * [Dependencies](#dependencies)
    * [Setting up Environment](#setting-up-environment)
+   * [Docker Containers](#docker)
   * [Running Queries](#running-queries)
   * [Contact](#contact)
 
@@ -46,20 +46,18 @@ A fundamental dependency of our system is that it is designed for machines that 
 
 * Mac or Linux operating system
 * GCC 5.3 (Linux) or Apple LLVM version 7.0.2 (Mac)
-* cmake 2.8 or higher
-* SBT
-* Clang-format
-* jemalloc
-* Intel TBB
-* iPython Notebook
-* cython
-* jpype 0.6.1
-* pandas
-* C++11
+* clang-format
+* C++11 
+* cmake 2.8 or higher (C++)
+* jemalloc (C++)
+* tbb (C++, Intel)
+* sbt (scala)
+* iPython Notebook (python)
+* cython (python)
+* jpype 0.6.1 (python)
+* pandas (python)
 
-The instructions below detail our dependencies and how to install them on a Linux machine with sudo privileges. For Macs try `brew` (homebrew) instead of `apt-get`. A complete list of our dependencies as well as how to install them is in our `Dockerfile`.
-
-We support Mac and Linux operating systems. If you are running on a Mac you must use the default Clang installation. If you are running on a Linux machine we support GCC v4.9. 
+The instructions below briefly describe some of our dependencies and why we have them. A complete list of our dependencies as well as how to install them is in our `Dockerfile`. Note: we provide JPype and an install script in our `dependencies` folder.
 
 **Why iPython Notebook?**
 
@@ -67,23 +65,19 @@ iPython Notebook provides a easy and user-friendly front-end for users to enter,
 
 **Why clang-format?**
 
-EmptyHeaded generates code from a high level datalog description. Making generated code look nice is a challenging task! Clang-format is an easy solution.
+EmptyHeaded generates code from a high level datalog description. Making generated code look nice is a challenging task! [Clang-format](http://clang.llvm.org/docs/ClangFormat.html) is an easy solution.
 
 **Why jemalloc?**
 
-The GNU malloc is ineffecient for multi-threaded programs. jemalloc to the rescue!
-
-```
-sudo apt-get install libjemalloc-dev
-```
+The GNU malloc is ineffecient for multi-threaded programs. [jemalloc](https://www.facebook.com/notes/facebook-engineering/scalable-memory-allocation-using-jemalloc/480222803919/) to the rescue!
 
 **Why TBB?**
 
-Writing an efficient parallel-sort is a challenging task. Why re-invent the wheel? Use TBB.
+Writing an efficient parallel-sort is a challenging task. Why re-invent the wheel? Use [Intel's TBB](https://www.threadingbuildingblocks.org/).
 
 **Why Pandas?**
 
-Pandas DataFrames provides a nice and highly used front-end for EmptyHeaded to accept tables from. We can also run without DataFrames but who doesn't love DataFrames?
+[Pandas DataFrames](http://pandas.pydata.org/pandas-docs/stable/dsintro.html) provides a nice and highly used front-end for EmptyHeaded to accept tables from. We can also run without DataFrames but who doesn't love DataFrames?
 
 **Why JPype?**
 
