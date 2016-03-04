@@ -23,16 +23,16 @@ object EHGenerator {
     return ghd
   }
 
-  /*
   def detectTransitiveClosure(qp:QueryPlan,db:DBInstance) : Boolean = {
     //check encodings, check that base case is not annotated
     if(qp.ghd.length == 2 && qp.ghd.last.recursion.isDefined){
       val base_case = qp.ghd.head
-      val encodings = 
-      if(base_case.relations.length > 0 && encodings.length == 1){
-        if(base_case.nprr.length == 2){
+      if(base_case.relations.length > 0){
+        if(qp.ghd.last.recursion.get.input == "e" && 
+          qp.ghd.last.recursion.get.criteria == "=" && 
+          qp.ghd.last.recursion.get.convergenceValue == "0"){
           if(base_case.nprr.head.selection.length == 1){
-            if(qp.ghd.last.nprr.last.aggregation.get.operation == "MIN"){
+            if(qp.ghd.last.nprr.last.aggregation.get.operation == "<"){
               return true
             }
           }
@@ -41,7 +41,6 @@ object EHGenerator {
     }
     return false
   }
-  */
   
   def run(qp:QueryPlan,dbIn:DBInstance,id:String,filename:String): List[Relation] = {
     db = dbIn
@@ -56,7 +55,7 @@ object EHGenerator {
 
     //spit out output for each query in global vars
     //find all distinct relations
-    val single_source_tc = false//detectTransitiveClosure(qp,db)
+    val single_source_tc = detectTransitiveClosure(qp,db)
     qp.relations.foreach( r => {
       if(db.relationMap.contains(r.name)){
         val loadTC = !single_source_tc || (r.ordering == (0 until r.ordering.length).toList)
@@ -84,23 +83,23 @@ object EHGenerator {
       val source = base_case.nprr.head.selection.head.expression
       val expression = qp.ghd.last.nprr.last.aggregation.get.expression
       
-          /*
-      val encoding = Environment.config.schemas(base_case.relations.head.name).attributes.map(_.encoding).distinct.head
-      outputAttributes = List(Environment.config.schemas(base_case.relations.head.name).attributes.head)
+      val encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head      
+      val recordering = (0 until qp.ghd.last.attributes.values.length).toList.mkString("_")
 
+      cppCode.append(emitIntermediateTrie(qp.ghd.last.name,qp.ghd.last.annotation,qp.ghd.last.attributes.values.length,qp.ghd.last.duplicateOf))
+      outputEncodings += (qp.ghd.last.name -> QueryCompiler.buildInternalSchema(List(encoding),List(qp.ghd.last.annotation)))
       //get encoding
       includeCode.append("""#include "TransitiveClosure.hpp" """)
       cppCode.append(s"""
-        tc::unweighted_single_source<hybrid,ParMemoryBuffer,${qp.output.annotation}>(
+        tc::unweighted_single_source<hybrid,ParMemoryBuffer,${qp.ghd.last.annotation}>(
           Encoding_${encoding}->value_to_key.at(${source}), // from encoding
           Encoding_${encoding}->num_distinct, //from encoding
           Trie_${input}, //input graph
-          Trie_${output}, //output vector
+          Trie_${qp.ghd.last.name}_${recordering}, //output vector
           ${init},
-          [&](${qp.output.annotation} a){return ${expression} a;});
-        Trie_${output}->encodings.push_back((void*)Encoding_${encoding});
+          [&](${qp.ghd.last.annotation} a){return ${expression.replaceAll("AGG","")} a;});
+        Trie_${qp.ghd.last.name}_${recordering}->encodings.push_back((void*)Encoding_${encoding});
         """)
-        */
     }
     cppCode.append(emitOutputs(db,qp.outputs))
     cppCode.append(emitEndQuery())

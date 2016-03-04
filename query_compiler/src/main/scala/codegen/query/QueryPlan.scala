@@ -240,23 +240,12 @@ def c_run_${id}(tm):
     }).toList.filter(qpa => !(!qpa.materialize && qpa.selection.length == 0 && qpa.aggregation == None))
   }
 
-/*
-case class QueryPlanAttrInfo(val name:String,
-                        val accessors:List[QueryPlanAccessor],
-                        val materialize:Boolean,
-                        val selection:List[QueryPlanSelection],
-                        val annotation:Option[String],
-                        val aggregation:Option[QueryPlanAggregation],
-                        /* The last two here are never filled out in the top down pass*/
-                        val prevMaterialized:Option[String],
-                        val nextMaterialized:Option[String])
-*/
-
   private def getbagrecursion(rule:Rule):Option[QueryPlanRecursion] = {
     rule.recursion match {
       case Some(rec) => {
         val input = rec.criteria match {
           case a:ITERATIONS => "i"
+          case e:EPSILON => "e"
           case _ =>
             throw new Exception("not valid recursion")
         }

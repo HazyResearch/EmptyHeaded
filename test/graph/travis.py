@@ -209,13 +209,26 @@ BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edg
   if bs.num_rows != 26936100L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
 
+def sssp(db):
+  paths = \
+"""
+SSSP(x;y) :- Edge(w,x),w=0,y:long <- [1].
+SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)].
+"""
+  print "\nSSSP"
+  db.eval(paths)
+  bs = db.get("SSSP")
+  df = bs.getDF()
+  if df.iloc[1000][1] != 2:
+    raise ResultError("SSSP value incorrect: " + str(df.iloc[1000][1]))
+
 def pagerank(db):
   pr="""
 N(;w) :- Edge(x,y),w:long<-[SUM(x;1)].
 PageRank(x;y) :- Edge(x,z),y:float<-[(1.0/N)].
 PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SUM(z;1.0)].
 """
-  print "\n PAGERANK"
+  print "\nPAGERANK"
   db.eval(pr)
   bs = db.get("PageRank")
   df = bs.getDF()
@@ -247,7 +260,7 @@ def test_pruned():
   four_clique_agg(db)
 
 def test_duplicated():
-  build = True
+  build = False
   ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/facebook_duplicated.tsv",\
   sep='\t',\
   names=["0","1"],\
@@ -281,6 +294,7 @@ def test_duplicated():
   barbell_agg_sel(db)
   barbell_sel(db)
   pagerank(db)
+  sssp(db)
 
 def test_simple():
   build = True
