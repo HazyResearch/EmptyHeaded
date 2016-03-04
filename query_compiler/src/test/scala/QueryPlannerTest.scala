@@ -281,7 +281,7 @@ class QueryPlannerTest extends FunSuite {
       PageRank(x;y) :- Edge(x,z),y:float<-[(1.0/N)].
       PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SUM(z;1.0)]."""
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(pgrank))
-    optimized.rules.foreach(rule => println(rule))
+    //optimized.rules.foreach(rule => println(rule))
     assertResult(ir)(optimized)
   }
 
@@ -443,35 +443,41 @@ class QueryPlannerTest extends FunSuite {
     assertResult(ir)(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm4)))
   }
 
-  /*test("lubm7") {
+  test("lubm7") {
     val ir = IR(List(
-      Rule(Result(
-        Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())),true),
+      Rule(Result(Rel("bag_1_e_a_lubm7",Attributes(List("a")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("e", "a"))),
+        Project(Attributes(List("e"))),
+        Join(List(
+          Rel("rdftype",Attributes(List("a", "e")),Annotations(List())))),Aggregations(List()),
+        Filters(List(Selection("e",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'")))),
+      Rule(Result(Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())),true),
         None,
         Operation("*"),
         Order(Attributes(List("d", "b"))),
         Project(Attributes(List("d"))),
-        Join(List(Rel("rdftype", Attributes(List("b", "d")),Annotations(List())))),
+        Join(List(
+          Rel("rdftype",Attributes(List("b", "d")),Annotations(List())))),
         Aggregations(List()),
         Filters(List(Selection("d",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'")))),
       Rule(Result(Rel("bag_1_c_b_lubm7",Attributes(List("b")),Annotations(List())),true),
         None,
-        Operation("*"),
-        Order(Attributes(List("c", "b"))),
-        Project(Attributes(List("c"))),
-        Join(List(Rel("teacherOf", Attributes(List("c", "b")),Annotations(List())))),
+        Operation("*"),Order(Attributes(List("c", "b"))),Project(Attributes(List("c"))),
+        Join(List(Rel("teacherOf",Attributes(List("c", "b")),Annotations(List())))),
         Aggregations(List()),
         Filters(List(Selection("c",EQUALS(),"'http://www.Department0.University0.edu/AssociateProfessor0'")))),
-      Rule(Result(Rel("lubm7", Attributes(List("a", "b")),Annotations(List())),false),
+      Rule(Result(Rel("lubm7",Attributes(List("a", "b")),Annotations(List())),false),
         None,
         Operation("*"),
-        Order(Attributes(List("a", "b"))),
+        Order(Attributes(List("b", "a"))),
         Project(Attributes(List())),
         Join(List(
           Rel("takesCourse",Attributes(List("a", "b")),Annotations(List())),
-          Rel("rdftype",Attributes(List("a")),Annotations(List())),
           Rel("bag_1_c_b_lubm7",Attributes(List("b")),Annotations(List())),
-          Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())))),
+          Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())),
+          Rel("bag_1_e_a_lubm7",Attributes(List("a")),Annotations(List())))),
         Aggregations(List()),
         Filters(List()))))
     val lubm7 =
@@ -484,19 +490,80 @@ class QueryPlannerTest extends FunSuite {
         |rdftype(a,e),
         |e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'.
       """.stripMargin
-    println(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm7)))
+    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm7))
+    assertResult(ir)(optimized)
   }
 
   test("lubm8") {
+    val ir = IR(List(
+      Rule(Result(Rel("bag_2_d_a_lubm8",Attributes(List("a")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("d", "a"))),
+        Project(Attributes(List("d"))),
+        Join(List(Rel("rdftype",Attributes(List("a", "d")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List(Selection("d",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'")))),
+      Rule(Result(Rel("bag_2_f_b_lubm8",Attributes(List("b")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("f", "b"))),
+        Project(Attributes(List("f"))),
+        Join(List(Rel("rdftype",Attributes(List("b", "f")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List(Selection("f",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'")))),
+      Rule(Result(Rel("bag_2_e_b_lubm8",Attributes(List("b")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("e", "b"))),
+        Project(Attributes(List("e"))),
+        Join(List(Rel("subOrganizationOf",Attributes(List("b", "e")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List(Selection("e",EQUALS(),"'http://www.University0.edu'")))),
+      Rule(Result(Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "b"))),
+        Project(Attributes(List())),
+        Join(List(
+          Rel("memberOf",Attributes(List("a", "b")),Annotations(List())),
+          Rel("bag_2_e_b_lubm8",Attributes(List("b")),Annotations(List())),
+          Rel("bag_2_f_b_lubm8",Attributes(List("b")),Annotations(List())),
+          Rel("bag_2_d_a_lubm8",Attributes(List("a")),Annotations(List())))),
+        Aggregations(List()),Filters(List())),
+      Rule(Result(Rel("lubm8_root",Attributes(List("a", "c")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "c", "b"))),
+        Project(Attributes(List("b"))),
+        Join(List(
+          Rel("emailAddress",Attributes(List("a", "c")),Annotations(List())),
+          Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())))),
+        Aggregations(List()),Filters(List())),
+      Rule(Result(Rel("lubm8",Attributes(List("a", "b", "c")),Annotations(List())),false),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "c", "b"))),
+        Project(Attributes(List())),
+        Join(List(
+          Rel("lubm8_root",Attributes(List("a", "c")),Annotations(List())),
+          Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())),
+          Rel("bag_2_e_b_lubm8",Attributes(List("b")),Annotations(List())),
+          Rel("bag_2_f_b_lubm8",Attributes(List("b")),Annotations(List())),
+          Rel("bag_2_d_a_lubm8",Attributes(List("a")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List()))))
     val lubm8 =
       """
         |lubm8(a,b,c) :- memberOf(a,b),
         |emailAddress(a,c),
         |rdftype(a,d),
-        |d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'
+        |d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent',
         |subOrganizationOf(b,e),
-        |e='http://www.University0.edu'),rdftype(b,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'.
+        |e='http://www.University0.edu',
+        |rdftype(b,f),
+        |f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'.
         |""".stripMargin
-    println(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm8)))
-  } */
+    assertResult(ir)(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm8)))
+  }
 }

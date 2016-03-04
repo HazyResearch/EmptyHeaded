@@ -22,6 +22,13 @@ object AttrOrderingUtil {
     materialized:::notMaterialized
   }
 
+  def order_by_num_times_passed_up(attrNames:List[Attr], node:EHNode): List[Attr] = {
+    val attrs = attrNames.toArray
+    scala.util.Sorting.stableSort(attrs,
+      (attr1:Attr, attr2:Attr) => node.children.count(child => child.attrSet.contains(attr1)) > node.children.count(child => child.attrSet.contains(attr2)))
+    return attrs.toList
+  }
+
   private def get_attribute_ordering(f_in:mutable.Set[EHNode],
                              outputRelation:Rel): List[String] = {
     var frontier = f_in
@@ -35,11 +42,11 @@ object AttrOrderingUtil {
         val cur_attrs = partition_materialized(cur.rels.flatMap{r => r.attrs.values}.sorted, outputRelation).distinct
 
         //collect others
-        cur_attrs.foreach{ a =>
-          if(!attr.contains(a) && !level_attr.contains(a)){
-            level_attr += a
-          }
+        val filtered_cur_attr = cur_attrs.filter{ a =>
+          (!attr.contains(a) && !level_attr.contains(a))
         }
+
+        level_attr ++= order_by_num_times_passed_up(filtered_cur_attr, cur)
 
         cur.children.foreach{(child:GHDNode) =>
           next_frontier += child

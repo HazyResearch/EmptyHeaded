@@ -1,7 +1,6 @@
 package duncecap
 
 import duncecap.attr._
-
 import scala.collection.immutable.TreeSet
 
 abstract class EHNode(val rels: List[OptimizerRel], val selections:Array[Selection]) {
