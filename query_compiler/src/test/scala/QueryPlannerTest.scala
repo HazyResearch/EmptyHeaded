@@ -263,7 +263,7 @@ class QueryPlannerTest extends FunSuite {
       Order(Attributes(List("x", "z"))),
       Project(Attributes(List())),
       Join(List(Rel("Edge",Attributes(List("x", "z")), Annotations(List())))),
-      Aggregations(List(Aggregation("y","float",CONST(),Attributes(List("z")),"(1.0/N)","",List()))),Filters(List())),
+      Aggregations(List(Aggregation("y","float",CONST(),Attributes(List("z")),"(1.0/N)","",List(Rel("N",Attributes(List()),Annotations(List("w"))))))),Filters(List())),
     Rule(Result(
       Rel("PageRank",Attributes(List("x")),Annotations(List("y"))),false),
       Some(Recursion(ITERATIONS(),EQUALS(),"5")),
