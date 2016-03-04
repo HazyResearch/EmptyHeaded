@@ -276,7 +276,7 @@ class GHDNode(override val rels: List[OptimizerRel],
 
   def getJoin(): Join = {
     Join(subtreeRels.map(rel =>
-      OptimizerRel.toRel(rel)).toList)
+      OptimizerRel.toRel(rel)).toList.distinct)
   }
 
   def computePrevRulesDependedOn(expression:String,

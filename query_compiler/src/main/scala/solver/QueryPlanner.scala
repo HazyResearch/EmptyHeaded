@@ -3,18 +3,47 @@ package duncecap
 import scala.collection.mutable.ListBuffer
 
 object QueryPlanner {
-  private def rewriteRecursiveRule(rule:Rule): Rule = {
-    val newName = rule.result.rel.name + "_recursive"
-    Rule(
-      Result(Rel(newName,rule.result.rel.attrs, rule.result.rel.anno), false),
-      rule.recursion,
-      rule.operation,
-      rule.order,
-      rule.project,
-      rule.join,
-      rule.aggregations,
-      rule.filters
-    )
+  private def renameRecursiveBaseCase(rel:Rel): Rel = {
+    val newName = rel.name + "_basecase"
+    Rel(newName,rel.attrs, rel.anno)
+  }
+
+  private def rewriteRecursiveRuleBaseCases(rules:List[Rule], recursiveRels:Set[String]): List[Rule] = {
+    rules.map(rule => {
+      if (recursiveRels.contains(rule.result.rel.name)) {
+        if (isRecursiveRule(rule)) {
+          Rule(
+            rule.result,
+            rule.recursion,
+            rule.operation,
+            rule.order,
+            rule.project,
+            Join(rule.join.rels.map(rel => {
+              if (rel.name == rule.result.rel.name) {
+                renameRecursiveBaseCase(rel)
+              } else {
+                rel
+              }
+            })),
+            rule.aggregations,
+            rule.filters
+          )
+        } else {
+          Rule(
+            Result(renameRecursiveBaseCase(rule.result.rel), true),
+            rule.recursion,
+            rule.operation,
+            rule.order,
+            rule.project,
+            rule.join,
+            rule.aggregations,
+            rule.filters
+          )
+        }
+      } else {
+        rule
+      }
+    })
   }
 
   private def markStatementAsRecursive(origRule:Rule, rule:Rule): Rule = {
@@ -30,25 +59,6 @@ object QueryPlanner {
     )
   }
 
-  private def markBaseCasesAsIntermediate(rules:List[Rule], recursiveRels:Set[String]): List[Rule] = {
-    rules.map(rule => {
-      if (recursiveRels.contains(rule.result.rel.name)) {
-        Rule(
-          Result(rule.result.rel, true),
-          rule.recursion,
-          rule.operation,
-          rule.order,
-          rule.project,
-          rule.join,
-          rule.aggregations,
-          rule.filters
-        )
-      } else {
-        rule
-      }
-    })
-  }
-
   private def isRecursiveRule(rule:Rule): Boolean = {
     val joinNames = rule.join.rels.map(_.name)
     return joinNames.contains(rule.result.rel.name)
@@ -59,13 +69,10 @@ object QueryPlanner {
     // I would imagine the optimizer takes in potentially multiple
     // rules for the same relation.
     val recursiveRels = new ListBuffer[String]()
-    val irRules = ir.rules.foldLeft(List[Rule]())((accum:List[Rule], origRule:Rule) => {
-      val isRecursive = isRecursiveRule(origRule)
-      val rule = if (isRecursive) {
-        recursiveRels += origRule.result.rel.name
-        rewriteRecursiveRule(origRule)
-      } else {
-        origRule
+    val irRules = ir.rules.foldLeft(List[Rule]())((accum:List[Rule], rule:Rule) => {
+      val isRecursive = isRecursiveRule(rule)
+      if (isRecursive) {
+        recursiveRels += rule.result.rel.name
       }
 
       val rootNodes =
@@ -130,13 +137,13 @@ object QueryPlanner {
         ghdsWithPushedOutSelections))
       var rules = chosen.head.getQueryPlan(accum)
       rules = if (isRecursive) {
-        markStatementAsRecursive(origRule, rules.head)::rules.tail
+        markStatementAsRecursive(rule, rules.head)::rules.tail
       } else {
         rules
       }
       rules:::accum
     }).reverse
-    val finalRules = markBaseCasesAsIntermediate(irRules, recursiveRels.toSet)
+    val finalRules  = rewriteRecursiveRuleBaseCases(irRules, recursiveRels.toSet).distinct
     IR(finalRules)
   }
 }

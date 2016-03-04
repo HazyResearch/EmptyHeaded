@@ -105,7 +105,7 @@ object DatalogParser extends RegexParsers {
         ab.getOp(opin),
         Attributes(List()),
         initin,
-        b,
+        "",
         List())
       List((None,Some(agg),None))
   }
