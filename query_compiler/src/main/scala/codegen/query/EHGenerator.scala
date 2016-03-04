@@ -477,14 +477,16 @@ object EHGenerator {
       case Some(a) => {
         a.operation match {
           case "CONST" => {
-            if(a.expression != "")
-              code.append(s"""annotation_${head.name} = ${a.expression} ${a.init};""")
+            if(a.init != "")
+              code.append(s"""annotation_${head.name} = ${a.init};""")
             else 
               throw new IllegalArgumentException("CONST annotation must have expression")
           }
           case _ => {
-            if(a.expression != "")
-              code.append(s"""annotation_${head.name} = (${a.expression} annotation_${head.name});""")
+            if(a.expression != ""){
+              val newExpr = a.expression.replaceAll("AGG", s"annotation_${head.name}")
+              code.append(s"""annotation_${head.name} = ${newExpr};""")
+            }
           }
         }
       }
@@ -889,12 +891,16 @@ object EHGenerator {
             } else {
               if(remainingAttrs.length == 1){
                 val loopOverSet = remainingAttrs.head.materialize && remainingAttrs.head.annotation.isDefined
+                println(loopOverSet)
                 if(loopOverSet){
                   code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
                   code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors)) 
                   code.append(emitSetValues(remainingAttrs.head))
                   code.append(emitParallelAnnotationComputation(remainingAttrs.head))
                   code.append("});")
+                } else {
+                  code.append(s"""num_rows_reducer.update(0,count_${remainingAttrs.head.name});""")
+                  code.append(emitFinalAnnotation(remainingAttrs.head,bag.annotation,iteratorAccessors,true,passedScalar))  
                 }
               } else{
                 code.append(s"""num_rows_reducer.update(0,count_${remainingAttrs.head.name});""")

@@ -118,7 +118,7 @@ def c_run_${id}(tm):
           case Some(a) => a.datatype
         }
         val relations = ir2relationinfo(List(rule))
-        val nprr = getattrinfo(rule)
+        val nprr = getattrinfo(rule,db)
         val recursion = getbagrecursion(rule)
 
         QueryPlanBagInfo(
@@ -172,7 +172,7 @@ def c_run_${id}(tm):
     }).toList
   } 
 
-  private def getattrinfo(rule:Rule) : List[QueryPlanAttrInfo] = {
+  private def getattrinfo(rule:Rule,db:DBInstance) : List[QueryPlanAttrInfo] = {
     //create accessors for each attribute
     val accessorMap = Map[String,ListBuffer[QueryPlanAccessor]]()
     val selectionMap = Map[String,ListBuffer[QueryPlanSelection]]()
@@ -184,10 +184,14 @@ def c_run_${id}(tm):
     //build up accessors
     rule.join.rels.foreach(r => {
       r.attrs.values.foreach(a => {
+        val annotated = if(db.relationMap.contains(r.name))
+            db.relationMap(r.name).schema.annotationTypes.length > 0
+          else 
+            r.anno.values.length > 0
         accessorMap(a) += QueryPlanAccessor(
           r.name,
           Attributes(r.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))),
-          r.anno.values.length > 0)
+          annotated)
       })
     })
     //build up selections
