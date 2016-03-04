@@ -566,121 +566,6 @@ object EHGenerator {
     }
     return code
   }
-  /*
-  def emitTopDownIterators(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],iteratorLevels:mutable.Map[String,Int]) : StringBuilder = {
-    val code = new StringBuilder()
-    if(iterators.length == 0)
-      return code
-    code.append(emitTopDownAttributes(iterators,attrs,iteratorLevels))
-    return code
-  }
-
-  def emitTopDownAttributes(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],iteratorLevels:mutable.Map[String,Int]) : StringBuilder = {
-    val code = new StringBuilder()
-    if(attrs.length == 0 && iterators.length == 1) //done quit
-      return code.append(emitTopDownIterators(List(),List(),iteratorLevels))
-    else if(attrs.length == 0) //done with cur iterator
-      return code.append(emitTopDownIterators(iterators.tail,iterators.tail.head.attributeInfo,iteratorLevels))
-
-    val attrInfo = attrs.head
-    val iteratorName = iterators.head.iterator
-    if(iterators.length == 1 && attrs.length == 1){
-      code.append(s"""const size_t count_${attrInfo.name} = Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
-      code.append(s"""num_rows_reducer.update(tid,count_${attrInfo.name});""")
-    } else {
-      code.append(s"""Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
-      code.append("Builder->allocate_next(tid);")
-      code.append(s"""Builder->foreach_builder([&](const uint32_t ${attrInfo.name}_i, const uint32_t ${attrInfo.name}_d) {""")
-      attrInfo.accessors.foreach(acc => {
-        iteratorLevels(acc.name) += 1
-        val index = acc.attrs.values.indexOf(attrInfo.name)
-        if(index != (acc.attrs.values.length-1)){
-          if(iteratorName == acc.name){
-            code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_i,${attrInfo.name}_d);""")
-          } else {
-            code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_d);""")
-          }
-        }
-      })
-    }
-
-    code.append(emitTopDownIterators(iterators,attrs.tail,iteratorLevels))
-    if(!(iterators.length == 1 && attrs.length == 1)){
-      code.append(s"""Builder->set_level(${attrInfo.name}_i,${attrInfo.name}_d);""")
-      code.append("});")
-    }
-
-    return code
-  }
-
-  def emitTopDown(
-    output:String,
-    ordering:List[Int],
-    annotation:String,
-    td_inter:List[TopDownPassIterator],
-    intermediateRelations:Map[String,List[Attribute]]) 
-      : (StringBuilder,List[Attribute]) = {
-    
-    val td = td_inter.filter(_.attributeInfo.length != 0) //fixme
-    val code = new StringBuilder()
-    
-    code.append("{")
-    code.append("auto bag_timer = timer::start_clock();")
-    code.append("num_rows_reducer.clear();")
-
-    //emit iterators for top down pass (build encodings)
-    val eBuffers = mutable.ListBuffer[(String,Attribute)]()
-    val iteratorLevels = mutable.Map[String,Int]()
-    td_inter.foreach(tdi => {
-      iteratorLevels += ((tdi.iterator -> 0))
-      val ordering = (0 until intermediateRelations(tdi.iterator).length).toList.mkString("_")
-      code.append(s"""ParTrieIterator<${annotation},${memory}> Iterators_${tdi.iterator}(Trie_${tdi.iterator}_${ordering});""")
-      tdi.attributeInfo.foreach(ai => {
-        val acc = ai.accessors.head
-        val index = acc.attrs.values.indexOf(ai.name)
-        eBuffers += ((ai.name,intermediateRelations(acc.name)(index)))
-      })
-    })
-    val encodings = eBuffers.toList.groupBy(eb => eb._1).map(eb => (eb._1 -> eb._2.head._2))
-    val attrs = eBuffers.toList.map(eb => eb._1)
-    val outputAttributes = attrs.map(encodings(_))
-    //emit builder
-    code.append(emitParallelBuilder(output+"_"+ordering.mkString("_"),attrs,annotation,encodings,attrs.length))
-
-    val firstIterator = td.head
-    val firstAttr = firstIterator.attributeInfo.head
-    code.append(s"""Builders.build_set(Iterators_${firstIterator.iterator}.head);""")
-    code.append("Builders.allocate_next();")
-    code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t ${firstAttr.name}_i, const uint32_t ${firstAttr.name}_d) {""")
-    //get iterator and builder for each thread
-    code.append(s"""TrieBuilder<${annotation},${memory}>* Builder = Builders.builders.at(tid);""")
-    td_inter.foreach(tdi => {
-      val name = tdi.iterator
-      code.append(s"""TrieIterator<${annotation},${memory}>* Iterator_${name} = Iterators_${name}.iterators.at(tid);""")
-    })
-
-    firstAttr.accessors.foreach(acc => {
-      val index = acc.attrs.values.indexOf(firstAttr.name)
-      iteratorLevels(acc.name) += 1
-      if(index != (acc.attrs.values.length-1)){
-        if(firstIterator.iterator == acc.name){
-          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_i,${firstAttr.name}_d);""")
-        } else {
-          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_d);""")
-        }
-      }
-    })
-
-    code.append(emitTopDownIterators(td,firstIterator.attributeInfo.tail,iteratorLevels))
-    code.append(s"""Builder->set_level(${firstAttr.name}_i,${firstAttr.name}_d);""")
-    code.append("});")
-    code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
-    code.append(s"""timer::stop_clock("TOP DOWN TIME", bag_timer);""")
-    code.append("}")
-
-    (code,outputAttributes)
-  }
-  */
 
   def emitHeadBuildCode(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
@@ -928,7 +813,7 @@ object EHGenerator {
         bag.recursion match {
           case Some(rec) => 
             code.append(s""" 
-              Trie_${rec.input}_${recordering} = Builders.trie;
+              Trie_${outputName}_${recordering} = Builders.trie;
               num_iterations++;
               }
               """)

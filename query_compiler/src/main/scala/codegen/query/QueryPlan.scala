@@ -45,6 +45,8 @@ def c_run_${id}(tm):
     val outputRelations = ListBuffer[Relation]()
     val (independentrules,headrelations) = getIndependentRules(db,ir)
 
+    println("HEADS: "+headrelations)
+
     /*
     //DEBUG
     independentrules.foreach(r => { 
@@ -106,7 +108,7 @@ def c_run_${id}(tm):
       val filename = s"${db.folder}/libs/${folder}/run_${i}.hpp"
 
       //figure out what relations we need
-      val rels = ir2relationinfo(rules).filter(r => !headrelations.contains(r.name))
+      val rels = ir2relationinfo(rules,db,headrelations).filter(r => !headrelations.contains(r.name))
       val output = ir2outputinfo(rules)
       val ghd = rules.map(rule =>{
         val name = rule.result.rel.name
@@ -117,8 +119,8 @@ def c_run_${id}(tm):
           case None => "void*"
           case Some(a) => a.datatype
         }
-        val relations = ir2relationinfo(List(rule))
-        val nprr = getattrinfo(rule,db)
+        val relations = ir2relationinfo(List(rule),db,headrelations)
+        val nprr = getattrinfo(rule,db,headrelations)
         val recursion = getbagrecursion(rule)
 
         QueryPlanBagInfo(
@@ -172,7 +174,7 @@ def c_run_${id}(tm):
     }).toList
   } 
 
-  private def getattrinfo(rule:Rule,db:DBInstance) : List[QueryPlanAttrInfo] = {
+  private def getattrinfo(rule:Rule,db:DBInstance,headrelations:scala.collection.immutable.Map[String,Rel]) : List[QueryPlanAttrInfo] = {
     //create accessors for each attribute
     val accessorMap = Map[String,ListBuffer[QueryPlanAccessor]]()
     val selectionMap = Map[String,ListBuffer[QueryPlanSelection]]()
@@ -186,6 +188,8 @@ def c_run_${id}(tm):
       r.attrs.values.foreach(a => {
         val annotated = if(db.relationMap.contains(r.name))
             db.relationMap(r.name).schema.annotationTypes.length > 0
+          else if(headrelations.contains(r.name))
+            headrelations(r.name).anno.values.length > 0
           else 
             r.anno.values.length > 0
         accessorMap(a) += QueryPlanAccessor(
@@ -268,19 +272,35 @@ case class QueryPlanAttrInfo(val name:String,
     }
   }
 
-  private def ir2relationinfo(rules:List[Rule]) : List[QueryPlanRelationInfo] = {
+  private def ir2relationinfo(rules:List[Rule],db:DBInstance,headrelations:scala.collection.immutable.Map[String,Rel]) : List[QueryPlanRelationInfo] = {
     val relations = Map[(String,List[Int]),(ListBuffer[Attributes],String)]()
     rules.foreach(rule => {
       val globalorder = rule.order.attrs.values
       rule.join.rels.foreach(rel => {
         val order = (0 until rel.attrs.values.length).
           sortBy(i => globalorder.indexOf(rel.attrs.values(i))).toList
-        val anno = if(rel.anno.values.length == 0)
+        val anno = if(db.relationMap.contains(rel.name)){
+          if(db.relationMap(rel.name).schema.annotationTypes.length == 0)
+            "void*"
+          else if(db.relationMap(rel.name).schema.annotationTypes.length == 1)
+            db.relationMap(rel.name).schema.annotationTypes.head
+          else 
+            throw new Exception("1 anno per relation")        
+        } else if(headrelations.contains(rel.name)){
+         if(headrelations(rel.name).anno.values.length == 0)
+            "void*"
+          else if(headrelations(rel.name).anno.values.length == 1)
+            rule.aggregations.values.head.datatype
+          else 
+            throw new Exception("1 anno per relation")
+        } else{
+         if(rel.anno.values.length == 0)
             "void*"
           else if(rel.anno.values.length == 1)
             rule.aggregations.values.head.datatype
           else 
             throw new Exception("1 anno per relation")
+        }
         if(!relations.contains((rel.name,order)))
           relations += ((rel.name,order) -> (ListBuffer(Attributes(order.map(i => rel.attrs.values(i)))),anno) ) 
         else
