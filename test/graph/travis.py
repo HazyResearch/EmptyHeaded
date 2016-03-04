@@ -271,13 +271,13 @@ def test_duplicated():
     db.build()
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated")
 
-  #lollipop_agg(db)
-  #barbell_agg(db)
-  #four_clique_agg_sel(db)
-  #four_clique_sel(db)
-  #barbell_agg_sel(db)
-  #barbell_sel(db)
-  pagerank(db)
+  lollipop_agg(db)
+  barbell_agg(db)
+  four_clique_agg_sel(db)
+  four_clique_sel(db)
+  barbell_agg_sel(db)
+  barbell_sel(db)
+  #pagerank(db)
 
 def test_simple():
   build = True
@@ -303,7 +303,7 @@ def test_simple():
 
 #basically the main method down here.
 start()
-#test_pruned()
+test_pruned()
 test_duplicated()
-#test_simple()
+test_simple()
 stop()
