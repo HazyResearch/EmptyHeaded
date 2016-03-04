@@ -307,7 +307,7 @@ class GHDNode(override val rels: List[OptimizerRel],
                 /*&& !selections.exists(select => select.attr == at)*/)),
         agg.init,
         agg.expression,
-        computePrevRulesDependedOn(agg.expression, prevRules)
+        computePrevRulesDependedOn(agg.init + " " + agg.expression, prevRules)
       )
       if (newAgg.attrs.values.isEmpty) {
         None
