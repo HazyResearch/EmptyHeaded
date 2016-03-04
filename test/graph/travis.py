@@ -259,15 +259,15 @@ def test_duplicated():
   names=["0","a_0"],\
   dtype={"0":np.uint32,"a_0":np.float32})
 
-  #inv_degree = Relation(
-  #  name="InvDegree",
-  #  dataframe=deg)
+  inv_degree = Relation(
+    name="InvDegree",
+    dataframe=deg)
 
   if build:
     db = Database.create(
       Config(num_threads=4),
       os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated",
-      [graph])#,inv_degree])
+      [graph,inv_degree])
     db.build()
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated")
 
@@ -303,7 +303,7 @@ def test_simple():
 
 #basically the main method down here.
 start()
-test_pruned()
+#test_pruned()
 test_duplicated()
-test_simple()
+#test_simple()
 stop()
