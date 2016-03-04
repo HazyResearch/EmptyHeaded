@@ -260,7 +260,7 @@ def test_pruned():
   four_clique_agg(db)
 
 def test_duplicated():
-  build = False
+  build = True
   ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/facebook_duplicated.tsv",\
   sep='\t',\
   names=["0","1"],\
