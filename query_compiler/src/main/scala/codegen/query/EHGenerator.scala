@@ -66,15 +66,12 @@ object EHGenerator {
     })
     cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList))
 
-    println("RUNNING")
     cppCode.append("par::reducer<size_t> num_rows_reducer(0,[](size_t a, size_t b) { return a + b; });")
     cppCode.append("\n//\n//query plan\n//\n")
     cppCode.append("auto query_timer = timer::start_clock();")
     var i = 1
     if(!single_source_tc){
       qp.ghd.foreach(bag => {
-        println()
-        println(bag)
         val (bagCode,bagOutput) = emitNPRR(bag,outputEncodings.toMap)
         outputEncodings += (bag.name -> bagOutput)
         cppCode.append(bagCode)
@@ -202,7 +199,6 @@ object EHGenerator {
     val encodings = mutable.ListBuffer[(String,Attribute)]()
     relations.foreach(r => {
       val name = r.name + "_" + r.ordering.mkString("_")
-      println(name)
       val enc = 
         if(db.relationMap.contains(r.name)) 
           db.relationMap(r.name).schema.attributeTypes
@@ -429,7 +425,6 @@ object EHGenerator {
     val joinType = "*" //fixme
     (head.aggregation,head.materialize) match { //you always check for annotations
       case (Some(a),false) => {
-        println("LOOP OVER SET: " + head.accessors)
         val loopOverSet = head.accessors.map(_.annotated).reduce((a,b) => {a || b})
         val extra = if(loopOverSet){
           code.append(emitForeach(head,iteratorAccessors))
@@ -458,7 +453,6 @@ object EHGenerator {
           case _ =>
             s"""intermediate_${head.name}"""
         }
-        println("HERE")
         (a.operation,isHead) match {
           case ("+",false) => code.append(s"""annotation_${head.name} += ${rhs};""")
           case ("+",true) => code.append(s"""annotation_${head.name}.update(0,${rhs});""")
@@ -732,13 +726,13 @@ object EHGenerator {
     val outputName = bag.name
     code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
 
+    var bagName = bag.name
     bag.duplicateOf match {
       case None => {
         code.append("{")
         
         bag.recursion match {
           case Some(rec) => {
-            println("rec: " + rec.input)
             if(rec.input == "i"){
               code.append(s""" 
                 size_t num_iterations = 0;
@@ -746,13 +740,15 @@ object EHGenerator {
                 """)
             }else 
               throw new IllegalArgumentException("CONVERGENCE CRITERIA NOT SUPPORTED")
+            code.append(emitIntermediateTrie("recursion",bag.annotation,bag.attributes.values.length,bag.duplicateOf))
+            bagName = "recursion"
           }
           case _ =>
         }
         code.append("auto bag_timer = timer::start_clock();")
         code.append("num_rows_reducer.clear();")
         val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,headencodings)
-        val pbname = bag.name+"_"+(0 until bag.attributes.values.length).toList.mkString("_")
+        val pbname = bagName+"_"+(0 until bag.attributes.values.length).toList.mkString("_")
         code.append(emitParallelBuilder(pbname,bag.attributes.values,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)
 
@@ -776,7 +772,6 @@ object EHGenerator {
             } else {
               if(remainingAttrs.length == 1){
                 val loopOverSet = remainingAttrs.head.materialize && remainingAttrs.head.annotation.isDefined
-                println(loopOverSet)
                 if(loopOverSet){
                   code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
                   code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors)) 
@@ -798,7 +793,7 @@ object EHGenerator {
         }
 
         code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
-        code.append(s"""timer::stop_clock("BAG ${bag.name} TIME", bag_timer);""")
+        code.append(s"""timer::stop_clock("BAG ${bagName} TIME", bag_timer);""")
         
         //copy the buffers, needed if recursive
         val recordering = (0 until bag.attributes.values.length).toList.mkString("_")
@@ -813,6 +808,7 @@ object EHGenerator {
         bag.recursion match {
           case Some(rec) => 
             code.append(s""" 
+              Trie_${outputName}_basecase_${recordering} = Trie_recursion_${recordering};
               Trie_${outputName}_${recordering} = Builders.trie;
               num_iterations++;
               }

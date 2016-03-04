@@ -217,7 +217,10 @@ PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SU
 """
   print "\n PAGERANK"
   db.eval(pr)
-
+  bs = db.get("PageRank")
+  df = bs.getDF()
+  if (df.iloc[0][1]-15.227079960463206) > 0.0001:
+    raise ResultError("PageRank value incorrect: " + str(df.iloc[0][1]))
 
 def test_pruned():
   build = True
@@ -277,7 +280,7 @@ def test_duplicated():
   four_clique_sel(db)
   barbell_agg_sel(db)
   barbell_sel(db)
-  #pagerank(db)
+  pagerank(db)
 
 def test_simple():
   build = True
@@ -303,7 +306,7 @@ def test_simple():
 
 #basically the main method down here.
 start()
-#test_pruned()
+test_pruned()
 test_duplicated()
-#test_simple()
+test_simple()
 stop()

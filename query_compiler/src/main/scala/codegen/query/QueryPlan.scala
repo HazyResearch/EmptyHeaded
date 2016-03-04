@@ -45,8 +45,6 @@ def c_run_${id}(tm):
     val outputRelations = ListBuffer[Relation]()
     val (independentrules,headrelations) = getIndependentRules(db,ir)
 
-    println("HEADS: "+headrelations)
-
     /*
     //DEBUG
     independentrules.foreach(r => { 
@@ -329,8 +327,6 @@ case class QueryPlanAttrInfo(val name:String,
         })
       }).toMap
     val headrules = headrels ++ usedScalars
-
-    ir.rules.foreach(println(_))
 
     ir.rules.reverse.foreach(rule => {
       var rulesindex = -1
