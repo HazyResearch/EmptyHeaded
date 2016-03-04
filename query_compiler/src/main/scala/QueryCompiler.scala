@@ -166,6 +166,7 @@ object QueryCompiler {
     "int" -> "int",
     "long" -> "long",
     "float" -> "float",
+    "float32" -> "float",
     "double" -> "double"
   )
 

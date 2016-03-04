@@ -209,6 +209,16 @@ BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edg
   if bs.num_rows != 26936100L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
 
+def pagerank(db):
+  pr="""
+N(;w) :- Edge(x,y),w:long<-[SUM(x;1)].
+PageRank(x;y) :- Edge(x,z),y:float<-[(1.0/N)].
+PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SUM(z;1.0)].
+"""
+  print "\n PAGERANK"
+  db.eval(pr)
+
+
 def test_pruned():
   build = True
   ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/facebook_pruned.tsv",\
@@ -244,20 +254,30 @@ def test_duplicated():
     name="Edge",
     dataframe=ratings)
 
+  deg = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/inv_degree.tsv",\
+  sep='\t',\
+  names=["0","a_0"],\
+  dtype={"0":np.uint32,"a_0":np.float32})
+
+  inv_degree = Relation(
+    name="InvDegree",
+    dataframe=deg)
+
   if build:
     db = Database.create(
       Config(num_threads=4),
       os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated",
-      [graph])
+      [graph,inv_degree])
     db.build()
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated")
 
-  lollipop_agg(db)
-  barbell_agg(db)
-  four_clique_agg_sel(db)
-  four_clique_sel(db)
-  barbell_agg_sel(db)
-  barbell_sel(db)
+  #lollipop_agg(db)
+  #barbell_agg(db)
+  #four_clique_agg_sel(db)
+  #four_clique_sel(db)
+  #barbell_agg_sel(db)
+  #barbell_sel(db)
+  pagerank(db)
 
 def test_simple():
   build = True
@@ -283,7 +303,7 @@ def test_simple():
 
 #basically the main method down here.
 start()
-test_pruned()
+#test_pruned()
 test_duplicated()
-test_simple()
+#test_simple()
 stop()

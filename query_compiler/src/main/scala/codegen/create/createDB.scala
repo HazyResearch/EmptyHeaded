@@ -69,7 +69,7 @@ object CreateDB{
     val encodings = Set[String]()
     db.relations.foreach(r => {
       val numCols = r.schema.attributeTypes.length + r.schema.annotationTypes.length
-      (r.schema.attributeTypes++r.schema.annotationTypes).foreach(atype => {
+      r.schema.attributeTypes.foreach(atype => {
         if(!encodings.contains(atype)){
           encodings += atype
           code.append(s""" 
@@ -89,14 +89,23 @@ mypair Pair_${r.name} = map->at("${r.name}");
 NumRows_${r.name} = Pair_${r.name}.first;
 ColumnStore_${r.name} = Pair_${r.name}.second;
 assert(ColumnStore_${r.name}.size() == ${numCols});""")
-        val atypes = r.schema.attributeTypes++r.schema.annotationTypes
-        (0 until atypes.length).foreach(i => {
+        var atypes = r.schema.attributeTypes
+        var i = 0
+        (0 until atypes.length).foreach(j => {
           code.append(s"""
 const ${atypes(i)}* col_${i} = (const ${atypes(i)}*)ColumnStore_${r.name}.at(${i}); 
 for(size_t i = 0; i < NumRows_${r.name}; i++){
-  EncodingMap_${r.schema.attributeTypes(i)}.update(col_${i}[i]);
+  EncodingMap_${atypes(i)}.update(col_${i}[i]);
 }
           """)
+          i += 1
+        })
+        atypes = r.schema.annotationTypes
+        (0 until r.schema.annotationTypes.length).foreach(j =>{
+          code.append(s"""
+const ${atypes(j)}* col_${i} = (const ${atypes(j)}*)ColumnStore_${r.name}.at(${i});
+          """)
+          i += 1
         }) 
       } else {
         code.append(s"""
@@ -178,8 +187,9 @@ EncodedColumnStore_${r.name}.add_column(
       r.schema.annotationTypes.foreach(at => {
         code.append(s"""
 EncodedColumnStore_${r.name}.add_annotation(
-  ColumnStore_${r.name}.at(${i}),
-  sizeof(${at}));""")
+  sizeof(${at}),
+  (void*)ColumnStore_${r.name}.at(${i})
+);""")
         i += 1
       })
       s"mkdir ${db.folder}/relations/${r.name}".!
@@ -224,12 +234,12 @@ void loadAndEncode(std::unordered_map<std::string,mypair>* map){
         throw new Exception("EmptyHeaded currently only supports one annotation per relation.")
       val annoType = if(r.schema.annotationTypes.length == 1) r.schema.annotationTypes(0) else "void*"
       val annoIn = if(r.schema.annotationTypes.length == 1) "annotation.at(0)" else "annotation"
-
       code.append(s"""{ //load encoded relation
 auto load_time = timer::start_clock();
 EncodedColumnStore* EncodedColumnStore_${r.name} = EncodedColumnStore::from_binary("${db.folder}/relations/${r.name}/");
 timer::stop_clock("LOADING ENCODED ${r.name}", load_time);""")
       orderings.foreach(ordering => {
+        val castType = s"std::vector<${annoType}>*"
         s"""mkdir ${db.folder}/relations/${r.name}/${r.name}_${ordering.mkString("_")}""".!
         s"""mkdir ${db.folder}/relations/${r.name}/${r.name}_${ordering.mkString("_")}/ram""".!
         code.append(s""" 
@@ -246,7 +256,7 @@ Trie<${annoType},ParMemoryBuffer> *Trie_${r.name}_${ordering.mkString("_")} = NU
       "${db.folder}/relations/${r.name}/${r.name}_${ordering.mkString("_")}",
       &Encoded_${r.name}_${ordering.mkString("_")}->max_set_size,
       &Encoded_${r.name}_${ordering.mkString("_")}->data, 
-      &Encoded_${r.name}_${ordering.mkString("_")}->${annoIn});
+      (${castType})&Encoded_${r.name}_${ordering.mkString("_")}->${annoIn});
   timer::stop_clock("BUILDING TRIE ${r.name}_${ordering.mkString("_")}", start_time);
 }
 ////////////////////emitWriteBinaryTrie////////////////////

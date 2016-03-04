@@ -298,7 +298,15 @@ case class QueryPlanAttrInfo(val name:String,
     //flip the order of the rules
     //add head rules to a queue
     //make sure all dependencies are in the same queue
-    val headrules = ir.rules.map(r => ((r.result.rel.name -> r.result.rel))).toMap
+    val headrels = ir.rules.map(r => ((r.result.rel.name -> r.result.rel))).toMap
+    val usedScalars = ir.rules.flatMap(r => {
+      r.aggregations.values.flatMap(agg =>{
+          agg.usedScalars.map(us => ((us.name -> us)) )
+        })
+      }).toMap
+    val headrules = headrels ++ usedScalars
+
+    ir.rules.foreach(println(_))
 
     ir.rules.reverse.foreach(rule => {
       var rulesindex = -1
@@ -317,39 +325,16 @@ case class QueryPlanAttrInfo(val name:String,
           rel += (r.name -> rulesindex)
         }
       })
+      rule.aggregations.values.foreach(agg => {
+        agg.usedScalars.foreach(us => {
+          if(headrules.contains(us.name)){
+            rel += (us.name -> rulesindex)
+          }
+        })
+      })
     })
     (rules.map(_.toList.reverse).toList,headrules)
   }
-/*
-case class TopDownPassIterator(val iterator:String,
-                               val attributeInfo:List[QueryPlanAttrInfo])
-
-*/
-/*
-  private def getTopDownIterators(rules:List[Rule]) {
-    val seenAttrs = Set[String]()
-    val iterators = ListBuffer[TopDownPassIterator]()
-    rules.foreach(rule => {
-      val iterator = rule.result.rel.name
-      val attrs = ListBuffer[QueryPlanAttrInfo]
-      rule.result.rel.attrs.values.foreach(attr => {
-        if(!seenAttrs.contains(attr)){
-          attrs += QueryPlanAttrInfo(
-            attr,
-            ,
-
-          )
-          seenAttrs += attr
-        }
-      })
-      if(attrs.length > 0){
-        println("TOP DOWN ITERATOR: " + iterator + " " + attrs)
-        iterators += TopDownPassIterator(iterator,attrs.toList)
-      }
-    })
-  }
-*/
-
 }
 
 object QP {
