@@ -109,7 +109,6 @@ def c_run_${id}(tm):
       val rels = ir2relationinfo(rules,db,headrelations).filter(r => !headrelations.contains(r.name))
       val output = ir2outputinfo(rules)
       val ghd = rules.map(rule =>{
-        println("RULE: " + rule)
         val name = rule.result.rel.name
         val duplicateOf = None
         val attributes = Attributes(rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)))
