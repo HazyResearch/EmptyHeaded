@@ -298,7 +298,7 @@ def test_duplicated():
 
 def test_simple():
   build = True
-  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/simple.tsv",\
+  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/simple.tsv",\
   sep='\t',\
   names=["0","1"],\
   dtype={"0":np.uint32,"1":np.uint32})
