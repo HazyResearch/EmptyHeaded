@@ -82,6 +82,10 @@ Writing an efficient parallel-sort is a challenging task. Why re-invent the whee
 
 [Pandas DataFrames](http://pandas.pydata.org/pandas-docs/stable/dsintro.html) provides a nice and highly used front-end for EmptyHeaded to accept tables from. We can also run without DataFrames but who doesn't love DataFrames?
 
+**Why cython?**
+
+[Cython](http://cython.org/) is awesome! It enables an easy bridge from C++ to Python, also it is just a great way to speed up Python code.
+
 **Why JPype?**
 
 JPype is our bridge between python and java. We provide this one in our `dependencies` folder along with a simple install script.
