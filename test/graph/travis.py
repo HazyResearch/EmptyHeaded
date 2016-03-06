@@ -249,10 +249,10 @@ def test_pruned():
   if build:
     db = Database.create(
       Config(num_threads=4),
-      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_pruned",
+      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_pruned",
       [graph])
     db.build()
-  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_pruned")
+  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_pruned")
 
   triangle_materialized(db)
   triangle_agg(db)
@@ -282,10 +282,10 @@ def test_duplicated():
   if build:
     db = Database.create(
       Config(num_threads=4),
-      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_duplicated",
+      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_duplicated",
       [graph,inv_degree])
     db.build()
-  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_duplicated")
+  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_duplicated")
 
   lollipop_agg(db)
   barbell_agg(db)
@@ -298,7 +298,7 @@ def test_duplicated():
 
 def test_simple():
   build = True
-  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/simple.tsv",\
+  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/simple.tsv",\
   sep='\t',\
   names=["0","1"],\
   dtype={"0":np.uint32,"1":np.uint32})
@@ -310,10 +310,10 @@ def test_simple():
   if build:
     db = Database.create(
       Config(num_threads=4),
-      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_simple",
+      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_simple",
       [graph])
     db.build()
-  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_simple")
+  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_simple")
 
   lollipop_materialized(db)
   barbell_materialized(db)
