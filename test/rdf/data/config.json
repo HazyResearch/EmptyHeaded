@@ -1,0 +1,170 @@
+{
+  "numThreads": 4,
+  "numNUMA": 4,
+  "database": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/db",
+  "algorithm": "NPRR+",
+  "layout": "hybrid",
+  "memory": "RAM",
+  "relations": [
+    {
+      "name": "takesCourse",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/takesCourse.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "memberOf",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/memberOf.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "subOrganizationOf",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/subOrganizationOf.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "undegraduateDegreeFrom",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/undergraduateDegreeFrom.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "rdftype",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/rdftype.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"types"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "worksFor",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/worksFor.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "name",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/name.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"name"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "emailAddress",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/emailAddress.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"email"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "telephone",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/telephone.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"telephone"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    },
+    {
+      "name": "teacherOf",
+      "source": "$EMPTYHEADED_HOME/examples/rdf/data/lubm1/teacherOf.tsv",
+      "attributes":[
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        },
+        {
+          "attrType":"std::string",
+          "encoding":"subject"
+        }
+      ],
+      "annotation":"void*",
+      "orderings":["all"]
+    }
+  ]
+}

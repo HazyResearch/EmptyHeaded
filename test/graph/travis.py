@@ -237,7 +237,7 @@ PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SU
 
 def test_pruned():
   build = True
-  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/facebook_pruned.tsv",\
+  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/facebook_pruned.tsv",\
   sep='\t',\
   names=["0","1"],\
   dtype={"0":np.uint32,"1":np.uint32})
@@ -249,10 +249,10 @@ def test_pruned():
   if build:
     db = Database.create(
       Config(num_threads=4),
-      os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_pruned",
+      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_pruned",
       [graph])
     db.build()
-  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_pruned")
+  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_pruned")
 
   triangle_materialized(db)
   triangle_agg(db)
@@ -261,7 +261,7 @@ def test_pruned():
 
 def test_duplicated():
   build = True
-  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/facebook_duplicated.tsv",\
+  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/facebook_duplicated.tsv",\
   sep='\t',\
   names=["0","1"],\
   dtype={"0":np.uint32,"1":np.uint32})
@@ -270,7 +270,7 @@ def test_duplicated():
     name="Edge",
     dataframe=ratings)
 
-  deg = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/inv_degree.tsv",\
+  deg = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/inv_degree.tsv",\
   sep='\t',\
   names=["0","a_0"],\
   dtype={"0":np.uint32,"a_0":np.float32})
@@ -282,10 +282,10 @@ def test_duplicated():
   if build:
     db = Database.create(
       Config(num_threads=4),
-      os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated",
+      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_duplicated",
       [graph,inv_degree])
     db.build()
-  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_duplicated")
+  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_duplicated")
 
   lollipop_agg(db)
   barbell_agg(db)
@@ -298,7 +298,7 @@ def test_duplicated():
 
 def test_simple():
   build = True
-  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/simple.tsv",\
+  ratings = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/simple.tsv",\
   sep='\t',\
   names=["0","1"],\
   dtype={"0":np.uint32,"1":np.uint32})
@@ -310,10 +310,10 @@ def test_simple():
   if build:
     db = Database.create(
       Config(num_threads=4),
-      os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_simple",
+      os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_simple",
       [graph])
     db.build()
-  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/examples/graph/data/db_simple")
+  db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/db_simple")
 
   lollipop_materialized(db)
   barbell_materialized(db)
