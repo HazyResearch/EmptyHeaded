@@ -215,6 +215,7 @@ timer::stop_clock("ENCODING ${r.name}", start_time);}""")
 
 typedef std::vector<void*> myvector;
 typedef std::pair<size_t,myvector> mypair;
+typedef std::string string;
 
 void loadAndEncode(std::unordered_map<std::string,mypair>* map){
   thread_pool::initializeThreadPool();

@@ -129,6 +129,7 @@ object EHGenerator {
       ${includes.toString}
 
       typedef std::unordered_map<std::string,void*> mymap;
+      typedef std::string string;
 
       void run_${id}(mymap* input_tries){
         thread_pool::initializeThreadPool();
@@ -644,8 +645,9 @@ object EHGenerator {
     val code = new StringBuilder()
     head.foreach(attr => {
       attr.selection.foreach(s => {
+        val newexpr = s.expression.replaceAll("\'","\"")
         code.append(s"""const uint32_t selection_${attr.name}_${attr.selection.indexOf(s)} = 
-          Encoding_${encodings(attr.name)}->value_to_key.at(${s.expression});""")
+          Encoding_${encodings(attr.name)}->value_to_key.at(${newexpr});""")
       })
     })
     code
