@@ -320,6 +320,7 @@ def test_simple():
 
 #basically the main method down here.
 start()
+os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases"+" && mkdir -p "os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases")
 test_pruned()
 test_duplicated()
 test_simple()

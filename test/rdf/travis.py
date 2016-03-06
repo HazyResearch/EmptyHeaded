@@ -108,7 +108,7 @@ lubm12(a,b) :- c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfe
 
 
 def test_lubm():
-  build = False
+  build = True
 
   takesCourse = Relation(
     name="takesCourse",
@@ -187,5 +187,6 @@ def test_lubm():
 
 #basically the main method down here.
 start()
+os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/databases"+" && mkdir -p "os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/databases")
 test_lubm()
 stop()
