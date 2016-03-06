@@ -109,6 +109,7 @@ def c_run_${id}(tm):
       val rels = ir2relationinfo(rules,db,headrelations).filter(r => !headrelations.contains(r.name))
       val output = ir2outputinfo(rules)
       val ghd = rules.map(rule =>{
+        println("RULE: " + rule)
         val name = rule.result.rel.name
         val duplicateOf = None
         val attributes = Attributes(rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)))
@@ -263,6 +264,7 @@ def c_run_${id}(tm):
     val relations = Map[(String,List[Int]),(ListBuffer[Attributes],String)]()
     rules.foreach(rule => {
       val globalorder = rule.order.attrs.values
+      val seen = Set[String]()
       rule.join.rels.foreach(rel => {
         val order = (0 until rel.attrs.values.length).
           sortBy(i => globalorder.indexOf(rel.attrs.values(i))).toList
@@ -288,10 +290,14 @@ def c_run_${id}(tm):
           else 
             throw new Exception("1 anno per relation")
         }
-        if(!relations.contains((rel.name,order)))
-          relations += ((rel.name,order) -> (ListBuffer(Attributes(order.map(i => rel.attrs.values(i)))),anno) ) 
-        else
-          relations(((rel.name,order)))._1 += Attributes(order.map(i => rel.attrs.values(i)))
+        val id = rel.name + order.mkString("") + rel.attrs.values.mkString("") + anno
+        if(!seen.contains(id)){ //only want unique iterators
+          if(!relations.contains((rel.name,order)))
+            relations += ((rel.name,order) -> (ListBuffer(Attributes(order.map(i => rel.attrs.values(i)))),anno) ) 
+          else
+            relations(((rel.name,order)))._1 += Attributes(order.map(i => rel.attrs.values(i)))
+        }
+        seen += id
       })
     })
     relations.map(relMap => {
