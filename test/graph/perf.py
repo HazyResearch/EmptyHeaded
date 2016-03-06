@@ -217,11 +217,11 @@ def test_duplicated(dataset):
 
 #basically the main method down here.
 start()
-datasets = ["googlePlus","higgs","socLivejournal","orkut","cidPatents","twitter2010"]
-#datasets = ["googlePlus"]
+#datasets = ["googlePlus","higgs","socLivejournal","orkut","cidPatents","twitter2010"]
+datasets = ["twitter2010"]
 
 for dataset in datasets:
   print "DATASET: " + dataset
-  test_pruned(dataset)
+  #test_pruned(dataset)
   test_duplicated(dataset)
 stop()

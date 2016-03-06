@@ -59,10 +59,10 @@ lubm5(a) :- b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Undergraduat
 def lubm7(db):
   lbm7 = \
 """
-lubm7(a,b) :- c='http://www.Department0.University0.edu/AssociateProfessor0',
+lubm7(b,c) :- a='http://www.Department0.University0.edu/AssociateProfessor0',
   d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course',
   e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent',
-  teacherOf(c,b),takesCourse(a,b),rdftype(b,d),rdftype(a,e).
+  teacherOf(a,b),takesCourse(c,b),rdftype(b,d),rdftype(c,e).
 """
   print "\nQUERY: LUBM 7"
   db.eval(lbm7)
@@ -106,7 +106,7 @@ def lubm12(db):
 lubm12(a,b) :- c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#FullProfessor',
   d='http://www.University0.edu',
   e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department',
-  worksFor(a,b),rdftype(a,c),subOrganizationOf(b,d),rdftype(b,e).
+  worksFor(b,a),rdftype(b,c),subOrganizationOf(a,d),rdftype(a,e).
 """
   print "\nQUERY: LUBM 12"
   db.eval(lbm12)
@@ -131,7 +131,7 @@ lubm14(a) :- b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Undergradua
   db.eval(lbm14)
 
 def test_lubm():
-  build = True
+  build = False
 
   takesCourse = Relation(
     name="takesCourse",
