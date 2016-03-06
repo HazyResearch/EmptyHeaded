@@ -187,6 +187,6 @@ def test_lubm():
 
 #basically the main method down here.
 start()
-os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/databases"+" && mkdir -p "os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/databases")
+os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/databases"+" && mkdir -p "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/databases")
 test_lubm()
 stop()
