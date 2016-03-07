@@ -463,9 +463,7 @@ class QueryPlannerTest extends FunSuite {
         Join(List(
           Rel("lubm4_root",Attributes(List("a", "b")),Annotations(List())),
           Rel("bag_1_a_d_lubm4",Attributes(List("a", "d")),Annotations(List())),
-          Rel("bag_1_a_c_lubm4",Attributes(List("a", "c")),Annotations(List())),
-          Rel("bag_2_e_a_lubm4",Attributes(List("a")),Annotations(List())),
-          Rel("bag_2_f_a_lubm4",Attributes(List("a")),Annotations(List())))),
+          Rel("bag_1_a_c_lubm4",Attributes(List("a", "c")),Annotations(List())))),
         Aggregations(List()),
         Filters(List()))))
     val lubm4 =
@@ -584,10 +582,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List())),
         Join(List(
           Rel("lubm8_root",Attributes(List("a", "c")),Annotations(List())),
-          Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())),
-          Rel("bag_2_e_b_lubm8",Attributes(List("b")),Annotations(List())),
-          Rel("bag_2_f_b_lubm8",Attributes(List("b")),Annotations(List())),
-          Rel("bag_2_d_a_lubm8",Attributes(List("a")),Annotations(List())))),
+          Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())))),
         Aggregations(List()),
         Filters(List()))))
     val lubm8 =

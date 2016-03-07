@@ -76,7 +76,8 @@ class GHD(val root:GHDNode,
      * You don't need to include a bag here if it is subsumed by a higher bag,
      * i.e., all the attributes it outputs are also output by a higher bag
      */
-    val relationsInTopDownPass = root.getResult(true, joinAggregates).rel::root.getDescendants(outputRelation.attrs, joinAggregates).distinct
+    val rootRel = root.getResult(true, joinAggregates).rel
+    val relationsInTopDownPass = rootRel::root.getDescendants(outputRelation.attrs, rootRel.attrs.values.toSet, joinAggregates).distinct
 
     return Rule(
       Result(outputRelation, false),

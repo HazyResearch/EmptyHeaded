@@ -282,10 +282,16 @@ class GHDNode(override val rels: List[OptimizerRel],
     }))
   }
 
-  def getDescendants(attrs:Attributes, aggMap:Map[String, Aggregation]):List[Rel] = {
-    val rels:List[Rel] = children
-      .filter(child => !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty)
-      .map(_.getResult(false, aggMap).rel)
-    rels:::children.flatMap(_.getDescendants(attrs, aggMap))
+  def getDescendants(attrs:Attributes, alreadyProvidedByHigherBag:Set[String], aggMap:Map[String, Aggregation]):List[Rel] = {
+    children.flatMap(child => {
+      val hasMaterializedAttr = !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty
+      val hasUnseenAttr = !(child.outputRelation.attrs.values.toSet subsetOf alreadyProvidedByHigherBag)
+
+      if (hasMaterializedAttr && hasUnseenAttr) {
+        child.getResult(false, aggMap).rel::child.getDescendants(attrs, alreadyProvidedByHigherBag ++ child.outputRelation.attrs.values.toSet,aggMap)
+      } else {
+        child.getDescendants(attrs, alreadyProvidedByHigherBag, aggMap)
+      }
+    })
   }
 }
