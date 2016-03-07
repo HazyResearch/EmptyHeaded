@@ -2,7 +2,7 @@ sudo: required
 services:
   - docker
 before_install:
-  - docker build -t $DOCKER_REPO:$COMMIT . 
+  - docker build -t $DOCKER_REPO:$COMMIT .
 script:
   - docker run $DOCKER_REPO:$COMMIT /bin/bash -c "./test/testAll.sh"
 after_success:
@@ -20,6 +20,7 @@ notifications:
 branches:
   only:
   - eh-2.0
+  - refactor_queryplanner
 env:
   global:
   - secure: IyC7NnQ7Cu57et3l8CDaQK3JBWsgEnIY84c4ECfBnXnadaDEiRcicHSI8E7IVhOq8WTGVme4ig9rJx07i5JWPPfsAxzftbyEXwub9EoQvEFgJUZg+9vCgrytq6wmH/jqvtF4UC6s6ULSE/nmQbKDBCHgkCUzCoQIKGgk7NKn8ovhRBDRG0izg/COdUS6vaL5JbdCvBoLw0Q12TjuFgykLUeMQKUQZLDDY/YU653mOgjm4h82RzZlGX7YBYLFi8rkNfLa9nP7yacmnaVhxE5wKcjDcvojHFv9NNH+IXiKlEgC3A35vskLugHzMFPYL/+y12v2cyHxzyvgn4DGasgzdnuOEI/4hkMJKIYS/sAtB418Pw3TvNZjXYDFo1hxiNitOtqnNIv/wMqS2iCtQxjyRf611dCaEzsAFyXUFfOGHPcXtGlH2+hsayPmDQ6TDWz3x3hmK57fI73ytlD1K2Fe1uoLq+2QtCE7RyPJm20BmMbVFICeUr+kLc8AWl0U47AD3QUOIhRAvkUi9TlLGSqq4k1V4+kmZ0doCAxI8zmP9KjVnAh2apfOZNy4EcOGUJ0oubBgUaQmhEgjpPtNOKTEeVR2cjH/OxiMEVRpDOEjTpE1gwkzTW9mWsYM8YZW+IbAwGgofznzrFaTQjpBlWpm14IYwUEpLKoSZcyFIgC8Phw=

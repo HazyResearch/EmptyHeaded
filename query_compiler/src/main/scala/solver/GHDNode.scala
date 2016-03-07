@@ -47,28 +47,6 @@ class GHDNode(override val rels: List[OptimizerRel],
     case _ => false
   }
 
-  def attrNameAgnosticEquals(otherNode: GHDNode, joinAggregates:Map[String, Aggregation]): Boolean = {
-    if (this.subtreeRels.size != otherNode.subtreeRels.size || !(attrSet & otherNode.attrSet).isEmpty) return false
-    return matchRelations(this.subtreeRels.toSet, otherNode.subtreeRels.toSet, this, otherNode, Map[Attr, Attr](), joinAggregates) ;
-  }
-
-  private def matchRelations(rels:Set[OptimizerRel],
-                             otherRels:Set[OptimizerRel],
-                             thisNode:GHDNode,
-                             otherNode:GHDNode,
-                             attrMap: Map[Attr, Attr],
-                             joinAggregates:Map[String, Aggregation]): Boolean = {
-    return false
-    /* if (rels.isEmpty && otherRels.isEmpty) return true
-
-    val matches = otherRels.map(otherRel => (otherRels-otherRel, PlanUtil.attrNameAgnosticRelationEquals(otherNode.outputRelation, otherRel, thisNode.outputRelation, rels.head, attrMap, joinAggregates))).filter(m => {
-      m._2.isDefined
-    })
-    return matches.exists(m => {
-      matchRelations(rels.tail, m._1, this, otherNode, m._2.get, joinAggregates)
-    }) */
-  }
-
   override def hashCode = 41 * rels.hashCode() + children.toSet.hashCode()
 
   def setBagName(name:String): Unit = {
@@ -101,19 +79,6 @@ class GHDNode(override val rels: List[OptimizerRel],
       children.map(_.recursivelyPushOutSelections)
       return newNode
     }
-  }
-
-  def eliminateDuplicateBagWork(seen:List[GHDNode], joinAggregates:Map[String, Aggregation]): List[GHDNode] = {
-    var newSeen = seen
-    children.foreach(c => {
-      newSeen = c.eliminateDuplicateBagWork(newSeen, joinAggregates)
-    })
-    val prevSeenDuplicate = newSeen.find(bag => bag.attrNameAgnosticEquals(this, joinAggregates))
-    prevSeenDuplicate.map(p => {
-      isDuplicateOf = Some(p.bagName)
-    })
-    newSeen = if (prevSeenDuplicate.isEmpty) this::newSeen else newSeen
-    return newSeen
   }
 
   def setDescendantNames(level:Int, suffix:String): Unit = {
@@ -317,10 +282,16 @@ class GHDNode(override val rels: List[OptimizerRel],
     }))
   }
 
-  def getDescendants(attrs:Attributes, aggMap:Map[String, Aggregation]):List[Rel] = {
-    val rels:List[Rel] = children
-      .filter(child => !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty)
-      .map(_.getResult(false, aggMap).rel)
-    rels:::children.flatMap(_.getDescendants(attrs, aggMap))
+  def getDescendants(attrs:Attributes, alreadyProvidedByHigherBag:Set[String], aggMap:Map[String, Aggregation]):List[Rel] = {
+    children.flatMap(child => {
+      val hasMaterializedAttr = !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty
+      val hasUnseenAttr = !(child.outputRelation.attrs.values.toSet subsetOf alreadyProvidedByHigherBag)
+
+      if (hasMaterializedAttr && hasUnseenAttr) {
+        child.getResult(false, aggMap).rel::child.getDescendants(attrs, alreadyProvidedByHigherBag ++ child.outputRelation.attrs.values.toSet,aggMap)
+      } else {
+        child.getDescendants(attrs, alreadyProvidedByHigherBag, aggMap)
+      }
+    })
   }
 }

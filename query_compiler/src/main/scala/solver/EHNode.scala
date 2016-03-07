@@ -1,12 +1,11 @@
 package duncecap
 
 import duncecap.attr._
-
 import scala.collection.immutable.TreeSet
 
 abstract class EHNode(val rels: List[OptimizerRel], val selections:Array[Selection]) {
   var attrSet = rels.foldLeft(TreeSet[String]())(
-    (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
+    (accum: TreeSet[String], rel:OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
   var attrToRels:Map[Attr,List[OptimizerRel]] = PlanUtil.createAttrToRelsMapping(attrSet, rels)
   var attrToSelection:Map[Attr,Array[Selection]]
     = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, selections))).toMap

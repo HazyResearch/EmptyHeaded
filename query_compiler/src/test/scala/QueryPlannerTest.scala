@@ -24,8 +24,8 @@ class QueryPlannerTest extends FunSuite {
     )
     val ir = IR(List(rule))
 
-    val optimized = QueryPlanner.findOptimizedPlans(
-      DatalogParser.run("Simple(a,b) :- Edge(a,b)."))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(
+      DatalogParser.run("Simple(a,b) :- Edge(a,b).")))
     assertResult(result)(optimized.rules.head.result)
     assertResult(operation)(optimized.rules.head.operation)
     assertResult(order)(optimized.rules.head.order)
@@ -95,7 +95,7 @@ class QueryPlannerTest extends FunSuite {
       Filters(List())
     )
 
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Lollipop(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d)."))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run("Lollipop(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d).")))
     assertResult(IR(List(bag1, bag0, topdownPass)))(optimized)
   }
 
@@ -184,7 +184,7 @@ class QueryPlannerTest extends FunSuite {
           Rel("bag_1_a_b_c_Lollipop",Attributes(List("a")),Annotations(List("z"))))),
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "d")),"1","AGG", List()))),Filters(List()))
       ))
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Lollipop(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(*)]"))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run("Lollipop(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(*)]")))
     assertResult(ir)(optimized)
   }
 
@@ -203,8 +203,8 @@ class QueryPlannerTest extends FunSuite {
           Rel("Edge",Attributes(List("a", "b")),Annotations(List())),
           Rel("bag_1_a_d_Lollipop",Attributes(List("a")),Annotations(List("z"))))),
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("c")),"1","AGG", List()))),Filters(List()))))
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(c,d)]"))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(
+      "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(c,d)]")))
     assertResult(ir)(optimized)
   }
 
@@ -234,17 +234,55 @@ class QueryPlannerTest extends FunSuite {
           Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG", List()))),Filters(List()))
       ))
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:long<-[COUNT(*)]."))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(
+      "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:long<-[COUNT(*)].")))
     assertResult(ir)(optimized)
   }
 
-  test("Barbell with selection") {
-    // TODO
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("""
-        BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0.
-    """))
-    //println(optimized)
+  test("Barbell agg with selection") {
+    val ir = IR(List(Rule(
+      Result(Rel("bag_1_p_a_BarbellSelAgg",Attributes(List("a")),Annotations(List("w"))),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("p", "a"))),
+        Project(Attributes(List())),
+        Join(List(Rel("Edge",Attributes(List("a", "p")), Annotations(List())))),
+        Aggregations(List(Aggregation("w","long",SUM(),Attributes(List("p")),"1","AGG",List()))),
+        Filters(List(Selection("p",EQUALS(),"0")))),
+      Rule(Result(Rel("bag_2_p_x_BarbellSelAgg",Attributes(List("x")),Annotations(List("w"))),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("p", "x"))),
+        Project(Attributes(List())),
+        Join(List(Rel("Edge",Attributes(List("p", "x")),Annotations(List())))),
+        Aggregations(List(Aggregation("w","long",SUM(),Attributes(List("p")),"1","AGG",List()))),
+        Filters(List(Selection("p",EQUALS(),"0")))),
+      Rule(Result(Rel("bag_1_x_y_z_BarbellSelAgg",Attributes(List()),Annotations(List("w"))),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("x", "y", "z"))),
+        Project(Attributes(List())),Join(List(
+          Rel("Edge",Attributes(List("y", "z")),Annotations(List())),
+          Rel("Edge",Attributes(List("x", "z")),Annotations(List())), Rel("Edge",Attributes(List("x", "y")),Annotations(List())),
+          Rel("bag_2_p_x_BarbellSelAgg",Attributes(List("x")),Annotations(List("w"))))),
+        Aggregations(List(Aggregation("w","long",SUM(),Attributes(List("x", "y", "z")),"1","AGG",List()))),
+        Filters(List())),
+      Rule(Result(Rel("BarbellSelAgg",Attributes(List()),Annotations(List("w"))),false),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "b", "c"))),Project(Attributes(List())),
+        Join(List(
+          Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
+          Rel("bag_1_x_y_z_BarbellSelAgg",Attributes(List()),Annotations(List("w"))),
+          Rel("bag_1_p_a_BarbellSelAgg",Attributes(List("a")),Annotations(List("w"))),
+          Rel("Edge",Attributes(List("a", "c")),Annotations(List())),
+          Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),
+        Aggregations(List(Aggregation("w","long",SUM(),Attributes(List("a", "b", "c")),"1","AGG",List()))),
+        Filters(List()))))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run("""
+        BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:long<-[COUNT(*)].
+    """)))
+    assertResult(ir)(optimized)
   }
 
   test("Pagerank, test that usedScalar field is filled out properly") {
@@ -280,8 +318,7 @@ class QueryPlannerTest extends FunSuite {
       N(;w) :- Edge(x,y),w:long<-[SUM(x;1)].
       PageRank(x;y) :- Edge(x,z),y:float<-[(1.0/N)].
       PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SUM(z;1.0)]."""
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(pgrank))
-    optimized.rules.foreach(rule => println(rule))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(pgrank)))
     assertResult(ir)(optimized)
   }
 
@@ -301,7 +338,7 @@ class QueryPlannerTest extends FunSuite {
     val sssp =
       """SSSP(x;y) :- Edge(w,x),w=0,y:long <- [1].
          SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)]."""
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(sssp))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(sssp)))
     assertResult(ir)(optimized)
   }
 
@@ -320,7 +357,7 @@ class QueryPlannerTest extends FunSuite {
         )))))
     val lubm1 = """
         lubm1(a) :- takesCourse(a,b),rdftype(a,c),b='http://www.Department0.University0.edu/GraduateCourse0',c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'."""
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm1))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm1)))
     assertResult(ir)(optimized)
   }
 
@@ -367,7 +404,7 @@ class QueryPlannerTest extends FunSuite {
         |z='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University',
         |rdftype(b,y),
         |y='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'.""".stripMargin.replaceAll("\n", "")
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm2))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm2)))
     assertResult(ir)(optimized)
   }
 
@@ -426,9 +463,7 @@ class QueryPlannerTest extends FunSuite {
         Join(List(
           Rel("lubm4_root",Attributes(List("a", "b")),Annotations(List())),
           Rel("bag_1_a_d_lubm4",Attributes(List("a", "d")),Annotations(List())),
-          Rel("bag_1_a_c_lubm4",Attributes(List("a", "c")),Annotations(List())),
-          Rel("bag_2_e_a_lubm4",Attributes(List("a")),Annotations(List())),
-          Rel("bag_2_f_a_lubm4",Attributes(List("a")),Annotations(List())))),
+          Rel("bag_1_a_c_lubm4",Attributes(List("a", "c")),Annotations(List())))),
         Aggregations(List()),
         Filters(List()))))
     val lubm4 =
@@ -440,38 +475,44 @@ class QueryPlannerTest extends FunSuite {
         |telephone(a,c),
         |rdftype(a,f),
         |f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#AssociateProfessor'.""".stripMargin
-    assertResult(ir)(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm4)))
+    assertResult(ir)(IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm4))))
   }
 
-  /*test("lubm7") {
+  test("lubm7") {
     val ir = IR(List(
-      Rule(Result(
-        Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())),true),
+      Rule(Result(Rel("bag_1_e_a_lubm7",Attributes(List("a")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("e", "a"))),
+        Project(Attributes(List("e"))),
+        Join(List(
+          Rel("rdftype",Attributes(List("a", "e")),Annotations(List())))),Aggregations(List()),
+        Filters(List(Selection("e",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'")))),
+      Rule(Result(Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())),true),
         None,
         Operation("*"),
         Order(Attributes(List("d", "b"))),
         Project(Attributes(List("d"))),
-        Join(List(Rel("rdftype", Attributes(List("b", "d")),Annotations(List())))),
+        Join(List(
+          Rel("rdftype",Attributes(List("b", "d")),Annotations(List())))),
         Aggregations(List()),
         Filters(List(Selection("d",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'")))),
       Rule(Result(Rel("bag_1_c_b_lubm7",Attributes(List("b")),Annotations(List())),true),
         None,
-        Operation("*"),
-        Order(Attributes(List("c", "b"))),
-        Project(Attributes(List("c"))),
-        Join(List(Rel("teacherOf", Attributes(List("c", "b")),Annotations(List())))),
+        Operation("*"),Order(Attributes(List("c", "b"))),Project(Attributes(List("c"))),
+        Join(List(Rel("teacherOf",Attributes(List("c", "b")),Annotations(List())))),
         Aggregations(List()),
         Filters(List(Selection("c",EQUALS(),"'http://www.Department0.University0.edu/AssociateProfessor0'")))),
-      Rule(Result(Rel("lubm7", Attributes(List("a", "b")),Annotations(List())),false),
+      Rule(Result(Rel("lubm7",Attributes(List("a", "b")),Annotations(List())),false),
         None,
         Operation("*"),
-        Order(Attributes(List("a", "b"))),
+        Order(Attributes(List("b", "a"))),
         Project(Attributes(List())),
         Join(List(
           Rel("takesCourse",Attributes(List("a", "b")),Annotations(List())),
-          Rel("rdftype",Attributes(List("a")),Annotations(List())),
           Rel("bag_1_c_b_lubm7",Attributes(List("b")),Annotations(List())),
-          Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())))),
+          Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())),
+          Rel("bag_1_e_a_lubm7",Attributes(List("a")),Annotations(List())))),
         Aggregations(List()),
         Filters(List()))))
     val lubm7 =
@@ -484,19 +525,77 @@ class QueryPlannerTest extends FunSuite {
         |rdftype(a,e),
         |e='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'.
       """.stripMargin
-    println(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm7)))
+    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm7)))
+    assertResult(ir)(optimized)
   }
 
   test("lubm8") {
+    val ir = IR(List(
+      Rule(Result(Rel("bag_2_d_a_lubm8",Attributes(List("a")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("d", "a"))),
+        Project(Attributes(List("d"))),
+        Join(List(Rel("rdftype",Attributes(List("a", "d")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List(Selection("d",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'")))),
+      Rule(Result(Rel("bag_2_f_b_lubm8",Attributes(List("b")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("f", "b"))),
+        Project(Attributes(List("f"))),
+        Join(List(Rel("rdftype",Attributes(List("b", "f")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List(Selection("f",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'")))),
+      Rule(Result(Rel("bag_2_e_b_lubm8",Attributes(List("b")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("e", "b"))),
+        Project(Attributes(List("e"))),
+        Join(List(Rel("subOrganizationOf",Attributes(List("b", "e")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List(Selection("e",EQUALS(),"'http://www.University0.edu'")))),
+      Rule(Result(Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "b"))),
+        Project(Attributes(List())),
+        Join(List(
+          Rel("memberOf",Attributes(List("a", "b")),Annotations(List())),
+          Rel("bag_2_e_b_lubm8",Attributes(List("b")),Annotations(List())),
+          Rel("bag_2_f_b_lubm8",Attributes(List("b")),Annotations(List())),
+          Rel("bag_2_d_a_lubm8",Attributes(List("a")),Annotations(List())))),
+        Aggregations(List()),Filters(List())),
+      Rule(Result(Rel("lubm8_root",Attributes(List("a", "c")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "c", "b"))),
+        Project(Attributes(List("b"))),
+        Join(List(
+          Rel("emailAddress",Attributes(List("a", "c")),Annotations(List())),
+          Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())))),
+        Aggregations(List()),Filters(List())),
+      Rule(Result(Rel("lubm8",Attributes(List("a", "b", "c")),Annotations(List())),false),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "c", "b"))),
+        Project(Attributes(List())),
+        Join(List(
+          Rel("lubm8_root",Attributes(List("a", "c")),Annotations(List())),
+          Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List()))))
     val lubm8 =
       """
         |lubm8(a,b,c) :- memberOf(a,b),
         |emailAddress(a,c),
         |rdftype(a,d),
-        |d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'
+        |d='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent',
         |subOrganizationOf(b,e),
-        |e='http://www.University0.edu'),rdftype(b,f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'.
+        |e='http://www.University0.edu',
+        |rdftype(b,f),
+        |f='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'.
         |""".stripMargin
-    println(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm8)))
-  } */
+    assertResult(ir)(IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(lubm8))))
+  }
 }
