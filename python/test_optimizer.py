@@ -9,12 +9,12 @@ def triangle():
 
 def triangle_counting():
   return optimize("""
-    Triangle(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(b,c)].
+    Triangle(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:long<-[COUNT(b,c)].
   """).ir
 
 def triangle_agg():
   return optimize("""
-    TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:uint64<-[COUNT(*)].
+    TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:long<-[COUNT(*)].
   """).ir
 
 def fourclique():
@@ -24,12 +24,12 @@ def fourclique():
 
 def fourclique_agg():
   return optimize("""
-    FliqueAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),z:uint64<-[COUNT(*)].
+    FliqueAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),z:long<-[COUNT(*)].
   """).ir
 
 def fourclique_sel_agg():
   return optimize("""
-    FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:uint64<-[COUNT(*)].
+    FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:long<-[COUNT(*)].
   """).ir
 
 def fourclique_sel():
@@ -44,19 +44,19 @@ def barbell_sel():
 
 def barbell_agg():
   return optimize("""
-    BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:uint64<-[COUNT(*)].
+    BarbellAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z),w:long<-[COUNT(*)].
 """).ir
 
 def barbell_sel_agg():
   return optimize("""
-    BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:uint64<-[COUNT(*)].
+    BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:long<-[COUNT(*)].
 """).ir
 
 def pagerank():
   return optimize("""
-    N(;w) :- Edge(x,y),w:uint64<-[SUM(x;1)].
-    PageRank(x;y) :- Edge(x,z),y:float32<-[(1.0/N)].
-    PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float32 <- [0.15+0.85*SUM(z;1.0)].
+    N(;w) :- Edge(x,y),w:long<-[SUM(x;1)].
+    PageRank(x;y) :- Edge(x,z),y:float<-[(1.0/N)].
+    PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SUM(z;1.0)].
   """).ir
 
 def lubm1():
@@ -82,6 +82,7 @@ queries = {
   "fourclique_sel":fourclique_sel,
   "fourclique_sel_agg":fourclique_sel_agg,
   "barbell_sel":barbell_sel,
+  "barbell_agg":barbell_agg,
   "barbell_sel_agg":barbell_sel_agg
 }
 

@@ -108,7 +108,7 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
   //return name of the cpp file
   def generate(datalog:String,hash:String,folder:String) : Int = {
     val ir = DatalogParser.run(datalog)
-    val optir = QueryPlanner.findOptimizedPlans(ir)
+    val optir = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(ir))
     val (num,rels) = QueryPlan.generate(optir,db,hash,folder)
     rels.foreach(db.addRelation(_))
     num
