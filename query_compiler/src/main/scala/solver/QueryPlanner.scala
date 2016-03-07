@@ -66,7 +66,7 @@ object QueryPlanner {
 
   def findOptimizedPlans(ir:IR): IR = {
     // This should run the GHD optimizer on any number of rules.
-    // I would imagine the optimizer takes in potentially multiple
+    // The optimizer takes in potentially multiple
     // rules for the same relation.
     val recursiveRels = new ListBuffer[String]()
     val irRules = ir.rules.foldLeft(List[Rule]())((accum:List[Rule], rule:Rule) => {

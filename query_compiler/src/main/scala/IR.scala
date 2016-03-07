@@ -1,5 +1,8 @@
 package duncecap
 
+import duncecap.attr._
+
+import scala.collection.immutable.TreeSet
 import scala.collection.mutable.ListBuffer
 
 case class IR(val rules:List[Rule]) {
@@ -8,15 +11,25 @@ case class IR(val rules:List[Rule]) {
   def getRule(i:Int):Rule = {rules(i)}
 }
 
-case class Rule(val result:Result,
-                val recursion:Option[Recursion],
-                val operation:Operation,
-                val order:Order,
-                val project:Project,
-                val join:Join,
-                val aggregations:Aggregations,
-                val filters:Filters) {
+abstract trait RuleBase {
+  val result:Result
+  val recursion:Option[Recursion]
+  val operation:Operation
+  val order:Order
+  val project:Project
+  val join:Join
+  val aggregations:Aggregations
+  val filters:Filters
+}
 
+case class Rule(override val result:Result,
+                override val recursion:Option[Recursion],
+                override val operation:Operation,
+                override val order:Order,
+                override val project:Project,
+                override val join:Join,
+                override val aggregations:Aggregations,
+                override val filters:Filters) extends RuleBase {
   def getResult():Result = {result}
   def getRecursion():Option[Recursion] = {recursion}
   def getOperation():Operation = {operation}
@@ -25,6 +38,58 @@ case class Rule(val result:Result,
   def getJoin():Join = {join}
   def getFilters():Filters = {filters}
   def getAggregations():Aggregations = {aggregations}
+  def attrNameAgnosticEquals(otherRule:Rule):Boolean = {
+    if (join.rels.size != otherRule.join.rels.size) return false
+    else {
+      val joinAggregates = getAggregations().values.flatMap(agg => {
+        val attrs = agg.attrs.values
+        attrs.map(attr => { (attr, agg) })
+      }).toMap ++ otherRule.getAggregations().values.flatMap(agg => {
+        val attrs = agg.attrs.values
+        attrs.map(attr => { (attr, agg) })
+      }).toMap
+
+      var attrSet = join.rels.foldLeft(TreeSet[String]())(
+        (accum: TreeSet[String], rel:Rel) => accum | TreeSet[String](rel.attrs.values: _*)) ++ otherRule.join.rels.foldLeft(TreeSet[String]())(
+        (accum: TreeSet[String], rel:Rel) => accum | TreeSet[String](rel.attrs.values: _*))
+      var attrToSelection:Map[Attr,Array[Selection]]
+      = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, filters.values.toArray))).toMap
+      return matchRelations(
+        this.join.rels.toSet,
+        otherRule.join.rels.toSet,
+        this.result.rel,
+        otherRule.result.rel,
+        Map[Attr, Attr](),
+        attrToSelection,
+        joinAggregates)
+    }
+  }
+
+
+  private def matchRelations(rule1Join:Set[Rel],
+                             rule2Join:Set[Rel],
+                             rule1Output:Rel,
+                             rule2Output:Rel,
+                             attrMap:Map[Attr, Attr],
+                             attrToSelection: Map[Attr, Array[Selection]],
+                             joinAggregates:Map[String, Aggregation]): Boolean = {
+    if (rule1Join.isEmpty && rule2Join.isEmpty) return true
+
+    val matches = rule2Join.map(otherRel => (rule2Join-otherRel, // what does this do?
+      PlanUtil.attrNameAgnosticRelationEquals(
+        rule2Output,
+        otherRel,
+        rule1Output,
+        rule1Join.head,
+        attrMap,
+        attrToSelection,
+        joinAggregates))).filter(m => {
+      m._2.isDefined
+    })
+    return matches.exists(m => {
+      matchRelations(rule1Join.tail, m._1, rule1Output, rule2Output, m._2.get, attrToSelection, joinAggregates)
+    })
+  }
 }
 
 case class Attributes(val values:List[String])
