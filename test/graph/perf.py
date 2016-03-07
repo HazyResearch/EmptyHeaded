@@ -222,6 +222,6 @@ datasets = ["twitter2010"]
 
 for dataset in datasets:
   print "DATASET: " + dataset
-  #test_pruned(dataset)
+  test_pruned(dataset)
   test_duplicated(dataset)
 stop()
