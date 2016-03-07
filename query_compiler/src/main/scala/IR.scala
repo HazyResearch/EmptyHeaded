@@ -11,25 +11,14 @@ case class IR(val rules:List[Rule]) {
   def getRule(i:Int):Rule = {rules(i)}
 }
 
-abstract trait RuleBase {
-  val result:Result
-  val recursion:Option[Recursion]
-  val operation:Operation
-  val order:Order
-  val project:Project
-  val join:Join
-  val aggregations:Aggregations
-  val filters:Filters
-}
-
-case class Rule(override val result:Result,
-                override val recursion:Option[Recursion],
-                override val operation:Operation,
-                override val order:Order,
-                override val project:Project,
-                override val join:Join,
-                override val aggregations:Aggregations,
-                override val filters:Filters) extends RuleBase {
+case class Rule(val result:Result,
+                val recursion:Option[Recursion],
+                val operation:Operation,
+                val order:Order,
+                val project:Project,
+                val join:Join,
+                val aggregations:Aggregations,
+                val filters:Filters) {
   def getResult():Result = {result}
   def getRecursion():Option[Recursion] = {recursion}
   def getOperation():Operation = {operation}
@@ -41,27 +30,34 @@ case class Rule(override val result:Result,
   def attrNameAgnosticEquals(otherRule:Rule):Boolean = {
     if (join.rels.size != otherRule.join.rels.size) return false
     else {
-      val joinAggregates = getAggregations().values.flatMap(agg => {
+      val joinAggregates1 = getAggregations().values.flatMap(agg => {
         val attrs = agg.attrs.values
         attrs.map(attr => { (attr, agg) })
-      }).toMap ++ otherRule.getAggregations().values.flatMap(agg => {
+      }).toMap
+      val joinAggregates2 = otherRule.getAggregations().values.flatMap(agg => {
         val attrs = agg.attrs.values
         attrs.map(attr => { (attr, agg) })
       }).toMap
 
-      var attrSet = join.rels.foldLeft(TreeSet[String]())(
-        (accum: TreeSet[String], rel:Rel) => accum | TreeSet[String](rel.attrs.values: _*)) ++ otherRule.join.rels.foldLeft(TreeSet[String]())(
+      val attrSet1 = join.rels.foldLeft(TreeSet[String]())(
         (accum: TreeSet[String], rel:Rel) => accum | TreeSet[String](rel.attrs.values: _*))
-      var attrToSelection:Map[Attr,Array[Selection]]
-      = attrSet.map(attr => (attr, PlanUtil.getSelection(attr, filters.values.toArray))).toMap
+      val attrSet2 = otherRule.join.rels.foldLeft(TreeSet[String]())(
+        (accum: TreeSet[String], rel:Rel) => accum | TreeSet[String](rel.attrs.values: _*))
+      val attrToSelection1:Map[Attr,Array[Selection]]
+        = attrSet1.map(attr => (attr, PlanUtil.getSelection(attr, filters.values.toArray))).toMap
+      val attrToSelection2:Map[Attr,Array[Selection]]
+        = attrSet2.map(attr => (attr, PlanUtil.getSelection(attr, otherRule.filters.values.toArray))).toMap
+
       return matchRelations(
         this.join.rels.toSet,
         otherRule.join.rels.toSet,
         this.result.rel,
         otherRule.result.rel,
         Map[Attr, Attr](),
-        attrToSelection,
-        joinAggregates)
+        attrToSelection1,
+        attrToSelection2,
+        joinAggregates1,
+        joinAggregates2)
     }
   }
 
@@ -71,23 +67,27 @@ case class Rule(override val result:Result,
                              rule1Output:Rel,
                              rule2Output:Rel,
                              attrMap:Map[Attr, Attr],
-                             attrToSelection: Map[Attr, Array[Selection]],
-                             joinAggregates:Map[String, Aggregation]): Boolean = {
+                             attrToSelection1: Map[Attr, Array[Selection]],
+                             attrToSelection2: Map[Attr, Array[Selection]],
+                             joinAggregates1:Map[String, Aggregation],
+                             joinAggregates2:Map[String, Aggregation]): Boolean = {
     if (rule1Join.isEmpty && rule2Join.isEmpty) return true
 
     val matches = rule2Join.map(otherRel => (rule2Join-otherRel, // what does this do?
       PlanUtil.attrNameAgnosticRelationEquals(
-        rule2Output,
-        otherRel,
         rule1Output,
         rule1Join.head,
+        rule2Output,
+        otherRel,
         attrMap,
-        attrToSelection,
-        joinAggregates))).filter(m => {
+        attrToSelection1,
+        attrToSelection2,
+        joinAggregates1,
+        joinAggregates2))).filter(m => {
       m._2.isDefined
     })
     return matches.exists(m => {
-      matchRelations(rule1Join.tail, m._1, rule1Output, rule2Output, m._2.get, attrToSelection, joinAggregates)
+      matchRelations(rule1Join.tail, m._1, rule1Output, rule2Output, m._2.get, attrToSelection1, attrToSelection2, joinAggregates1, joinAggregates2)
     })
   }
 }
