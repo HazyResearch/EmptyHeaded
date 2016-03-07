@@ -129,7 +129,7 @@ Running Queries
 -----------------
 We provide demos of EmptyHeaded in iPython notebooks. 
 
-We provide a tutorial of how to get started running your first EmptyHeaded query in the `examples/graph` folder. In this folder is a `Graph Tutorial` iPython notebook which can be loaded after executing `iPython notebook`
+We provide a tutorial of how to get started running your first EmptyHeaded query in the `docs/notebooks` folder. In this folder is a `Getting Started Tutorial` iPython notebook (amongst others) which can be loaded after executing `iPython notebook`.
 
 Contact
 -----------------
