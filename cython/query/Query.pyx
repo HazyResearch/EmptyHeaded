@@ -1,3 +1,5 @@
+# distutils: language = c++
+
 from cpython.cobject cimport PyCObject_AsVoidPtr
 import cython
 cimport cython
