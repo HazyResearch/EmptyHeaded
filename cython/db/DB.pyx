@@ -1,3 +1,5 @@
+# distutils: language = c++
+
 import cython
 cimport cython
 from libcpp.pair cimport pair

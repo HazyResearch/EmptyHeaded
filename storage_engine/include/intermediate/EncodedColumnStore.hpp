@@ -105,15 +105,10 @@ struct EncodedColumnStore {
 
     //write the annotation
     for(size_t i = 0; i < num_annotations; i++){
-      const uint8_t* myanno = (const uint8_t*)annotation.at(i);
+      uint8_t* myanno = (uint8_t*)annotation.at(i);
       const size_t num_bytes = annotation_bytes.at(i);
-      writefile->write((char *)&num_bytes, num_bytes);
-      for(size_t j = 0; j < num_rows; j++){
-        writefile->write(
-          (char *)myanno, 
-          num_bytes);
-        myanno += num_bytes;
-      }
+      writefile->write((char *)&num_bytes, sizeof(num_bytes));
+      writefile->write((char *)myanno, (num_bytes*num_rows));
     }
     writefile->close();
   }
@@ -164,14 +159,10 @@ struct EncodedColumnStore {
       infile->read((char *)&num_bytes, sizeof(num_bytes));
 
       annotation_bytes_in.at(i) = num_bytes;
-
       uint8_t* myanno = new uint8_t[num_bytes*num_rows_in];
-      for(size_t j = 0; j < num_rows_in; j++){
-        infile->read(
-          (char*)myanno, 
-          num_bytes);
-        myanno += num_bytes;
-      }
+      infile->read(
+        (char*)myanno, 
+        (num_bytes*num_rows_in));
       annotation_in.at(i) = ((void*)myanno);
     }
 

@@ -66,8 +66,12 @@ cdef inline convert(vector[void*] data, length):
   col = floatc2np(data.at(${i}),length)""")
         case "double" => pythonappendcode.append(s""" 
   col = doublec2np(data.at(${i}),length)""")
-        case _ => 
-          throw new Exception("Could not find type to transfer to dataframe.")
+        case _ => { //like fore strings we still want to compile but 
+          //do not support passing to DF
+          pythonappendcode.append(s"""
+  col = np.empty()""")
+          println("WARINING: Cannot transfer type to dataframe.")
+        }
       }
       pythonappendcode.append(s"""
   df[${i}] = col""")
@@ -153,6 +157,7 @@ cdef inline convert(vector[void*] data, length):
 #include "utils/timer.hpp"
 
 typedef std::unordered_map<std::string,void*> mymap;
+typedef std::string string;
 
 /*
 Loads relations from disk.

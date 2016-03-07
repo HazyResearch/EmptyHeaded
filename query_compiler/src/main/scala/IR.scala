@@ -195,7 +195,7 @@ case class SUM() extends AggOp {
   override val value = "+"
 }
 case class CONST() extends AggOp {
-  override val value = ""
+  override val value = "CONST"
 }
 case class MIN() extends AggOp {
   override val value = "<"

@@ -8,7 +8,10 @@ from Cython.Build import cythonize
 
 EH_PATH=os.path.expandvars("$EMPTYHEADED_HOME")
 if platform.uname()[0] == "Darwin":
-  clibs = ["-arch","x86_64","-std=c++0x"]
+  clibs = ["-arch","x86_64","-mavx",'-Wno-unused-function',
+            '-stdlib=libc++',
+            '-std=c++11',
+            '-mmacosx-version-min=10.8',]
   largs = ["-arch","x86_64"]
 else:
   clibs = ["-std=c++0x"]
@@ -17,16 +20,20 @@ else:
   os.environ["CXX"] = "g++-5"
 
 extensions = [
-    Extension("#PTrie#", ["#PTrie#.pyx"],
-        include_dirs = [EH_PATH+"/storage_engine/include",numpy.get_include()],
+    Extension(
+        "#PTrie#",
+        ["#PTrie#.pyx"],
         libraries = ["emptyheaded"],
         library_dirs = [EH_PATH+"/storage_engine/build/lib"],
-        language="c++",
+        include_dirs = [EH_PATH+"/storage_engine/include",numpy.get_include()],
         extra_compile_args = clibs,
         extra_link_args = largs,
+        language="c++"
     )
 ]
-
 setup(
-    ext_modules = cythonize(extensions)
+    name='#PTrie#',
+    ext_modules=cythonize(
+        extensions,
+    )
 )

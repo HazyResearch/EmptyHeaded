@@ -139,7 +139,8 @@ object QueryCompiler {
     "uint32" -> "uint32_t",
     "int32" -> "int32_t",
     "int64" -> "uint64_t",
-    "uint64" -> "int64_t"
+    "uint64" -> "int64_t",
+    "string" -> "string"
     //"String",
     //"Float",
     //"Double",
@@ -154,7 +155,8 @@ object QueryCompiler {
     "uint64_t" -> "uint64",
     "int64_t" -> "int64",
     "float" -> "float32",
-    "double" -> "float64"
+    "double" -> "float64",
+    "string" -> "string"
     //"String",
     //"Float",
     //"Double",
@@ -166,6 +168,7 @@ object QueryCompiler {
     "int" -> "int",
     "long" -> "long",
     "float" -> "float",
+    "float32" -> "float",
     "double" -> "double"
   )
 

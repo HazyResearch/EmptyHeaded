@@ -23,16 +23,16 @@ object EHGenerator {
     return ghd
   }
 
-  /*
   def detectTransitiveClosure(qp:QueryPlan,db:DBInstance) : Boolean = {
     //check encodings, check that base case is not annotated
     if(qp.ghd.length == 2 && qp.ghd.last.recursion.isDefined){
       val base_case = qp.ghd.head
-      val encodings = 
-      if(base_case.relations.length > 0 && encodings.length == 1){
-        if(base_case.nprr.length == 2){
+      if(base_case.relations.length > 0){
+        if(qp.ghd.last.recursion.get.input == "e" && 
+          qp.ghd.last.recursion.get.criteria == "=" && 
+          qp.ghd.last.recursion.get.convergenceValue == "0"){
           if(base_case.nprr.head.selection.length == 1){
-            if(qp.ghd.last.nprr.last.aggregation.get.operation == "MIN"){
+            if(qp.ghd.last.nprr.last.aggregation.get.operation == "<"){
               return true
             }
           }
@@ -41,7 +41,6 @@ object EHGenerator {
     }
     return false
   }
-  */
   
   def run(qp:QueryPlan,dbIn:DBInstance,id:String,filename:String): List[Relation] = {
     db = dbIn
@@ -56,7 +55,7 @@ object EHGenerator {
 
     //spit out output for each query in global vars
     //find all distinct relations
-    val single_source_tc = false//detectTransitiveClosure(qp,db)
+    val single_source_tc = detectTransitiveClosure(qp,db)
     qp.relations.foreach( r => {
       if(db.relationMap.contains(r.name)){
         val loadTC = !single_source_tc || (r.ordering == (0 until r.ordering.length).toList)
@@ -84,23 +83,23 @@ object EHGenerator {
       val source = base_case.nprr.head.selection.head.expression
       val expression = qp.ghd.last.nprr.last.aggregation.get.expression
       
-          /*
-      val encoding = Environment.config.schemas(base_case.relations.head.name).attributes.map(_.encoding).distinct.head
-      outputAttributes = List(Environment.config.schemas(base_case.relations.head.name).attributes.head)
+      val encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head      
+      val recordering = (0 until qp.ghd.last.attributes.values.length).toList.mkString("_")
 
+      cppCode.append(emitIntermediateTrie(qp.ghd.last.name,qp.ghd.last.annotation,qp.ghd.last.attributes.values.length,qp.ghd.last.duplicateOf))
+      outputEncodings += (qp.ghd.last.name -> QueryCompiler.buildInternalSchema(List(encoding),List(qp.ghd.last.annotation)))
       //get encoding
       includeCode.append("""#include "TransitiveClosure.hpp" """)
       cppCode.append(s"""
-        tc::unweighted_single_source<hybrid,ParMemoryBuffer,${qp.output.annotation}>(
+        tc::unweighted_single_source<hybrid,ParMemoryBuffer,${qp.ghd.last.annotation}>(
           Encoding_${encoding}->value_to_key.at(${source}), // from encoding
           Encoding_${encoding}->num_distinct, //from encoding
           Trie_${input}, //input graph
-          Trie_${output}, //output vector
+          Trie_${qp.ghd.last.name}_${recordering}, //output vector
           ${init},
-          [&](${qp.output.annotation} a){return ${expression} a;});
-        Trie_${output}->encodings.push_back((void*)Encoding_${encoding});
+          [&](${qp.ghd.last.annotation} a){return ${expression.replaceAll("AGG","")} a;});
+        Trie_${qp.ghd.last.name}_${recordering}->encodings.push_back((void*)Encoding_${encoding});
         """)
-        */
     }
     cppCode.append(emitOutputs(db,qp.outputs))
     cppCode.append(emitEndQuery())
@@ -130,6 +129,7 @@ object EHGenerator {
       ${includes.toString}
 
       typedef std::unordered_map<std::string,void*> mymap;
+      typedef std::string string;
 
       void run_${id}(mymap* input_tries){
         thread_pool::initializeThreadPool();
@@ -147,7 +147,7 @@ object EHGenerator {
       s"""mkdir -p ${db.folder}/relations/${r.name}/${r.name}_${r.ordering.mkString("_")}""" .!
 
       code.append(s"""
-      input_tries->insert(std::make_pair("${r.name}_${r.ordering.mkString("_")}",Trie_${r.name}_${r.ordering.mkString("_")}));
+      input_tries->insert(std::make_pair("${r.name}_${r.ordering.mkString("_")}",Trie_${r.name}_${(0 until r.ordering.length).toList.mkString("_")}));
       """)
     })
     code
@@ -420,7 +420,7 @@ object EHGenerator {
     code
   }
 
-  def emitFinalAnnotation(head:QueryPlanAttrInfo,annotationType:String,iteratorAccessors:IteratorAccessors,isHead:Boolean) : StringBuilder = {
+  def emitFinalAnnotation(head:QueryPlanAttrInfo,annotationType:String,iteratorAccessors:IteratorAccessors,isHead:Boolean,passedScalar:List[String]) : StringBuilder = {
     val code = new StringBuilder()
     val joinType = "*" //fixme
     (head.aggregation,head.materialize) match { //you always check for annotations
@@ -428,11 +428,12 @@ object EHGenerator {
         val loopOverSet = head.accessors.map(_.annotated).reduce((a,b) => {a || b})
         val extra = if(loopOverSet){
           code.append(emitForeach(head,iteratorAccessors))
-          ""
+          new StringBuilder("")
         } else {
-          s"""${joinType} count_${head.name}"""
+          new StringBuilder(s"""${joinType} count_${head.name}""")
         }
-        code.append(emitAnnotationAccessors(head,annotationType,iteratorAccessors,extra))
+        passedScalar.foreach(e => extra.append(s"""${joinType} ${e}"""))
+        code.append(emitAnnotationAccessors(head,annotationType,iteratorAccessors,extra.toString))
         code.append(emitAnnotationComputation(head,annotationType,iteratorAccessors,isHead))
         if(loopOverSet){
           code.append("});")
@@ -455,6 +456,8 @@ object EHGenerator {
         (a.operation,isHead) match {
           case ("+",false) => code.append(s"""annotation_${head.name} += ${rhs};""")
           case ("+",true) => code.append(s"""annotation_${head.name}.update(0,${rhs});""")
+          case ("CONST",false) => code.append(s"""//const not head"""+"\n")
+          case ("CONST",true) => code.append(s"""//const head"""+"\n")
           case _ => throw new IllegalArgumentException("OPERATION NOT YET SUPPORTED")
         } 
       } 
@@ -468,14 +471,16 @@ object EHGenerator {
       case Some(a) => {
         a.operation match {
           case "CONST" => {
-            if(a.expression != "")
-              code.append(s"""annotation_${head.name} = ${a.expression} ${a.init};""")
+            if(a.init != "")
+              code.append(s"""annotation_${head.name} = ${a.init};""")
             else 
               throw new IllegalArgumentException("CONST annotation must have expression")
           }
           case _ => {
-            if(a.expression != "")
-              code.append(s"""annotation_${head.name} = (${a.expression} annotation_${head.name});""")
+            if(a.expression != ""){
+              val newExpr = a.expression.replaceAll("AGG", s"annotation_${head.name}")
+              code.append(s"""annotation_${head.name} = ${newExpr};""")
+            }
           }
         }
       }
@@ -511,7 +516,7 @@ object EHGenerator {
     }
     code
   }
-  def nprrRecursiveCall(head:Option[QueryPlanAttrInfo],tail:List[QueryPlanAttrInfo],iteratorAccessors:IteratorAccessors,annotationType:String) : StringBuilder = {
+  def nprrRecursiveCall(head:Option[QueryPlanAttrInfo],tail:List[QueryPlanAttrInfo],iteratorAccessors:IteratorAccessors,annotationType:String,passedScalar:List[String]) : StringBuilder = {
     val code = new StringBuilder()
     (head,tail) match {
       case (Some(a),List()) => {
@@ -524,7 +529,7 @@ object EHGenerator {
         //init annotation
         code.append(emitInitializeAnnotation(a,annotationType))
         //emit compute annotation (might have to contain a foreach)
-        code.append(emitFinalAnnotation(a,annotationType,iteratorAccessors,false))
+        code.append(emitFinalAnnotation(a,annotationType,iteratorAccessors,false,passedScalar))
         //the expression for the aggregation
         code.append(emitAnnotationExpression(a,annotationType))
       }
@@ -540,7 +545,7 @@ object EHGenerator {
         //get annnotation accessors
         code.append(emitAnnotationAccessors(a,annotationType,iteratorAccessors))
         //recurse
-        code.append(nprrRecursiveCall(tail.headOption,tail.tail,iteratorAccessors,annotationType))
+        code.append(nprrRecursiveCall(tail.headOption,tail.tail,iteratorAccessors,annotationType,passedScalar))
         //the actual aggregation
         code.append(emitAnnotationComputation(a,annotationType,iteratorAccessors,false))
         //set
@@ -555,121 +560,6 @@ object EHGenerator {
     }
     return code
   }
-  /*
-  def emitTopDownIterators(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],iteratorLevels:mutable.Map[String,Int]) : StringBuilder = {
-    val code = new StringBuilder()
-    if(iterators.length == 0)
-      return code
-    code.append(emitTopDownAttributes(iterators,attrs,iteratorLevels))
-    return code
-  }
-
-  def emitTopDownAttributes(iterators:List[TopDownPassIterator],attrs:List[QueryPlanAttrInfo],iteratorLevels:mutable.Map[String,Int]) : StringBuilder = {
-    val code = new StringBuilder()
-    if(attrs.length == 0 && iterators.length == 1) //done quit
-      return code.append(emitTopDownIterators(List(),List(),iteratorLevels))
-    else if(attrs.length == 0) //done with cur iterator
-      return code.append(emitTopDownIterators(iterators.tail,iterators.tail.head.attributeInfo,iteratorLevels))
-
-    val attrInfo = attrs.head
-    val iteratorName = iterators.head.iterator
-    if(iterators.length == 1 && attrs.length == 1){
-      code.append(s"""const size_t count_${attrInfo.name} = Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
-      code.append(s"""num_rows_reducer.update(tid,count_${attrInfo.name});""")
-    } else {
-      code.append(s"""Builder->build_set(tid,Iterator_${iteratorName}->get_block(${iteratorLevels(iteratorName)}));""")
-      code.append("Builder->allocate_next(tid);")
-      code.append(s"""Builder->foreach_builder([&](const uint32_t ${attrInfo.name}_i, const uint32_t ${attrInfo.name}_d) {""")
-      attrInfo.accessors.foreach(acc => {
-        iteratorLevels(acc.name) += 1
-        val index = acc.attrs.values.indexOf(attrInfo.name)
-        if(index != (acc.attrs.values.length-1)){
-          if(iteratorName == acc.name){
-            code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_i,${attrInfo.name}_d);""")
-          } else {
-            code.append(s"""Iterator_${acc.name}->get_next_block(${index},${attrInfo.name}_d);""")
-          }
-        }
-      })
-    }
-
-    code.append(emitTopDownIterators(iterators,attrs.tail,iteratorLevels))
-    if(!(iterators.length == 1 && attrs.length == 1)){
-      code.append(s"""Builder->set_level(${attrInfo.name}_i,${attrInfo.name}_d);""")
-      code.append("});")
-    }
-
-    return code
-  }
-
-  def emitTopDown(
-    output:String,
-    ordering:List[Int],
-    annotation:String,
-    td_inter:List[TopDownPassIterator],
-    intermediateRelations:Map[String,List[Attribute]]) 
-      : (StringBuilder,List[Attribute]) = {
-    
-    val td = td_inter.filter(_.attributeInfo.length != 0) //fixme
-    val code = new StringBuilder()
-    
-    code.append("{")
-    code.append("auto bag_timer = timer::start_clock();")
-    code.append("num_rows_reducer.clear();")
-
-    //emit iterators for top down pass (build encodings)
-    val eBuffers = mutable.ListBuffer[(String,Attribute)]()
-    val iteratorLevels = mutable.Map[String,Int]()
-    td_inter.foreach(tdi => {
-      iteratorLevels += ((tdi.iterator -> 0))
-      val ordering = (0 until intermediateRelations(tdi.iterator).length).toList.mkString("_")
-      code.append(s"""ParTrieIterator<${annotation},${memory}> Iterators_${tdi.iterator}(Trie_${tdi.iterator}_${ordering});""")
-      tdi.attributeInfo.foreach(ai => {
-        val acc = ai.accessors.head
-        val index = acc.attrs.values.indexOf(ai.name)
-        eBuffers += ((ai.name,intermediateRelations(acc.name)(index)))
-      })
-    })
-    val encodings = eBuffers.toList.groupBy(eb => eb._1).map(eb => (eb._1 -> eb._2.head._2))
-    val attrs = eBuffers.toList.map(eb => eb._1)
-    val outputAttributes = attrs.map(encodings(_))
-    //emit builder
-    code.append(emitParallelBuilder(output+"_"+ordering.mkString("_"),attrs,annotation,encodings,attrs.length))
-
-    val firstIterator = td.head
-    val firstAttr = firstIterator.attributeInfo.head
-    code.append(s"""Builders.build_set(Iterators_${firstIterator.iterator}.head);""")
-    code.append("Builders.allocate_next();")
-    code.append(s"""Builders.par_foreach_builder([&](const size_t tid, const uint32_t ${firstAttr.name}_i, const uint32_t ${firstAttr.name}_d) {""")
-    //get iterator and builder for each thread
-    code.append(s"""TrieBuilder<${annotation},${memory}>* Builder = Builders.builders.at(tid);""")
-    td_inter.foreach(tdi => {
-      val name = tdi.iterator
-      code.append(s"""TrieIterator<${annotation},${memory}>* Iterator_${name} = Iterators_${name}.iterators.at(tid);""")
-    })
-
-    firstAttr.accessors.foreach(acc => {
-      val index = acc.attrs.values.indexOf(firstAttr.name)
-      iteratorLevels(acc.name) += 1
-      if(index != (acc.attrs.values.length-1)){
-        if(firstIterator.iterator == acc.name){
-          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_i,${firstAttr.name}_d);""")
-        } else {
-          code.append(s"""Iterator_${acc.name}->get_next_block(${index},${firstAttr.name}_d);""")
-        }
-      }
-    })
-
-    code.append(emitTopDownIterators(td,firstIterator.attributeInfo.tail,iteratorLevels))
-    code.append(s"""Builder->set_level(${firstAttr.name}_i,${firstAttr.name}_d);""")
-    code.append("});")
-    code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
-    code.append(s"""timer::stop_clock("TOP DOWN TIME", bag_timer);""")
-    code.append("}")
-
-    (code,outputAttributes)
-  }
-  */
 
   def emitHeadBuildCode(head:QueryPlanAttrInfo) : StringBuilder = {
     val code = new StringBuilder()
@@ -755,8 +645,9 @@ object EHGenerator {
     val code = new StringBuilder()
     head.foreach(attr => {
       attr.selection.foreach(s => {
+        val newexpr = s.expression.replaceAll("\'","\"")
         code.append(s"""const uint32_t selection_${attr.name}_${attr.selection.indexOf(s)} = 
-          Encoding_${encodings(attr.name)}->value_to_key.at(${s.expression});""")
+          Encoding_${encodings(attr.name)}->value_to_key.at(${newexpr});""")
       })
     })
     code
@@ -774,7 +665,7 @@ object EHGenerator {
   }
 
 
-  def emitHeadContainsSelections(head:List[QueryPlanAttrInfo]) : (StringBuilder,List[QueryPlanAttrInfo]) = {
+  def emitHeadContainsSelections(head:List[QueryPlanAttrInfo],annotationType:String,iteratorAccessors:IteratorAccessors) : (StringBuilder,List[QueryPlanAttrInfo]) = {
     val code = new StringBuilder()
     if(head.length == 0)
       (code,head)
@@ -782,7 +673,13 @@ object EHGenerator {
     val containsSelection = (cur.accessors.length == 1) && (cur.selection.length == 1) && !cur.materialize && cur.selection.head.operation == "="
     if(containsSelection){
       code.append(emitContainsSelection(cur.name,cur.materialize,cur.selection.head,cur.accessors.head))
-      val (newcode,newhead) = emitHeadContainsSelections(head.tail)
+      (cur.aggregation) match {
+        case Some(a) => {
+          code.append(s"""${annotationType} annotation_${cur.name} = (${annotationType}) ${a.init};""")
+        }
+        case _ => //do nothing 
+      }
+      val (newcode,newhead) = emitHeadContainsSelections(head.tail,annotationType,iteratorAccessors)
       code.append(newcode)
       (code,newhead)
     } else {
@@ -823,31 +720,36 @@ object EHGenerator {
     var oattrs = List[String]()
     var oanno = List[String]()
 
+    //For scalars that are passed in.
+    val passedScalar = bag.relations.filter(r => r.attributes.get.head.values.length == 0).map(_.name)
+
     //Emit the output trie for the bag.
     val outputName = bag.name
     code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
 
+    var bagName = bag.name
     bag.duplicateOf match {
       case None => {
         code.append("{")
         
         bag.recursion match {
           case Some(rec) => {
-            if(rec.criteria == "iterations"){
+            if(rec.input == "i"){
               code.append(s""" 
                 size_t num_iterations = 0;
                 while(num_iterations < ${rec.convergenceValue}){
                 """)
             }else 
               throw new IllegalArgumentException("CONVERGENCE CRITERIA NOT SUPPORTED")
-            code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
+            code.append(emitIntermediateTrie("recursion",bag.annotation,bag.attributes.values.length,bag.duplicateOf))
+            bagName = "recursion"
           }
           case _ =>
         }
         code.append("auto bag_timer = timer::start_clock();")
         code.append("num_rows_reducer.clear();")
         val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,headencodings)
-        val pbname = bag.name+"_"+(0 until bag.attributes.values.length).toList.mkString("_")
+        val pbname = bagName+"_"+(0 until bag.attributes.values.length).toList.mkString("_")
         code.append(emitParallelBuilder(pbname,bag.attributes.values,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)
 
@@ -855,7 +757,7 @@ object EHGenerator {
         oanno = if(bag.annotation == "void*") List() else List(bag.annotation)
         if(bag.nprr.length > 0){
           code.append(emitSelectionValues(bag.nprr,encodings))
-          val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr)
+          val (hsCode,remainingAttrs) = emitHeadContainsSelections(bag.nprr,bag.annotation,iteratorAccessors)
           code.append(hsCode)
           if(remainingAttrs.length > 0){
             code.append(emitHeadBuildCode(remainingAttrs.head))
@@ -864,15 +766,27 @@ object EHGenerator {
             if(remainingAttrs.length > 1){  
               code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
               code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors))
-              code.append(nprrRecursiveCall(remainingAttrs.tail.headOption,remainingAttrs.tail.tail,iteratorAccessors,bag.annotation))
+              code.append(nprrRecursiveCall(remainingAttrs.tail.headOption,remainingAttrs.tail.tail,iteratorAccessors,bag.annotation,passedScalar))
               code.append(emitSetValues(remainingAttrs.head))
               code.append(emitParallelAnnotationComputation(remainingAttrs.head))
               code.append("});")
             } else {
-              code.append(s"""num_rows_reducer.update(0,count_${remainingAttrs.head.name});""")
-              //code.append(emitInitializeAnnotation(remainingAttrs.head,bag.annotation))
-              //emit compute annotation (might have to contain a foreach)
-              code.append(emitFinalAnnotation(remainingAttrs.head,bag.annotation,iteratorAccessors,true))
+              if(remainingAttrs.length == 1){
+                val loopOverSet = remainingAttrs.head.materialize && remainingAttrs.head.annotation.isDefined
+                if(loopOverSet){
+                  code.append(emitHeadParForeach(remainingAttrs.head,bag.annotation,bag.relations,iteratorAccessors))
+                  code.append(emitAnnotationAccessors(remainingAttrs.head,bag.annotation,iteratorAccessors)) 
+                  code.append(emitSetValues(remainingAttrs.head))
+                  code.append(emitParallelAnnotationComputation(remainingAttrs.head))
+                  code.append("});")
+                } else {
+                  code.append(s"""num_rows_reducer.update(0,count_${remainingAttrs.head.name});""")
+                  code.append(emitFinalAnnotation(remainingAttrs.head,bag.annotation,iteratorAccessors,true,passedScalar))  
+                }
+              } else{
+                code.append(s"""num_rows_reducer.update(0,count_${remainingAttrs.head.name});""")
+                code.append(emitFinalAnnotation(remainingAttrs.head,bag.annotation,iteratorAccessors,true,passedScalar)) 
+              }
             }
             code.append(emitSetHeadAnnotations(outputName,remainingAttrs.head,bag.annotation))
           }
@@ -880,7 +794,7 @@ object EHGenerator {
         }
 
         code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
-        code.append(s"""timer::stop_clock("BAG ${bag.name} TIME", bag_timer);""")
+        code.append(s"""timer::stop_clock("BAG ${bagName} TIME", bag_timer);""")
         
         //copy the buffers, needed if recursive
         val recordering = (0 until bag.attributes.values.length).toList.mkString("_")
@@ -895,7 +809,8 @@ object EHGenerator {
         bag.recursion match {
           case Some(rec) => 
             code.append(s""" 
-              Trie_${rec.input}_${recordering} = Builders.trie;
+              Trie_${outputName}_basecase_${recordering} = Trie_recursion_${recordering};
+              Trie_${outputName}_${recordering} = Builders.trie;
               num_iterations++;
               }
               """)

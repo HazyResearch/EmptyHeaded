@@ -48,7 +48,7 @@ class Database:
   #runs GHD optimizer
   #returns an IR
   def optimize(self,datalog):
-    self.qc.optimize(datalog)
+    return IR.java2python(self.qc.optimize(datalog))
 
   def eval(self,datalog):
     global dbhash
