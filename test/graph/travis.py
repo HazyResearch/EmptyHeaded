@@ -28,7 +28,7 @@ def barbell_agg(db):
 """
 BarbellAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z),w:long<-[COUNT(*)].
 """
-  print "\nLollipop AGG"
+  print "\Barbell AGG"
   db.eval(b_agg)
 
   tri = db.get("BarbellAgg")
