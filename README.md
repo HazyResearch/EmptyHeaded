@@ -22,7 +22,7 @@ Overview
 
 EmptyHeaded is a new style of join processing engine. A full description is in our [manuscript](http://arxiv.org/abs/1503.02368). A brief overview is as follows.
 
-Joins are ubiqutous in data processing and often are the bottleneck of classic RDBMS workloads. Recent database theory has shown that Sellinger style join optimizers, which compute joins in a pairwise fashion are asympotically suboptimal. Therefore the join optimizers which have dominated the RDBMS for the past 40 years run suboptimal algorithms. Ngo et al. showed a new way to compute joins in a multiway fashion in this [paper](http://arxiv.org/abs/1203.1952). EmptyHeaded extends this line of work with novel theoretical and systems advances. Namely, in our query compiler we use a new worst-case optimal join algorithm (with stronger guarantees) that leverages [new theoretical advances for aggregate join queries](http://arxiv.org/abs/1508.07532).  We are also the first to translate this new theory into a system that leverages bit-level parallelism at several granularities within the data. Our storage engine accomplishes this through its design for SIMD parallelism.
+Joins are ubiquitous in data processing and often are the bottleneck of classic RDBMS workloads. Recent database theory has shown that Selinger style join optimizers, which compute joins in a pairwise fashion, are asympotically suboptimal. Therefore the join optimizers which have dominated the RDBMS for the past 40 years run suboptimal algorithms. Ngo et al. showed a new way to compute joins in a multiway fashion in this [paper](http://arxiv.org/abs/1203.1952). EmptyHeaded extends this line of work with novel theoretical and systems advances. Namely, in our query compiler we use a new worst-case optimal join algorithm (with stronger guarantees) that leverages [new theoretical advances for aggregate join queries](http://arxiv.org/abs/1508.07532).  We are also the first to translate this new theory into a system that leverages bit-level parallelism at several granularities within the data. Our storage engine accomplishes this through its design for SIMD parallelism.
 
 EmptyHeaded is designed to run as a python library. Behind the scenes there are three pieces of the EmptyHeaded engine.
 
@@ -41,11 +41,11 @@ To install EmptyHeaded from source ensure that your system:
 
 Dependencies
 -----------------
-Behind the scenes a lot goes on in our engine. This is no walk in the park library based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized code for hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Try using our [Docker images](#docker) where everything is taken care of for you already.
+Behind the scenes a lot goes on in our engine. This is no walk-in-the-park library-based engine--we have advanced theoretical compilation techniques, code generation, and highly optimized code for hardware--all spanning multiple programming languages. As such we have a fair number of dependencies. Try using our [Docker images](#docker) where everything is taken care of for you already.
 
 **AVX**
 
-A fundamental dependency of our system is that it is designed for machines that support the Advanced Vector Extensions (AVX) instruction set which is standard in modern and future hardware generations. Our performance is highly dependent on this instruction set being available. We currenlty DO NOT support old hardware generations without AVX. 
+A fundamental dependency of our system is that it is designed for machines that support the Advanced Vector Extensions (AVX) instruction set which is standard in modern and future hardware generations. Our performance is highly dependent on this instruction set being available. We currently DO NOT support old hardware generations without AVX. 
 
 * Mac or Linux operating system
 * GCC 5.3 (Linux) or Apple LLVM version 7.0.2 (Mac)
