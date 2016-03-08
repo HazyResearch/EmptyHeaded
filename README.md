@@ -134,7 +134,7 @@ We provide a tutorial of how to get started running your first EmptyHeaded query
 
 The syntax for all queries run in [EmptyHeaded: A Relational Engine for Graph Processing](http://arxiv.org/abs/1503.02368) can be found in `docs/notebooks/graph` and the syntax for all queries run in [Old Techniques for New Join Algorithms: A Case Study in RDF Processing](http://arxiv.org/abs/1602.03557) can be found in `docs/notebooks/rdf` (pipelining for LUBM 8 is still a WIP being merged to master).
 
-*A note on benchmarking* The execution time for each query can be found with out timer that outputs to the shell with `Time[Query]`, this seperates out pure query execution from file loading.
+*A note on benchmarking:* the execution time for each query can be found with our timer that outputs to the shell with `Time[Query]`. Our timers seperate pure query execution time and from the time spent loading from disk for the user.
 
 Contact
 -----------------
