@@ -35,6 +35,7 @@ The query compiler and code generator are written in Scala and the storage engin
 Installing from Source
 -----------------
 To install EmptyHeaded from source ensure that your system:
+
 1. Meets all [dependencies](#dependencies) detailed below (or you are in our [Docker](#docker) contatiner)
 2. Has [setup the EmptyHeaded environment](#setting-up-environment)
 3. Has [compiled the QueryCompiler and Cython bindings](#compilation).
