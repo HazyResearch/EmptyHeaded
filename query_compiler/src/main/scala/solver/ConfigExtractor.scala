@@ -1,4 +1,4 @@
-package DunceCap
+package duncecap.serialized
 
 case class Relation(val name:String, val storage:String)
 case class DatabaseConfig(val layout:String,

@@ -11,12 +11,10 @@
 #include "trie/TrieBlock.hpp"
 #include "utils/ParMMapBuffer.hpp"
 #include "utils/ParMemoryBuffer.hpp"
-#include "Annotation.hpp"
 
 template<class A,class M>
 void Trie<A,M>::save(){
   std::ofstream *writefile = new std::ofstream();
-  //std::cout << memoryBuffers->path <<  " " << M::folder << std::endl;
   std::string file = memoryBuffers->path+M::folder+std::string("trieinfo.bin");
   writefile->open(file, std::ios::binary | std::ios::trunc);
   writefile->write((char *)&annotated, sizeof(annotated));
@@ -120,6 +118,8 @@ void recursive_foreach(
 
 template<class A,class M>
 TrieBlock<layout,M>* Trie<A,M>::getHead(){
+  if(num_columns == 0)
+    return NULL;
   TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)(memoryBuffers->get_address(NUM_THREADS,0));
   return head; 
 }
@@ -131,7 +131,7 @@ template<class A,class M>
 void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body){
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
   TrieBlock<layout,M>* head = this->getHead();
-  if(head->get_set()->cardinality > 0){
+  if(head != NULL && head->get_set()->cardinality > 0){
     head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
       tuple->push_back(a_d);
       if(num_columns > 1){
@@ -404,8 +404,9 @@ Trie<A,M>::Trie(
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
 
-  /*
   //DEBUG
+  /*
+  std::cout << "TRIEE BUULd" << std::endl;
   std::cout << num_columns << std::endl;
   for(size_t i = 0; i < num_rows; i++){
     for(size_t j = 0; j < num_columns; j++){
@@ -414,7 +415,7 @@ Trie<A,M>::Trie(
     std::cout << std::endl;
   }
   */
-
+  
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();

@@ -1,5 +1,5 @@
-#include "thread_pool.hpp"
-#include "parallel.hpp"
+#include "utils/thread_pool.hpp"
+#include "utils/parallel.hpp"
 
 namespace par{
 

@@ -1,127 +1,83 @@
-package DunceCap
+package duncecap
 
-import DunceCap.attr._
+import duncecap.attr._
 
 object PlanUtil {
-  def getRelationInfoBasedOnName(forTopLevelSummary: Boolean,
-                                 relsToUse:List[QueryRelation],
-                                 attributeOrdering:List[Attr]): List[QueryPlanRelationInfo] = {
-    val distinctRelationNames = relsToUse.map(r => r.name).distinct
-
-    distinctRelationNames.flatMap(n => {
-      val relationsWithName = relsToUse.filter(r => {
-        r.name == n
-      })
-      val orderingsAndRels: List[(List[Int], List[QueryRelation])] = relationsWithName.map(rn => {
-        (PlanUtil.getNumericalOrdering(attributeOrdering, rn), rn)
-      }).groupBy(p => p._1).toList.map(elem => {
-        (elem._1, elem._2.unzip._2)
-      })
-      val or = orderingsAndRels.map(orderingAndRels => {
-        val ordering = orderingAndRels._1
-        val rels = orderingAndRels._2
-        if (forTopLevelSummary) {
-          new QueryPlanRelationInfo(rels.head.name, ordering, None, rels.head.annotationType)
-        } else {
-          new QueryPlanRelationInfo(rels.head.name, ordering, Some(rels.map(rel => reorderByNumericalOrdering(rel.attrNames, ordering))), rels.head.annotationType)
-        }
-      })
-      or
-    })
-  }
-
-  def reorderByNumericalOrdering(attr:List[Attr], ordering:List[Int]): List[Attr] = {
-    ordering.map(o => attr(o))
-  }
-
-  def getNumericalOrdering(attributeOrdering:List[Attr], rel:QueryRelation): List[Int] = {
-    attributeOrdering.map(a => rel.attrNames.indexOf(a)).filter(pos => {
-      pos != -1
-    })
-  }
-
-  def getOrderedAttrsWithAccessor(attributeOrdering:List[Attr], attrToRels:Map[Attr, List[QueryRelation]]): List[Attr] = {
-    attributeOrdering.flatMap(attr => {
-      val accessor = getAccessor(attr, attrToRels, attributeOrdering)
-      if (accessor.isEmpty) {
-        None
-      } else {
-        Some(attr)
-      }
-    })
-  }
-
-  def getAccessor(attr:Attr, attrToRels:Map[Attr, List[QueryRelation]], attributeOrdering:List[Attr]): List[QueryPlanAccessor] = {
-    attrToRels.get(attr).getOrElse(List()).map(rel => {
-      val ordering = getNumericalOrdering(attributeOrdering, rel)
-      new QueryPlanAccessor(rel.name, reorderByNumericalOrdering(rel.attrNames, ordering),(rel.attrNames.last == attr && rel.annotationType != "void*"))
-    })
-  }
-
-  def getAggregation(joinAggregates:Map[String,ParsedAggregate],
-                     attr:Attr,
-                     prevNextInfo:(Option[Attr], Option[Attr])): Option[QueryPlanAggregation] = {
-    joinAggregates.get(attr).map(parsedAggregate => {
-      new QueryPlanAggregation(parsedAggregate.op, parsedAggregate.init, parsedAggregate.expression, prevNextInfo._1, prevNextInfo._2)
-    })
-  }
-
-  def getSelection(attr:Attr, attrToRels:Map[Attr, List[QueryRelation]]): List[QueryPlanSelection] = {
-    attrToRels.get(attr).getOrElse(List())
-      .flatMap(rel => rel.attrs.filter(attrInfo => attrInfo._1 == attr &&  !attrInfo._2.isEmpty))
-      .map(attrInfo => QueryPlanSelection(attrInfo._2, attrInfo._3))
-  }
-
-  def createAttrToRelsMapping(attrs:Set[Attr], rels:List[QueryRelation]): Map[Attr, List[QueryRelation]] = {
-    attrs.map(attr =>{
+  def createAttrToRelsMapping(attrs:Set[Attr], rels:List[OptimizerRel]): Map[Attr, List[OptimizerRel]] = {
+    attrs.map(attr => {
       val relevantRels = rels.filter(rel => {
-        rel.attrNames.contains(attr)
+        rel.attrs.values.contains(attr)
       })
       (attr, relevantRels)
     }).toMap
   }
 
-  def getPrevAndNextAttrNames(attrsWithAccessor: List[Attr],
-                              filterFn:(Attr => Boolean)): List[(Option[Attr], Option[Attr])] = {
-    val prevAttrsMaterialized = attrsWithAccessor.foldLeft((List[Option[Attr]](), Option.empty[Attr]))((acc, attr) => {
-      val prevAttrMaterialized = (
-        if (filterFn(attr)) {
-          Some(attr)
-        } else {
-          acc._2
-        })
-      (acc._2::acc._1, prevAttrMaterialized)
-    })._1.reverse
-    val nextAttrsMaterialized = attrsWithAccessor.foldRight((List[Option[Attr]](), Option.empty[Attr]))((attr, acc) => {
-      val nextAttrMaterialized = (
-        if (filterFn(attr)) {
-          Some(attr)
-        } else {
-          acc._2
-        })
-      (acc._2::acc._1, nextAttrMaterialized)
-    })._1
-    prevAttrsMaterialized.zip(nextAttrsMaterialized)
+  def getSelection(attr:Attr, selections:Array[Selection]) = {
+    selections.filter(selection => selection.getAttr() == attr)
   }
 
+  private def createAttrWithSelectionInfo(attr:Attr,
+                                          attrToSelection:Map[Attr, Array[Selection]]): (Attr, Option[SelectionOp], Option[SelectionVal]) = {
+
+    val attrName = attr
+    val selectionsOpt = attrToSelection.get(attr)
+    if (selectionsOpt.isDefined && !selectionsOpt.get.isEmpty) {
+      val selections = selectionsOpt.get
+      (attr, Some(selections(0).operation.value), Some(selections(0).value))
+    } else {
+      (attr, None, None)
+    }
+  }
+
+  private def aggregatesAreAnalogous(attr1:Attr,
+                                     attr2:Attr,
+                                     joinAggregates1:Map[String, Aggregation],
+                                     joinAggregates2:Map[String, Aggregation]): Boolean = {
+    val agg1Opt = joinAggregates1.get(attr1)
+    val agg2Opt = joinAggregates2.get(attr2)
+    agg1Opt match {
+      case None => {
+        if (agg2Opt.isEmpty) {
+          true
+        } else {
+          false
+        }
+      }
+      case Some(agg1) => {
+        if (agg2Opt.isEmpty) {
+          false
+        } else {
+          val agg2 = agg2Opt.get
+          agg2.operation == agg1.operation &&
+            agg2.init == agg1.init &&
+            agg2.expression == agg1.expression
+        }
+      }
+    }
+  }
   /**
    * Try to match rel1 and rel2; in order for this to work, the attribute mappings such a map would imply must not contradict the
    * mappings we already know about. If this does work, return the new attribute mapping (which potentially has some new entries),
    * otherwise return None
    */
-  def attrNameAgnosticRelationEquals(output1:QueryRelation,
-                                     rel1: QueryRelation,
-                                     output2:QueryRelation,
-                                     rel2: QueryRelation,
+  def attrNameAgnosticRelationEquals(output1:Rel,
+                                     rel1:Rel,
+                                     output2:Rel,
+                                     rel2:Rel,
                                      attrMap: Map[Attr, Attr],
-                                     joinAggregates:Map[String, ParsedAggregate]): Option[Map[Attr, Attr]] = {
+                                     attrToSelection1: Map[Attr, Array[Selection]],
+                                     attrToSelection2: Map[Attr, Array[Selection]],
+                                     joinAggregates1:Map[String, Aggregation],
+                                     joinAggregates2:Map[String, Aggregation]): Option[Map[Attr, Attr]] = {
+    /* Rel names must match */
     if (!rel1.name.equals(rel2.name)) {
       return None
     }
+
     val zippedAttrs = (
-      rel1.attrs,
-      rel1.attrNames.map(attr => attrMap.get(attr)),
-      rel2.attrs).zipped.toList
+      rel1.attrs.values.map(attr => createAttrWithSelectionInfo(attr, attrToSelection1)),
+      rel1.attrs.values.map(attr => attrMap.get(attr)),
+      rel2.attrs.values.map(attr => createAttrWithSelectionInfo(attr, attrToSelection2))).zipped.toList
     if (zippedAttrs
       .exists({case (_, mappedToAttr, rel2Attr) => mappedToAttr.isDefined &&
       (!mappedToAttr.get.equals(rel2Attr._1))})) {
@@ -142,8 +98,8 @@ object PlanUtil {
           // don't need to check the aggregations again because they must have been checked when we put them in attrMap
           m
         } else {
-          if (output1.attrNames.contains(attrsTriple._1._1)!=output2.attrNames.contains(attrsTriple._3._1)
-            || !joinAggregates.get(attrsTriple._1._1).equals(joinAggregates.get(attrsTriple._3._1))) {
+          if (output1.attrs.values.contains(attrsTriple._1._1)!=output2.attrs.values.contains(attrsTriple._3._1)
+            || !aggregatesAreAnalogous(attrsTriple._1._1, attrsTriple._3._1, joinAggregates1, joinAggregates2)) {
             None
           } else {
             Some(m.get + (attrsTriple._1._1 -> attrsTriple._3._1))

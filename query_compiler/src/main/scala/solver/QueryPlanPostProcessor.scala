@@ -1,6 +1,6 @@
-package DunceCap
+package duncecap
 
 abstract trait QueryPlanPostProcessor {
   def doPostProcessingPass
-  def getQueryPlan: QueryPlan
+  def getQueryPlan(prevRules:List[Rule]): List[Rule]
 }

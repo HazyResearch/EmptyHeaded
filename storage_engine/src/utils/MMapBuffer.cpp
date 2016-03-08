@@ -19,8 +19,8 @@
 #include <sys/uio.h>
 #include <stdio.h>
 #include <errno.h>
-#include "common.hpp"
-#include "MMapBuffer.hpp"
+#include "utils/common.hpp"
+#include "utils/MMapBuffer.hpp"
 
 MMapBuffer::MMapBuffer(const char* _filename, size_t initSize) : filename(_filename) {
   // TODO Auto-generated constructor stub

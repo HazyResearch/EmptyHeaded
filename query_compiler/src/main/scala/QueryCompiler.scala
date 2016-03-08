@@ -1,77 +1,192 @@
-package DunceCap
+package duncecap
 
-import java.io.{FileOutputStream, PrintStream, File}
+import java.io._
+import scala.collection.mutable.Map
+import scala.collection.mutable.ListBuffer
+import sys.process._
 
-case class Config(directory: Option[String] = None,
-                  dbConfig:String = "",
-                  nprrOnly:Boolean = false,
-                  bagDedup:Boolean = true,
-                  codeGen:Option[String] = None,
-                  readQueryFromFile:Boolean = false,
-                  query:String = "",
-                  explain:Boolean = false)
+//Defines schema types for relations
+case class Schema(
+  val externalAttributeTypes:List[String],
+  val externalAnnotationTypes:List[String]
+  ) extends Serializable {
+  val attributeTypes:List[String] = checkAttributes()
+  val annotationTypes:List[String] = checkAnnotations()
+  def getAttributeTypes:Array[String] = {externalAttributeTypes.toArray}
+  def getAnnotationTypes:Array[String] = {externalAnnotationTypes.toArray}
+
+  //Checks that the schema has valid types.
+  private def checkAttributes():List[String] = {
+    externalAttributeTypes.map(a => {
+      if(!QueryCompiler.validAttributeTypes.contains(a))
+        throw new Exception("Attribute type " + a + " in schema is not valid.")
+      QueryCompiler.validAttributeTypes(a)
+    })
+  }
+  private def checkAnnotations():List[String] = {
+    externalAnnotationTypes.map(a => {
+      if(!QueryCompiler.validAnnotationTypes.contains(a))
+        throw new Exception("Attribute type " + a + " in schema is not valid.")
+      QueryCompiler.validAnnotationTypes(a)
+    })
+  }
+}
+
+//Defines relations
+case class Relation(
+  val name:String,
+  val schema:Schema,
+  val filename:String,
+  val df:Boolean
+  ) extends Serializable {
+  def getName():String = {name}
+  def getSchema():Schema = {schema}
+  def getFilename():String = {filename}
+  def getDF():Boolean = {df}
+}
+
+//Configuration for the db
+case class Config(
+  val system:String,
+  val numThreads:Int,
+  val numSockets:Int,
+  val layout:String,
+  val memory:String
+  ) extends Serializable {
+  def getSystem():String = {system}
+  def getNumThreads():Int = {numThreads}
+  def getNumSockets():Int = {numSockets}
+  def getLayout():String = {layout}
+  def getMemory():String = {memory}
+}
+
+//Creates an instance of database (needed to compile queries)
+case class DBInstance(val folder:String, val config:Config) extends Serializable {
+  val relations:ListBuffer[Relation] = ListBuffer[Relation]()
+  val relationMap:Map[String,Relation] = Map[String,Relation]()
+
+  //map from relation name to index in listbuffer
+  val name2relation:Map[String,Int] = Map[String,Int]()
+  def addRelation(r:Relation){
+    name2relation += ((r.name,relations.length))
+    relationMap += (r.name -> r)
+    relations += r
+  }
+
+  def getFolder():String = {folder}
+  def getConfig():Config = {config}
+  def getNumRelations():Int = {relations.length}
+  //kind of a hack but we make it look like a list
+  def getRelation(i:Int):Relation = {relations(i)}
+}
+
+//Main class which compilation runs out of
+class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
+  def getDBInstance():DBInstance = { db }
+
+  def createDB() {
+    CreateDB.loadAndEncode(db,hash)
+  }
+
+  //Parse a datalog statement and code generate it.
+  def genTrieWrapper(rel:String) {
+    Trie.run(db,db.relations(db.name2relation(rel)))
+  }
+
+  //Parse a datalog statement and code generate it.
+  def datalog(query:String):String = {
+    val ir = DatalogParser.run(query)
+    "Query.cpp"
+  }
+
+  def optimize(query:String):IR = {
+    val ir = DatalogParser.run(query)
+    IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(ir))
+  }
+
+  //code generate from an IR
+  //return name of the cpp file
+  def generate(datalog:String,hash:String,folder:String) : Int = {
+    val ir = DatalogParser.run(datalog)
+    val optir = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(ir))
+    val (num,rels) = QueryPlan.generate(optir,db,hash,folder)
+    rels.foreach(db.addRelation(_))
+    num
+  }
+
+  //saves the schema on disk
+  def toDisk(){
+    val result = s"""mkdir ${db.folder}""" !
+
+    if(result == 1){
+      throw new Exception("ERROR DATABASE FOLDER EXISTS OR IS AN INVALID PATH.")
+    }
+
+    val result2 = s"""mkdir ${db.folder}/libs""" !
+
+    val fos = new FileOutputStream(db.folder+"/schema.bin")
+    val oos = new ObjectOutputStream(fos)
+    oos.writeObject(this)
+    oos.close()
+  }
+}
 
 object QueryCompiler {
-  def readFile(file:String): String = {
-    val source = scala.io.Source.fromFile(file)
-    val line = try source.mkString finally source.close()
-    line
+  //acceptable attribute types
+  val validAttributeTypes = Map(
+    //"Boolean" -> ,
+    //"Byte",
+    "uint32" -> "uint32_t",
+    "int32" -> "int32_t",
+    "int64" -> "uint64_t",
+    "uint64" -> "int64_t",
+    "string" -> "string"
+    //"String",
+    //"Float",
+    //"Double",
+    //"Date"
+    )
+
+  val internalAttrToExternal = Map(
+    //"Boolean" -> ,
+    //"Byte",
+    "uint32_t" -> "uint32",
+    "int32_t" -> "int32",
+    "uint64_t" -> "uint64",
+    "int64_t" -> "int64",
+    "float" -> "float32",
+    "double" -> "float64",
+    "string" -> "string"
+    //"String",
+    //"Float",
+    //"Double",
+    //"Date"
+    )
+
+  //All numeric types
+  val validAnnotationTypes = Map(
+    "int" -> "int",
+    "long" -> "long",
+    "float" -> "float",
+    "float32" -> "float",
+    "double" -> "double"
+  )
+
+  //Special builder to convert arrays to lists
+  def buildInternalSchema(attrTypes:List[String],annoTypes:List[String]) : Schema = {
+    Schema(attrTypes.map(internalAttrToExternal(_)),annoTypes.map(validAnnotationTypes(_)))
   }
-  def main(args:Array[String]): Unit = {
-    val parser = new scopt.OptionParser[Config]("target/start") {
-      head("Emptyheaded", "0.1")
-      opt[Unit]("explain") action { (_, c) =>
-        c.copy(explain = true) } text("show the query plan instead of running the query")
-      opt[String]('d', "directory") action { (x, c) =>
-        c.copy(directory = Some(x))} text("directory within EMPTYHEADED_HOME to write json output, by default prints to stdout when running just planner")
-      opt[String]('g', "codegen") action { (x, c) =>
-        c.copy(codeGen = Some(x))} text("File to JSON query plan, runs only code generation with this argument.")
-      opt[String]('c', "db-config") required() valueName("<file>") action { (x, c) =>
-        c.copy(dbConfig = x)} text("database config file")
-      opt[Unit]('n', "nprr-only") action { (_, c) =>
-        c.copy(nprrOnly = true)} text("whether to use only NPRR (single bag GHD), defaults to false")
-      opt[Unit]("no-bag-dedup") action { (_, c) =>
-        c.copy(bagDedup = false)} text("whether to deduplicate bags in the GHD")
-      opt[Unit]('f', "read-query-from-file") action { (_, c) =>
-        c.copy(readQueryFromFile = true)} text("whether to read the query from a file, defaults to false")
-      opt[String]('q',"<query>") action { (x, c) =>
-        c.copy(query = x)} text("query")
-      help("help") text("prints this usage text")
-    }
 
-    parser.parse(args, Config()) map { config =>
-      Environment.fromJSON(config.dbConfig)
-      val queryString =
-        if (config.readQueryFromFile) {
-          readFile(config.query)
-        } else if(!config.codeGen.isDefined){
-          config.query
-        } else ""
-        
-
-      val queryPlans:QueryPlans = config.codeGen match {
-        case None => QueryPlans(DCParser.run(queryString, config))
-        case Some(g) => QP.fromJSON(g)
-      }
-
-      val output = config.directory match {
-        case Some(d) => {
-          new PrintStream(new FileOutputStream(
-            new File(d + "/q"+queryString.hashCode+".json"),false))
-        } 
-        case _ => { 
-          System.out
-        }
-      }
-
-      if (!config.explain) {
-        CPPGenerator.run(queryPlans)
-      } else {
-        output.print(queryPlans)
-      }
-      output.close
-    } getOrElse {
-      // arguments are bad, usage message will have been displayed
-    }
+  //Special builder to convert arrays to lists
+  def buildSchema(attrTypes:Array[String],annoTypes:Array[String]) : Schema = {
+    Schema(attrTypes.toList, annoTypes.toList)
+  }
+  //Build from a schema saved on disk
+  def fromDisk(filename:String) : QueryCompiler = {
+    val fos = new FileInputStream(filename)
+    val oos = new ObjectInputStream(fos)
+    val myqc = oos.readObject().asInstanceOf[QueryCompiler]
+    oos.close()
+    myqc
   }
 }

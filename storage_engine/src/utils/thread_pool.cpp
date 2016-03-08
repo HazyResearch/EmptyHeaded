@@ -1,5 +1,5 @@
-#include "thread_pool.hpp"
-#include "parallel.hpp"
+#include "utils/thread_pool.hpp"
+#include "utils/parallel.hpp"
 
 pthread_barrier_t thread_pool::barrier; // barrier synchronization object 
 pthread_t* thread_pool::threadPool;
@@ -7,7 +7,7 @@ pthread_mutex_t* thread_pool::locks;
 pthread_cond_t* thread_pool::readyConds;
 pthread_cond_t* thread_pool::doneConds;
 
-void** thread_pool::workPool;
+FN_PTR* thread_pool::workPool;
 void** thread_pool::argPool;
 
 ////////////////////////////////////////////////////
@@ -71,7 +71,7 @@ void thread_pool::submitWork(size_t threadId, void *(*work) (void *), void *arg)
   while (argPool[threadId] != NULL) {
     pthread_cond_wait(&doneConds[threadId], &locks[threadId]);
   }
-  workPool[threadId] = (void*)work;
+  workPool[threadId] = work;
   argPool[threadId] = arg;
   pthread_cond_signal(&readyConds[threadId]);
   pthread_mutex_unlock(&locks[threadId]);
@@ -86,7 +86,7 @@ void* thread_pool::processWork(void* threadId) {
   pthread_mutex_init(&locks[id], NULL);
   pthread_cond_init(&readyConds[id], NULL);
   pthread_cond_init(&doneConds[id], NULL);
-  workPool[id] = NULL;
+  //workPool[id] = (void *(*)(void *))NULL;
   argPool[id] = NULL;
   void *(*work) (void *);
   void *arg;
@@ -102,14 +102,15 @@ void* thread_pool::processWork(void* threadId) {
       pthread_cond_wait(&readyConds[id], &locks[id]);
     }
 
-    work = (void *(*)(void *))workPool[id];
-    workPool[id] = NULL;
+    work = workPool[id];
+    //workPool[id] = (void *(*)(void *))NULL;
     arg = argPool[id];
     argPool[id] = NULL;
     pthread_cond_signal(&doneConds[id]);
     pthread_mutex_unlock(&locks[id]);
     work(arg);
   }
+  return NULL;
 }
 
 void thread_pool::initializeThreadPool() {
@@ -117,7 +118,7 @@ void thread_pool::initializeThreadPool() {
   locks = new pthread_mutex_t[NUM_THREADS];
   readyConds = new pthread_cond_t[NUM_THREADS];
   doneConds = new pthread_cond_t[NUM_THREADS];
-  workPool = new void*[NUM_THREADS];
+  workPool = new FN_PTR[NUM_THREADS];
   argPool = new void*[NUM_THREADS];
 
   pthread_barrier_init (&barrier, NULL, NUM_THREADS+1);
