@@ -130,7 +130,7 @@ Running Queries
 -----------------
 We provide demos of EmptyHeaded in iPython notebooks. 
 
-We provide a tutorial of how to get started running your first EmptyHeaded query in the `docs/notebooks` folder. In this folder is a `Getting Started Tutorial` iPython notebook (amongst others) which can be loaded after executing `iPython notebook`.
+We provide a tutorial of how to get started running your first EmptyHeaded query in the `docs/notebooks` folder. In this folder is a `Getting Started Tutorial` iPython notebook (amongst others) which can be loaded after executing `ipython notebook`.
 
 The syntax for all queries run in [EmptyHeaded: A Relational Engine for Graph Processing](http://arxiv.org/abs/1503.02368) can be found in `docs/notebooks/graph` and the syntax for all queries run in [Old Techniques for New Join Algorithms: A Case Study in RDF Processing](http://arxiv.org/abs/1602.03557) can be found in `docs/notebooks/rdf` (pipelining for LUBM 8 is still a WIP being merged to master).
 
