@@ -17,7 +17,7 @@ object AttrOrderingUtil {
     return hasSelect:::noSelect
   }
 
-  def partition_materialized(attrNames:List[Attr], outputRelation:Rel): List[Attr] = {
+  def partition_materialized(attrNames:List[Attr], outputRelation:RelBase): List[Attr] = {
     val (materialized, notMaterialized) = attrNames.partition(outputRelation.attrs.values.contains(_))
     materialized:::notMaterialized
   }
@@ -30,7 +30,7 @@ object AttrOrderingUtil {
   }
 
   private def get_attribute_ordering(f_in:mutable.Set[EHNode],
-                             outputRelation:Rel): List[String] = {
+                             outputRelation:RelBase): List[String] = {
     var frontier = f_in
     var next_frontier = mutable.Set[EHNode]()
     var attr = scala.collection.mutable.ListBuffer.empty[String]
@@ -64,7 +64,7 @@ object AttrOrderingUtil {
 
   def getAttributeOrdering(node:EHNode,
                            queryRelations:List[OptimizerRel],
-                           outputRelation:Rel,
+                           outputRelation:RelBase,
                            selections:List[Selection]) : List[String] = {
     val ordering = get_attribute_ordering(
       mutable.LinkedHashSet[EHNode](node),
