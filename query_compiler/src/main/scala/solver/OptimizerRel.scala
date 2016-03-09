@@ -47,6 +47,7 @@ object OptimizerRelFactory {
   def createOptimizerRelWithNoSelects(attrs:String*): OptimizerRel = {
     OptimizerRel("", Attributes(attrs.toList), Annotations(List()), false, attrs.toSet)
   }
+
   def createImaginaryOptimizerRelWithNoSelects(attrs:String*): OptimizerRel = {
     OptimizerRel("", Attributes(attrs.toList), Annotations(List()), true, attrs.toSet)
   }

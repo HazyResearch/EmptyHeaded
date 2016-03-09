@@ -42,10 +42,12 @@ class GHD(val root:GHDNode,
     root.setDescendantNames(1, outputRelation.name)
 
     root.recursivelyComputeProjectedOutAttrsAndOutputRelation(
-      if (outputRelation.anno.values.isEmpty) "" else outputRelation.anno.values.head,
+      if (outputRelation.anno.values.isEmpty) None else Some(outputRelation.anno.values.head),
       outputRelation.attrs.values.toSet,
-      outputRelation.attrs.values.toSet)
-    if (needTopDownPass()){
+      outputRelation.attrs.values.toSet
+    )
+
+    if (needTopDownPass()) {
       root.setBagName(s"""${outputRelation.name}_root""")
     }
     bagOutputs = getBagOutputRelations(root)
