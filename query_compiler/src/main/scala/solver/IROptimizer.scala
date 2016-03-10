@@ -14,7 +14,7 @@ object IROptimizer {
              rel
            }
          })),
-         rule.aggregations,
+         rule.aggregations, /* TODO, you may need to substitute in a CONST agg as well */
          rule.filters)
   }
 

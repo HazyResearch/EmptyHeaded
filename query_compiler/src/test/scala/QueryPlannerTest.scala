@@ -188,26 +188,6 @@ class QueryPlannerTest extends FunSuite {
     assertResult(ir)(optimized)
   }
 
-  test("lollipop partial agg with project") {
-    val ir = IR(List(
-      Rule(Result(
-        Rel("bag_1_a_d_Lollipop",Attributes(List("a")),Annotations(List("z"))), true),None,Operation("*"),Order(Attributes(List("a", "d"))),Project(Attributes(List())),
-        Join(List(
-          Rel("Edge", Attributes(List("a", "d")),Annotations(List())))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("d")),"1","AGG", List()))),Filters(List())),
-      Rule(Result(
-        Rel("Lollipop",Attributes(List("a")),Annotations(List("z"))), false),None,Operation("*"),Order(Attributes(List("a", "b", "c"))),Project(Attributes(List("b"))),
-        Join(List(
-          Rel("Edge",Attributes(List("a", "c")),Annotations(List())),
-          Rel("Edge",Attributes(List("b", "c")),Annotations(List())),
-          Rel("Edge",Attributes(List("a", "b")),Annotations(List())),
-          Rel("bag_1_a_d_Lollipop",Attributes(List("a")),Annotations(List("z"))))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("c")),"1","AGG", List()))),Filters(List()))))
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(c,d)]"))
-    assertResult(ir)(optimized)
-  }
-
   test("4 clique with selection and aggregation") {
     val ir = IR(List(
       Rule(Result(
@@ -427,6 +407,17 @@ class QueryPlannerTest extends FunSuite {
         Join(List(
           Rel("worksFor",Attributes(List("a", "e")),Annotations(List())))),
         Aggregations(List()),Filters(List(Selection("e",EQUALS(),"'http://www.Department0.University0.edu'")))),
+      Rule(Result(Rel("bag_1_a_b_lubm4",Attributes(List("a", "b")),Annotations(List())),true),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "b"))),
+        Project(Attributes(List())),
+        Join(List(
+          Rel("name",Attributes(List("a", "b")),Annotations(List())),
+          Rel("bag_2_e_a_lubm4",Attributes(List("a")),Annotations(List())),
+          Rel("bag_2_f_a_lubm4",Attributes(List("a")),Annotations(List())))),
+        Aggregations(List()),
+        Filters(List())),
       Rule(Result(Rel("bag_1_a_c_lubm4",Attributes(List("a", "c")),Annotations(List())),true),
         None,
         Operation("*"),
@@ -435,34 +426,23 @@ class QueryPlannerTest extends FunSuite {
         Join(List(
           Rel("telephone",Attributes(List("a", "c")),Annotations(List())),
           Rel("bag_2_e_a_lubm4",Attributes(List("a")),Annotations(List())),
-          Rel("bag_2_f_a_lubm4",Attributes(List("a")),Annotations(List())))),
-        Aggregations(List()),
-        Filters(List())),
-      Rule(Result(Rel("bag_1_a_d_lubm4",Attributes(List("a", "d")),Annotations(List())),true),
+          Rel("bag_2_f_a_lubm4",Attributes(List("a")),Annotations(List())))),Aggregations(List()),Filters(List())),
+      Rule(Result(Rel("lubm4_root",Attributes(List("a", "d")),Annotations(List())),true),
         None,
-        Operation("*"),
-        Order(Attributes(List("a", "d"))),
-        Project(Attributes(List())),
+        Operation("*"),Order(Attributes(List("a", "d", "b", "c"))),
+        Project(Attributes(List("b", "c"))),
         Join(List(
           Rel("emailAddress",Attributes(List("a", "d")),Annotations(List())),
-          Rel("bag_2_e_a_lubm4",Attributes(List("a")),Annotations(List())),
-          Rel("bag_2_f_a_lubm4",Attributes(List("a")),Annotations(List())))),Aggregations(List()),Filters(List())),
-      Rule(Result(Rel("lubm4_root",Attributes(List("a", "b")),Annotations(List())),true),
-        None,
-        Operation("*"),Order(Attributes(List("a", "b", "d", "c"))),
-        Project(Attributes(List("c", "d"))),
-        Join(List(
-          Rel("name",Attributes(List("a", "b")),Annotations(List())),
-          Rel("bag_1_a_d_lubm4",Attributes(List("a", "d")),Annotations(List())),
+          Rel("bag_1_a_b_lubm4",Attributes(List("a", "b")),Annotations(List())),
           Rel("bag_1_a_c_lubm4",Attributes(List("a", "c")),Annotations(List())))),Aggregations(List()),Filters(List())),
       Rule(Result(Rel("lubm4",Attributes(List("a", "b", "c", "d")),Annotations(List())),false),
         None,
         Operation("*"),
-        Order(Attributes(List("a", "b", "d", "c"))),
+        Order(Attributes(List("a", "d", "b", "c"))),
         Project(Attributes(List())),
         Join(List(
-          Rel("lubm4_root",Attributes(List("a", "b")),Annotations(List())),
-          Rel("bag_1_a_d_lubm4",Attributes(List("a", "d")),Annotations(List())),
+          Rel("lubm4_root",Attributes(List("a", "d")),Annotations(List())),
+          Rel("bag_1_a_b_lubm4",Attributes(List("a", "b")),Annotations(List())),
           Rel("bag_1_a_c_lubm4",Attributes(List("a", "c")),Annotations(List())))),
         Aggregations(List()),
         Filters(List()))))

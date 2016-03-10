@@ -81,12 +81,6 @@ object QueryPlanner {
             rule.getResult().getRel().getAttributes().toSet,
             rule.getFilters().values.toArray)
 
-         /* GHDSolver.getMinFHWDecompositions(
-            rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)),
-            rule.getFilters().values.toArray,
-            None)*/
-
-
       val joinAggregates = rule.getAggregations().values.flatMap(agg => {
         val attrs = agg.attrs.values
         attrs.map(attr => { (attr, agg) })

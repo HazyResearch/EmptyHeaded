@@ -30,12 +30,10 @@ class GHDNode(override val rels: List[OptimizerRel],
     Iterator(this) ++ children.iterator.map(_.iterator).flatten
   }
 
+  override def size: Int = 1
+
   override def toString: String = {
     return s"""GHDNode(${rels}, ${children})"""
-  }
-
-  override def size(): Int = {
-    return iterator.size
   }
 
   /**

@@ -20,12 +20,8 @@ object GHDSolver {
       compAndCompPlus => getCharacteristicHypergraphEdges(compAndCompPlus._1.toSet, compAndCompPlus._2, output).toList
     })
 
-    val G_i_options = getMinFHWDecompositions(H_0_edges.toList, selections)::characteristicHypergraphEdges
-      .map(H => getMinFHWDecompositions(H.toList.filter(!_.isImaginary), selections, H.find(_.isImaginary)))
-
-   // println("G_i_options")
-    G_i_options.head.map(println(_))
-   // println("====================")
+    val G_i_options = getMinFHWDecompositions(H_0_edges.toList, selections).distinct::characteristicHypergraphEdges
+      .map(H => getMinFHWDecompositions(H.toList.filter(!_.isImaginary), selections, H.find(_.isImaginary)).distinct)
 
     val G_i_combos = G_i_options.foldLeft(List[List[GHDNode]](List[GHDNode]()))(allSubtreeAssignmentsFoldFunc)
 
@@ -76,13 +72,9 @@ object GHDSolver {
       val stitchable = G_0_nodes.find(node => {
         (agg intersect compPlus) subsetOf node.attrSet
       })
-      println("agg: ")
-      println(agg)
-      println(compPlus)
-      println(G_0_nodes)
       assert(stitchable.isDefined) // in theory, we always find a stitchable node
       stitchable.get.children = g_i::stitchable.get.children
-      // assert((agg intersect compPlus) subsetOf g_i.noChildAttrSet)
+      assert((agg intersect compPlus) subsetOf g_i.attrSet)
     }})
     return G_0
   }
@@ -218,12 +210,7 @@ object GHDSolver {
 
   private def bagCannotBeExpanded(bag: GHDNode, leftOverRels: Set[OptimizerRel], selected:Set[String]): Boolean = {
     // true if there does not exist a remaining rel entirely covered by this bag
-    val b = leftOverRels.forall(rel => !rel.attrs.values.forall(attrName => selected.contains(attrName) || bag.noChildAttrSet.contains(attrName)))
-   /* println("&&&&&&&&&")
-    println(selected)
-    println(bag.noChildAttrSet)
-    println(leftOverRels)
-    println("*********") */
+    val b = leftOverRels.forall(rel => !rel.attrs.values.forall(attrName => bag.noChildAttrSet.contains(attrName)))
     return b
   }
 
