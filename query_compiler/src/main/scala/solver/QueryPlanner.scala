@@ -76,17 +76,16 @@ object QueryPlanner {
       }
 
       val rootNodes =
-        if (!rule.aggregations.values.isEmpty) {
           GHDSolver.computeAJAR_GHD(
             rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)).toSet,
             rule.getResult().getRel().getAttributes().toSet,
             rule.getFilters().values.toArray)
-        } else {
-          GHDSolver.getMinFHWDecompositions(
+
+         /* GHDSolver.getMinFHWDecompositions(
             rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)),
             rule.getFilters().values.toArray,
-            None)
-        }
+            None)*/
+
 
       val joinAggregates = rule.getAggregations().values.flatMap(agg => {
         val attrs = agg.attrs.values

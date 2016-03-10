@@ -203,8 +203,8 @@ class QueryPlannerTest extends FunSuite {
           Rel("Edge",Attributes(List("a", "b")),Annotations(List())),
           Rel("bag_1_a_d_Lollipop",Attributes(List("a")),Annotations(List("z"))))),
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("c")),"1","AGG", List()))),Filters(List()))))
-    val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(c,d)]")))
+    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
+      "Lollipop(a;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),z:long<-[COUNT(c,d)]"))
     assertResult(ir)(optimized)
   }
 

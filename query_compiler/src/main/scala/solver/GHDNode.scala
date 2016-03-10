@@ -14,7 +14,7 @@ class GHDNode(override val rels: List[OptimizerRel],
               override val selections:Array[Selection])
   extends EHNode(rels, selections) with Iterable[GHDNode] {
   var subtreeRels = rels.toSet
-  val noChildAttrSet = rels.foldLeft(TreeSet[String]())(
+  val noChildAttrSet = rels.filter(!_.isImaginary).foldLeft(TreeSet[String]())(
     (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
   var bagName: String = null
   var isDuplicateOf: Option[String] = None
@@ -180,6 +180,7 @@ class GHDNode(override val rels: List[OptimizerRel],
       } catch {
         case e: NoFeasibleSolutionException => {
           val it = constraintList.iterator
+          println(unselectedAttrSet)
           while (it.hasNext) {
             println(it.next().getCoefficients)
           }

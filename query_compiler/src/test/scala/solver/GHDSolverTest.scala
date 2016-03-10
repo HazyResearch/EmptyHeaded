@@ -5,43 +5,55 @@ import org.scalatest.FunSuite
 class GHDSolverTest extends FunSuite {
 
   final val RELATIONS: List[OptimizerRel] = List(
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "b", "c"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("g", "a"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("c", "d", "e"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("e", "f"))
+    OptimizerRelFactory.createOptimizerRel("a", "b", "c"),
+    OptimizerRelFactory.createOptimizerRel("g", "a"),
+    OptimizerRelFactory.createOptimizerRel("c", "d", "e"),
+    OptimizerRelFactory.createOptimizerRel("e", "f"))
   final val PATH2: List[OptimizerRel] = List(
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "b"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("b", "c"))
+    OptimizerRelFactory.createOptimizerRel("a", "b"),
+    OptimizerRelFactory.createOptimizerRel("b", "c"))
   final val TADPOLE: List[OptimizerRel] = List(
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "b"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("b", "c"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("c", "a"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "e"))
+    OptimizerRelFactory.createOptimizerRel("a", "b"),
+    OptimizerRelFactory.createOptimizerRel("b", "c"),
+    OptimizerRelFactory.createOptimizerRel("c", "a"),
+    OptimizerRelFactory.createOptimizerRel("a", "e"))
   final val SPLIT: List[OptimizerRel] = List(
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("b", "c", "d", "z", "y"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("c", "d", "e", "i", "j"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("b", "d", "f", "g", "h"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("f", "g", "h", "k", "b"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("f", "g", "h", "n", "b"))
+    OptimizerRelFactory.createOptimizerRel("b", "c", "d", "z", "y"),
+    OptimizerRelFactory.createOptimizerRel("c", "d", "e", "i", "j"),
+    OptimizerRelFactory.createOptimizerRel("b", "d", "f", "g", "h"),
+    OptimizerRelFactory.createOptimizerRel("f", "g", "h", "k", "b"),
+    OptimizerRelFactory.createOptimizerRel("f", "g", "h", "n", "b"))
   final val BARBELL: List[OptimizerRel] = List(
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "b"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("b", "c"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "c"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("d", "e"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("e", "f"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("d", "f"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("c", "d")
+    OptimizerRelFactory.createOptimizerRel("a", "b"),
+    OptimizerRelFactory.createOptimizerRel("b", "c"),
+    OptimizerRelFactory.createOptimizerRel("a", "c"),
+    OptimizerRelFactory.createOptimizerRel("d", "e"),
+    OptimizerRelFactory.createOptimizerRel("e", "f"),
+    OptimizerRelFactory.createOptimizerRel("d", "f"),
+    OptimizerRelFactory.createOptimizerRel("c", "d")
+  )
+  final val LONG_BARBELL: List[OptimizerRel] = List(
+    OptimizerRelFactory.createOptimizerRel("a", "b"),
+    OptimizerRelFactory.createOptimizerRel("b", "c"),
+    OptimizerRelFactory.createOptimizerRel("a", "c"),
+    OptimizerRelFactory.createOptimizerRel("d", "e"),
+    OptimizerRelFactory.createOptimizerRel("e", "f"),
+    OptimizerRelFactory.createOptimizerRel("d", "f"),
+    OptimizerRelFactory.createOptimizerRel("c", "p"),
+    OptimizerRelFactory.createOptimizerRel("d", "p")
   )
   final val FFT: List[OptimizerRel] = List(
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("y0", "y1"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("x0", "y0"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("x0", "y1"),
-    OptimizerRelFactory.createOptimizerRelWithNoSelects("x1", "y0")
+    OptimizerRelFactory.createOptimizerRel("y0", "y1"),
+    OptimizerRelFactory.createOptimizerRel("x0", "y0"),
+    OptimizerRelFactory.createOptimizerRel("x0", "y1"),
+    OptimizerRelFactory.createOptimizerRel("x1", "y0")
   )
   final val solver = GHDSolver
 
   test("Can form 3 node AJAR GHD for barbell") {
     val ajarGHDs = GHDSolver.computeAJAR_GHD(BARBELL.toSet, Set("c", "d"), Array())
+
+    ajarGHDs.map(println(_))
 
     val singleNodeG_0Trees = ajarGHDs.filter(ghd => {
       ghd.attrSet.equals(Set("c", "d")) &&
@@ -59,7 +71,11 @@ class GHDSolverTest extends FunSuite {
     // make sure that we get partition correctly after we choose the root
     val chosen = List(BARBELL.last)
     val partitions = solver.getPartitions(
-      BARBELL.take(6), chosen, Set(), solver.getAttrSet(chosen))
+      BARBELL.take(6),
+      chosen,
+      Set(),
+      Set(),
+      solver.getAttrSet(chosen))
     assert(partitions.isDefined)
     assert(partitions.get.size == 2)
 
@@ -74,5 +90,33 @@ class GHDSolverTest extends FunSuite {
     expectedDecomp = expectedDecomp.filter((root : GHDNode) => root.children(0).rels.size == 3 && root.children(1).rels.size == 3)
 
     assert(expectedDecomp.size >= 1)
+  }
+
+  test("Can form 1 node AJAR GHD for length 2 path query") {
+    val ajarGHDs = GHDSolver.computeAJAR_GHD(PATH2.toSet, Set("a", "c"), Array())
+    ajarGHDs.map(ajarGHD => {
+      assert(Set("a", "b", "c") == ajarGHD.attrSet)
+      assert(ajarGHD.children.size == 0)
+    })
+  }
+
+  test("check that ajar works correctly on query without aggregation as well") {
+    val ajarGHDs = GHDSolver.computeAJAR_GHD(PATH2.toSet, Set("a", "b", "c"), Array())
+    ajarGHDs.map(println(_))
+    ajarGHDs.map(ajarGHD => {
+      assert(Set("a", "b", "c") == ajarGHD.attrSet)
+      assert(ajarGHD.children.size == 0)
+    })
+  }
+
+  test("blah") {
+    val ajarGHDs = GHDSolver.computeAJAR_GHD(BARBELL.toSet, Set("a", "b", "c", "d", "e", "f"), Array())
+    ajarGHDs.map(println(_))
+
+  }
+
+  test("blah2") {
+    val ajarGHDs = GHDSolver.computeAJAR_GHD(LONG_BARBELL.toSet, Set("a", "b", "c", "d", "e", "f"), Array(Selection("p", EQUALS(), "0")))
+    ajarGHDs.map(println(_))
   }
 }

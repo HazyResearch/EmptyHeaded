@@ -44,11 +44,11 @@ case class OptimizerRel(override val name:String,
                    val nonSelectedAttrNames:Set[String]) extends RelBase
 
 object OptimizerRelFactory {
-  def createOptimizerRelWithNoSelects(attrs:String*): OptimizerRel = {
+  def createOptimizerRel(attrs:String*): OptimizerRel = {
     OptimizerRel("", Attributes(attrs.toList), Annotations(List()), false, attrs.toSet)
   }
 
-  def createImaginaryOptimizerRelWithNoSelects(attrs:String*): OptimizerRel = {
+  def createImaginaryOptimizerRel(attrs:String*): OptimizerRel = {
     OptimizerRel("", Attributes(attrs.toList), Annotations(List()), true, attrs.toSet)
   }
 }

@@ -18,21 +18,21 @@ class AttrOrderingUtilTest extends FunSuite {
 
   test("Can order attributes, taking into account GHD structure and what's equality-selected") {
     val rootBag = new GHDNode(List(
-      OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "b"),
-      OptimizerRelFactory.createOptimizerRelWithNoSelects("b", "c"),
-      OptimizerRelFactory.createOptimizerRelWithNoSelects("c", "a")), Array())
+      OptimizerRelFactory.createOptimizerRel("a", "b"),
+      OptimizerRelFactory.createOptimizerRel("b", "c"),
+      OptimizerRelFactory.createOptimizerRel("c", "a")), Array())
     val child1 = new GHDNode(List(
-      OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "x")), Array(Selection("x", EQUALS(), "0")))
+      OptimizerRelFactory.createOptimizerRel("a", "x")), Array(Selection("x", EQUALS(), "0")))
     val child2 = new GHDNode(List(
-      OptimizerRelFactory.createOptimizerRelWithNoSelects("b","y")), Array(Selection("y", EQUALS(), "0")))
+      OptimizerRelFactory.createOptimizerRel("b","y")), Array(Selection("y", EQUALS(), "0")))
     val child3 = new GHDNode(List(
-      OptimizerRelFactory.createOptimizerRelWithNoSelects("c","z")),  Array(Selection("z", EQUALS(), "0")))
+      OptimizerRelFactory.createOptimizerRel("c","z")),  Array(Selection("z", EQUALS(), "0")))
     rootBag.children = List(child1, child2, child3)
 
     val ordering = AttrOrderingUtil.getAttributeOrdering(
       rootBag,
       rootBag.rels:::child1.rels:::child2.rels:::child3.rels,
-      OptimizerRelFactory.createOptimizerRelWithNoSelects("a", "b", "c"),
+      OptimizerRelFactory.createOptimizerRel("a", "b", "c"),
       List(Selection("x", EQUALS(), "0"),Selection("y", EQUALS(), "0"), Selection("z", EQUALS(), "0")))
 
     assertResult(Set[Attr]("x", "y", "z"))(ordering.take(3).toSet)
