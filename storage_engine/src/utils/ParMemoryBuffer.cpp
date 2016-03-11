@@ -41,6 +41,10 @@ ParMemoryBuffer::ParMemoryBuffer(size_t num_elems_in){
   elements.push_back(head);
 }
 
+MemoryBuffer* ParMemoryBuffer::at(const size_t tid){
+  return elements.at(tid);
+}
+
 size_t ParMemoryBuffer::get_size(const size_t tid){
   return elements.at(tid)->getSize();
 }

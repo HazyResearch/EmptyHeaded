@@ -1,7 +1,7 @@
 #ifndef _SPARSEVECTOR_H_
 #define _SPARSEVECTOR_H_
 
-#include "layout/uinteger.hpp"
+#include "layout/UINTEGER.hpp"
 
 /*
 Vectors are laid flat in memory as follows
@@ -11,64 +11,59 @@ Vector | Indices (uint/bitset/block) | Annotations
 ---------------------------------------------------------
 */
 
-template <class A, class M>
-class SparseVector{ 
-  public: 
-    Meta meta;
-    Buffer<M> buffer;
-
-    SparseVector(const Meta& meta_in,
-      const Buffer<M>& buffer_in){
-      meta = meta_in;
-      buffer = buffer_in;
-    };
-    
+struct SparseVector{ 
     //Find the index of a data elem.
-    const uint32_t indexOf(const uint32_t data) const{
+    template <class A, class M>
+    static inline const uint32_t indexOf(const uint32_t data) {
     };
 
     //calls index of then calls get below.
-    A get(const uint32_t data) const{
+    template <class A, class M>
+    static inline A get(const uint32_t data) {
     
     };
 
     //look up a data value
-    A get(
+    template <class A, class M>
+    static inline A get(
       const uint32_t index,
-      const uint32_t data) const{
+      const uint32_t data) {
 
     };
 
     //set an annotation value
-    void set(
+    template <class A, class M>
+    static inline void set(
       const uint32_t index,
       const uint32_t data, 
-      const A value) const{
+      const A value) {
 
     };
 
     //look up a data value
-    bool contains(const uint32_t key) const{
+    template <class A, class M>
+    static inline bool contains(const uint32_t key) {
 
     };
 
     //mutable loop (returns data and index)
-    template<typename F>
-    inline void foreach(F f) const{
+    template <class A, class M, typename F>
+    static inline inline void foreach(F f) {
 
     };
 
     //parallel iterator
-    template<typename F>
-    inline void par_foreach(F f) const{
+    template <class A, class M, typename F>
+    static inline inline void par_foreach(F f) {
 
     };
 
     //constructors
-    void from_vector(
+    template <class A, class M>
+    static inline void from_vector(
       M* memory_buffer,
-      std::vector<uint32_t>* v) const{
-
+      std::vector<uint32_t>* v) {
+      UINTEGER::from_vector(memory_buffer,v->data(),v->size());
     };
 };
 

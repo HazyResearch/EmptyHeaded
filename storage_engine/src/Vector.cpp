@@ -36,9 +36,16 @@ bool Vector<T,A,M>::contains(const uint32_t key) const{
 
 //constructors
 template <class T, class A, class M>
-Vector<T,A,M> Vector<T,A,M>::from_array(
-  M const * memoryBuffer,
-  const uint32_t *array_data, 
-  const size_t data_size){
+Vector<T,A,M> Vector<T,A,M>::from_vector(
+  M* memoryBuffer,
+  std::vector<uint32_t>* v){
+  T:: template from_vector<A,M>(memoryBuffer,v);
   Vector<T,A,M>(memoryBuffer,0);
 }
+
+
+template struct Vector<SparseVector,void*,MemoryBuffer>;
+template struct Vector<SparseVector,int,MemoryBuffer>;
+template struct Vector<SparseVector,long,MemoryBuffer>;
+template struct Vector<SparseVector,float,MemoryBuffer>;
+template struct Vector<SparseVector,double,MemoryBuffer>;
