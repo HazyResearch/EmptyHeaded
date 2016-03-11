@@ -39,8 +39,25 @@ template <class T, class A, class M>
 Vector<T,A,M> Vector<T,A,M>::from_vector(
   M* memoryBuffer,
   std::vector<uint32_t>* v){
-  T:: template from_vector<A,M>(memoryBuffer,v);
-  Vector<T,A,M>(memoryBuffer,0);
+
+  const size_t index = memoryBuffer->get_offset();
+  const size_t num_bytes = T::get_num_bytes(v);
+  //reserve memory
+  memoryBuffer->get_next(sizeof(Meta)+num_bytes);
+  Meta* meta = new(memoryBuffer->get_address(index)) Meta();
+
+  meta->cardinality = v->size();
+
+  meta->start = 0;
+  meta->end = 0;
+  if(v->size() > 0){
+    meta->start = v->at(0);
+    meta->end = v->at(v->size()-1);
+  }
+  meta->type = T::get_type();
+
+  T:: template from_vector<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),v);
+  return Vector<T,A,M>(memoryBuffer,index);
 }
 
 

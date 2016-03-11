@@ -48,22 +48,32 @@ struct SparseVector{
 
     //mutable loop (returns data and index)
     template <class A, class M, typename F>
-    static inline inline void foreach(F f) {
-
+    static inline void foreach(F f,Meta* meta,M* memoryBuffer,const size_t index) {
+      UINTEGER:: template foreach<A,M>(f,meta,memoryBuffer,index);
     };
 
     //parallel iterator
     template <class A, class M, typename F>
-    static inline inline void par_foreach(F f) {
+    static inline void par_foreach(F f) {
 
+    };
+
+    //parallel iterator
+    static inline size_t get_num_bytes(std::vector<uint32_t>* m) {
+      return m->size()*sizeof(uint32_t);
+    };
+
+    //parallel iterator
+    static inline type::layout get_type() {
+      return type::UINTEGER;
     };
 
     //constructors
     template <class A, class M>
     static inline void from_vector(
-      M* memory_buffer,
+      uint8_t* buffer,
       std::vector<uint32_t>* v) {
-      UINTEGER::from_vector(memory_buffer,v->data(),v->size());
+      UINTEGER::from_vector(buffer,v->data(),v->size());
     };
 };
 

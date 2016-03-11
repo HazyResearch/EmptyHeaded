@@ -48,6 +48,10 @@ MemoryBuffer::~MemoryBuffer() {
   size = 0;
 }
 
+size_t MemoryBuffer::get_offset(){
+  return currentHead-buffer;
+}
+
 uint8_t* MemoryBuffer::get_next(const size_t size_requested){
   const size_t head_offset = currentHead-buffer;
   const size_t size_left = size-head_offset;

@@ -31,6 +31,7 @@ public:
   uint8_t* getBuffer();
   void free();
 
+  size_t get_offset();
   uint8_t* get_address(size_t pos);
   size_t getSize() { return size; }
   size_t get_length() {return size; }

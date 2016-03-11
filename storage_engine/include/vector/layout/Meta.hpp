@@ -16,6 +16,12 @@ template<class M>
 struct Buffer {
   size_t index;
   M* memory_buffer;
+  Buffer(){};
+  /*
+  Buffer(size_t index_in, M* buf_in){
+    index = index_in;
+    memory_buffer = buf_in;
+  };*/
 };
 
 #endif

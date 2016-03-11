@@ -8,7 +8,9 @@ void run(mymap *input_tries) {
   a->push_back(0);
   a->push_back(1);
   a->push_back(2);
-  //Vector<SparseVector,void*,MemoryBuffer> v(mybuf->head,0);
+  Vector<SparseVector,void*,MemoryBuffer> v = Vector<SparseVector,void*,MemoryBuffer>::from_vector(mybuf->head,a);
 
-  Vector<SparseVector,void*,MemoryBuffer>::from_vector(mybuf->head,a);
+  v.foreach([&](uint32_t index, uint32_t data){
+    std::cout << index << " " << data << std::endl;
+  });
 }

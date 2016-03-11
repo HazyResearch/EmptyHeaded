@@ -34,6 +34,7 @@ struct Vector{
     buffer.index = index;
     //placement new
     meta = new (memory_buffer_in->get_address(index)) Meta();
+    std::cout << meta->cardinality << std::endl;
   }
 
   //Find the index of a data elem.
@@ -59,7 +60,7 @@ struct Vector{
   //mutable loop (returns data and index)
   template<typename F>
   inline void foreach(F f) const{
-
+    T:: template foreach<A,M>(f,meta,buffer.memory_buffer,buffer.index+sizeof(Meta));
   };
 
   //parallel iterator
