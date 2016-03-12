@@ -63,13 +63,19 @@ struct Vector{
   inline uint8_t* get_annotation() const {
     return buffer.memory_buffer->get_address(buffer.index)
       +sizeof(Meta)
-      +T::get_num_bytes(meta);
+      +T::get_num_index_bytes(meta);
   }
 
   //mutable loop (returns data and index)
   template<typename F>
   inline void foreach(F f) const{
     T:: template foreach<A,M>(f,meta,buffer.memory_buffer,buffer.index+sizeof(Meta));
+  };
+
+  //mutable loop (returns data and index)
+  template<typename F>
+  inline void foreach_index(F f) const{
+    T:: template foreach_index<M>(f,meta,buffer.memory_buffer,buffer.index+sizeof(Meta));
   };
 
   //parallel iterator
@@ -82,6 +88,13 @@ struct Vector{
   static Vector<T,A,M> from_vector(
     M* memoryBuffer,
     const uint32_t const * data,
+    const size_t len);
+
+  //constructors
+  static Vector<T,A,M> from_vector(
+    M* memoryBuffer,
+    const uint32_t const * data,
+    const A const * values,
     const size_t len);
 };
 

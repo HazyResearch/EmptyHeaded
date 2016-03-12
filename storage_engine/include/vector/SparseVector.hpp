@@ -52,20 +52,30 @@ struct SparseVector{
       UINTEGER:: template foreach<A,M>(f,meta,memoryBuffer,index);
     };
 
+      //mutable loop (returns data and index)
+    template <class M, typename F>
+    static inline void foreach_index(F f,Meta* meta,M* memoryBuffer,const size_t index) {
+      UINTEGER:: template foreach_index<M>(f,meta,memoryBuffer,index);
+    };
+
     //parallel iterator
     template <class A, class M, typename F>
     static inline void par_foreach(F f) {
 
     };
 
-    //parallel iterator
+    template<class A>
     static inline size_t get_num_bytes(Meta* m) {
-      return m->cardinality*sizeof(uint32_t);
+      return m->cardinality*(sizeof(uint32_t)*sizeof(A));
     };
 
-    //parallel iterator
+    template <class A>
     static inline size_t get_num_bytes(const uint32_t const * data,const size_t len) {
-      return len*sizeof(uint32_t);
+      return len*(sizeof(uint32_t)+sizeof(A));
+    };
+
+    static inline size_t get_num_index_bytes(Meta* m) {
+      return m->cardinality*sizeof(uint32_t);
     };
 
     //parallel iterator
@@ -81,6 +91,26 @@ struct SparseVector{
       const size_t len) {
       UINTEGER::from_vector(buffer,data,len);
     };
+
+    //constructors
+    template <class A, class M>
+    static inline void from_vector(
+      uint8_t* buffer,    
+      const uint32_t const * data,
+      const A const * values,
+      const size_t len) {
+      UINTEGER::from_vector<A>(buffer,data,values,len);
+    };
+};
+
+template<>
+inline size_t SparseVector::get_num_bytes<void*>(const uint32_t const * data,const size_t len) {
+  return len*sizeof(uint32_t);
+};
+
+template<>
+inline size_t SparseVector::get_num_bytes<void*>(Meta* m) {
+  return m->cardinality*sizeof(uint32_t);
 };
 
 #endif

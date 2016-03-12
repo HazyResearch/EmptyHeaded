@@ -39,10 +39,36 @@ template <class T, class A, class M>
 Vector<T,A,M> Vector<T,A,M>::from_vector(
   M* memoryBuffer,
   const uint32_t const * data,
+  const A const * values,
   const size_t len){
 
   const size_t index = memoryBuffer->get_offset();
-  const size_t num_bytes = T::get_num_bytes(data,len);
+  const size_t num_bytes = T:: template get_num_bytes<A>(data,len);
+  //reserve memory
+  memoryBuffer->get_next(sizeof(Meta)+num_bytes);
+  Meta* meta = new(memoryBuffer->get_address(index)) Meta();
+
+  meta->cardinality = len;
+  meta->start = 0;
+  meta->end = 0;
+  if(len > 0){
+    meta->start = *data;
+    meta->end = *(data+(len-1));
+  }
+  meta->type = T::get_type();
+  T:: template from_vector<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),data,values,len);
+  return Vector<T,A,M>(memoryBuffer,index);
+}
+
+//constructors
+template <class T, class A, class M>
+Vector<T,A,M> Vector<T,A,M>::from_vector(
+  M* memoryBuffer,
+  const uint32_t const * data,
+  const size_t len){
+
+  const size_t index = memoryBuffer->get_offset();
+  const size_t num_bytes = T:: template get_num_bytes<A>(data,len);
   //reserve memory
   memoryBuffer->get_next(sizeof(Meta)+num_bytes);
   Meta* meta = new(memoryBuffer->get_address(index)) Meta();
