@@ -81,7 +81,8 @@ struct Vector{
   //constructors
   static Vector<T,A,M> from_vector(
     M* memoryBuffer,
-    std::vector<uint32_t>* v);
+    const uint32_t const * data,
+    const size_t len);
 };
 
 #endif

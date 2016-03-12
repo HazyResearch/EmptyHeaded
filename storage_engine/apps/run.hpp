@@ -10,14 +10,14 @@ void run(mymap *input_tries) {
     a->push_back(i*10);
   }
   Vector<SparseVector,void*,MemoryBuffer> v1 = 
-    Vector<SparseVector,void*,MemoryBuffer>::from_vector(mybuf->head,a);
+    Vector<SparseVector,void*,MemoryBuffer>::from_vector(mybuf->head,a->data(),a->size());
 
   std::vector<uint32_t>* b = new std::vector<uint32_t>();
   for(size_t i = 0; i < 1000; i++){
     b->push_back(i*2);
   }
   Vector<SparseVector,void*,MemoryBuffer> v2 = 
-    Vector<SparseVector,void*,MemoryBuffer>::from_vector(mybuf->head,b);
+    Vector<SparseVector,void*,MemoryBuffer>::from_vector(mybuf->head,b->data(),b->size());
 
 
   std::cout << "HERE" << std::endl;

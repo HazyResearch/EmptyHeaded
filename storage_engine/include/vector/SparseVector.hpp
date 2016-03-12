@@ -64,8 +64,8 @@ struct SparseVector{
     };
 
     //parallel iterator
-    static inline size_t get_num_bytes(std::vector<uint32_t>* m) {
-      return m->size()*sizeof(uint32_t);
+    static inline size_t get_num_bytes(const uint32_t const * data,const size_t len) {
+      return len*sizeof(uint32_t);
     };
 
     //parallel iterator
@@ -76,9 +76,10 @@ struct SparseVector{
     //constructors
     template <class A, class M>
     static inline void from_vector(
-      uint8_t* buffer,
-      std::vector<uint32_t>* v) {
-      UINTEGER::from_vector(buffer,v->data(),v->size());
+      uint8_t* buffer,    
+      const uint32_t const * data,
+      const size_t len) {
+      UINTEGER::from_vector(buffer,data,len);
     };
 };
 

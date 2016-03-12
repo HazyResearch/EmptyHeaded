@@ -38,25 +38,26 @@ bool Vector<T,A,M>::contains(const uint32_t key) const{
 template <class T, class A, class M>
 Vector<T,A,M> Vector<T,A,M>::from_vector(
   M* memoryBuffer,
-  std::vector<uint32_t>* v){
+  const uint32_t const * data,
+  const size_t len){
 
   const size_t index = memoryBuffer->get_offset();
-  const size_t num_bytes = T::get_num_bytes(v);
+  const size_t num_bytes = T::get_num_bytes(data,len);
   //reserve memory
   memoryBuffer->get_next(sizeof(Meta)+num_bytes);
   Meta* meta = new(memoryBuffer->get_address(index)) Meta();
 
-  meta->cardinality = v->size();
+  meta->cardinality = len;
 
   meta->start = 0;
   meta->end = 0;
-  if(v->size() > 0){
-    meta->start = v->at(0);
-    meta->end = v->at(v->size()-1);
+  if(len > 0){
+    meta->start = *data;
+    meta->end = *(data+(len-1));
   }
   meta->type = T::get_type();
 
-  T:: template from_vector<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),v);
+  T:: template from_vector<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),data,len);
   return Vector<T,A,M>(memoryBuffer,index);
 }
 
