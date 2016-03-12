@@ -9,7 +9,7 @@ object AttrOrderingUtil {
   /**
    * Partition attrNames into attrs with equality selection, then attrs without
    * keeping the ordering between attrs with equality selection,
-   * keeping the ordering and between attrs without
+   * keeping the ordering between attrs without
    */
   def partition_equality_selected(attrs:List[Attr],
                                   selections:List[Selection]): List[Attr] = {
