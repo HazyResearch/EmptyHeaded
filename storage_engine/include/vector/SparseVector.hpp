@@ -59,6 +59,11 @@ struct SparseVector{
     };
 
     //parallel iterator
+    static inline size_t get_num_bytes(Meta* m) {
+      return m->cardinality*sizeof(uint32_t);
+    };
+
+    //parallel iterator
     static inline size_t get_num_bytes(std::vector<uint32_t>* m) {
       return m->size()*sizeof(uint32_t);
     };

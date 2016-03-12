@@ -29,12 +29,11 @@ struct Vector{
   //Construct this on your own (just manages the memory)
   Buffer<M> buffer;
   Vector(
-    M* memory_buffer_in, size_t index){
+    M* memory_buffer_in, const size_t index){
     buffer.memory_buffer = memory_buffer_in;
     buffer.index = index;
     //placement new
     meta = new (memory_buffer_in->get_address(index)) Meta();
-    std::cout << meta->cardinality << std::endl;
   }
 
   //Find the index of a data elem.
@@ -56,6 +55,16 @@ struct Vector{
 
   //look up a data value
   bool contains(const uint32_t key) const;
+
+  inline uint8_t* get_data() const{
+    return buffer.memory_buffer->get_address(buffer.index)+sizeof(Meta);
+  }
+
+  inline uint8_t* get_annotation() const {
+    return buffer.memory_buffer->get_address(buffer.index)
+      +sizeof(Meta)
+      +T::get_num_bytes(meta);
+  }
 
   //mutable loop (returns data and index)
   template<typename F>

@@ -1,4 +1,5 @@
 #include "Vector.hpp"
+#include "VectorOps.hpp"
 
 typedef std::unordered_map<std::string, void *> mymap;
 
@@ -13,4 +14,11 @@ void run(mymap *input_tries) {
   v.foreach([&](uint32_t index, uint32_t data){
     std::cout << index << " " << data << std::endl;
   });
+
+  std::cout << "HERE" << std::endl;
+  Vector<SparseVector,void*,MemoryBuffer> v2 = ops::vintersect(mybuf->head,v,v);
+  v2.foreach([&](uint32_t index, uint32_t data){
+    std::cout << index << " " << data << std::endl;
+  });
+
 }
