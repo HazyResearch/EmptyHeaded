@@ -20,7 +20,12 @@ template <class T, class A, class M>
 A Vector<T,A,M>::get(
   const uint32_t index,
   const uint32_t data) const{
-  return (A)0;
+  return T:: template get<A,M>(
+    index,
+    data,
+    meta,
+    buffer.memory_buffer,
+    buffer.index+sizeof(Meta));
 }
 
 //set an annotation value
@@ -29,7 +34,11 @@ void Vector<T,A,M>::set(
   const uint32_t index,
   const uint32_t data, 
   const A value) {
-
+  T:: template get<A,M>(
+    data,
+    meta,
+    buffer.memory_buffer,
+    buffer.index+sizeof(Meta));
 }
 
 //look up a data value

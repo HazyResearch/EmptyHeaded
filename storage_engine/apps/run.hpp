@@ -3,10 +3,6 @@
 
 typedef std::unordered_map<std::string, void *> mymap;
 
-/*
-
-*/
-
 void run(mymap *input_tries) {
   ParMemoryBuffer const * mybuf = new ParMemoryBuffer(100);
   std::vector<uint32_t>* a = new std::vector<uint32_t>();
@@ -51,10 +47,10 @@ void run(mymap *input_tries) {
       // - run intersection, loop over compute annotation
     //void* and NextLevel (mat/agg) -> return index/data
       // - run intersection (possible alloc NextLevel)
-  /*
-  Vector<SparseVector,void*,MemoryBuffer> r = ops::vintersect(mybuf->head,v1,v2);
+  
+  Vector<SparseVector,void*,MemoryBuffer> r = 
+    ops::mat_intersect<void*,void*,float>(mybuf->head,v1,v2);
   r.foreach_index([&](const uint32_t index, const uint32_t data){
     std::cout << index << " " << data << std::endl;
   });
-  */
 }

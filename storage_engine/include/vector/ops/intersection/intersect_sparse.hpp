@@ -59,9 +59,7 @@ namespace ops{
         freq.meta->cardinality);  
     }
     return Vector<SparseVector,A,MemoryBuffer>(m,index);
-
   }
-
 
   //Materilize (allocate memory & run intersection)
   inline float agg_intersect(
@@ -88,7 +86,6 @@ namespace ops{
     return anno;
   }
 
-
   //Materilize (allocate memory & run intersection)
   template <class A, class B, class C>
   inline Vector<SparseVector,A,MemoryBuffer> mat_intersect(
@@ -99,7 +96,6 @@ namespace ops{
     const size_t alloc_size = sizeof(Meta)*
       sizeof(uint32_t)*
       std::min(rare.meta->cardinality,freq.meta->cardinality);
-
     return alloc_and_intersect<A,B,C>(alloc_size,m,rare,freq);
   }
 }

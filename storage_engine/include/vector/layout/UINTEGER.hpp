@@ -22,6 +22,36 @@ struct UINTEGER{
     return values[data_index];
   }
 
+  template <class A, class M>
+  static inline A get(
+    const uint32_t index,
+    const uint32_t data,
+    Meta* meta, 
+    M* memoryBuffer,
+    const size_t buffer_index){
+    (void) data;
+    const uint32_t const * indices = (const uint32_t const *) 
+      (memoryBuffer->get_address(index));
+    const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
+    const A const * values = (const A const *) 
+      (memoryBuffer->get_address(index)+anno_offset);
+    return values[index];
+  }
+
+  template <class A, class M>
+  static inline void set(
+    const uint32_t index,
+    const A value,
+    Meta* meta,
+    M* memoryBuffer,
+    const size_t buffer_index){
+
+    const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
+    A * values = (const A const *) 
+      (memoryBuffer->get_address(index)+anno_offset);
+    values[index] = value;
+  }
+
   //Iterates over set applying a lambda.
   template <class A, class M, typename F>
   static inline void foreach(F f,Meta* meta, M* memoryBuffer,const size_t index) {

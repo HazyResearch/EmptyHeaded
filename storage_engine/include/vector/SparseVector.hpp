@@ -23,15 +23,18 @@ struct SparseVector{
       Meta* meta,
       M* memoryBuffer,
       const size_t index) {
-      UINTEGER:: template get<A,M>(data,meta,memoryBuffer,index);
+      return UINTEGER:: template get<A,M>(data,meta,memoryBuffer,index);
     };
 
     //look up a data value
     template <class A, class M>
     static inline A get(
       const uint32_t index,
-      const uint32_t data) {
-
+      const uint32_t data,
+      Meta* meta,
+      M* memoryBuffer,
+      const size_t buffer_index) {
+      return UINTEGER:: template get<A,M>(index,data,meta,memoryBuffer,buffer_index);
     };
 
     //set an annotation value
@@ -39,8 +42,17 @@ struct SparseVector{
     static inline void set(
       const uint32_t index,
       const uint32_t data, 
-      const A value) {
-
+      const A value,
+      Meta* meta,
+      M* memoryBuffer,
+      const size_t buffer_index) {
+      (void) data;
+      UINTEGER:: template get<A,M>(
+        index,
+        value,
+        meta,
+        memoryBuffer,
+        buffer_index);
     };
 
     //look up a data value
