@@ -19,8 +19,11 @@ struct SparseVector{
 
     //calls index of then calls get below.
     template <class A, class M>
-    static inline A get(const uint32_t data) {
-    
+    static inline A get(const uint32_t data,
+      Meta* meta,
+      M* memoryBuffer,
+      const size_t index) {
+      UINTEGER:: template get<A,M>(data,meta,memoryBuffer,index);
     };
 
     //look up a data value

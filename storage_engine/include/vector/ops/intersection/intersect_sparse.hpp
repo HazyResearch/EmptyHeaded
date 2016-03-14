@@ -16,113 +16,91 @@ namespace ops{
   Dense intersections actually just multiply vectors.
   */
 
+  template <class A, class B, class C>
+  inline Vector<SparseVector,A,MemoryBuffer> alloc_and_intersect(
+    const size_t alloc_size,
+    MemoryBuffer *m,
+    const Vector<SparseVector,B,MemoryBuffer>& rare, 
+    const Vector<SparseVector,C,MemoryBuffer>& freq){
+
+    const size_t index = m->get_offset();
+    uint8_t *buffer = m->get_next(alloc_size);
+    Meta* meta = new(buffer) Meta();
+    uint32_t *out = (uint32_t*)(buffer+sizeof(Meta));
+
+    if(rare.meta->cardinality == 0 || freq.meta->cardinality == 0){
+      meta->cardinality = 0;
+      meta->start = 0;
+      meta->end = 0;
+      meta->type = type::UINTEGER;
+    } else if((rare.meta->cardinality/freq.meta->cardinality) >= 32) {
+      set_intersect_galloping(
+        meta,
+        out,
+        (const uint32_t const *)freq.get_data(),
+        freq.meta->cardinality,
+        (const uint32_t const *)rare.get_data(),
+        rare.meta->cardinality);
+    } else if((freq.meta->cardinality/rare.meta->cardinality) >= 32) {
+      set_intersect_galloping(
+        meta,
+        out,
+        (const uint32_t const *)rare.get_data(),
+        rare.meta->cardinality,
+        (const uint32_t const *)freq.get_data(),
+        freq.meta->cardinality);
+    } else {
+      set_intersect_shuffle(
+        meta,
+        out,
+        (const uint32_t const *)rare.get_data(),
+        rare.meta->cardinality,
+        (const uint32_t const *)freq.get_data(),
+        freq.meta->cardinality);  
+    }
+    return Vector<SparseVector,A,MemoryBuffer>(m,index);
+
+  }
+
+
   //Materilize (allocate memory & run intersection)
-  inline Vector<SparseVector,float,MemoryBuffer> agg_intersect(
+  inline float agg_intersect(
     MemoryBuffer *m,
     const Vector<SparseVector,float,MemoryBuffer>& rare, 
     const Vector<SparseVector,float,MemoryBuffer>& freq){
 
     //run intersection.
-    //loop over intersection result and aggregate.
-  }
-
-
-  //Materilize (allocate memory & run intersection)
-  inline Vector<SparseVector,void*,MemoryBuffer> mat_intersect(
-    MemoryBuffer *m,
-    const Vector<SparseVector,void*,MemoryBuffer>& rare, 
-    const Vector<SparseVector,void*,MemoryBuffer>& freq){
-
-    const size_t index = m->get_offset();
-    uint8_t *buffer = m->get_next(
-      sizeof(Meta)*
-      sizeof(uint32_t)*
-      std::min(rare.meta->cardinality,freq.meta->cardinality));
-
-    Meta* meta = new(buffer) Meta();
-    uint32_t *out = (uint32_t*)(buffer+sizeof(Meta));
-
-    if(rare.meta->cardinality == 0 || freq.meta->cardinality == 0){
-      meta->cardinality = 0;
-      meta->start = 0;
-      meta->end = 0;
-      meta->type = type::UINTEGER;
-    } else if((rare.meta->cardinality/freq.meta->cardinality) >= 32) {
-      set_intersect_galloping(
-        meta,
-        out,
-        (const uint32_t const *)freq.get_data(),
-        freq.meta->cardinality,
-        (const uint32_t const *)rare.get_data(),
-        rare.meta->cardinality);
-    } else if((freq.meta->cardinality/rare.meta->cardinality) >= 32) {
-      set_intersect_galloping(
-        meta,
-        out,
-        (const uint32_t const *)rare.get_data(),
-        rare.meta->cardinality,
-        (const uint32_t const *)freq.get_data(),
-        freq.meta->cardinality);
-    } else {
-      set_intersect_shuffle(
-        meta,
-        out,
-        (const uint32_t const *)rare.get_data(),
-        rare.meta->cardinality,
-        (const uint32_t const *)freq.get_data(),
-        freq.meta->cardinality);  
-    }
-    return Vector<SparseVector,void*,MemoryBuffer>(m,index);
-  }
-
-  //Materilize (allocate memory & run intersection)
-  inline Vector<SparseVector,void*,MemoryBuffer> agg_intersect(
-    MemoryBuffer *m,
-    const Vector<SparseVector,void*,MemoryBuffer>& rare, 
-    const Vector<SparseVector,void*,MemoryBuffer>& freq){
-
-    const size_t index = m->get_offset();
     const size_t alloc_size = sizeof(Meta)*
       sizeof(uint32_t)*
-      std::min(rare.meta->cardinality,freq.meta->cardinality)
-    uint8_t *buffer = m->get_next(alloc_size);
+      std::min(rare.meta->cardinality,freq.meta->cardinality);
+    
+    Vector<SparseVector,float,MemoryBuffer> result = 
+      alloc_and_intersect<float,float,float>(alloc_size,m,rare,freq);
 
-    Meta* meta = new(buffer) Meta();
-    uint32_t *out = (uint32_t*)(buffer+sizeof(Meta));
-
-    if(rare.meta->cardinality == 0 || freq.meta->cardinality == 0){
-      meta->cardinality = 0;
-      meta->start = 0;
-      meta->end = 0;
-      meta->type = type::UINTEGER;
-    } else if((rare.meta->cardinality/freq.meta->cardinality) >= 32) {
-      set_intersect_galloping(
-        meta,
-        out,
-        (const uint32_t const *)freq.get_data(),
-        freq.meta->cardinality,
-        (const uint32_t const *)rare.get_data(),
-        rare.meta->cardinality);
-    } else if((freq.meta->cardinality/rare.meta->cardinality) >= 32) {
-      set_intersect_galloping(
-        meta,
-        out,
-        (const uint32_t const *)rare.get_data(),
-        rare.meta->cardinality,
-        (const uint32_t const *)freq.get_data(),
-        freq.meta->cardinality);
-    } else {
-      set_intersect_shuffle(
-        meta,
-        out,
-        (const uint32_t const *)rare.get_data(),
-        rare.meta->cardinality,
-        (const uint32_t const *)freq.get_data(),
-        freq.meta->cardinality);  
-    }
+    float anno = 0.0;
+    result.foreach_index([&](const uint32_t index, const uint32_t data){
+      //have some field set in vector see if it is annotated or not,
+      //use default field if set otherwise actually lookup the annotation.
+      anno += rare.get(data)*freq.get(data);
+    });
 
     m->roll_back(alloc_size);
-    return Vector<SparseVector,void*,MemoryBuffer>(m,index);
+    return anno;
+  }
+
+
+  //Materilize (allocate memory & run intersection)
+  template <class A, class B, class C>
+  inline Vector<SparseVector,A,MemoryBuffer> mat_intersect(
+    MemoryBuffer *m,
+    const Vector<SparseVector,B,MemoryBuffer>& rare, 
+    const Vector<SparseVector,C,MemoryBuffer>& freq){
+
+    const size_t alloc_size = sizeof(Meta)*
+      sizeof(uint32_t)*
+      std::min(rare.meta->cardinality,freq.meta->cardinality);
+
+    return alloc_and_intersect<A,B,C>(alloc_size,m,rare,freq);
   }
 }
 #endif

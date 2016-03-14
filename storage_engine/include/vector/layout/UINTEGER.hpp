@@ -4,6 +4,24 @@
 #include "Meta.hpp"
 
 struct UINTEGER{
+
+  template <class A, class M>
+  static inline A get(
+    const uint32_t data, 
+    Meta* meta, 
+    M* memoryBuffer,
+    const size_t index){
+
+    const uint32_t const * indices = (const uint32_t const *) 
+      (memoryBuffer->get_address(index));
+    const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
+    const A const * values = (const A const *) 
+      (memoryBuffer->get_address(index)+anno_offset);
+    const long data_index = utils::binary_search(indices,0,meta->cardinality,data);
+    assert(data_index != -1);
+    return values[data_index];
+  }
+
   //Iterates over set applying a lambda.
   template <class A, class M, typename F>
   static inline void foreach(F f,Meta* meta, M* memoryBuffer,const size_t index) {
