@@ -86,7 +86,7 @@ object EHGenerator {
       val encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head      
       val recordering = (0 until qp.ghd.last.attributes.values.length).toList.mkString("_")
 
-      cppCode.append(emitIntermediateTrie(qp.ghd.last.name,qp.ghd.last.annotation,qp.ghd.last.attributes.values.length,qp.ghd.last.duplicateOf))
+      cppCode.append(emitIntermediateTrie(qp.ghd.last.order,qp.ghd.last.name,qp.ghd.last.annotation,qp.ghd.last.attributes.values.length,qp.ghd.last.duplicateOf))
       outputEncodings += (qp.ghd.last.name -> QueryCompiler.buildInternalSchema(List(encoding),List(qp.ghd.last.annotation)))
       //get encoding
       includeCode.append("""#include "TransitiveClosure.hpp" """)
@@ -147,7 +147,7 @@ object EHGenerator {
       s"""mkdir -p ${db.folder}/relations/${r.name}/${r.name}_${r.ordering.mkString("_")}""" .!
 
       code.append(s"""
-      input_tries->insert(std::make_pair("${r.name}_${r.ordering.mkString("_")}",Trie_${r.name}_${(0 until r.ordering.length).toList.mkString("_")}));
+      input_tries->insert(std::make_pair("${r.name}_${r.ordering.mkString("_")}",Trie_${r.name}_${r.ordering.mkString("_")}));
       """)
     })
     code
@@ -695,9 +695,9 @@ object EHGenerator {
     })
     return code
   }
-  def emitIntermediateTrie(name:String,annotation:String,num:Int,bagDuplicate:Option[String]) : StringBuilder = {
+  def emitIntermediateTrie(order:List[Int],name:String,annotation:String,num:Int,bagDuplicate:Option[String]) : StringBuilder = {
     val code = new StringBuilder()
-    val ordering = (0 until num).toList.mkString("_")
+    val ordering = order.mkString("_")
     bagDuplicate match {
       case Some(bd) => {
         code.append(s"""Trie<${annotation},${memory}> *Trie_${name}_${ordering} = Trie_${bd}_${ordering};""")
@@ -725,7 +725,7 @@ object EHGenerator {
 
     //Emit the output trie for the bag.
     val outputName = bag.name
-    code.append(emitIntermediateTrie(bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
+    code.append(emitIntermediateTrie(bag.order,bag.name,bag.annotation,bag.attributes.values.length,bag.duplicateOf))
 
     var bagName = bag.name
     bag.duplicateOf match {
@@ -741,7 +741,7 @@ object EHGenerator {
                 """)
             }else 
               throw new IllegalArgumentException("CONVERGENCE CRITERIA NOT SUPPORTED")
-            code.append(emitIntermediateTrie("recursion",bag.annotation,bag.attributes.values.length,bag.duplicateOf))
+            code.append(emitIntermediateTrie(bag.order,"recursion",bag.annotation,bag.attributes.values.length,bag.duplicateOf))
             bagName = "recursion"
           }
           case _ =>
@@ -749,7 +749,7 @@ object EHGenerator {
         code.append("auto bag_timer = timer::start_clock();")
         code.append("num_rows_reducer.clear();")
         val (parItCode,iteratorAccessors,encodings) = emitParallelIterators(bag.relations,headencodings)
-        val pbname = bagName+"_"+(0 until bag.attributes.values.length).toList.mkString("_")
+        val pbname = bagName+"_"+bag.order.toList.mkString("_")
         code.append(emitParallelBuilder(pbname,bag.attributes.values,bag.annotation,encodings,bag.nprr.length))
         code.append(parItCode)
 
@@ -797,7 +797,7 @@ object EHGenerator {
         code.append(s"""timer::stop_clock("BAG ${bagName} TIME", bag_timer);""")
         
         //copy the buffers, needed if recursive
-        val recordering = (0 until bag.attributes.values.length).toList.mkString("_")
+        val recordering = bag.order.mkString("_")
 
         code.append(s"""Trie_${outputName}_${recordering}->memoryBuffers = Builders.trie->memoryBuffers;""")
         if(bag.attributes.values.length == 0)

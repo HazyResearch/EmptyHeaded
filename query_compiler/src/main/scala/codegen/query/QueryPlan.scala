@@ -112,6 +112,7 @@ def c_run_${id}(tm):
         val name = rule.result.rel.name
         val duplicateOf = None
         val attributes = Attributes(rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_)))
+        val order = (0 until rule.result.rel.attrs.values.length).toList.sortBy(i => rule.order.attrs.values.indexOf(rule.result.rel.attrs.values(i)))
         val aggregation = getAggregation(rule)
         val annotation = aggregation match {
           case None => "void*"
@@ -124,6 +125,7 @@ def c_run_${id}(tm):
         QueryPlanBagInfo(
           name,
           duplicateOf,
+          order,
           attributes,
           annotation,
           relations,
@@ -166,7 +168,7 @@ def c_run_${id}(tm):
       val order = rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))
       QueryPlanRelationInfo(
         rule.result.rel.name,
-        rule.result.rel.attrs.values.map(order.indexOf(_)),
+        (0 until rule.result.rel.attrs.values.length).toList.sortBy(i => order.indexOf(rule.result.rel.attrs.values(i))),
         Some(List(rule.result.rel.attrs)),
         annotation)
     }).toList
@@ -419,6 +421,7 @@ case class QueryPlanOutputInfo(val name:String,
  */
 case class QueryPlanBagInfo(val name:String,
                             val duplicateOf:Option[String],
+                            val order:List[Int],
                             val attributes:Attributes,
                             val annotation:String,
                             val relations:List[QueryPlanRelationInfo],
