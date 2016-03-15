@@ -24,6 +24,8 @@ struct Trie{
   std::vector<void*> encodings;
   A annotation;
 
+  void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
+
   Trie<A,M>(
     std::string path,
     std::vector<uint32_t>* max_set_sizes, 

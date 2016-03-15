@@ -40,6 +40,9 @@ void run(mymap *input_tries) {
     trie,
     annotations);
 
+  t->foreach([&](std::vector<uint32_t> *v, void* anno){
+    
+  });
 
   thread_pool::deleteThreadPool();
   /*
