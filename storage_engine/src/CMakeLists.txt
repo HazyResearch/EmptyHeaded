@@ -7,6 +7,7 @@ add_library(emptyheaded SHARED
 	utils/MMapBuffer.cpp
 	utils/ParMemoryBuffer.cpp
 	utils/ParMMapBuffer.cpp
+	Encoding.cpp
 	Vector.cpp
 	Trie.cpp
 )

@@ -1,11 +1,24 @@
 #include "Trie.hpp"
 #include "Vector.hpp"
+#include "load.hpp"
 
 typedef std::unordered_map<std::string, void *> mymap;
 
 void run(mymap *input_tries) {
   thread_pool::initializeThreadPool();
 
+  std::string ehhome = std::string(getenv ("EMPTYHEADED_HOME"))+"/storage_engine/apps/";
+
+  Trie<void*,ParMemoryBuffer> *graph = load_graph(ehhome+"graph.tsv");
+  graph->print();
+
+  Trie<float,ParMemoryBuffer> *mat = load_matrix(ehhome+"mat.tsv");
+  mat->print();
+
+  Trie<float,ParMemoryBuffer> *vec = load_vector(ehhome+"vector.tsv");
+  vec->print();
+
+  /*
   ParMemoryBuffer const * mybuf = new ParMemoryBuffer(100);
   std::vector<uint32_t>* a = new std::vector<uint32_t>();
   for(size_t i = 0; i < 10; i++){

@@ -13,6 +13,16 @@
 
 typedef SparseVector VectorType;
 
+template<class A,class M>
+void Trie<A,M>::print(){
+  foreach([&](std::vector<uint32_t> *v, A anno){
+    for(size_t i = 0 ; i < v->size(); i++){
+      std::cout << v->at(i) << "\t";
+    }
+    std::cout << anno << std::endl;
+  });
+}
+
 template<class A, class M>
 void unpack_last(  
   const bool annotated,
@@ -339,7 +349,6 @@ Trie<A,M>::Trie(
     //change this to returning a set
     //par for over the set
     //reset new_head because a realloc could of occured
-    std::cout << head_size << std::endl;
     par::for_range(0,head_size,100,[&](const size_t tid, const size_t i){
       const size_t start = ranges_buffer->at(0)[i];
       const size_t end = ranges_buffer->at(0)[i+1];

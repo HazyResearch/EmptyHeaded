@@ -24,6 +24,7 @@ struct Trie{
   std::vector<void*> encodings;
   A annotation;
 
+  void print();
   void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
 
   Trie<A,M>(
