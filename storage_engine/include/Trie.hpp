@@ -33,6 +33,13 @@ struct Trie{
     std::vector<std::vector<uint32_t> >* attr_in, 
     std::vector<A>* annotation);
 
+  Trie<A,M>(std::string path, size_t num_columns_in, bool annotated_in){
+    annotated = annotated_in;
+    memoryBuffers = new M(path,2);
+    num_columns = num_columns_in;
+  };
+
+  
   ~Trie<A,M>(){
     delete memoryBuffers;
   };

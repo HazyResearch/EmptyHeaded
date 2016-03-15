@@ -89,6 +89,25 @@ namespace ops{
   }
 
   //Materilize (allocate memory & run intersection)
+  template <class A, class B>
+  inline Vector<SparseVector,void*,MemoryBuffer> agg_intersect(
+    MemoryBuffer *m,
+    const Vector<SparseVector,A,MemoryBuffer>& rare, 
+    const Vector<SparseVector,B,MemoryBuffer>& freq){
+
+    //run intersection.
+    const size_t alloc_size = sizeof(Meta)*
+      sizeof(uint32_t)*
+      std::min(rare.meta->cardinality,freq.meta->cardinality);
+    
+    Vector<SparseVector,void*,MemoryBuffer> result = 
+      alloc_and_intersect<void*,A,B>(alloc_size,m,rare,freq);
+    m->roll_back(alloc_size);
+    return result;
+  }
+
+
+  //Materilize (allocate memory & run intersection)
   template <class A, class B, class C>
   inline Vector<SparseVector,A,MemoryBuffer> mat_intersect(
     MemoryBuffer *m,
