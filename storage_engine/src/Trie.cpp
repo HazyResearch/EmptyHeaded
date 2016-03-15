@@ -11,43 +11,74 @@
 #include "VectorOps.hpp"
 #include "Trie.hpp"
 
-template<class A,class M>
-void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body){
-  std::vector<uint32_t>* tuple = new std::vector<uint32_t>();
-  std::cout << "FOREACH" << std::endl;
-  /*
-  TrieBlock<layout,M>* head = this->getHead();
-  if(head != NULL && head->get_set()->cardinality > 0){
-    head->get_set()->foreach_index([&](uint32_t a_i, uint32_t a_d){
+typedef SparseVector VectorType;
+
+template<class A, class M>
+void unpack_last(  
+  const bool annotated,
+  std::vector<uint32_t>* tuple,
+  const Vector<VectorType,A,MemoryBuffer>& head,
+  const std::function<void(std::vector<uint32_t>*,A)> body){
+ if(annotated){
+    head.foreach([&](const uint32_t a_i, const uint32_t a_d, const A& anno){
+      (void) a_i;
       tuple->push_back(a_d);
-      if(num_columns > 1){
-        TrieBlock<layout,M>* next = head->get_next_block(a_i,a_d,memoryBuffers);
-        if(next != NULL){
-          recursive_foreach<A,M>(
-            annotated,
-            memoryBuffers,
-            next,
-            1,
-            num_columns,
-            tuple,
-            body);
-        }
-      } else if(annotated) {
-        const A annotationValue = head->template get_annotation<A>(a_i,a_d);
-        body(tuple,annotationValue);
-      } else if(num_columns == 1){
-        body(tuple,(A)0); 
-      }
+      body(tuple,anno);
       tuple->pop_back(); //delete the last element
     });
-  } else if(annotated){
-    body(tuple,(A)annotation); 
+  } else{
+    head.foreach_index([&](const uint32_t a_i, const uint32_t a_d){
+      (void) a_i;
+      tuple->push_back(a_d);
+      body(tuple,(A)0);
+      tuple->pop_back(); //delete the last element 
+    });
   }
-  */
 }
 
+template<class A, class M>
+void recursive_foreach(
+  const bool annotated,
+  std::vector<uint32_t>* tuple,
+  const Vector<VectorType,NextLevel,MemoryBuffer>& head,
+  M* memoryBuffers,
+  const size_t level,
+  const size_t num_levels,
+  const std::function<void(std::vector<uint32_t>*,A)> body){
 
-typedef SparseVector VectorType;
+  assert(level < num_levels);
+  if(level == (num_levels-1)){
+    head.foreach([&](const uint32_t a_i, const uint32_t a_d, const NextLevel& nl){
+      (void) a_i;
+      tuple->push_back(a_d);
+      Vector<VectorType,A,MemoryBuffer> next(memoryBuffers->at(nl.tid),nl.index);
+      unpack_last<A,M>(annotated,tuple,next,body);
+      tuple->pop_back(); //delete the last element
+    });
+  } else {
+    head.foreach([&](const uint32_t a_i, const uint32_t a_d, const NextLevel& nl){
+      (void) a_i;
+      tuple->push_back(a_d);
+      Vector<VectorType,NextLevel,MemoryBuffer> next(memoryBuffers->at(nl.tid),nl.index);
+      recursive_foreach<A,M>(annotated,tuple,next,memoryBuffers,level+1,num_levels,body);
+      tuple->pop_back(); //delete the last element
+    });
+  }
+}
+
+template<class A,class M>
+void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body){
+  std::vector<uint32_t>* tuple = new std::vector<uint32_t>();  
+  if(num_columns > 1){
+    Vector<VectorType,NextLevel,MemoryBuffer> head(memoryBuffers->at(NUM_THREADS),0);
+    recursive_foreach<A,M>(annotated,tuple,head,memoryBuffers,1,num_columns,body);
+  } else if(num_columns == 1){
+    Vector<VectorType,A,MemoryBuffer> head(memoryBuffers->at(NUM_THREADS),0);
+    unpack_last<A,M>(annotated,tuple,head,body);
+  } else if(annotated){
+    body(tuple,(A)annotation); 
+  } 
+}
 
 /*
 * Recursive sort function to get the relation in order for the trie.

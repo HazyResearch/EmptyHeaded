@@ -41,7 +41,10 @@ void run(mymap *input_tries) {
     annotations);
 
   t->foreach([&](std::vector<uint32_t> *v, void* anno){
-    
+    for(size_t i = 0 ; i < v->size(); i++){
+      std::cout << v->at(i) << "\t";
+    }
+    std::cout << std::endl;
   });
 
   thread_pool::deleteThreadPool();
