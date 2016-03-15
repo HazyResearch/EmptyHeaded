@@ -16,7 +16,7 @@ namespace ops{
    * From code by O. Kaser.
    */
   static size_t __frogadvanceUntil(
-    const uint32_t const *array, 
+    const uint32_t * const array, 
     const size_t pos,
     const size_t length, 
     const size_t min) {
@@ -58,9 +58,9 @@ namespace ops{
   
   inline void scalar_gallop(
       uint32_t *out, 
-      const uint32_t const *smallset, 
+      const uint32_t * const smallset, 
       const size_t smalllength, 
-      const uint32_t const *largeset,
+      const uint32_t * const largeset,
       const size_t largelength){
 
       size_t count = 0;
@@ -114,8 +114,6 @@ namespace ops{
       if (lenA == 0 || lenB == 0)
           return 0;
 
-      const uint32_t *startA = A;
-      const uint32_t *startB = B;
       const uint32_t *endA = A + lenA;
       const uint32_t *endB = B + lenB;
       size_t count = 0;
@@ -252,13 +250,11 @@ namespace ops{
   inline size_t set_intersect_galloping(
       Meta * meta,
       uint32_t * out,
-      const uint32_t const *rare,
+      const uint32_t *rare,
       const size_t lenRare,
       const uint32_t *freq,
       const size_t lenFreq
     ){
-      const uint32_t * const startRare = rare;
-      const uint32_t * const startFreq = freq;
       size_t count = 0;
 
       *out = 0;

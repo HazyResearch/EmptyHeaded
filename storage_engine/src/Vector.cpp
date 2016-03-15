@@ -3,6 +3,7 @@
 
 template <class T, class A, class M>
 uint32_t Vector<T,A,M>::indexOf(const uint32_t data) const{
+  (void) data;
   return 0;
 }
 
@@ -35,16 +36,24 @@ void Vector<T,A,M>::set(
   const uint32_t index,
   const uint32_t data, 
   const A& value) {
-  T:: template get<A,M>(
+  (void) index;
+  (void) data;
+  (void) value;
+  /*
+  T:: template set<A,M>(
+    index,
     data,
+    value,
     meta,
     buffer.memory_buffer,
     buffer.index+sizeof(Meta));
+  */
 }
 
 //look up a data value
 template <class T, class A, class M>
 bool Vector<T,A,M>::contains(const uint32_t key) const{
+  (void) key;
   return false;
 }
 
@@ -52,8 +61,8 @@ bool Vector<T,A,M>::contains(const uint32_t key) const{
 template <class T, class A, class M>
 Vector<T,A,M> Vector<T,A,M>::from_array(
   M* memoryBuffer,
-  const uint32_t const * data,
-  const A const * values,
+  const uint32_t * const data,
+  const A * const values,
   const size_t len){
 
   const size_t index = memoryBuffer->get_offset();
@@ -78,7 +87,7 @@ Vector<T,A,M> Vector<T,A,M>::from_array(
 template <class T, class A, class M>
 Vector<T,A,M> Vector<T,A,M>::from_array(
   M* memoryBuffer,
-  const uint32_t const * data,
+  const uint32_t * const data,
   const size_t len){
 
   const size_t index = memoryBuffer->get_offset();

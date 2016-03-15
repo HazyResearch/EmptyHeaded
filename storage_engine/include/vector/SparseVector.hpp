@@ -14,7 +14,8 @@ Vector | Indices (uint/bitset/block) | Annotations
 struct SparseVector{ 
     //Find the index of a data elem.
     template <class A, class M>
-    static inline const uint32_t indexOf(const uint32_t data) {
+    static inline uint32_t indexOf(const uint32_t data) {
+        (void) data;
     };
 
     //calls index of then calls get below.
@@ -58,7 +59,7 @@ struct SparseVector{
     //look up a data value
     template <class A, class M>
     static inline bool contains(const uint32_t key) {
-
+      (void) key;
     };
 
     //mutable loop (returns data and index)
@@ -76,7 +77,7 @@ struct SparseVector{
     //parallel iterator
     template <class A, class M, typename F>
     static inline void par_foreach(F f) {
-
+      (void) f;
     };
 
     template<class A>
@@ -85,7 +86,8 @@ struct SparseVector{
     };
 
     template <class A>
-    static inline size_t get_num_bytes(const uint32_t const * data,const size_t len) {
+    static inline size_t get_num_bytes(const uint32_t * const data,const size_t len) {
+      (void) data;
       return len*(sizeof(uint32_t)+sizeof(A));
     };
 
@@ -102,7 +104,7 @@ struct SparseVector{
     template <class A, class M>
     static inline void from_array(
       uint8_t* buffer,    
-      const uint32_t const * data,
+      const uint32_t * const data,
       const size_t len) {
       UINTEGER::from_vector(buffer,data,len);
     };
@@ -111,15 +113,18 @@ struct SparseVector{
     template <class A, class M>
     static inline void from_array(
       uint8_t* buffer,    
-      const uint32_t const * data,
-      const A const * values,
+      const uint32_t * const data,
+      const A * const values,
       const size_t len) {
       UINTEGER::from_vector<A>(buffer,data,values,len);
     };
 };
 
 template<>
-inline size_t SparseVector::get_num_bytes<void*>(const uint32_t const * data,const size_t len) {
+inline size_t SparseVector::get_num_bytes<void*>(
+  const uint32_t * const data,
+  const size_t len) {
+  (void) data;
   return len*sizeof(uint32_t);
 };
 

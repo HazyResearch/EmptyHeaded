@@ -38,25 +38,25 @@ namespace ops{
       set_intersect_galloping(
         meta,
         out,
-        (const uint32_t const *)freq.get_data(),
+        (const uint32_t * const)freq.get_data(),
         freq.meta->cardinality,
-        (const uint32_t const *)rare.get_data(),
+        (const uint32_t * const)rare.get_data(),
         rare.meta->cardinality);
     } else if((freq.meta->cardinality/rare.meta->cardinality) >= 32) {
       set_intersect_galloping(
         meta,
         out,
-        (const uint32_t const *)rare.get_data(),
+        (const uint32_t * const)rare.get_data(),
         rare.meta->cardinality,
-        (const uint32_t const *)freq.get_data(),
+        (const uint32_t * const)freq.get_data(),
         freq.meta->cardinality);
     } else {
       set_intersect_shuffle(
         meta,
         out,
-        (const uint32_t const *)rare.get_data(),
+        (const uint32_t * const)rare.get_data(),
         rare.meta->cardinality,
-        (const uint32_t const *)freq.get_data(),
+        (const uint32_t * const)freq.get_data(),
         freq.meta->cardinality);  
     }
     return Vector<SparseVector,A,MemoryBuffer>(m,index);
@@ -78,6 +78,7 @@ namespace ops{
 
     float anno = 0.0;
     result.foreach_index([&](const uint32_t index, const uint32_t data){
+      (void) index;
       //have some field set in vector see if it is annotated or not,
       //use default field if set otherwise actually lookup the annotation.
       anno += rare.get(data)*freq.get(data);

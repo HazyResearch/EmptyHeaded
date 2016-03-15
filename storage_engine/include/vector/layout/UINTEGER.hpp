@@ -12,10 +12,10 @@ struct UINTEGER{
     M* memoryBuffer,
     const size_t index){
 
-    const uint32_t const * indices = (const uint32_t const *) 
+    const uint32_t * const indices = (const uint32_t * const) 
       (memoryBuffer->get_address(index));
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
-    const A const * values = (const A const *) 
+    const A * const values = (const A * const) 
       (memoryBuffer->get_address(index)+anno_offset);
     const long data_index = utils::binary_search(indices,0,meta->cardinality,data);
     assert(data_index != -1);
@@ -30,10 +30,9 @@ struct UINTEGER{
     M* memoryBuffer,
     const size_t buffer_index){
     (void) data;
-    const uint32_t const * indices = (const uint32_t const *) 
-      (memoryBuffer->get_address(index));
+    (void) buffer_index;
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
-    const A const * values = (const A const *) 
+    const A * const values = (const A * const) 
       (memoryBuffer->get_address(index)+anno_offset);
     return values[index];
   }
@@ -45,9 +44,10 @@ struct UINTEGER{
     Meta* meta,
     M* memoryBuffer,
     const size_t buffer_index){
+    (void) buffer_index;
 
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
-    A * values = (const A const *) 
+    const A * const values = (const A * const) 
       (memoryBuffer->get_address(index)+anno_offset);
     values[index] = value;
   }
@@ -57,9 +57,9 @@ struct UINTEGER{
   static inline void foreach(F f,Meta* meta, M* memoryBuffer,const size_t index) {
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
     for(size_t i=0; i<meta->cardinality;i++){
-      const uint32_t const * data = (const uint32_t const *) 
+      const uint32_t * const data = (const uint32_t * const) 
         (memoryBuffer->get_address(index)+(sizeof(uint32_t)*i));
-      const A const * values = (const A const *) 
+      const A * const values = (const A * const) 
         (memoryBuffer->get_address(index)+anno_offset+(sizeof(A)*i));
       f(i,*data,*values);
     }
@@ -69,7 +69,7 @@ struct UINTEGER{
   template <class M, typename F>
   static inline void foreach_index(F f,Meta* meta, M* memoryBuffer,const size_t index) {
     for(size_t i=0; i<meta->cardinality;i++){
-      const uint32_t const * data = (const uint32_t const *) 
+      const uint32_t * const data = (const uint32_t * const) 
         (memoryBuffer->get_address(index)+(sizeof(uint32_t)*i));
       f(i,*data);
     }
@@ -78,7 +78,7 @@ struct UINTEGER{
   //constructors
   static inline void from_vector(
     uint8_t* buffer,
-    const uint32_t const * input_data,
+    const uint32_t * const input_data,
     const size_t input_length ) {
     memcpy((void*)buffer,(void*)input_data,(input_length*sizeof(uint32_t)));
   };
@@ -90,13 +90,12 @@ struct UINTEGER{
   template<class A>
   static inline void from_vector(
     uint8_t* buffer,
-    const uint32_t const * input_data,
-    const A const * values,
+    const uint32_t * const input_data,
+    const A * const values,
     const size_t input_length ) {
     memcpy((void*)buffer,(void*)input_data,(input_length*sizeof(uint32_t)));
     memcpy( (void*)(buffer+(input_length*sizeof(uint32_t))),
       (void*)values,(input_length*sizeof(A)));
-    A* anno = (A*)(buffer+(input_length*sizeof(uint32_t)));
   };
 
 };

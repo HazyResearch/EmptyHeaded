@@ -85,20 +85,20 @@ struct Vector{
   //parallel iterator
   template<typename F>
   inline void par_foreach(F f) const{
-
+    (void)f;
   };
 
   //constructors
   static Vector<T,A,M> from_array(
     M* memoryBuffer,
-    const uint32_t const * data,
+    const uint32_t * const data,
     const size_t len);
 
   //constructors
   static Vector<T,A,M> from_array(
     M* memoryBuffer,
-    const uint32_t const * data,
-    const A const * values,
+    const uint32_t * const data,
+    const A * const values,
     const size_t len);
 };
 

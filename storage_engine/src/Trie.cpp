@@ -76,11 +76,10 @@ template<class A,class M>
 Vector<VectorType,A,MemoryBuffer> build_vector(
   const size_t thread_id,
   M *buffer, 
-  const uint32_t const * set_data_buffer,
-  const A const * annotation,
+  const uint32_t * const set_data_buffer,
+  const A * const annotation,
   const size_t set_size){
 
-  const size_t offset = buffer->get_offset(thread_id);
   return Vector<VectorType,A,MemoryBuffer>::from_array(
     buffer->elements.at(thread_id),
     set_data_buffer,
@@ -95,10 +94,9 @@ template<class A,class M>
 Vector<VectorType,A,MemoryBuffer> build_vector(
   const size_t thread_id,
   M *buffer, 
-  const uint32_t const * set_data_buffer,
+  const uint32_t * const set_data_buffer,
   const size_t set_size){
 
-  const size_t offset = buffer->get_offset(thread_id);
   return Vector<VectorType,A,MemoryBuffer>::from_array(
     buffer->elements.at(thread_id),
     set_data_buffer,
@@ -131,7 +129,6 @@ size_t recursive_build(
   const size_t tid, 
   const size_t start, 
   const size_t end, 
-  const uint32_t data, 
   const size_t level, 
   const size_t num_levels, 
   std::vector<std::vector<uint32_t>> *attr_in,
@@ -166,7 +163,6 @@ size_t recursive_build(
         tid,
         next_start,
         next_end,
-        next_data,
         level+1,
         num_levels,
         attr_in,
@@ -267,8 +263,6 @@ Trie<A,M>::Trie(
     &attr_in->at(0));
   const size_t head_size = std::get<0>(tup);
   
-  std::cout << "BUILDING" << std::endl;
-
   if(num_columns > 1){
     Vector<VectorType,NextLevel,MemoryBuffer> head = build_vector<NextLevel,M>(
         NUM_THREADS,
@@ -287,7 +281,6 @@ Trie<A,M>::Trie(
         tid,
         start,
         end,
-        data,
         1,
         num_columns,
         attr_in,
@@ -315,64 +308,6 @@ Trie<A,M>::Trie(
         set_data_buffer->at(0),
         head_size);
   }
-  /*
-  //Build the head set.
-
-
-  size_t cur_level = 1;
-  if(num_columns > 1){
-    TrieBlock<layout,M>* new_head = 
-      (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
-    new_head->init_next(NUM_THREADS,memoryBuffers);
-
-    //encode the set, create a block with NULL pointers to next level
-    //should be a 1-1 between pointers in block and next ranges
-    //also a 1-1 between blocks and numbers of next ranges
-
-    //reset new_head because a realloc could of occured
-    new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
-    const size_t loop_size = new_head->nextSize();
-    par::for_range(0,loop_size,100,[&](size_t tid, size_t i){
-      (void) tid;
-      new_head->getNext(i)->index = -1;
-    });
-    //reset new_head because a realloc could of occured
-    par::for_range(0,head_size,100,[&](size_t tid, size_t i){
-      const size_t start = ranges_buffer->at(0)[i];
-      const size_t end = ranges_buffer->at(0)[i+1];
-      const uint32_t data = set_data_buffer->at(0)[i];
-      recursive_build<TrieBlock<layout,M>,M,A>(
-        i,
-        start,
-        end,
-        data,
-        head_offset,
-        cur_level,
-        num_columns,
-        tid,
-        attr_in,
-        memoryBuffers,
-        ranges_buffer,
-        set_data_buffer,
-        indicies,
-        annotations);
-    });
-  } else if(annotations->size() > 0){
-    TrieBlock<layout,M>* new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
-    //perform allocation for annotation (0 = tid)
-    //nextSize should gets the size of pointers or annotations (should be renamed?)
-    memoryBuffers->head->get_next(sizeof(A)*(new_head->nextSize()));
-    //could of realloced, get the head again
-    new_head = (TrieBlock<layout,M>*)memoryBuffers->head->get_address(head_offset);
-
-    for(size_t i = 0; i < head_size; i++){
-      const uint32_t data = set_data_buffer->at(0)[i]; 
-      A annotationValue = annotations->at(indicies[i]);
-      new_head->template set_annotation<A>(annotationValue,i,data);
-    }
-  }
-  */
-
   delete[] tmp_st;
   delete[] tmp_i;
   delete ranges_buffer;
