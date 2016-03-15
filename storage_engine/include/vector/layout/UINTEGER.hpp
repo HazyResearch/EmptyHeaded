@@ -40,15 +40,15 @@ struct UINTEGER{
   template <class A, class M>
   static inline void set(
     const uint32_t index,
+    const uint32_t data,
     const A& value,
     Meta* meta,
     M* memoryBuffer,
     const size_t buffer_index){
-    (void) buffer_index;
-
+    (void) data;
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
-    const A * const values = (const A * const) 
-      (memoryBuffer->get_address(index)+anno_offset);
+    A * const values = (A * const) 
+      (memoryBuffer->get_address(buffer_index)+anno_offset);
     values[index] = value;
   }
 

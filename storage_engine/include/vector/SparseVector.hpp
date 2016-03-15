@@ -48,8 +48,9 @@ struct SparseVector{
       M* memoryBuffer,
       const size_t buffer_index) {
       (void) data;
-      UINTEGER:: template get<A,M>(
+      UINTEGER:: template set<A,M>(
         index,
+        data,
         value,
         meta,
         memoryBuffer,

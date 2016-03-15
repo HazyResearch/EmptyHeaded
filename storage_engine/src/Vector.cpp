@@ -39,7 +39,6 @@ void Vector<T,A,M>::set(
   (void) index;
   (void) data;
   (void) value;
-  /*
   T:: template set<A,M>(
     index,
     data,
@@ -47,7 +46,6 @@ void Vector<T,A,M>::set(
     meta,
     buffer.memory_buffer,
     buffer.index+sizeof(Meta));
-  */
 }
 
 //look up a data value
