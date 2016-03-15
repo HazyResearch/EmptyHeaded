@@ -69,9 +69,9 @@ namespace ops{
     const Vector<SparseVector,float,MemoryBuffer>& freq){
 
     //run intersection.
-    const size_t alloc_size = sizeof(Meta)*
-      sizeof(uint32_t)*
-      std::min(rare.meta->cardinality,freq.meta->cardinality);
+    const size_t alloc_size = sizeof(Meta)+
+      (sizeof(uint32_t)*
+       std::min(rare.meta->cardinality,freq.meta->cardinality));
     
     Vector<SparseVector,float,MemoryBuffer> result = 
       alloc_and_intersect<float,float,float>(alloc_size,m,rare,freq);
@@ -96,9 +96,9 @@ namespace ops{
     const Vector<SparseVector,B,MemoryBuffer>& freq){
 
     //run intersection.
-    const size_t alloc_size = sizeof(Meta)*
-      sizeof(uint32_t)*
-      std::min(rare.meta->cardinality,freq.meta->cardinality);
+    const size_t alloc_size = sizeof(Meta)+
+      (sizeof(uint32_t)*
+      std::min(rare.meta->cardinality,freq.meta->cardinality));
     
     Vector<SparseVector,void*,MemoryBuffer> result = 
       alloc_and_intersect<void*,A,B>(alloc_size,m,rare,freq);
@@ -114,9 +114,9 @@ namespace ops{
     const Vector<SparseVector,B,MemoryBuffer>& rare, 
     const Vector<SparseVector,C,MemoryBuffer>& freq){
 
-    const size_t alloc_size = sizeof(Meta)*
-      sizeof(uint32_t)*
-      std::min(rare.meta->cardinality,freq.meta->cardinality);
+    const size_t alloc_size = sizeof(Meta)+
+      ((sizeof(uint32_t)+sizeof(A))*
+       std::min(rare.meta->cardinality,freq.meta->cardinality));
     return alloc_and_intersect<A,B,C>(alloc_size,m,rare,freq);
   }
 }
