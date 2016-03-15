@@ -12,9 +12,10 @@
 #ifndef _VECTOR_H_
 #define _VECTOR_H_
 
+#include "utils/utils.hpp"
 #include "vector/SparseVector.hpp"
-#include "utils/MemoryBuffer.hpp"
-
+#include "vector/annotations/NextLevel.hpp"
+#include "vector/Meta.hpp"
 /*
 Vectors are laid flat in the memory buffer as follows
 
@@ -51,7 +52,7 @@ struct Vector{
   void set(
     const uint32_t index,
     const uint32_t data, 
-    const A value);
+    const A& value);
 
   //look up a data value
   bool contains(const uint32_t key) const;
@@ -75,7 +76,10 @@ struct Vector{
   //mutable loop (returns data and index)
   template<typename F>
   inline void foreach_index(F f) const{
-    T:: template foreach_index<M>(f,meta,buffer.memory_buffer,buffer.index+sizeof(Meta));
+    T:: template foreach_index<M>(
+      f,
+      meta,buffer.memory_buffer,
+      buffer.index+sizeof(Meta));
   };
 
   //parallel iterator
@@ -85,13 +89,13 @@ struct Vector{
   };
 
   //constructors
-  static Vector<T,A,M> from_vector(
+  static Vector<T,A,M> from_array(
     M* memoryBuffer,
     const uint32_t const * data,
     const size_t len);
 
   //constructors
-  static Vector<T,A,M> from_vector(
+  static Vector<T,A,M> from_array(
     M* memoryBuffer,
     const uint32_t const * data,
     const A const * values,

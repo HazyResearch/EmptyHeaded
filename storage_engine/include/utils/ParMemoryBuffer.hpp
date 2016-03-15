@@ -16,6 +16,7 @@ struct ParMemoryBuffer{
   
   //debug
   MemoryBuffer* at(const size_t tid);
+  size_t get_offset(const size_t tid);
   size_t get_size(const size_t tid);
   uint8_t* get_address(const size_t tid);
   uint8_t* get_address(const size_t tid, const size_t offset);

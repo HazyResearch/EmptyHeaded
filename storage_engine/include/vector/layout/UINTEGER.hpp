@@ -1,10 +1,10 @@
 #ifndef _UINTEGER_H_
 #define _UINTEGER_H_
 
-#include "Meta.hpp"
+#include "utils/utils.hpp"
+#include "vector/Meta.hpp"
 
 struct UINTEGER{
-
   template <class A, class M>
   static inline A get(
     const uint32_t data, 
@@ -41,7 +41,7 @@ struct UINTEGER{
   template <class A, class M>
   static inline void set(
     const uint32_t index,
-    const A value,
+    const A& value,
     Meta* meta,
     M* memoryBuffer,
     const size_t buffer_index){

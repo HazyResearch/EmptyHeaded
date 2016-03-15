@@ -8,11 +8,7 @@
 #ifndef _TRIE_H_
 #define _TRIE_H_
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <functional>
-#include "layout.hpp"
+#include "utils/utils.hpp"
 
 /*
 * Very simple tree structure stores the trie. All that is needed is the 
@@ -28,27 +24,6 @@ struct Trie{
   std::vector<void*> encodings;
   A annotation;
 
-  Trie<A,M>(){}
-  Trie<A,M>(bool annotated_in, 
-    A annotation_in,
-    size_t num_rows_in, 
-    size_t num_columns_in, 
-    M* buf_in){
-
-    annotated = annotated_in;
-    annotation = annotation_in;
-    num_rows = num_rows_in;
-    num_columns = num_columns_in;
-    memoryBuffers = buf_in;
-    annotation = (A)0;
-  };
-
-  Trie<A,M>(std::string path, size_t num_columns_in, bool annotated_in){
-    annotated = annotated_in;
-    memoryBuffers = new M(path,2);
-    num_columns = num_columns_in;
-  };
-
   Trie<A,M>(
     std::string path,
     std::vector<uint32_t>* max_set_sizes, 
@@ -58,12 +33,6 @@ struct Trie{
   ~Trie<A,M>(){
     delete memoryBuffers;
   };
-
-  void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
-  void save();
-  TrieBlock<layout,M>* getHead();
-
-  static Trie<A,M>* load(std::string path);
 };
 
 #endif

@@ -5,8 +5,8 @@
 * Some common utility functions.
 ******************************************************************************/
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef _UTILS_H
+#define _UTILS_H
 
 #include "timer.hpp"
 #include "io.hpp"
@@ -19,7 +19,7 @@
 
 namespace utils {
   //Look for a key, pass in a pointer to an array and a start and end index.
-  long binary_search(const uint32_t * const data, size_t first, size_t last, uint32_t search_key){
+  inline long binary_search(const uint32_t * const data, size_t first, size_t last, uint32_t search_key){
    long index;
    if (first > last){
     index = -1;
@@ -39,8 +39,7 @@ namespace utils {
     }
    } // end if
    return index;
-  }// end binarySearch
-
+  } // end binarySearch
 }
 
 #endif

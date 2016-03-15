@@ -1,16 +1,18 @@
+#include "Trie.hpp"
 #include "Vector.hpp"
-#include "VectorOps.hpp"
 
 typedef std::unordered_map<std::string, void *> mymap;
 
 void run(mymap *input_tries) {
+  thread_pool::initializeThreadPool();
+
   ParMemoryBuffer const * mybuf = new ParMemoryBuffer(100);
   std::vector<uint32_t>* a = new std::vector<uint32_t>();
   for(size_t i = 0; i < 10; i++){
     a->push_back(i*10);
   }
   Vector<SparseVector,void*,MemoryBuffer> v1 = 
-    Vector<SparseVector,void*,MemoryBuffer>::from_vector(
+    Vector<SparseVector,void*,MemoryBuffer>::from_array(
       mybuf->head,
       a->data(),
       a->size());
@@ -25,12 +27,29 @@ void run(mymap *input_tries) {
     anno->push_back((float)2.0);
   }
 
+  std::vector<std::vector<uint32_t>> *trie = new std::vector<std::vector<uint32_t>>();
+  std::vector<uint32_t> *max_sizes = new std::vector<uint32_t>();
+  trie->push_back(*a);
+  max_sizes->push_back(10);
+  trie->push_back(*a);
+  max_sizes->push_back(10);
+  std::vector<void*>* annotations = new std::vector<void*>();
+  Trie<void*,ParMemoryBuffer> *t = new Trie<void*,ParMemoryBuffer>(
+    "",
+    max_sizes, 
+    trie,
+    annotations);
+
+
+  thread_pool::deleteThreadPool();
+  /*
+
   //from vector
     //void* just build index/data
     //annotation build index/data and values
     //NextLevel build index/data and alloc next level (worry about later)
   Vector<SparseVector,float,MemoryBuffer> v2 = 
-    Vector<SparseVector,float,MemoryBuffer>::from_vector(
+    Vector<SparseVector,float,MemoryBuffer>::from_array(
       mybuf->head,
       b->data(),
       anno->data(),
@@ -53,4 +72,5 @@ void run(mymap *input_tries) {
   r.foreach_index([&](const uint32_t index, const uint32_t data){
     std::cout << index << " " << data << std::endl;
   });
+  */
 }

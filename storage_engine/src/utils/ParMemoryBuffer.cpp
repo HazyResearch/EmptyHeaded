@@ -45,6 +45,10 @@ MemoryBuffer* ParMemoryBuffer::at(const size_t tid){
   return elements.at(tid);
 }
 
+size_t ParMemoryBuffer::get_offset(const size_t tid){
+  return elements.at(tid)->get_offset();
+}
+
 size_t ParMemoryBuffer::get_size(const size_t tid){
   return elements.at(tid)->getSize();
 }

@@ -1,3 +1,4 @@
+#include "vector/SparseVector.hpp"
 #include "Vector.hpp"
 
 template <class T, class A, class M>
@@ -33,7 +34,7 @@ template <class T, class A, class M>
 void Vector<T,A,M>::set(
   const uint32_t index,
   const uint32_t data, 
-  const A value) {
+  const A& value) {
   T:: template get<A,M>(
     data,
     meta,
@@ -49,7 +50,7 @@ bool Vector<T,A,M>::contains(const uint32_t key) const{
 
 //constructors
 template <class T, class A, class M>
-Vector<T,A,M> Vector<T,A,M>::from_vector(
+Vector<T,A,M> Vector<T,A,M>::from_array(
   M* memoryBuffer,
   const uint32_t const * data,
   const A const * values,
@@ -69,13 +70,13 @@ Vector<T,A,M> Vector<T,A,M>::from_vector(
     meta->end = *(data+(len-1));
   }
   meta->type = T::get_type();
-  T:: template from_vector<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),data,values,len);
+  T:: template from_array<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),data,values,len);
   return Vector<T,A,M>(memoryBuffer,index);
 }
 
 //constructors
 template <class T, class A, class M>
-Vector<T,A,M> Vector<T,A,M>::from_vector(
+Vector<T,A,M> Vector<T,A,M>::from_array(
   M* memoryBuffer,
   const uint32_t const * data,
   const size_t len){
@@ -87,7 +88,6 @@ Vector<T,A,M> Vector<T,A,M>::from_vector(
   Meta* meta = new(memoryBuffer->get_address(index)) Meta();
 
   meta->cardinality = len;
-
   meta->start = 0;
   meta->end = 0;
   if(len > 0){
@@ -96,7 +96,7 @@ Vector<T,A,M> Vector<T,A,M>::from_vector(
   }
   meta->type = T::get_type();
 
-  T:: template from_vector<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),data,len);
+  T:: template from_array<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),data,len);
   return Vector<T,A,M>(memoryBuffer,index);
 }
 
@@ -106,3 +106,5 @@ template struct Vector<SparseVector,int,MemoryBuffer>;
 template struct Vector<SparseVector,long,MemoryBuffer>;
 template struct Vector<SparseVector,float,MemoryBuffer>;
 template struct Vector<SparseVector,double,MemoryBuffer>;
+template struct Vector<SparseVector,NextLevel,MemoryBuffer>;
+

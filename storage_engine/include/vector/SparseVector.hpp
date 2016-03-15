@@ -42,7 +42,7 @@ struct SparseVector{
     static inline void set(
       const uint32_t index,
       const uint32_t data, 
-      const A value,
+      const A& value,
       Meta* meta,
       M* memoryBuffer,
       const size_t buffer_index) {
@@ -100,7 +100,7 @@ struct SparseVector{
 
     //constructors
     template <class A, class M>
-    static inline void from_vector(
+    static inline void from_array(
       uint8_t* buffer,    
       const uint32_t const * data,
       const size_t len) {
@@ -109,7 +109,7 @@ struct SparseVector{
 
     //constructors
     template <class A, class M>
-    static inline void from_vector(
+    static inline void from_array(
       uint8_t* buffer,    
       const uint32_t const * data,
       const A const * values,

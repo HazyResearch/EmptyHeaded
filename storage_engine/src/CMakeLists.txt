@@ -8,4 +8,5 @@ add_library(emptyheaded SHARED
 	utils/ParMemoryBuffer.cpp
 	utils/ParMMapBuffer.cpp
 	Vector.cpp
+	Trie.cpp
 )

@@ -10,9 +10,11 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <functional>
 #include <iterator>
 #include <algorithm>  // for std::find
 #include <cstring>
+#include <string>
 #include <sys/mman.h>
 #include <fcntl.h>    /* For O_RDWR */
 #include <unistd.h>   /* For open(), creat() */

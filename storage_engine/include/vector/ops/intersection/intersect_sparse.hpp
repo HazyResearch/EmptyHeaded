@@ -1,6 +1,7 @@
 #ifndef _INTERSECT_SPARSE_H_
 #define _INTERSECT_SPARSE_H_
 
+#include "vector/SparseVector.hpp"
 #include "intersect_uinteger.hpp"
 
 namespace ops{
