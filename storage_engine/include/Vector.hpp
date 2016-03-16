@@ -71,7 +71,7 @@ struct Vector{
   template<typename F>
   inline void foreach(F f) const{
     T:: template foreach<A,M>(f,meta,buffer.memory_buffer,buffer.index+sizeof(Meta));
-  };
+  }
 
   //mutable loop (returns data and index)
   template<typename F>
@@ -80,13 +80,13 @@ struct Vector{
       f,
       meta,buffer.memory_buffer,
       buffer.index+sizeof(Meta));
-  };
+  }
 
   //parallel iterator
   template<typename F>
   inline void par_foreach(F f) const{
     (void)f;
-  };
+  }
 
   //constructors
   static Vector<T,A,M> from_array(

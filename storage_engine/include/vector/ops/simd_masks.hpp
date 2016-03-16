@@ -8,7 +8,7 @@ namespace masks{
     std::cout << "reg[2]: " << _mm_extract_epi32(reg,2) << std::endl;
     std::cout << "reg[3]: " << _mm_extract_epi32(reg,3) << std::endl << std::endl;   
   }
-  
+
   static uint64_t find_mask[64];
   static inline int init_masks(){
     find_mask[0] = 0;
@@ -19,6 +19,8 @@ namespace masks{
   }
   //force init_masks to run before main
   static int m = init_masks();
+  inline void fake_out(){std::cout << m;}
+  
   static const __m128i shuffle_mask32[16] = {        
     _mm_set_epi8(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0), //0
     _mm_set_epi8(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0), //1

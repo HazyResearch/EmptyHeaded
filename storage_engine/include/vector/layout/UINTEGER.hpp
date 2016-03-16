@@ -30,10 +30,9 @@ struct UINTEGER{
     M* memoryBuffer,
     const size_t buffer_index){
     (void) data;
-    (void) buffer_index;
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
     const A * const values = (const A * const) 
-      (memoryBuffer->get_address(index)+anno_offset);
+      (memoryBuffer->get_address(buffer_index)+anno_offset);
     return values[index];
   }
 
@@ -81,7 +80,7 @@ struct UINTEGER{
     const uint32_t * const input_data,
     const size_t input_length ) {
     memcpy((void*)buffer,(void*)input_data,(input_length*sizeof(uint32_t)));
-  };
+  }
 
   //constructors
   /*
@@ -96,8 +95,7 @@ struct UINTEGER{
     memcpy((void*)buffer,(void*)input_data,(input_length*sizeof(uint32_t)));
     memcpy( (void*)(buffer+(input_length*sizeof(uint32_t))),
       (void*)values,(input_length*sizeof(A)));
-  };
-
+  }
 };
 
 #endif

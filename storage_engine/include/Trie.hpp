@@ -31,7 +31,7 @@ struct Trie{
     std::string path,
     std::vector<uint32_t>* max_set_sizes, 
     std::vector<std::vector<uint32_t> >* attr_in, 
-    std::vector<A>* annotation);
+    const std::vector<void*>&);
 
   Trie<A,M>(std::string path, size_t num_columns_in, bool annotated_in){
     annotated = annotated_in;

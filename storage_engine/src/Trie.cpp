@@ -198,6 +198,18 @@ size_t encode_tail(
   return data_size;
 }
 
+template<class A>
+void encode_annotation(
+  const size_t start, 
+  const size_t end,
+  A * annotation_output,
+  const A * const annotation_input, 
+  uint32_t *indicies){
+  for(size_t i = start; i < end; i++){
+    annotation_output[i-start] = annotation_input[indicies[i]];
+  }
+}
+
 /*
 * Recursively build the trie. Terminates when we hit the number of levels.
 */
@@ -213,7 +225,8 @@ size_t recursive_build(
   std::vector<size_t*> *ranges_buffer, 
   std::vector<uint32_t*> *set_data_buffer, 
   uint32_t *indicies,
-  std::vector<A>* annotation){
+  const std::vector<void*>& annotation,
+  A * annotation_buffer){
 
   uint32_t *sb = set_data_buffer->at(tid*num_levels+level);
   const size_t set_size = encode_tail(start,end,sb,attr_in->at(level),indicies);
@@ -247,19 +260,21 @@ size_t recursive_build(
         ranges_buffer,
         set_data_buffer,
         indicies,
-        annotation);
+        annotation,
+        annotation_buffer);
       NextLevel nl;
       nl.tid = tid;
       nl.index = next_index;
       head.set(i,next_data,nl); 
     }
     return head.buffer.index;
-  } else if(annotation->size() != 0) {
+  } else if(annotation.size() != 0) { 
+    encode_annotation<A>(start,end,annotation_buffer,(const A* const)annotation.at(0),indicies);
     Vector<VectorType,A,MemoryBuffer> head = build_vector<A,M>(
         tid,
         data_allocator,
         sb,
-        annotation->data(),
+        (const A* const) annotation_buffer,
         set_size); 
     return head.buffer.index;
   } else {
@@ -278,10 +293,10 @@ Trie<A,M>::Trie(
   std::string path,
   std::vector<uint32_t>* max_set_sizes, 
   std::vector<std::vector<uint32_t>>* attr_in,
-  std::vector<A>* annotations){
+  const std::vector<void*>& annotations){
 
   annotation = (A)0;
-  annotated = annotations->size() > 0;
+  annotated = annotations.size() > 0;
   num_rows = attr_in->at(0).size();
   num_columns = attr_in->size();
 
@@ -310,10 +325,16 @@ Trie<A,M>::Trie(
     std::cout << std::endl;
   }
   */
-  
+  /*
+  for(size_t i = 0; i < annotations->size(); i++){
+    std::cout << annotations->at(i) << std::endl;
+  }*/
+
+
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();
+  A* annotation_buffer = new A[max_set_sizes->at(num_columns-1)];
 
   size_t alloc_size = 0;
   for(size_t i = 0; i < num_columns; i++){
@@ -364,18 +385,19 @@ Trie<A,M>::Trie(
         ranges_buffer,
         set_data_buffer,
         indicies,
-        annotations);
+        annotations,
+        annotation_buffer);
       NextLevel nl;
       nl.tid = tid;
       nl.index = next_index;
       head.set(i,data,nl);
     });
-  } else if(annotations->size() > 0){
+  } else if(annotations.size() > 0){
       build_vector<A,M>(
         NUM_THREADS,
         memoryBuffers,
         set_data_buffer->at(0),
-        annotations->data(),
+        (const A* const)annotations.at(0),
         head_size);
   } else {
       build_vector<A,M>(
