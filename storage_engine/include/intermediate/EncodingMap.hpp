@@ -49,13 +49,11 @@ struct FrequencyEncodingMap{
   std::map<T,uint32_t> values;
 
   FrequencyEncodingMap(){}
-  ~FrequencyEncodingMap(){
-    delete values;
-  }
+  ~FrequencyEncodingMap(){}
 
   //Have a way to add values
   inline void update(const T value){
-    const auto it = std::find(value);
+    const auto it = values.find(value);
     uint32_t freq = 1;
     if(it != values.end()){
       freq = it->second + 1;
@@ -73,9 +71,9 @@ struct FrequencyEncodingMap{
     //sort by the frequency
     
     //first create a vector with contents of the map, then sort that vector
-    std::vector<std::pair<T,uint32_t> > myVec(values.begin(), values.end());
-    tbb::parallel_sort(myVec.begin(),myVec.end(),&myFunction);
-    return &myVec;
+    std::vector<std::pair<T,uint32_t> >* myVec = new std::vector<std::pair<T,uint32_t> >(values.begin(), values.end());
+    tbb::parallel_sort(myVec->begin(),myVec->end(),&FrequencyEncodingMap<T>::myFunction);
+    return myVec;
   }
 };
 

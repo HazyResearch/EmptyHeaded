@@ -393,11 +393,17 @@ Trie<A,M>::Trie(
       head.set(i,data,nl);
     });
   } else if(annotations.size() > 0){
+      encode_annotation<A>(
+        0,
+        head_size,
+        annotation_buffer,
+        (const A* const)annotations.at(0),
+        indicies);
       build_vector<A,M>(
         NUM_THREADS,
         memoryBuffers,
         set_data_buffer->at(0),
-        (const A* const)annotations.at(0),
+        (const A* const)annotation_buffer,
         head_size);
   } else {
       build_vector<A,M>(

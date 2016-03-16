@@ -13,12 +13,6 @@ int main()
   Trie<float,ParMemoryBuffer> *M = tup.first;
   Trie<float,ParMemoryBuffer> *M_T = tup.second;
 
-  M->print();
-
-  std::cout << std::endl;
-
-  M_T->print();
-
   auto query_time = timer::start_clock();
   const size_t num_nprr_cols = 3;
   Trie<float,ParMemoryBuffer>* result = new Trie<float,ParMemoryBuffer>("",2,true);
