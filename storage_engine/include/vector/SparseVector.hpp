@@ -112,7 +112,7 @@ struct SparseVector{
     static inline size_t get_num_bytes(
       const Meta * const restrict meta)
     {
-      return meta->cardinality*(sizeof(uint32_t)*sizeof(A));
+      return sizeof(Meta)+meta->cardinality*(sizeof(uint32_t)+sizeof(A));
     }
 
     template <class A>

@@ -53,6 +53,38 @@ struct Vector{
     meta = new (memory_buffer_in->get_address(bufferIndex)) Meta();
   }
 
+  Vector(
+    const size_t tid,
+    M* memory_buffer_in,
+    const Vector<T,A,M>& restrict v_in)
+  {
+    memoryBuffer = memory_buffer_in;
+    const size_t cpy_size = T:: template get_num_bytes<A>(v_in.meta);
+    const size_t index = memory_buffer_in->get_offset(tid);
+    uint8_t *buf = memory_buffer_in->get_next(tid,cpy_size);
+    memcpy((void*)buf,(void*)v_in.memoryBuffer->get_address(v_in.bufferIndex),cpy_size);
+    //placement new
+    meta = new (buf) Meta();
+    bufferIndex.tid = tid;
+    bufferIndex.index = index;
+  }
+
+  Vector(
+    const size_t tid,
+    M* memory_buffer_in,
+    const uint8_t * const restrict data,
+    const size_t len)
+  {
+    memoryBuffer = memory_buffer_in;
+    const size_t index = memory_buffer_in->get_offset(tid);
+    uint8_t *buf = memory_buffer_in->get_next(tid,len);
+    memcpy((void*)buf,(void*)data,len);
+    //placement new
+    meta = new (buf) Meta();
+    bufferIndex.tid = tid;
+    bufferIndex.index = index;
+  }
+
 
   //Find the index of a data elem.
   uint32_t indexOf(const uint32_t data) const;
@@ -73,6 +105,14 @@ struct Vector{
 
   //look up a data value
   bool contains(const uint32_t key) const;
+
+  inline size_t get_num_bytes() const{
+    return T:: template get_num_bytes<A>(meta);
+  }
+
+  inline uint8_t* get_this() const{
+    return memoryBuffer->get_address(bufferIndex);
+  }
 
   inline uint8_t* get_data() const{
     return memoryBuffer->get_address(bufferIndex)+sizeof(Meta);

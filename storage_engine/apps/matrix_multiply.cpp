@@ -32,23 +32,24 @@ int main()
 
   //Dumb and not necessary.
   Vector<SparseVector,BufferIndex,ParMemoryBuffer> A = 
-    ops::mat_intersect<BufferIndex,BufferIndex,BufferIndex>(
+    Vector<SparseVector,BufferIndex,ParMemoryBuffer>(
       NUM_THREADS,
       result->memoryBuffers,
-      M_head,
       M_head);
   A.parforeach_index([&](const size_t tid, const uint32_t a_i, const uint32_t a_d){
+    (void) a_i;
     BufferIndex a_nl = M_head.get(a_d);
     Vector<SparseVector,float,ParMemoryBuffer> M_b(
       M->memoryBuffers,
       a_nl);
     Vector<SparseVector,float,ParMemoryBuffer> B = 
-      ops::mat_intersect<float,BufferIndex,BufferIndex>(
+      Vector<SparseVector,float,ParMemoryBuffer>(
         tid,
         result->memoryBuffers,
-        M_T_head,
-        M_T_head);
+        M_T_head.get_this(),
+        M_T_head.get_num_bytes());
     B.foreach_index([&](const uint32_t b_i, const uint32_t b_d){
+      (void) b_i;
       BufferIndex b_nl = M_T_head.get(b_d);
       Vector<SparseVector,float,ParMemoryBuffer> M_T_b(
           M_T->memoryBuffers,
