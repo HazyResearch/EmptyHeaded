@@ -31,7 +31,9 @@
 #include <vector>
 #include "tbb/parallel_sort.h"
 
-#define NUM_THREADS 1
+#ifdef NUM_THREADS_IN
+static size_t NUM_THREADS = NUM_THREADS_IN; 
+#endif
 
 const static size_t GIGABYTE = 1073741824;
 //Needed for parallelization, prevents false sharing of cache lines

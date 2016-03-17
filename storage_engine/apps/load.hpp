@@ -203,11 +203,11 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> load_matr
   {
     auto start_time = timer::start_clock();
     EncodedColumnStore_graph.add_column(
-        Encoding_uint32_t->encode_column((uint32_t *)ColumnStore_graph.at(1),
+        Encoding_uint32_t->encode_column((uint32_t *)ColumnStore_graph.at(0),
                                         NumRows_graph),
         Encoding_uint32_t->num_distinct);
     EncodedColumnStore_graph.add_column(
-        Encoding_uint32_t->encode_column((uint32_t *)ColumnStore_graph.at(0),
+        Encoding_uint32_t->encode_column((uint32_t *)ColumnStore_graph.at(1),
                                         NumRows_graph),
         Encoding_uint32_t->num_distinct);
     EncodedColumnStore_graph.add_annotation(

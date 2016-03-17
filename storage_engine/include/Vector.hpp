@@ -84,8 +84,11 @@ struct Vector{
 
   //parallel iterator
   template<typename F>
-  inline void par_foreach(F f) const{
-    (void)f;
+  inline void parforeach_index(F f) const{
+    T:: template parforeach_index<M>(
+      f,
+      meta,buffer.memory_buffer,
+      buffer.index+sizeof(Meta));
   }
 
   //constructors

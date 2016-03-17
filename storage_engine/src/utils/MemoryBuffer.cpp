@@ -48,7 +48,7 @@ MemoryBuffer::~MemoryBuffer() {
   size = 0;
 }
 
-size_t MemoryBuffer::get_offset(){
+size_t MemoryBuffer::get_offset() const {
   return currentHead-buffer;
 }
 
@@ -73,7 +73,7 @@ void MemoryBuffer::roll_back(const size_t size_requested){
   currentHead -= size_requested;
 }
 
-uint8_t* MemoryBuffer::resize(size_t increaseSize)
+uint8_t* MemoryBuffer::resize(const size_t increaseSize)
 {
   const size_t old_head_offset = currentHead-buffer;
   size_t newsize = size + increaseSize;
@@ -95,12 +95,12 @@ uint8_t* MemoryBuffer::getBuffer()
   return buffer;
 }
 
-void MemoryBuffer::memset(uint8_t value)
+void MemoryBuffer::memset(const uint8_t value)
 {
   ::memset(buffer, value, size);
 }
 
-uint8_t* MemoryBuffer::get_address(size_t pos)
+uint8_t* MemoryBuffer::get_address(const size_t pos) const
 {
   return buffer + pos;
 }

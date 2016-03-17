@@ -19,7 +19,7 @@ namespace par{
       }
       memset(elem,(uint8_t)0,sizeof(T)*NUM_THREADS*PADDING);
     }
-    inline void update(size_t tid, T new_val){
+    inline void update(const size_t tid, T new_val){
       elem[tid*PADDING] = f(elem[tid*PADDING],new_val);
     }
     inline void clear(){

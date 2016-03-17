@@ -7,9 +7,10 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  //std::string ehhome = std::string(getenv ("EMPTYHEADED_HOME"));
-
-  auto tup = load_matrix_and_transpose("/dfs/scratch0/caberger/systems/matrix_benchmarking/data/simple.tsv");
+  std::string ehhome = std::string(getenv ("EMPTYHEADED_HOME"));
+  auto tup = load_matrix_and_transpose(ehhome+"/test/matrix/data/harbor.tsv");
+  
+  //auto tup = load_matrix_and_transpose("/dfs/scratch0/caberger/systems/matrix_benchmarking/data/simple.tsv");
   Trie<float,ParMemoryBuffer> *M = tup.first;
   Trie<float,ParMemoryBuffer> *M_T = tup.second;
 
@@ -68,10 +69,12 @@ int main()
 
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
   result->foreach([&](std::vector<uint32_t> *v,float anno){
-    for(size_t i = 0; i < v->size(); i++){
-      std::cout << enc->key_to_value.at(v->at(i)) << "\t";
+    if(anno != 0){
+      for(size_t i = 0; i < v->size(); i++){
+        std::cout << enc->key_to_value.at(v->at(i)) << "\t";
+      }
+      std::cout << anno << std::endl;
     }
-    std::cout << anno << std::endl;
   });
 
   //result->print();

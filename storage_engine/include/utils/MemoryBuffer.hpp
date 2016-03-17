@@ -27,19 +27,20 @@ public:
   MemoryBuffer();
   MemoryBuffer(size_t size);
   virtual ~MemoryBuffer();
-  uint8_t* resize(size_t increasedSize);
+  uint8_t* resize(const size_t increasedSize);
   uint8_t* getBuffer();
   void free();
 
-  size_t get_offset();
-  uint8_t* get_address(size_t pos);
-  size_t getSize() { return size; }
-  size_t get_length() {return size; }
+  inline size_t getSize() const { return size; }
+  inline uint8_t* get_head() const {return currentHead;};
+  inline size_t get_length() const {return size; }
+  inline uint8_t* get_address() const { return buffer; }
+
+  size_t get_offset() const;
+  uint8_t* get_address(const size_t pos) const;
   uint8_t* get_next(const size_t size_requested);
-  uint8_t* get_head(){return currentHead;};
   void roll_back(const size_t size_requested);
-  uint8_t* get_address() { return buffer; }
-  void memset(uint8_t value);
+  void memset(const uint8_t value);
   void save(std::ofstream& ofile);
   void load(std::ifstream& ifile);
 

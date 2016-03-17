@@ -77,12 +77,14 @@ namespace ops{
       alloc_and_intersect<float,float,float>(alloc_size,m,rare,freq);
 
     float anno = 0.0;
+    /*
     result.foreach_index([&](const uint32_t index, const uint32_t data){
       (void) index;
       //have some field set in vector see if it is annotated or not,
       //use default field if set otherwise actually lookup the annotation.
       anno += rare.get(data)*freq.get(data);
     });
+    */
 
     m->roll_back(alloc_size);
     return anno;
