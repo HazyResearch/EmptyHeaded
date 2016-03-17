@@ -41,7 +41,7 @@ ParMemoryBuffer::ParMemoryBuffer(size_t num_elems_in){
   elements.push_back(head);
 }
 
-MemoryBuffer* ParMemoryBuffer::at(const size_t tid){
+MemoryBuffer* ParMemoryBuffer::at(const size_t tid) const {
   return elements.at(tid);
 }
 
@@ -57,12 +57,8 @@ uint8_t* ParMemoryBuffer::get_head(const size_t tid){
   return (uint8_t*)elements.at(tid)->get_head();
 }
 
-uint8_t* ParMemoryBuffer::get_address(const size_t tid){
+uint8_t* ParMemoryBuffer::get_address(const size_t tid) const{
   return (uint8_t*)elements.at(tid)->getBuffer();
-}
-
-uint8_t* ParMemoryBuffer::get_address(const size_t tid, const size_t offset){
-  return (uint8_t*)elements.at(tid)->get_address(offset);
 }
 
 uint8_t* ParMemoryBuffer::get_next(const size_t tid, const size_t num){

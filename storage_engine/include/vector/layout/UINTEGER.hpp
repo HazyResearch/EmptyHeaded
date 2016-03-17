@@ -10,13 +10,13 @@ struct UINTEGER{
     const uint32_t data, 
     const Meta * const restrict meta, 
     const M * const restrict memoryBuffer,
-    const size_t index){
+    const BufferIndex& restrict bufferIndex){
 
     const uint32_t * const indices = (const uint32_t * const) 
-      (memoryBuffer->get_address(index));
+      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
     const A * const values = (const A * const) 
-      (memoryBuffer->get_address(index)+anno_offset);
+      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+anno_offset);
     const long data_index = utils::binary_search(indices,0,meta->cardinality,data);
     assert(data_index != -1);
     return values[data_index];
@@ -28,11 +28,11 @@ struct UINTEGER{
     const uint32_t data,
     const Meta * const restrict meta, 
     const M * const restrict memoryBuffer,
-    const size_t buffer_index){
+    const BufferIndex& restrict bufferIndex){
     (void) data;
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
     const A * const values = (const A * const) 
-      (memoryBuffer->get_address(buffer_index)+anno_offset);
+      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+anno_offset);
     return values[index];
   }
 
@@ -43,12 +43,12 @@ struct UINTEGER{
     const A& restrict value,
     const Meta * const restrict meta, 
     const M * const restrict memoryBuffer,
-    const size_t buffer_index)
+    const BufferIndex& restrict bufferIndex)
   {
     (void) data;
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
     A * const values = (A * const) 
-      (memoryBuffer->get_address(buffer_index)+anno_offset);
+      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+anno_offset);
     values[index] = value;
   }
 
@@ -58,14 +58,14 @@ struct UINTEGER{
     F f,
     const Meta * const restrict meta, 
     const M * const restrict memoryBuffer,
-    const size_t index) 
+    const BufferIndex& restrict bufferIndex) 
   {
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
     for(size_t i=0; i<meta->cardinality;i++){
       const uint32_t * const data = (const uint32_t * const) 
-        (memoryBuffer->get_address(index)+(sizeof(uint32_t)*i));
+        (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+(sizeof(uint32_t)*i));
       const A * const values = (const A * const) 
-        (memoryBuffer->get_address(index)+anno_offset+(sizeof(A)*i));
+        (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+anno_offset+(sizeof(A)*i));
       f(i,*data,*values);
     }
   }
@@ -75,12 +75,12 @@ struct UINTEGER{
     F f,
     const Meta * const restrict meta, 
     const M * const restrict memoryBuffer,
-    const size_t index) 
+    const BufferIndex& restrict bufferIndex) 
   {
     par::for_range(0, meta->cardinality,
      [&](const size_t tid, const size_t i) {
         const uint32_t * const data = (const uint32_t * const) 
-          (memoryBuffer->get_address(index)+(sizeof(uint32_t)*i));
+          (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+(sizeof(uint32_t)*i));
         f(tid, (const uint32_t)i, *data);
      });
   }
@@ -91,11 +91,11 @@ struct UINTEGER{
     F f,
     const Meta * const restrict meta, 
     const M * const restrict memoryBuffer,
-    const size_t index)
+    const BufferIndex& restrict bufferIndex)
   {
     for(size_t i=0; i<meta->cardinality;i++){
       const uint32_t * const data = (const uint32_t * const) 
-        (memoryBuffer->get_address(index)+(sizeof(uint32_t)*i));
+        (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+(sizeof(uint32_t)*i));
       f(i,*data);
     }
   }

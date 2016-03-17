@@ -10,7 +10,7 @@ int main()
   std::string ehhome = std::string(getenv ("EMPTYHEADED_HOME"));
   auto tup = load_matrix_and_transpose(ehhome+"/test/matrix/data/harbor.tsv");
   
-  //auto tup = load_matrix_and_transpose("/dfs/scratch0/caberger/systems/matrix_benchmarking/data/simple.tsv");
+  //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
   Trie<float,ParMemoryBuffer> *M = tup.first;
   Trie<float,ParMemoryBuffer> *M_T = tup.second;
 
@@ -19,52 +19,49 @@ int main()
   Trie<float,ParMemoryBuffer>* result = new Trie<float,ParMemoryBuffer>("",2,true);
   
   //temporary buffers for aggregate intersections.
-  MemoryBuffer **tmp_buffers = new MemoryBuffer*[num_nprr_cols];
+  ParMemoryBuffer **tmp_buffers = new ParMemoryBuffer*[num_nprr_cols];
   for(size_t i = 0; i < num_nprr_cols; i++){
-    tmp_buffers[i] = new MemoryBuffer(100);
+    tmp_buffers[i] = new ParMemoryBuffer(100);
   }
 
   //M(a,b),M_T(c,b)
-  Vector<SparseVector,NextLevel,MemoryBuffer> M_head(
-    M->memoryBuffers->at(NUM_THREADS),
-    0);
-  Vector<SparseVector,NextLevel,MemoryBuffer> M_T_head(
-    M_T->memoryBuffers->at(NUM_THREADS),
-    0);
+  Vector<SparseVector,BufferIndex,ParMemoryBuffer> M_head(
+    M->memoryBuffers);
+  Vector<SparseVector,BufferIndex,ParMemoryBuffer> M_T_head(
+    M_T->memoryBuffers);
 
   //Dumb and not necessary.
-  Vector<SparseVector,NextLevel,MemoryBuffer> A = 
-    ops::mat_intersect<NextLevel,NextLevel,NextLevel>(
-      result->memoryBuffers->head,
+  Vector<SparseVector,BufferIndex,ParMemoryBuffer> A = 
+    ops::mat_intersect<BufferIndex,BufferIndex,BufferIndex>(
+      NUM_THREADS,
+      result->memoryBuffers,
       M_head,
       M_head);
-    A.foreach_index([&](const uint32_t a_i, const uint32_t a_d){
-      const size_t tid = 0;
-      NextLevel a_nl = M_head.get(a_d);
-      Vector<SparseVector,float,MemoryBuffer> M_b(
-        M->memoryBuffers->at(a_nl.tid),
-        a_nl.index);
-      Vector<SparseVector,float,MemoryBuffer> B = 
-        ops::mat_intersect<float,NextLevel,NextLevel>(
-          result->memoryBuffers->at(tid),
-          M_T_head,
-          M_T_head);
-      B.foreach_index([&](const uint32_t b_i, const uint32_t b_d){
-        NextLevel b_nl = M_T_head.get(b_d);
-        Vector<SparseVector,float,MemoryBuffer> M_T_b(
-          M_T->memoryBuffers->at(b_nl.tid),
-          b_nl.index);
-          float l2_c = ops::agg_intersect(
-            tmp_buffers[2],
-            M_b,
-            M_T_b);
-          B.set(b_i,b_d,l2_c);
-      });
-      NextLevel nl;
-      nl.tid = tid;
-      nl.index = B.buffer.index;
-      A.set(a_i,a_d,nl);
+  A.parforeach_index([&](const size_t tid, const uint32_t a_i, const uint32_t a_d){
+    BufferIndex a_nl = M_head.get(a_d);
+    Vector<SparseVector,float,ParMemoryBuffer> M_b(
+      M->memoryBuffers,
+      a_nl);
+    Vector<SparseVector,float,ParMemoryBuffer> B = 
+      ops::mat_intersect<float,BufferIndex,BufferIndex>(
+        tid,
+        result->memoryBuffers,
+        M_T_head,
+        M_T_head);
+    B.foreach_index([&](const uint32_t b_i, const uint32_t b_d){
+      BufferIndex b_nl = M_T_head.get(b_d);
+      Vector<SparseVector,float,ParMemoryBuffer> M_T_b(
+          M_T->memoryBuffers,
+          b_nl);
+        float l2_c = ops::agg_intersect(
+          tid,
+          tmp_buffers[2],
+          M_b,
+          M_T_b);
+        B.set(b_i,b_d,l2_c);
     });
+    A.set(a_i,a_d,B.bufferIndex);
+  });
   timer::stop_clock("QUERY",query_time);
 
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
@@ -76,7 +73,5 @@ int main()
       std::cout << anno << std::endl;
     }
   });
-
-  //result->print();
   return 0;
 }

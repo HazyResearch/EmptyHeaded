@@ -13,8 +13,8 @@ A Vector<T,A,M>::get(const uint32_t data) const{
   return T:: template get<A,M>(
     data,
     meta,
-    buffer.memory_buffer,
-    buffer.index+sizeof(Meta));
+    memoryBuffer,
+    bufferIndex);
 }
 
 //look up a data value
@@ -26,8 +26,8 @@ A Vector<T,A,M>::get(
     index,
     data,
     meta,
-    buffer.memory_buffer,
-    buffer.index+sizeof(Meta));
+    memoryBuffer,
+    bufferIndex);
 }
 
 //set an annotation value
@@ -44,8 +44,8 @@ void Vector<T,A,M>::set(
     data,
     value,
     meta,
-    buffer.memory_buffer,
-    buffer.index+sizeof(Meta));
+    memoryBuffer,
+    bufferIndex);
 }
 
 //look up a data value
@@ -58,16 +58,20 @@ bool Vector<T,A,M>::contains(const uint32_t key) const{
 //constructors
 template <class T, class A, class M>
 Vector<T,A,M> Vector<T,A,M>::from_array(
+  const size_t tid,
   M* memoryBuffer,
   const uint32_t * const data,
   const A * const values,
   const size_t len){
 
-  const size_t index = memoryBuffer->get_offset();
+  const size_t index = memoryBuffer->get_offset(tid);
+  BufferIndex bufferIndex;
+  bufferIndex.tid = tid;
+  bufferIndex.index = index;
   const size_t num_bytes = T:: template get_num_bytes<A>(data,len);
   //reserve memory
-  memoryBuffer->get_next(sizeof(Meta)+num_bytes);
-  Meta* meta = new(memoryBuffer->get_address(index)) Meta();
+  memoryBuffer->get_next(tid,sizeof(Meta)+num_bytes);
+  Meta* meta = new(memoryBuffer->get_address(bufferIndex)) Meta();
 
   meta->cardinality = len;
   meta->start = 0;
@@ -77,22 +81,32 @@ Vector<T,A,M> Vector<T,A,M>::from_array(
     meta->end = *(data+(len-1));
   }
   meta->type = T::get_type();
-  T:: template from_array<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),data,values,len);
-  return Vector<T,A,M>(memoryBuffer,index);
+  T:: template from_array<A,M>(
+    memoryBuffer->get_address(bufferIndex)+sizeof(Meta),
+    data,
+    values,
+    len);
+
+  return Vector<T,A,M>(memoryBuffer,bufferIndex);
 }
 
 //constructors
 template <class T, class A, class M>
 Vector<T,A,M> Vector<T,A,M>::from_array(
+  const size_t tid,
   M* memoryBuffer,
   const uint32_t * const data,
   const size_t len){
 
-  const size_t index = memoryBuffer->get_offset();
+  const size_t index = memoryBuffer->get_offset(tid);
+  BufferIndex bufferIndex;
+  bufferIndex.tid = tid;
+  bufferIndex.index = index;
+
   const size_t num_bytes = T:: template get_num_bytes<A>(data,len);
   //reserve memory
-  memoryBuffer->get_next(sizeof(Meta)+num_bytes);
-  Meta* meta = new(memoryBuffer->get_address(index)) Meta();
+  memoryBuffer->get_next(tid,sizeof(Meta)+num_bytes);
+  Meta* meta = new(memoryBuffer->get_address(bufferIndex)) Meta();
 
   meta->cardinality = len;
   meta->start = 0;
@@ -103,15 +117,18 @@ Vector<T,A,M> Vector<T,A,M>::from_array(
   }
   meta->type = T::get_type();
 
-  T:: template from_array<A,M>(memoryBuffer->get_address(index+sizeof(Meta)),data,len);
-  return Vector<T,A,M>(memoryBuffer,index);
+  T:: template from_array<A,M>(
+    memoryBuffer->get_address(bufferIndex)+sizeof(Meta),
+    data,
+    len);
+  return Vector<T,A,M>(memoryBuffer,bufferIndex);
 }
 
 
-template struct Vector<SparseVector,void*,MemoryBuffer>;
-template struct Vector<SparseVector,int,MemoryBuffer>;
-template struct Vector<SparseVector,long,MemoryBuffer>;
-template struct Vector<SparseVector,float,MemoryBuffer>;
-template struct Vector<SparseVector,double,MemoryBuffer>;
-template struct Vector<SparseVector,NextLevel,MemoryBuffer>;
+template struct Vector<SparseVector,void*,ParMemoryBuffer>;
+template struct Vector<SparseVector,int,ParMemoryBuffer>;
+template struct Vector<SparseVector,long,ParMemoryBuffer>;
+template struct Vector<SparseVector,float,ParMemoryBuffer>;
+template struct Vector<SparseVector,double,ParMemoryBuffer>;
+template struct Vector<SparseVector,BufferIndex,ParMemoryBuffer>;
 

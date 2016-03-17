@@ -32,7 +32,8 @@
 #include "tbb/parallel_sort.h"
 
 #ifdef NUM_THREADS_IN
-static size_t NUM_THREADS = NUM_THREADS_IN; 
+static size_t NUM_THREADS = NUM_THREADS_IN;
+static size_t get_num_threads(){return NUM_THREADS;}
 #endif
 
 const static size_t GIGABYTE = 1073741824;

@@ -27,9 +27,9 @@ struct SparseVector{
       const uint32_t data,
       const Meta * const restrict meta,
       const M * const restrict memoryBuffer,
-      const size_t index)
+      const BufferIndex& restrict bufferIndex)
     {
-      return UINTEGER:: template get<A,M>(data,meta,memoryBuffer,index);
+      return UINTEGER:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
     }
 
     //look up a data value
@@ -39,9 +39,9 @@ struct SparseVector{
       const uint32_t data,
       const Meta * const restrict meta,
       const M * const restrict memoryBuffer,
-      const size_t buffer_index)
+      const BufferIndex& restrict bufferIndex)
     {
-      return UINTEGER:: template get<A,M>(index,data,meta,memoryBuffer,buffer_index);
+      return UINTEGER:: template get<A,M>(index,data,meta,memoryBuffer,bufferIndex);
     }
 
     //set an annotation value
@@ -52,7 +52,7 @@ struct SparseVector{
       const A& restrict value,
       const Meta * const restrict meta,
       const M * const restrict memoryBuffer,
-      const size_t buffer_index) 
+      const BufferIndex& restrict bufferIndex) 
     {
       (void) data;
       UINTEGER:: template set<A,M>(
@@ -61,7 +61,7 @@ struct SparseVector{
         value,
         meta,
         memoryBuffer,
-        buffer_index);
+        bufferIndex);
     }
 
     //look up a data value
@@ -77,9 +77,9 @@ struct SparseVector{
       F f,
       const Meta * const restrict meta,
       const M * const restrict memoryBuffer,
-      const size_t index)
+      const BufferIndex& restrict bufferIndex)
     {
-      UINTEGER:: template foreach<A,M>(f,meta,memoryBuffer,index);
+      UINTEGER:: template foreach<A,M>(f,meta,memoryBuffer,bufferIndex);
     }
 
       //mutable loop (returns data and index)
@@ -88,9 +88,9 @@ struct SparseVector{
       F f,
       const Meta * const restrict meta,
       const M * const restrict memoryBuffer,
-      const size_t index)
+      const BufferIndex& restrict bufferIndex)
     {
-      UINTEGER:: template foreach_index<M>(f,meta,memoryBuffer,index);
+      UINTEGER:: template foreach_index<M>(f,meta,memoryBuffer,bufferIndex);
     }
 
       //mutable loop (returns data and index)
@@ -99,9 +99,13 @@ struct SparseVector{
       F f,
       const Meta * const restrict meta,
       const M * const restrict memoryBuffer,
-      const size_t index)
+      const BufferIndex& restrict bufferIndex)
     {
-      UINTEGER:: template parforeach_index<M>(f,meta,memoryBuffer,index);
+      UINTEGER:: template parforeach_index<M>(
+        f,
+        meta,
+        memoryBuffer,
+        bufferIndex);
     }
 
     template<class A>

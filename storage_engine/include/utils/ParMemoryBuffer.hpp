@@ -2,6 +2,7 @@
 #define _PARMEMORYBUFFER_H
 
 #include "MemoryBuffer.hpp"
+#include "vector/annotations/BufferIndex.hpp"
 
 struct ParMemoryBuffer{
   size_t num_buffers;
@@ -14,12 +15,17 @@ struct ParMemoryBuffer{
   ParMemoryBuffer( size_t num_buffers_in,std::string path);
   ParMemoryBuffer(size_t num_elems);
   
+  uint8_t* get_address(const size_t tid) const;
+  uint8_t* get_address(const size_t tid, const size_t offset) const;
+  
+  uint8_t* get_address(const BufferIndex& restrict bi) const {
+    return (uint8_t*)elements.at(bi.tid)->get_address(bi.index);
+  }
+
   //debug
-  MemoryBuffer* at(const size_t tid);
+  MemoryBuffer* at(const size_t tid) const;
   size_t get_offset(const size_t tid);
   size_t get_size(const size_t tid);
-  uint8_t* get_address(const size_t tid);
-  uint8_t* get_address(const size_t tid, const size_t offset);
   uint8_t* get_next(const size_t tid, const size_t num);
   void roll_back(const size_t tid, const size_t num);
   void save();

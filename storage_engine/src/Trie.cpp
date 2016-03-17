@@ -27,7 +27,7 @@ template<class A, class M>
 void unpack_last(  
   const bool annotated,
   std::vector<uint32_t>* tuple,
-  const Vector<VectorType,A,MemoryBuffer>& head,
+  const Vector<VectorType,A,M>& head,
   const std::function<void(std::vector<uint32_t>*,A)> body){
  if(annotated){
     head.foreach([&](const uint32_t a_i, const uint32_t a_d, const A& anno){
@@ -50,7 +50,7 @@ template<class A, class M>
 void recursive_foreach(
   const bool annotated,
   std::vector<uint32_t>* tuple,
-  const Vector<VectorType,NextLevel,MemoryBuffer>& head,
+  const Vector<VectorType,BufferIndex,M>& head,
   M* memoryBuffers,
   const size_t level,
   const size_t num_levels,
@@ -58,18 +58,18 @@ void recursive_foreach(
 
   assert(level < num_levels);
   if(level == (num_levels-1)){
-    head.foreach([&](const uint32_t a_i, const uint32_t a_d, const NextLevel& nl){
+    head.foreach([&](const uint32_t a_i, const uint32_t a_d, const BufferIndex& nl){
       (void) a_i;
       tuple->push_back(a_d);
-      Vector<VectorType,A,MemoryBuffer> next(memoryBuffers->at(nl.tid),nl.index);
+      Vector<VectorType,A,M> next(memoryBuffers,nl);
       unpack_last<A,M>(annotated,tuple,next,body);
       tuple->pop_back(); //delete the last element
     });
   } else {
-    head.foreach([&](const uint32_t a_i, const uint32_t a_d, const NextLevel& nl){
+    head.foreach([&](const uint32_t a_i, const uint32_t a_d, const BufferIndex& nl){
       (void) a_i;
       tuple->push_back(a_d);
-      Vector<VectorType,NextLevel,MemoryBuffer> next(memoryBuffers->at(nl.tid),nl.index);
+      Vector<VectorType,BufferIndex,M> next(memoryBuffers,nl);
       recursive_foreach<A,M>(annotated,tuple,next,memoryBuffers,level+1,num_levels,body);
       tuple->pop_back(); //delete the last element
     });
@@ -80,10 +80,16 @@ template<class A,class M>
 void Trie<A,M>::foreach(const std::function<void(std::vector<uint32_t>*,A)> body){
   std::vector<uint32_t>* tuple = new std::vector<uint32_t>();  
   if(num_columns > 1){
-    Vector<VectorType,NextLevel,MemoryBuffer> head(memoryBuffers->at(NUM_THREADS),0);
+    BufferIndex bi;
+    bi.tid = NUM_THREADS;
+    bi.index = 0;
+    Vector<VectorType,BufferIndex,M> head(memoryBuffers,bi);
     recursive_foreach<A,M>(annotated,tuple,head,memoryBuffers,1,num_columns,body);
   } else if(num_columns == 1){
-    Vector<VectorType,A,MemoryBuffer> head(memoryBuffers->at(NUM_THREADS),0);
+    BufferIndex bi;
+    bi.tid = NUM_THREADS;
+    bi.index = 0;
+    Vector<VectorType,A,M> head(memoryBuffers,bi);
     unpack_last<A,M>(annotated,tuple,head,body);
   } else if(annotated){
     body(tuple,(A)annotation); 
@@ -150,15 +156,16 @@ std::tuple<size_t,size_t> produce_ranges(
 * Produce a Vector
 */
 template<class A,class M>
-Vector<VectorType,A,MemoryBuffer> build_vector(
+Vector<VectorType,A,M> build_vector(
   const size_t thread_id,
   M *buffer, 
   const uint32_t * const set_data_buffer,
   const A * const annotation,
   const size_t set_size){
 
-  return Vector<VectorType,A,MemoryBuffer>::from_array(
-    buffer->elements.at(thread_id),
+  return Vector<VectorType,A,M>::from_array(
+    thread_id,
+    buffer,
     set_data_buffer,
     annotation,
     set_size);
@@ -168,14 +175,15 @@ Vector<VectorType,A,MemoryBuffer> build_vector(
 * Produce a Vector
 */
 template<class A,class M>
-Vector<VectorType,A,MemoryBuffer> build_vector(
+Vector<VectorType,A,M> build_vector(
   const size_t thread_id,
   M *buffer, 
   const uint32_t * const set_data_buffer,
   const size_t set_size){
 
-  return Vector<VectorType,A,MemoryBuffer>::from_array(
-    buffer->elements.at(thread_id),
+  return Vector<VectorType,A,M>::from_array(
+    thread_id,
+    buffer,
     set_data_buffer,
     set_size);
 }
@@ -231,7 +239,7 @@ size_t recursive_build(
   uint32_t *sb = set_data_buffer->at(tid*num_levels+level);
   const size_t set_size = encode_tail(start,end,sb,attr_in->at(level),indicies);
   if(level < (num_levels-1)){
-    Vector<VectorType,NextLevel,MemoryBuffer> head = build_vector<NextLevel,M>(
+    Vector<VectorType,BufferIndex,M> head = build_vector<BufferIndex,M>(
         tid,
         data_allocator,
         sb,
@@ -262,28 +270,28 @@ size_t recursive_build(
         indicies,
         annotation,
         annotation_buffer);
-      NextLevel nl;
+      BufferIndex nl;
       nl.tid = tid;
       nl.index = next_index;
       head.set(i,next_data,nl); 
     }
-    return head.buffer.index;
+    return head.bufferIndex.index;
   } else if(annotation.size() != 0) { 
     encode_annotation<A>(start,end,annotation_buffer,(const A* const)annotation.at(0),indicies);
-    Vector<VectorType,A,MemoryBuffer> head = build_vector<A,M>(
+    Vector<VectorType,A,M> head = build_vector<A,M>(
         tid,
         data_allocator,
         sb,
         (const A* const) annotation_buffer,
         set_size); 
-    return head.buffer.index;
+    return head.bufferIndex.index;
   } else {
-    Vector<VectorType,A,MemoryBuffer> head = build_vector<A,M>(
+    Vector<VectorType,A,M> head = build_vector<A,M>(
         tid,
         data_allocator,
         sb,
         set_size); 
-    return head.buffer.index;
+    return head.bufferIndex.index;
   }
 }
 
@@ -334,7 +342,7 @@ Trie<A,M>::Trie(
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();
-  A* annotation_buffer = new A[max_set_sizes->at(num_columns-1)];
+  A** annotation_buffers = new A*[NUM_THREADS];
 
   size_t alloc_size = 0;
   for(size_t i = 0; i < num_columns; i++){
@@ -345,6 +353,7 @@ Trie<A,M>::Trie(
 
   size_t index = 0;
   for(size_t t = 0; t < NUM_THREADS; t++){
+    annotation_buffers[t] = new A[max_set_sizes->at(num_columns-1)];
     for(size_t i = 0; i < num_columns; i++){
       ranges_buffer->push_back(&tmp_st[index]);
       set_data_buffer->push_back(&tmp_i[index]); 
@@ -362,7 +371,7 @@ Trie<A,M>::Trie(
   const size_t head_size = std::get<0>(tup);
   
   if(num_columns > 1){
-    Vector<VectorType,NextLevel,MemoryBuffer> head = build_vector<NextLevel,M>(
+    Vector<VectorType,BufferIndex,M> head = build_vector<BufferIndex,M>(
         NUM_THREADS,
         memoryBuffers,
         set_data_buffer->at(0),
@@ -386,8 +395,8 @@ Trie<A,M>::Trie(
         set_data_buffer,
         indicies,
         annotations,
-        annotation_buffer);
-      NextLevel nl;
+        annotation_buffers[tid]);
+      BufferIndex nl;
       nl.tid = tid;
       nl.index = next_index;
       head.set(i,data,nl);
@@ -396,14 +405,14 @@ Trie<A,M>::Trie(
       encode_annotation<A>(
         0,
         head_size,
-        annotation_buffer,
+        annotation_buffers[0],
         (const A* const)annotations.at(0),
         indicies);
       build_vector<A,M>(
         NUM_THREADS,
         memoryBuffers,
         set_data_buffer->at(0),
-        (const A* const)annotation_buffer,
+        (const A* const)annotation_buffers[0],
         head_size);
   } else {
       build_vector<A,M>(
