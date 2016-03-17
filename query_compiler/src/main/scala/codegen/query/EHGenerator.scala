@@ -392,6 +392,7 @@ object EHGenerator {
     (head.aggregation,head.materialize) match { //you always check for annotations
       case (Some(a),false) => {
         if(a.operation != "CONST"){
+          println(a + " " + extra)
           code.append(s"""const ${annotationType} intermediate_${head.name} = """)
           //starter that has no effect on join operation
           joinType match {
@@ -430,7 +431,7 @@ object EHGenerator {
           code.append(emitForeach(head,iteratorAccessors))
           new StringBuilder("")
         } else {
-          new StringBuilder(s"""${joinType} count_${head.name}""")
+          new StringBuilder(s"""${joinType} (count_${head.name} ${joinType} ${a.init})""")
         }
         passedScalar.foreach(e => extra.append(s"""${joinType} ${e}"""))
         code.append(emitAnnotationAccessors(head,annotationType,iteratorAccessors,extra.toString))
