@@ -430,7 +430,7 @@ object EHGenerator {
           code.append(emitForeach(head,iteratorAccessors))
           new StringBuilder("")
         } else {
-          new StringBuilder(s"""${joinType} count_${head.name}""")
+          new StringBuilder(s"""${joinType} (count_${head.name} ${joinType} ${a.init})""")
         }
         passedScalar.foreach(e => extra.append(s"""${joinType} ${e}"""))
         code.append(emitAnnotationAccessors(head,annotationType,iteratorAccessors,extra.toString))
