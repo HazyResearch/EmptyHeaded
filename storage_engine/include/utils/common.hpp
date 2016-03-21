@@ -52,10 +52,6 @@ const static size_t GIGABYTE = 1073741824;
 #define SOCKET_THREADS 12
 #define MAX_MEMORY 10 //GB
 
-#define BITS_PER_WORD 64
-#define ADDRESS_BITS_PER_WORD 6
-#define BYTES_PER_WORD 8
-
 namespace common{
   static size_t bitset_length = 2;
   static double bitset_req = 128.0;//256.0;
@@ -84,13 +80,9 @@ namespace type{
   };
 
   enum layout: uint8_t {
-    RANGE_BITSET = 0,
+    BITSET = 0,
     UINTEGER = 1,
-    HYBRID = 2,
-    BLOCK_BITSET = 3,
-    BLOCK = 4,
-    NOT_VALID = 8
-
+    HYBRID = 2
   };
 
 }

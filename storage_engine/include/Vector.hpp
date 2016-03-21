@@ -14,6 +14,7 @@
 
 #include "utils/utils.hpp"
 #include "vector/SparseVector.hpp"
+#include "vector/DenseVector.hpp"
 #include "vector/annotations/BufferIndex.hpp"
 #include "vector/Meta.hpp"
 /*

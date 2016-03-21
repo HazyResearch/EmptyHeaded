@@ -116,7 +116,6 @@ Vector<T,A,M> Vector<T,A,M>::from_array(
     meta->end = *(data+(len-1));
   }
   meta->type = T::get_type();
-
   T:: template from_array<A,M>(
     memoryBuffer->get_address(bufferIndex)+sizeof(Meta),
     data,
@@ -132,3 +131,9 @@ template struct Vector<SparseVector,float,ParMemoryBuffer>;
 template struct Vector<SparseVector,double,ParMemoryBuffer>;
 template struct Vector<SparseVector,BufferIndex,ParMemoryBuffer>;
 
+template struct Vector<DenseVector,void*,ParMemoryBuffer>;
+template struct Vector<DenseVector,int,ParMemoryBuffer>;
+template struct Vector<DenseVector,long,ParMemoryBuffer>;
+template struct Vector<DenseVector,float,ParMemoryBuffer>;
+template struct Vector<DenseVector,double,ParMemoryBuffer>;
+template struct Vector<DenseVector,BufferIndex,ParMemoryBuffer>;

@@ -18,6 +18,17 @@
 #include "ParMemoryBuffer.hpp"
 
 namespace utils {
+
+  template<class A>
+  inline A zero(){
+    return (A)0;
+  }
+
+  template<>
+  inline BufferIndex zero(){
+    return BufferIndex(0,0);
+  }
+
   //Look for a key, pass in a pointer to an array and a start and end index.
   inline long binary_search(const uint32_t * const data, size_t first, size_t last, uint32_t search_key){
    long index;

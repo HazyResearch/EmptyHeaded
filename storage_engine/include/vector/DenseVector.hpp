@@ -1,7 +1,7 @@
-#ifndef _SPARSEVECTOR_H_
-#define _SPARSEVECTOR_H_
+#ifndef _DENSEVECTOR_H_
+#define _DENSEVECTOR_H_
 
-#include "layout/UINTEGER.hpp"
+#include "layout/BITSET.hpp"
 
 /*
 Vectors are laid flat in memory as follows
@@ -11,7 +11,7 @@ Vector | Indices (uint/bitset/block) | Annotations
 ---------------------------------------------------------
 */
 
-struct SparseVector{ 
+struct DenseVector{ 
   //Find the index of a data elem.
   template <class A, class M>
   static inline uint32_t indexOf(
@@ -79,7 +79,7 @@ struct SparseVector{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
-    UINTEGER:: template foreach<A,M>(f,meta,memoryBuffer,bufferIndex);
+    BITSET:: template foreach<A,M>(f,meta,memoryBuffer,bufferIndex);
   }
 
     //mutable loop (returns data and index)
@@ -90,7 +90,7 @@ struct SparseVector{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
-    UINTEGER:: template foreach_index<M>(f,meta,memoryBuffer,bufferIndex);
+    BITSET:: template foreach_index<M>(f,meta,memoryBuffer,bufferIndex);
   }
 
     //mutable loop (returns data and index)
@@ -112,7 +112,9 @@ struct SparseVector{
   static inline size_t get_num_bytes(
     const Meta * const restrict meta)
   {
-    return sizeof(Meta)+meta->cardinality*(sizeof(uint32_t)+sizeof(A));
+    return sizeof(Meta)+(meta->cardinality*sizeof(A))
+      +sizeof(uint64_t)
+      +(sizeof(uint64_t)*BITSET::get_num_data_words(meta));
   }
 
   template <class A>
@@ -121,19 +123,21 @@ struct SparseVector{
     const size_t len)
   {
     (void) data;
-    return len*(sizeof(uint32_t)+sizeof(A));
+    const size_t num_words = data[len-1]-data[0]; 
+    return len*sizeof(A)+(num_words*sizeof(uint64_t))+sizeof(uint64_t);
   }
 
   static inline size_t get_num_index_bytes(
     const Meta * const restrict meta)
   {
-    return meta->cardinality*sizeof(uint32_t);
+    const size_t num_words = BITSET::get_num_data_words(meta); 
+    return (num_words*sizeof(uint64_t))+sizeof(uint64_t);
   }
 
   //parallel iterator
   static inline type::layout get_type() 
   {
-    return type::UINTEGER;
+    return type::BITSET;
   }
 
   //constructors
@@ -143,7 +147,7 @@ struct SparseVector{
     const uint32_t * const restrict data,
     const size_t len) 
   {
-    UINTEGER::from_vector(buffer,data,len);
+    BITSET::from_vector(buffer,data,len);
   }
 
   //constructors
@@ -154,24 +158,25 @@ struct SparseVector{
     const A * const restrict values,
     const size_t len) 
   {
-    UINTEGER::from_vector<A>(buffer,data,values,len);
+    BITSET::from_vector<A>(buffer,data,values,len);
   }
 };
 
 template<>
-inline size_t SparseVector::get_num_bytes<void*>(
+inline size_t DenseVector::get_num_bytes<void*>(
   const uint32_t * const restrict data,
   const size_t len) 
 {
-  (void) data;
-  return len*sizeof(uint32_t);
+  const size_t num_words = data[len-1]-data[0]; 
+  return (num_words*sizeof(uint64_t))+sizeof(uint64_t);
 }
 
 template<>
-inline size_t SparseVector::get_num_bytes<void*>(
+inline size_t DenseVector::get_num_bytes<void*>(
   const Meta * const restrict meta) 
 {
-  return meta->cardinality*sizeof(uint32_t);
+  const size_t num_words = BITSET::get_num_data_words(meta); 
+  return (num_words*sizeof(uint64_t))+sizeof(uint64_t);
 }
 
 #endif
