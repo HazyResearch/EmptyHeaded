@@ -131,13 +131,23 @@ void thread_pool::initializeThreadPool() {
 
 void* killThread(void *args_in){
   (void) args_in;
+  std::cout << "KILL" << std::endl;
   pthread_exit(NULL);
 }
 
 void thread_pool::deleteThreadPool() {
   for(size_t k = 0; k < NUM_THREADS; k++) { 
-    submitWork(k,killThread,(void *)NULL);
+    pthread_cancel(threadPool[k]);
   }
+  for(size_t k = 0; k < NUM_THREADS; k++) { 
+    pthread_join(threadPool[k],NULL);
+  }
+  delete[] threadPool;
+  delete[] locks;
+  delete[] readyConds;
+  delete[] doneConds;
+  delete[] workPool;
+  delete[] argPool;
 }
 
 template void* thread_pool::general_body<par::staticParFor>(void*);

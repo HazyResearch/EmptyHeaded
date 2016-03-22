@@ -75,7 +75,7 @@ TEST_CASE( "Test basic DenseVector functionality.", "[DenseVector]" ) {
   // Test Par Foreach
   /////////////////////////////////////////////////////////////////////////////
 
-  //thread_pool::deleteThreadPool();
+  thread_pool::deleteThreadPool();
 }
 
 TEST_CASE( "Test basic SparseVector functionality.", "[SparseVector]" ) {
@@ -118,5 +118,5 @@ TEST_CASE( "Test basic SparseVector functionality.", "[SparseVector]" ) {
   // Test Par Foreach
   /////////////////////////////////////////////////////////////////////////////
 
-  //thread_pool::deleteThreadPool();
+  thread_pool::deleteThreadPool();
 }
