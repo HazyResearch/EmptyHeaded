@@ -137,4 +137,4 @@ template struct Vector<DenseVector,int,ParMemoryBuffer>;
 template struct Vector<DenseVector,long,ParMemoryBuffer>;
 template struct Vector<DenseVector,float,ParMemoryBuffer>;
 template struct Vector<DenseVector,double,ParMemoryBuffer>;
-//template struct Vector<DenseVector,BufferIndex,ParMemoryBuffer>;
+template struct Vector<DenseVector,BufferIndex,ParMemoryBuffer>;

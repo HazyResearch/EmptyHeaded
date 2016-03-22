@@ -111,7 +111,7 @@ struct BITSET{
                 (memoryBuffer->get_address(bufferIndex)+
                   sizeof(Meta)+
                   sizeof(uint64_t)*num_words+
-                  sizeof(A)*data);
+                  sizeof(A)*(data-meta->start));
               f(index++,data,*values);
             }
           }
@@ -232,8 +232,9 @@ struct BITSET{
     const size_t range = input_length > 0 ? 
       input_data[input_length-1]-input_data[0]+1 : 
       0;
+    const uint32_t start = input_data[0];
     for(size_t i = 0; i < range; i++){
-      if(i == input_data[input_index]){
+      if((i+start) == input_data[input_index]){
         anno_buffer[i] = values[input_index];
         ++input_index;
       } else{

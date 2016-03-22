@@ -11,7 +11,7 @@
 #include "VectorOps.hpp"
 #include "Trie.hpp"
 
-typedef SparseVector VectorType;
+typedef DenseVector VectorType;
 
 template<class A,class M>
 void Trie<A,M>::print(){
@@ -243,7 +243,7 @@ size_t recursive_build(
         tid,
         data_allocator,
         sb,
-        set_size); 
+        set_size);
 
     auto tup = produce_ranges(
       start,
@@ -333,11 +333,6 @@ Trie<A,M>::Trie(
     std::cout << std::endl;
   }
   */
-  /*
-  for(size_t i = 0; i < annotations->size(); i++){
-    std::cout << annotations->at(i) << std::endl;
-  }*/
-
 
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
@@ -400,6 +395,7 @@ Trie<A,M>::Trie(
       nl.tid = tid;
       nl.index = next_index;
       head.set(i,data,nl);
+      Vector<DenseVector,BufferIndex,M> v(memoryBuffers,nl);
     });
   } else if(annotations.size() > 0){
       encode_annotation<A>(

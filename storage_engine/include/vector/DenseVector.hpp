@@ -124,8 +124,8 @@ struct DenseVector{
     const size_t len)
   {
     (void) data;
-    const size_t range = data[len-1]-data[0]; 
-    const size_t num_words = BITSET::word_index(data[len-1])-BITSET::word_index(data[0]);
+    const size_t range = len > 0 ? data[len-1]-data[0]+1:0; 
+    const size_t num_words = len > 0 ? BITSET::word_index(data[len-1])-BITSET::word_index(data[0])+1 : 0;
     return sizeof(Meta)+range*sizeof(A)+(num_words*sizeof(uint64_t));
   }
 

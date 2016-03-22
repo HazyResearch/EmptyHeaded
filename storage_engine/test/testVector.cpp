@@ -7,6 +7,7 @@
 const size_t vector_length = 10;
 const size_t multiplication_factor = 32;
 const float init_value = 0.25f;
+const size_t offset = 128;
 
 //Add tests for trie build.
 
@@ -34,14 +35,14 @@ void test_parforeach(const Vector<T,float,ParMemoryBuffer> & v){
 template<class T>
 void test_get(const Vector<T,float,ParMemoryBuffer> & v){
   for(size_t i = 0; i < vector_length; i++){
-    REQUIRE((v.get(i*multiplication_factor)) == (init_value));
+    REQUIRE((v.get(offset+i*multiplication_factor)) == (init_value));
   }
 }
 
 template<class T>
 void test_set(Vector<T,float,ParMemoryBuffer> & v){
-  v.set(1,multiplication_factor,0.5f);
-  REQUIRE((v.get(multiplication_factor)) == (0.5f));
+  v.set(1,offset+multiplication_factor,0.5f);
+  REQUIRE((v.get(offset+multiplication_factor)) == (0.5f));
 }
 
 TEST_CASE( "Test basic DenseVector functionality.", "[DenseVector]" ) {
@@ -54,7 +55,7 @@ TEST_CASE( "Test basic DenseVector functionality.", "[DenseVector]" ) {
   std::vector<uint32_t> v1;
   std::vector<float> a;
   for(size_t i = 0; i < vector_length; i++){
-    v1.push_back(i*multiplication_factor);
+    v1.push_back(offset+i*multiplication_factor);
     a.push_back(init_value);
   }
   Vector<DenseVector,float,ParMemoryBuffer> v =
@@ -98,7 +99,7 @@ TEST_CASE( "Test basic SparseVector functionality.", "[SparseVector]" ) {
   std::vector<uint32_t> v1;
   std::vector<float> a;
   for(size_t i = 0; i < vector_length; i++){
-    v1.push_back(i*multiplication_factor);
+    v1.push_back(offset+i*multiplication_factor);
     a.push_back(init_value);
   }
   Vector<SparseVector,float,ParMemoryBuffer> v =
