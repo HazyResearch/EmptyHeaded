@@ -29,7 +29,6 @@ int main()
   Vector<DenseVector,BufferIndex,ParMemoryBuffer> M_T_head(
     M_T->memoryBuffers);
 
-  std::cout << "HERE" << std::endl;
   Vector<DenseVector,BufferIndex,ParMemoryBuffer> A = 
     Vector<DenseVector,BufferIndex,ParMemoryBuffer>(
       NUM_THREADS,
@@ -55,19 +54,17 @@ int main()
       Vector<DenseVector,float,ParMemoryBuffer> M_T_b(
           M_T->memoryBuffers,
           b_nl);
-      /*
       float l2_c = ops::agg_intersect(
         tid,
         tmp_buffers[2],
         M_b,
         M_T_b);
       B.set(b_i,b_d,l2_c);
-      */
     });
     A.set(a_i,a_d,B.bufferIndex);
   });
   timer::stop_clock("QUERY",query_time);
-  /*
+
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
   result->foreach([&](std::vector<uint32_t> *v,float anno){
     if(anno != 0){
@@ -77,6 +74,6 @@ int main()
       std::cout << anno << std::endl;
     }
   });
-  */
+  
   return 0;
 }
