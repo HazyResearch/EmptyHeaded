@@ -7,6 +7,7 @@
 const size_t vector_length = 10;
 const size_t multiplication_factor = 32;
 const float init_value = 0.25f;
+
 //Add tests for trie build.
 
 //Add tests for vector intersections.
@@ -74,7 +75,7 @@ TEST_CASE( "Test basic DenseVector functionality.", "[DenseVector]" ) {
   // Test Par Foreach
   /////////////////////////////////////////////////////////////////////////////
 
-  thread_pool::deleteThreadPool();
+  //thread_pool::deleteThreadPool();
 }
 
 TEST_CASE( "Test basic SparseVector functionality.", "[SparseVector]" ) {
@@ -117,5 +118,5 @@ TEST_CASE( "Test basic SparseVector functionality.", "[SparseVector]" ) {
   // Test Par Foreach
   /////////////////////////////////////////////////////////////////////////////
 
-  thread_pool::deleteThreadPool();
+  //thread_pool::deleteThreadPool();
 }
