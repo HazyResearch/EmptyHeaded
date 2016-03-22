@@ -30,7 +30,9 @@ namespace ops{
     Meta* meta = new(buffer) Meta();
     uint32_t *out = (uint32_t*)(buffer+sizeof(Meta));
 
-    if(rare.meta->cardinality == 0 || freq.meta->cardinality == 0){
+    if(rare.meta->cardinality == 0 || freq.meta->cardinality == 0
+      || (rare.meta->start > freq.meta->end) 
+      || (freq.meta->start > rare.meta->end)){
       meta->cardinality = 0;
       meta->start = 0;
       meta->end = 0;

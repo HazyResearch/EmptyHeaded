@@ -7,7 +7,6 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  std::string ehhome = std::string(getenv ("EMPTYHEADED_HOME"));
   auto tup = load_dense_matrix_and_transpose(4,4);
   
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
@@ -25,46 +24,47 @@ int main()
   }
 
   //M(a,b),M_T(c,b)
-  Vector<SparseVector,BufferIndex,ParMemoryBuffer> M_head(
+  Vector<DenseVector,BufferIndex,ParMemoryBuffer> M_head(
     M->memoryBuffers);
-  Vector<SparseVector,BufferIndex,ParMemoryBuffer> M_T_head(
+  Vector<DenseVector,BufferIndex,ParMemoryBuffer> M_T_head(
     M_T->memoryBuffers);
 
-  //Dumb and not necessary.
-  Vector<SparseVector,BufferIndex,ParMemoryBuffer> A = 
-    Vector<SparseVector,BufferIndex,ParMemoryBuffer>(
+  std::cout << "HERE" << std::endl;
+  Vector<DenseVector,BufferIndex,ParMemoryBuffer> A = 
+    Vector<DenseVector,BufferIndex,ParMemoryBuffer>(
       NUM_THREADS,
       result->memoryBuffers,
       M_head);
 
   A.parforeach_index([&](const size_t tid, const uint32_t a_i, const uint32_t a_d){
     (void) a_i;
-    /*
     BufferIndex a_nl = M_head.get(a_d);
-    Vector<SparseVector,float,ParMemoryBuffer> M_b(
+    Vector<DenseVector,float,ParMemoryBuffer> M_b(
       M->memoryBuffers,
       a_nl);
-    Vector<SparseVector,float,ParMemoryBuffer> B = 
-      Vector<SparseVector,float,ParMemoryBuffer>(
+    Vector<DenseVector,float,ParMemoryBuffer> B = 
+      Vector<DenseVector,float,ParMemoryBuffer>(
         tid,
         result->memoryBuffers,
         M_T_head.get_this(),
         M_T_head.get_num_bytes());
+
     B.foreach_index([&](const uint32_t b_i, const uint32_t b_d){
       (void) b_i;
       BufferIndex b_nl = M_T_head.get(b_d);
-      Vector<SparseVector,float,ParMemoryBuffer> M_T_b(
+      Vector<DenseVector,float,ParMemoryBuffer> M_T_b(
           M_T->memoryBuffers,
           b_nl);
-        float l2_c = ops::agg_intersect(
-          tid,
-          tmp_buffers[2],
-          M_b,
-          M_T_b);
-        B.set(b_i,b_d,l2_c);
+      /*
+      float l2_c = ops::agg_intersect(
+        tid,
+        tmp_buffers[2],
+        M_b,
+        M_T_b);
+      B.set(b_i,b_d,l2_c);
+      */
     });
     A.set(a_i,a_d,B.bufferIndex);
-    */
   });
   timer::stop_clock("QUERY",query_time);
   /*
