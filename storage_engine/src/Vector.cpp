@@ -80,6 +80,9 @@ Vector<T,A,M> Vector<T,A,M>::from_array(
     meta->start = *data;
     meta->end = *(data+(len-1));
   }
+  std::cout << "CARD: " << meta->cardinality << std::endl;
+  std::cout << "START: " << meta->start << std::endl;
+  std::cout << "END: " << meta->end << std::endl;
   meta->type = T::get_type();
   T:: template from_array<A,M>(
     memoryBuffer->get_address(bufferIndex)+sizeof(Meta),
@@ -136,4 +139,4 @@ template struct Vector<DenseVector,int,ParMemoryBuffer>;
 template struct Vector<DenseVector,long,ParMemoryBuffer>;
 template struct Vector<DenseVector,float,ParMemoryBuffer>;
 template struct Vector<DenseVector,double,ParMemoryBuffer>;
-template struct Vector<DenseVector,BufferIndex,ParMemoryBuffer>;
+//template struct Vector<DenseVector,BufferIndex,ParMemoryBuffer>;

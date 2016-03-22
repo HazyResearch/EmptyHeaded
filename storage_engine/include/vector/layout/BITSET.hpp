@@ -30,7 +30,7 @@ struct BITSET{
 
   static inline size_t get_num_data_words(const Meta * const restrict meta){
     const size_t num_words = 
-      word_index(meta->start)-word_index(meta->end);
+      word_index(meta->end)-word_index(meta->start);
     return (meta->cardinality>0) ? (num_words+1): 0;
   }
 
@@ -113,7 +113,8 @@ struct BITSET{
                 (memoryBuffer->get_address(bufferIndex)+
                   sizeof(Meta)+
                   sizeof(uint64_t)+
-                  sizeof(uint64_t)*data);
+                  sizeof(uint64_t)*num_words+
+                  sizeof(A)*data);
               f(index++,data,*values);
             }
           }
@@ -148,7 +149,9 @@ struct BITSET{
     const size_t num_words = get_num_data_words(meta);
     size_t index = 0;
     if(num_words > 0){
-      const uint64_t * const restrict offpointer = (const uint64_t* const restrict)(memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
+      const uint64_t * const restrict offpointer = 
+        (const uint64_t* const restrict)
+        (memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
       const uint64_t offset = *offpointer;
       for(size_t i = 0; i < num_words; i++){
         const uint64_t * const restrict A64_data = 
@@ -218,12 +221,17 @@ struct BITSET{
 
     from_vector(buffer,input_data,input_length);
     const uint64_t offset = BITSET::word_index(input_data[0]);
-    const size_t num_words = (word_index(input_data[input_length-1])-offset)+1;
-    A* anno_buffer = (A*)buffer+(sizeof(uint64_t)*num_words);
+    const size_t num_words = input_length > 0 ? word_index(input_data[input_length-1])-offset+1:0;
+    A* anno_buffer = (A*)(buffer+(sizeof(uint64_t)*num_words)+sizeof(uint64_t));
+    std::cout << "ANNO MEM: " << (void*) anno_buffer << std::endl;
     size_t input_index = 0;
-    for(size_t i = 0; i < input_length; i++){
+    const size_t range = input_length > 0 ? 
+      input_data[input_length-1]-input_data[0]+1 : 
+      0;
+    for(size_t i = 0; i < range; i++){
       if(i == input_data[input_index]){
-        anno_buffer[i] = values[i];
+        std::cout << "ANNO BUF: " << i << " " << input_index << " " << values[input_index] << std::endl;
+        anno_buffer[i] = values[input_index];
         ++input_index;
       } else{
         anno_buffer[i] = utils::zero<A>();
