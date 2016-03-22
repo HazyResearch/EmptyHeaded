@@ -101,7 +101,7 @@ struct DenseVector{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
-    UINTEGER:: template parforeach_index<M>(
+    BITSET:: template parforeach_index<M>(
       f,
       meta,
       memoryBuffer,

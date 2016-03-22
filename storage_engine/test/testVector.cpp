@@ -19,20 +19,29 @@ void test_foreach(const Vector<T,float,ParMemoryBuffer> & v){
     (void) index; (void) data;
     reduced_anno += anno;
   });
-  REQUIRE(reduced_anno == 2.75f);
+  REQUIRE((reduced_anno) == (2.75f));
+}
+
+template<class T>
+void test_parforeach(const Vector<T,float,ParMemoryBuffer> & v){
+  par::reducer<float> reduced_anno(0,[&](const float a, const float b){return a + b;});
+  v.parforeach_index([&](const size_t tid, const uint32_t index, const uint32_t data){
+    reduced_anno.update(tid,v.get(index,data));
+  });
+  REQUIRE((reduced_anno.evaluate(0)) == (2.75f));
 }
 
 template<class T>
 void test_get(const Vector<T,float,ParMemoryBuffer> & v){
   for(size_t i = 0; i < vector_length; i++){
-    REQUIRE(v.get(i*multiplication_factor) == init_value);
+    REQUIRE((v.get(i*multiplication_factor)) == (init_value));
   }
 }
 
 template<class T>
 void test_set(Vector<T,float,ParMemoryBuffer> & v){
   v.set(1,multiplication_factor,0.5f);
-  REQUIRE(v.get(multiplication_factor) == 0.5f);
+  REQUIRE((v.get(multiplication_factor)) == (0.5f));
 }
 
 TEST_CASE( "Test basic DenseVector functionality.", "[DenseVector]" ) {
@@ -74,6 +83,7 @@ TEST_CASE( "Test basic DenseVector functionality.", "[DenseVector]" ) {
   /////////////////////////////////////////////////////////////////////////////
   // Test Par Foreach
   /////////////////////////////////////////////////////////////////////////////
+  test_parforeach<DenseVector>(v);
 
   thread_pool::deleteThreadPool();
 }
@@ -117,6 +127,7 @@ TEST_CASE( "Test basic SparseVector functionality.", "[SparseVector]" ) {
   /////////////////////////////////////////////////////////////////////////////
   // Test Par Foreach
   /////////////////////////////////////////////////////////////////////////////
+  test_parforeach<SparseVector>(v);
 
   thread_pool::deleteThreadPool();
 }
