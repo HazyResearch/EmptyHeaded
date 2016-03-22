@@ -30,7 +30,7 @@ void test_get(const Vector<T,float,ParMemoryBuffer> & v){
 
 template<class T>
 void test_set(Vector<T,float,ParMemoryBuffer> & v){
-  v.set(0,multiplication_factor,0.5f);
+  v.set(1,multiplication_factor,0.5f);
   REQUIRE(v.get(multiplication_factor) == 0.5f);
 }
 
@@ -106,12 +106,12 @@ TEST_CASE( "Test basic SparseVector functionality.", "[SparseVector]" ) {
   /////////////////////////////////////////////////////////////////////////////
   // Test Set
   /////////////////////////////////////////////////////////////////////////////
-  //test_set<SparseVector>(v);
+  test_set<SparseVector>(v);
 
   /////////////////////////////////////////////////////////////////////////////
   // Test Foreach 
   /////////////////////////////////////////////////////////////////////////////
-  //test_foreach<SparseVector>(v);
+  test_foreach<SparseVector>(v);
 
   /////////////////////////////////////////////////////////////////////////////
   // Test Par Foreach
