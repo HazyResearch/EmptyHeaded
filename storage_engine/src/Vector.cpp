@@ -70,7 +70,7 @@ Vector<T,A,M> Vector<T,A,M>::from_array(
   bufferIndex.index = index;
   const size_t num_bytes = T:: template get_num_bytes<A>(data,len);
   //reserve memory
-  memoryBuffer->get_next(tid,sizeof(Meta)+num_bytes);
+  memoryBuffer->get_next(tid,num_bytes);
   Meta* meta = new(memoryBuffer->get_address(bufferIndex)) Meta();
 
   meta->cardinality = len;
@@ -80,9 +80,7 @@ Vector<T,A,M> Vector<T,A,M>::from_array(
     meta->start = *data;
     meta->end = *(data+(len-1));
   }
-  std::cout << "CARD: " << meta->cardinality << std::endl;
-  std::cout << "START: " << meta->start << std::endl;
-  std::cout << "END: " << meta->end << std::endl;
+
   meta->type = T::get_type();
   T:: template from_array<A,M>(
     memoryBuffer->get_address(bufferIndex)+sizeof(Meta),
@@ -108,7 +106,7 @@ Vector<T,A,M> Vector<T,A,M>::from_array(
 
   const size_t num_bytes = T:: template get_num_bytes<A>(data,len);
   //reserve memory
-  memoryBuffer->get_next(tid,sizeof(Meta)+num_bytes);
+  memoryBuffer->get_next(tid,num_bytes);
   Meta* meta = new(memoryBuffer->get_address(bufferIndex)) Meta();
 
   meta->cardinality = len;

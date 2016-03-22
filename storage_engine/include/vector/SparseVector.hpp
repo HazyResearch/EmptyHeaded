@@ -121,7 +121,7 @@ struct SparseVector{
     const size_t len)
   {
     (void) data;
-    return len*(sizeof(uint32_t)+sizeof(A));
+    return sizeof(Meta)+len*(sizeof(uint32_t)+sizeof(A));
   }
 
   static inline size_t get_num_index_bytes(
@@ -164,14 +164,14 @@ inline size_t SparseVector::get_num_bytes<void*>(
   const size_t len) 
 {
   (void) data;
-  return len*sizeof(uint32_t);
+  return sizeof(Meta)+len*sizeof(uint32_t);
 }
 
 template<>
 inline size_t SparseVector::get_num_bytes<void*>(
   const Meta * const restrict meta) 
 {
-  return meta->cardinality*sizeof(uint32_t);
+  return sizeof(Meta)+meta->cardinality*sizeof(uint32_t);
 }
 
 #endif

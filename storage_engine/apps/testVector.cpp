@@ -29,5 +29,11 @@ int main()
     std::cout << index << " " << data  << " " << anno << std::endl;
   });
 
+  std::cout << "GET VALUE: " << v.get(32) << std::endl;
+  v.set(0,32,0.5);
+  std::cout << "GET VALUE: " << v.get(32) << std::endl;
+
+  //add a test for par foreach
+
   return 0;
 }

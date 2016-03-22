@@ -34,7 +34,6 @@ struct BITSET{
     return (meta->cardinality>0) ? (num_words+1): 0;
   }
 
-
   template <class A, class M>
   static inline A get(
     const uint32_t data, 
@@ -42,14 +41,14 @@ struct BITSET{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex){
 
-    const uint32_t * const indices = (const uint32_t * const) 
-      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
-    const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
-    const A * const values = (const A * const) 
-      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+anno_offset);
-    const long data_index = utils::binary_search(indices,0,meta->cardinality,data);
-    assert(data_index != -1);
-    return values[data_index];
+    const size_t num_words = get_num_data_words(meta);
+    const A* const restrict values = 
+      (const A* const restrict)
+      (memoryBuffer->get_address(bufferIndex)+
+        sizeof(Meta)+
+        BYTES_PER_WORD*num_words+
+        sizeof(A)*(data-meta->start));
+    return *values;
   }
 
   template <class A, class M>
@@ -59,11 +58,8 @@ struct BITSET{
     const Meta * const restrict meta, 
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex){
-    (void) data;
-    const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
-    const A * const values = (const A * const) 
-      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+anno_offset);
-    return values[index];
+    (void) index;
+    return get<A,M>(data,meta,memoryBuffer,bufferIndex);
   }
 
   template <class A, class M>
@@ -75,11 +71,15 @@ struct BITSET{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
-    (void) data;
-    const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
-    A * const values = (A * const) 
-      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+anno_offset);
-    values[index] = value;
+    (void) index;
+    const size_t num_words = get_num_data_words(meta);
+    A* const restrict values = 
+      (A* const restrict)
+      (memoryBuffer->get_address(bufferIndex)+
+        sizeof(Meta)+
+        BYTES_PER_WORD*num_words+
+        sizeof(A)*(data-meta->start));
+    *values = value;
   }
 
 
@@ -92,16 +92,14 @@ struct BITSET{
     const BufferIndex& restrict bufferIndex) 
   {
     const size_t num_words = get_num_data_words(meta);
+    const size_t offset = word_index(meta->start);
     size_t index = 0;
     if(num_words > 0){
-      const uint64_t * const restrict offpointer = (const uint64_t* const restrict)(memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
-      const uint64_t offset = *offpointer;
       for(size_t i = 0; i < num_words; i++){
         const uint64_t * const restrict A64_data = 
           (const uint64_t* const restrict)
           (memoryBuffer->get_address(bufferIndex)+
             sizeof(Meta)+
-            sizeof(uint64_t)+
             sizeof(uint64_t)*i);
         const uint64_t cur_word = *A64_data;
         if(cur_word != 0) {
@@ -112,7 +110,6 @@ struct BITSET{
                 (const A* const restrict)
                 (memoryBuffer->get_address(bufferIndex)+
                   sizeof(Meta)+
-                  sizeof(uint64_t)+
                   sizeof(uint64_t)*num_words+
                   sizeof(A)*data);
               f(index++,data,*values);
@@ -149,16 +146,12 @@ struct BITSET{
     const size_t num_words = get_num_data_words(meta);
     size_t index = 0;
     if(num_words > 0){
-      const uint64_t * const restrict offpointer = 
-        (const uint64_t* const restrict)
-        (memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
-      const uint64_t offset = *offpointer;
+      const uint64_t offset = word_index(meta->start);
       for(size_t i = 0; i < num_words; i++){
         const uint64_t * const restrict A64_data = 
           (const uint64_t* const restrict)
           (memoryBuffer->get_address(bufferIndex)+
             sizeof(Meta)+
-            sizeof(uint64_t)+
             sizeof(uint64_t)*i);
         const uint64_t cur_word = *A64_data;
         if(cur_word != 0) {
@@ -180,9 +173,8 @@ struct BITSET{
   {
     if(input_length > 0){
       const uint64_t offset = BITSET::word_index(input_data[0]);
-      ((uint64_t*)buffer)[0] = offset; 
 
-      uint64_t* R64_data = (uint64_t*)(buffer+sizeof(uint64_t));
+      uint64_t* R64_data = (uint64_t*)(buffer);
       size_t word = offset;
       size_t i = 0;
 
@@ -222,15 +214,13 @@ struct BITSET{
     from_vector(buffer,input_data,input_length);
     const uint64_t offset = BITSET::word_index(input_data[0]);
     const size_t num_words = input_length > 0 ? word_index(input_data[input_length-1])-offset+1:0;
-    A* anno_buffer = (A*)(buffer+(sizeof(uint64_t)*num_words)+sizeof(uint64_t));
-    std::cout << "ANNO MEM: " << (void*) anno_buffer << std::endl;
+    A* anno_buffer = (A*)(buffer+(sizeof(uint64_t)*num_words));
     size_t input_index = 0;
     const size_t range = input_length > 0 ? 
       input_data[input_length-1]-input_data[0]+1 : 
       0;
     for(size_t i = 0; i < range; i++){
       if(i == input_data[input_index]){
-        std::cout << "ANNO BUF: " << i << " " << input_index << " " << values[input_index] << std::endl;
         anno_buffer[i] = values[input_index];
         ++input_index;
       } else{

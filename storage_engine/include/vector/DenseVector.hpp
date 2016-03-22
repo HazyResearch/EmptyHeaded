@@ -29,7 +29,7 @@ struct DenseVector{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
-    return UINTEGER:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
+    return BITSET:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
   }
 
   //look up a data value
@@ -41,7 +41,7 @@ struct DenseVector{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
-    return UINTEGER:: template get<A,M>(index,data,meta,memoryBuffer,bufferIndex);
+    return BITSET:: template get<A,M>(index,data,meta,memoryBuffer,bufferIndex);
   }
 
   //set an annotation value
@@ -55,7 +55,7 @@ struct DenseVector{
     const BufferIndex& restrict bufferIndex) 
   {
     (void) data;
-    UINTEGER:: template set<A,M>(
+    BITSET:: template set<A,M>(
       index,
       data,
       value,
@@ -115,7 +115,6 @@ struct DenseVector{
     const size_t range = (meta->cardinality > 0) ? 
       (meta->end-meta->start+1) : 0;
     return sizeof(Meta)+(range*sizeof(A))
-      +sizeof(uint64_t)
       +(sizeof(uint64_t)*BITSET::get_num_data_words(meta));
   }
 
@@ -127,14 +126,14 @@ struct DenseVector{
     (void) data;
     const size_t range = data[len-1]-data[0]; 
     const size_t num_words = BITSET::word_index(data[len-1])-BITSET::word_index(data[0]);
-    return range*sizeof(A)+(num_words*sizeof(uint64_t))+sizeof(uint64_t);
+    return sizeof(Meta)+range*sizeof(A)+(num_words*sizeof(uint64_t));
   }
 
   static inline size_t get_num_index_bytes(
     const Meta * const restrict meta)
   {
     const size_t num_words = BITSET::get_num_data_words(meta); 
-    return (num_words*sizeof(uint64_t))+sizeof(uint64_t);
+    return (num_words*sizeof(uint64_t));
   }
 
   //parallel iterator
@@ -171,7 +170,7 @@ inline size_t DenseVector::get_num_bytes<void*>(
   const size_t len) 
 {
   const size_t num_words = len > 0 ? data[len-1]-data[0]+1 : 0; 
-  return (num_words*sizeof(uint64_t))+sizeof(uint64_t);
+  return sizeof(Meta)+(num_words*sizeof(uint64_t));
 }
 
 template<>
@@ -179,7 +178,7 @@ inline size_t DenseVector::get_num_bytes<void*>(
   const Meta * const restrict meta) 
 {
   const size_t num_words = BITSET::get_num_data_words(meta); 
-  return (num_words*sizeof(uint64_t))+sizeof(uint64_t);
+  return sizeof(Meta)+(num_words*sizeof(uint64_t));
 }
 
 #endif
