@@ -74,12 +74,14 @@ struct Vector{
     const size_t tid,
     M* memory_buffer_in,
     const uint8_t * const restrict data,
-    const size_t len)
+    const size_t index_len,
+    const size_t anno_len)
   {
     memoryBuffer = memory_buffer_in;
     const size_t index = memory_buffer_in->get_offset(tid);
-    uint8_t *buf = memory_buffer_in->get_next(tid,len);
-    memcpy((void*)buf,(void*)data,len);
+    uint8_t *buf = memory_buffer_in->get_next(tid,(index_len+anno_len+sizeof(Meta)));
+    memcpy((void*)buf,(void*)data,(index_len+sizeof(Meta)));
+    memset((void*)(buf+index_len+sizeof(Meta)),(uint8_t)0,anno_len);
     //placement new
     meta = new (buf) Meta();
     bufferIndex.tid = tid;
@@ -111,6 +113,15 @@ struct Vector{
 
   inline size_t get_num_bytes() const{
     return T:: template get_num_bytes<A>(meta);
+  }
+
+  inline size_t get_num_index_bytes() const{
+    return T:: template get_num_index_bytes(meta);
+  }
+
+  template<class R>
+  inline size_t get_num_annotation_bytes() const{
+    return T:: template get_num_annotation_bytes<R>(meta);
   }
 
   inline uint8_t* get_this() const{

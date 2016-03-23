@@ -154,6 +154,14 @@ struct DenseVector{
     return (num_words*sizeof(uint64_t));
   }
 
+
+  template <class A>
+  static inline size_t get_num_annotation_bytes(
+    const Meta * const restrict meta)
+  {
+    return BITSET::get_num_data_words(meta)*64*sizeof(A);
+  }
+
   //parallel iterator
   static inline type::layout get_type() 
   {

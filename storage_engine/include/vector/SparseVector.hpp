@@ -153,6 +153,13 @@ struct SparseVector{
     return meta->cardinality*sizeof(uint32_t);
   }
 
+  template <class A>
+  static inline size_t get_num_annotation_bytes(
+    const Meta * const restrict meta)
+  {
+    return meta->cardinality*(sizeof(uint32_t)+sizeof(A));
+  }
+
   //parallel iterator
   static inline type::layout get_type() 
   {

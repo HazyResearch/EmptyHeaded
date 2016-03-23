@@ -47,7 +47,8 @@ int main()
         tid,
         result->memoryBuffers,
         M_T_head.get_this(),
-        M_T_head.get_num_bytes());
+        M_T_head.get_num_index_bytes(),
+        M_T_head.get_num_annotation_bytes<float>());
     B.foreach_index([&](const uint32_t b_i, const uint32_t b_d){
       (void) b_i;
       BufferIndex b_nl = M_T_head.get(b_d);
