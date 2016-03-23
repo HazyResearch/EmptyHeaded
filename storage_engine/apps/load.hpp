@@ -26,7 +26,7 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
         EncodingMap_uint32_t.update(i);
         v_1->push_back(j);
         EncodingMap_uint32_t.update(j);
-        a_0->push_back(0.25f);
+        a_0->push_back(0.2f);
         NumRows_graph++;
       }
     }
