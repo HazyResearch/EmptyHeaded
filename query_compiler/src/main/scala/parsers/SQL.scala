@@ -15,6 +15,7 @@ case class SQLLiteral(value:String) extends SQLTerm
 abstract class SQLAggregation extends SQLTerm
 case class SQLCount() extends SQLAggregation
 case class SQLSum(column: SQLColumn) extends SQLAggregation
+case class SQLMin(column: SQLColumn) extends SQLAggregation
 
 case class SQLColumn(name:String, relation:String) extends SQLResult
 
@@ -27,6 +28,10 @@ case class SQLAndExpression(expr1: SQLBooleanExpression, expr2: SQLBooleanExpres
 
 case class SQLJoin(rel: SQLRelation, expr:SQLBooleanExpression)
 
+abstract class Convergence
+case class IterationsConvergence(iterations: String) extends Convergence
+case class EpsilonConvergence(epsilon: String) extends Convergence
+
 abstract class SQLStatement
 case class SQLBasicStatement(
                          resultName: String,
@@ -36,7 +41,7 @@ case class SQLBasicStatement(
                          where: Option[SQLBooleanExpression]
                        ) extends SQLStatement
 
-case class SQLRecursion(iterations: String, baseCase: SQLBasicStatement, recursiveCase: SQLBasicStatement) extends SQLStatement
+case class SQLRecursion(convergence:Convergence, baseCase: SQLBasicStatement, recursiveCase: SQLBasicStatement) extends SQLStatement
 
 object SQLParser extends RegexParsers {
   def run(line:String, dBInstance: DBInstance) : IR = {
@@ -97,7 +102,11 @@ object SQLParser extends RegexParsers {
 
   def sum:Parser[SQLSum] = "SUM(" ~> column <~ ")" ^^ {case column => SQLSum(column)}
 
+  def min:Parser[SQLMin] = "MIN(" ~> column <~ ")" ^^ {case column => SQLMin(column)}
+
   def count:Parser[SQLCount] = "COUNT(*)" ^^ {case _ => SQLCount()}
+
+  def aggregation:Parser[SQLAggregation] = sum | min | count
 
   def columns:Parser[List[SQLColumn]] = column ~ (("," ~> column)*) ^^ {
     case firstColumn ~ rest => {
@@ -105,7 +114,7 @@ object SQLParser extends RegexParsers {
     }
   }
 
-  def term:Parser[SQLTerm] = count | sum | literal
+  def term:Parser[SQLTerm] = aggregation | literal
 
   def expression:Parser[SQLExpression] = term ~ ((op ~ expression)?) ^^ {
     case t ~ None => {
@@ -165,8 +174,14 @@ object SQLParser extends RegexParsers {
     }
   }
 
-  def recursiveStatement:Parser[SQLRecursion] = ("WITH RECURSIVE FOR" ~> number <~ "ITERATIONS" <~ "(") ~ statement ~ ("UNION" ~> statement <~ ")" <~ (";"?)) ^^ {
-    case iterations ~ baseCase ~ recursiveCase => {
+  def iterationsCriteria[Parser[String]] = "FOR" ~> number <~ "ITERATIONS"
+
+  def recursiveStatement:Parser[SQLRecursion] = ("WITH RECURSIVE" ~> (iterationsCriteria?) <~ "(") ~ statement ~ ("UNION" ~> statement <~ ")" <~ (";"?)) ^^ {
+    case it ~ baseCase ~ recursiveCase => {
+      val iterations = it match {
+        case Some(s:String) => IterationsConvergence(s)
+        case None => EpsilonConvergence("0")
+      }
       SQLRecursion(iterations, baseCase, recursiveCase)
     }
   }
@@ -180,7 +195,7 @@ object SQLParser extends RegexParsers {
                joins: List[SQLJoin],
                where: Option[SQLBooleanExpression],
                relationsToSize: Map[String, Int],
-               iterations: Option[String] = None
+               iterations: Option[Convergence] = None
              ) = {
     // A list of sets of columns that must be equal by join constraints.
     val columnEquivalenceConstraints = mergeSets(
@@ -205,7 +220,7 @@ object SQLParser extends RegexParsers {
           case Some(i:Int) => i
           case None => throw new Exception("Relation " + sqlRelation.name + " not found.")
         }
-        val irNames = (0 to numColumns - 1).map({case idx => {
+        val irNames = (0 until numColumns).map({case idx => {
           val key = SQLColumn(idxToColumnName(idx), sqlRelation.alias)
           val irName = columnToIRName.get(key) match {
             case Some(name:String) => name
@@ -237,6 +252,13 @@ object SQLParser extends RegexParsers {
               case None => throw new Exception("Bad column name in sum")
             }
             Aggregation(IRNameGenerator.nextAnno, "float", SUM(), Attributes(List(columnIrName)), "1", annotationExpr, List())
+          }
+          case Some(SQLMin(column)) => {
+            val columnIrName = columnToIRName.get(column) match {
+              case Some(name:String) => name
+              case None => throw new Exception("Bad column name in min")
+            }
+            Aggregation(IRNameGenerator.nextAnno, "long", MIN(), Attributes(List(columnIrName)), "1", annotationExpr, List())
           }
           case Some(c:SQLCount) => {
             Aggregation(IRNameGenerator.nextAnno, "long", SUM(), Attributes(columnToIRName.values.toList.distinct), "1", annotationExpr, List())
@@ -270,7 +292,8 @@ object SQLParser extends RegexParsers {
     })
 
     val recursion = iterations match {
-      case Some(i:String) => Some(Recursion(ITERATIONS(), EQUALS(), i))
+      case Some(IterationsConvergence(i:String)) => Some(Recursion(ITERATIONS(), EQUALS(), i))
+      case Some(EpsilonConvergence(e:String)) => Some(Recursion(EPSILON(), EQUALS(), e))
       case None => None
     }
 
@@ -308,6 +331,7 @@ object SQLParser extends RegexParsers {
     expr match {
       case s:SQLSum => Some(s)
       case c:SQLCount => Some(c)
+      case m:SQLMin => Some(m)
       case l:SQLLiteral => None
       case SQLCompoundExpression(lhs, op, rhs) => {
         val lhsRes = extractAggregation(lhs)
