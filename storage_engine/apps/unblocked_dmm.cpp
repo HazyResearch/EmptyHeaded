@@ -7,7 +7,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  auto tup = load_dense_matrix_and_transpose(4,4);
+  auto tup = load_dense_matrix_and_transpose(2096,2096);
   
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
   Trie<float,ParMemoryBuffer> *M = tup.first;
@@ -47,33 +47,24 @@ int main()
         result->memoryBuffers,
         M_T_head.get_this(),
         M_T_head.get_num_bytes());
-    //block on M_b
-    M_b.foreach_block([&](const uint32_t block_index){
-      B.foreach_index([&](const uint32_t b_i, const uint32_t b_d){
-        (void) b_i;
-        BufferIndex b_nl = M_T_head.get(b_d);
-        Vector<DenseVector,float,ParMemoryBuffer> M_T_b(
+    B.foreach_index([&](const uint32_t b_i, const uint32_t b_d){
+      (void) b_i;
+      BufferIndex b_nl = M_T_head.get(b_d);
+      Vector<DenseVector,float,ParMemoryBuffer> M_T_b(
           M_T->memoryBuffers,
           b_nl);
-        float * M_b_block = M_b.get_block(block_index);
-        float * M_T_b_block = M_T_b.get_block(block_index);
-        const size_t num_blocks_per_avx = (256/sizeof(float))/(sizeof(float)*BLOCK_SIZE);
-        __m256 r = _mm256_set1_ps(0.0f);
-        for(size_t i = 0; i < num_blocks_per_avx; i++){
-          const __m256 m_b_1 = _mm256_load_ps(&M_b_block[i*8]);
-          const __m256 m_b_2 = _mm256_load_ps(&M_T_b_block[i*8]);
-          r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
-        }
-        __m256 s = _mm256_hadd_ps(r,r);
-        float anno = ((float*)&s)[0] + ((float*)&s)[2];
-        anno += B.get(b_i,b_d);
-        B.set(b_i,b_d,anno);
-      });
+      float l2_c = ops::agg_intersect(
+        tid,
+        tmp_buffers[2],
+        M_b,
+        M_T_b);
+      B.set(b_i,b_d,l2_c);
     });
     A.set(a_i,a_d,B.bufferIndex);
   });
   timer::stop_clock("QUERY",query_time);
 
+  /*
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
   result->foreach([&](std::vector<uint32_t> *v,float anno){
     if(anno != 0){
@@ -83,6 +74,6 @@ int main()
       std::cout << anno << std::endl;
     }
   });
-
+  */
   return 0;
 }

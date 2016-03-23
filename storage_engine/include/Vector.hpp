@@ -93,6 +93,8 @@ struct Vector{
   //calls index of then calls get below.
   A get(const uint32_t data) const;
 
+  A* get_block(const uint32_t block_index) const;
+
   //look up a data value
   A get(
     const uint32_t index,
@@ -129,6 +131,16 @@ struct Vector{
   template<typename F>
   inline void foreach(F f) const{
     T:: template foreach<A,M>(
+      f,
+      meta,
+      memoryBuffer,
+      bufferIndex);
+  }
+
+  //mutable loop (returns data and index)
+  template<typename F>
+  inline void foreach_block(F f) const{
+    T:: template foreach_block<M>(
       f,
       meta,
       memoryBuffer,

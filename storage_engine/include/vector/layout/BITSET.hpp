@@ -34,6 +34,12 @@ struct BITSET{
     return (meta->cardinality>0) ? (num_words+1): 0;
   }
 
+  static inline size_t get_num_blocks(const Meta * const restrict meta){
+    const size_t num_words = 
+      (word_index(meta->end)-word_index(meta->start))+1;
+    return (meta->cardinality>0) ? ((num_words*64)/BLOCK_SIZE): 0;
+  }
+
   template <class A, class M>
   static inline A get(
     const uint32_t data, 
@@ -47,7 +53,7 @@ struct BITSET{
       (memoryBuffer->get_address(bufferIndex)+
         sizeof(Meta)+
         BYTES_PER_WORD*num_words+
-        sizeof(A)*(data-meta->start));
+        sizeof(A)*(data-(word_index(meta->start)*64)));
     return *values;
   }
 
@@ -60,6 +66,27 @@ struct BITSET{
     const BufferIndex& restrict bufferIndex){
     (void) index;
     return get<A,M>(data,meta,memoryBuffer,bufferIndex);
+  }
+
+  template <class A, class M>
+  static inline A* get_block(
+    const uint32_t block_index, 
+    const Meta * const restrict meta, 
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex){
+
+    const uint32_t anno_index = block_index*BLOCK_SIZE;
+    const size_t wi = word_index(anno_index);
+    const size_t bit_index = (anno_index) % BITS_PER_WORD;
+    const size_t num_words = get_num_data_words(meta);
+    (void)wi; (void)bit_index;
+    const A* const restrict values = 
+      (const A* const restrict)
+      (memoryBuffer->get_address(bufferIndex)+
+        sizeof(Meta)+
+        BYTES_PER_WORD*num_words+
+        sizeof(A)*(anno_index-(word_index(meta->start)*64)));
+    return (A*)values;
   }
 
   template <class A, class M>
@@ -78,10 +105,24 @@ struct BITSET{
       (memoryBuffer->get_address(bufferIndex)+
         sizeof(Meta)+
         BYTES_PER_WORD*num_words+
-        sizeof(A)*(data-meta->start));
+        sizeof(A)*(data-(word_index(meta->start)*64)));
     *values = value;
   }
 
+  //Iterates over set applying a lambda.
+  template <class M, typename F>
+  static inline void foreach_block(
+    F f,
+    const Meta * const restrict meta, 
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex) 
+  {
+    (void) memoryBuffer; (void) bufferIndex;
+    const size_t num_blocks = get_num_blocks(meta);
+    for(size_t i = 0; i < num_blocks; i++){
+      f(i);
+    }
+  }
 
   //Iterates over set applying a lambda.
   template <class A, class M, typename F>
@@ -111,7 +152,7 @@ struct BITSET{
                 (memoryBuffer->get_address(bufferIndex)+
                   sizeof(Meta)+
                   sizeof(uint64_t)*num_words+
-                  sizeof(A)*(data-meta->start));
+                  sizeof(A)*(data-(offset*64)));
               f(index++,data,*values);
             }
           }
@@ -229,10 +270,8 @@ struct BITSET{
     const size_t num_words = input_length > 0 ? word_index(input_data[input_length-1])-offset+1:0;
     A* anno_buffer = (A*)(buffer+(sizeof(uint64_t)*num_words));
     size_t input_index = 0;
-    const size_t range = input_length > 0 ? 
-      input_data[input_length-1]-input_data[0]+1 : 
-      0;
-    const uint32_t start = input_data[0];
+    const size_t range = num_words*64;
+    const uint32_t start = offset*64;
     for(size_t i = 0; i < range; i++){
       if((i+start) == input_data[input_index]){
         anno_buffer[i] = values[input_index];

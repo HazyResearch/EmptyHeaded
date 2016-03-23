@@ -17,6 +17,15 @@ A Vector<T,A,M>::get(const uint32_t data) const{
     bufferIndex);
 }
 
+template <class T, class A, class M>
+A* Vector<T,A,M>::get_block(const uint32_t data) const{
+  return T:: template get_block<A,M>(
+    data,
+    meta,
+    memoryBuffer,
+    bufferIndex);
+}
+
 //look up a data value
 template <class T, class A, class M>
 A Vector<T,A,M>::get(

@@ -32,6 +32,16 @@ struct DenseVector{
     return BITSET:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
   }
 
+  template <class A, class M>
+  static inline A* get_block(
+    const uint32_t data,
+    const Meta * const restrict meta,
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex)
+  {
+    return BITSET:: template get_block<A,M>(data,meta,memoryBuffer,bufferIndex);
+  }
+
   //look up a data value
   template <class A, class M>
   static inline A get(
@@ -69,6 +79,17 @@ struct DenseVector{
   static inline bool contains(const uint32_t key) {
     (void) key;
     return false;
+  }
+
+  //mutable loop (returns data and index)
+  template <class M, typename F>
+  static inline void foreach_block(
+    F f,
+    const Meta * const restrict meta,
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex)
+  {
+    BITSET:: template foreach_block<M>(f,meta,memoryBuffer,bufferIndex);
   }
 
   //mutable loop (returns data and index)
@@ -112,9 +133,7 @@ struct DenseVector{
   static inline size_t get_num_bytes(
     const Meta * const restrict meta)
   {
-    const size_t range = (meta->cardinality > 0) ? 
-      (meta->end-meta->start+1) : 0;
-    return sizeof(Meta)+(range*sizeof(A))
+    return sizeof(Meta)+(BITSET::get_num_data_words(meta)*64*sizeof(A))
       +(sizeof(uint64_t)*BITSET::get_num_data_words(meta));
   }
 
@@ -124,9 +143,8 @@ struct DenseVector{
     const size_t len)
   {
     (void) data;
-    const size_t range = len > 0 ? data[len-1]-data[0]+1:0; 
     const size_t num_words = len > 0 ? BITSET::word_index(data[len-1])-BITSET::word_index(data[0])+1 : 0;
-    return sizeof(Meta)+range*sizeof(A)+(num_words*sizeof(uint64_t));
+    return sizeof(Meta)+(num_words*64*sizeof(A))+(num_words*sizeof(uint64_t));
   }
 
   static inline size_t get_num_index_bytes(

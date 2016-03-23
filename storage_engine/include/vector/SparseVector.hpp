@@ -21,6 +21,17 @@ struct SparseVector{
       return 0;
   }
 
+  template <class A, class M>
+  static inline A* get_block(
+    const uint32_t data,
+    const Meta * const restrict meta,
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex)
+  {
+    (void) data; (void) meta; (void) memoryBuffer; (void) bufferIndex;
+    return (A*)NULL;//BITSET:: template get_block<A,M>(data,meta,memoryBuffer,bufferIndex);
+  }
+
   //calls index of then calls get below.
   template <class A, class M>
   static inline A get(
@@ -82,7 +93,19 @@ struct SparseVector{
     UINTEGER:: template foreach<A,M>(f,meta,memoryBuffer,bufferIndex);
   }
 
-    //mutable loop (returns data and index)
+  //mutable loop (returns data and index)
+  template <class M, typename F>
+  static inline void foreach_block(
+    F f,
+    const Meta * const restrict meta,
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex)
+  {
+    (void) f; (void) meta; (void) memoryBuffer; (void) bufferIndex;
+    //BITSET:: template foreach_block<M>(f,meta,memoryBuffer,bufferIndex);
+  }
+
+  //mutable loop (returns data and index)
   template <class M, typename F>
   static inline void foreach_index(
     F f,
