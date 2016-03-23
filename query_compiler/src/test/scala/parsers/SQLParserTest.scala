@@ -108,4 +108,21 @@ CREATE TABLE PageRank AS (
 
     SQLParser.run(query, db)
   }
+
+  test("Should parse SSSP") {
+    val query = """
+WITH RECURSIVE (
+CREATE TABLE SSSP AS (
+    SELECT e.b, 1 FROM Edge e WHERE e.a = 107
+);
+UNION
+CREATE TABLE SSSP AS (
+    SELECT e.b, 1 + MIN(e.a) FROM Edge e
+    JOIN SSSP s ON s.a = e.a
+)
+)
+                """
+
+    SQLParser.run(query, db)
+  }
 }

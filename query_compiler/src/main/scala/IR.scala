@@ -119,13 +119,13 @@ case class Result(val rel:Rel, val isIntermediate:Boolean){
 
 abstract class ConvergenceCriteria {}
 
-case class ITERATIONS() extends ConvergenceCriteria {}
-case class EPSILON() extends ConvergenceCriteria {}
+case class ITERATIONS() extends Convergence {}
+case class EPSILON() extends Convergence {}
 
 case class Recursion(
-  val criteria:ConvergenceCriteria,
-  val operation:Op,
-  val value:String) {
+                      val criteria:Convergence,
+                      val operation:Op,
+                      val value:String) {
   def getCriteria():String = {
     criteria match {
       case i:ITERATIONS => "iterations"
