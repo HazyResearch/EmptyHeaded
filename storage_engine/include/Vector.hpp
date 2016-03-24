@@ -116,7 +116,7 @@ struct Vector{
   }
 
   inline size_t get_num_index_bytes() const{
-    return T:: template get_num_index_bytes(meta);
+    return T::get_num_index_bytes(meta);
   }
 
   template<class R>
