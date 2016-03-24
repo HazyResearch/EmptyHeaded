@@ -7,7 +7,8 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  auto tup = load_dense_matrix_and_transpose(8192,8192);
+  const size_t mat_size = 1024;
+  auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);
   
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
   Trie<float,ParMemoryBuffer> *M = tup.first;
@@ -61,45 +62,51 @@ int main()
     result->memoryBuffers,
     BufferIndex(NUM_THREADS,0));
   const size_t j_block_index = 0;
-  I.foreach_block([&](const uint32_t i_block_index){
-    for(size_t i = 0; i < BLOCK_SIZE; i++){
-      BufferIndex i_nll = I.get(BLOCK_SIZE*j_block_index+i);
-      Vector<DenseVector,float,ParMemoryBuffer> B(
-        result->memoryBuffers,
-        i_nll);
 
-      BufferIndex i_nl = M_head.get(BLOCK_SIZE*i_block_index+i);
-      Vector<DenseVector,float,ParMemoryBuffer> M_b(
-        M->memoryBuffers,
-        i_nl);
-      const float * const restrict M_b_block = 
-        M_b.get_block(i_block_index);
-      for(size_t j = 0; j < BLOCK_SIZE; j++){
-        BufferIndex j_nl = M_T_head.get(BLOCK_SIZE*i_block_index+j);
-        Vector<DenseVector,float,ParMemoryBuffer> M_T_b(
-          M_T->memoryBuffers,
-          j_nl);
-        const float * const restrict M_T_b_block = 
-          M_T_b.get_block(i_block_index);
+  //I.foreach_block([&](const uint32_t i_block_index){
+  I.foreach_block([&](const uint32_t r_block_index){
+    I.foreach_block([&](const uint32_t i_block_index){
+      const size_t j_block_index = i_block_index;
+        for(size_t i = 0; i < BLOCK_SIZE; i++){
+          BufferIndex i_nll = I.get(BLOCK_SIZE*r_block_index+i);
+          Vector<DenseVector,float,ParMemoryBuffer> B(
+            result->memoryBuffers,
+            i_nll);
 
-        __m256 r = _mm256_set1_ps(0.0f);
-        for(size_t a = 0; a < num_blocks_per_avx; a++){
-          const __m256 m_b_1 = _mm256_loadu_ps(&M_b_block[a*elems_per_reg]);
-          const __m256 m_b_2 = _mm256_loadu_ps(&M_T_b_block[a*elems_per_reg]);
-          r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
+          BufferIndex i_nl = M_head.get(BLOCK_SIZE*i_block_index+i);
+          Vector<DenseVector,float,ParMemoryBuffer> M_b(
+            M->memoryBuffers,
+            i_nl);
+          const float * const restrict M_b_block = 
+            M_b.get_block(i_block_index);
+          for(size_t j = 0; j < BLOCK_SIZE; j++){
+            BufferIndex j_nl = M_T_head.get(BLOCK_SIZE*j_block_index+j);
+            Vector<DenseVector,float,ParMemoryBuffer> M_T_b(
+              M_T->memoryBuffers,
+              j_nl);
+            const float * const restrict M_T_b_block = 
+              M_T_b.get_block(j_block_index);
+
+            __m256 r = _mm256_set1_ps(0.0f);
+            for(size_t a = 0; a < num_blocks_per_avx; a++){
+              const __m256 m_b_1 = _mm256_loadu_ps(&M_b_block[a*elems_per_reg]);
+              const __m256 m_b_2 = _mm256_loadu_ps(&M_T_b_block[a*elems_per_reg]);
+              r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
+            }
+            __m256 s = _mm256_hadd_ps(r,r);
+            float anno = ((float*)&s)[0] + ((float*)&s)[1] + ((float*)&s)[4] + ((float*)&s)[5];
+            anno += B.get(BLOCK_SIZE*r_block_index+j,BLOCK_SIZE*r_block_index+j);
+            B.set(BLOCK_SIZE*r_block_index+j,BLOCK_SIZE*r_block_index+j,anno);
+          }
         }
-        __m256 s = _mm256_hadd_ps(r,r);
-        float anno = ((float*)&s)[0] + ((float*)&s)[1] + ((float*)&s)[4] + ((float*)&s)[5];
-        anno += B.get(BLOCK_SIZE*j_block_index+j,BLOCK_SIZE*j_block_index+j);
-        B.set(BLOCK_SIZE*j_block_index+j,BLOCK_SIZE*j_block_index+j,anno);
-      }
-    }
-  });
+      });
+    });
+  //});
 
   timer::stop_clock("QUERY",query_time);
 
   size_t num_output = 0;
-  const size_t max_num_output = 10;
+  const size_t max_num_output = mat_size*mat_size;
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
   result->foreach([&](std::vector<uint32_t> *v,float anno){
     if(anno != 0){
