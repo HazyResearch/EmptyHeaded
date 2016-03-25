@@ -23,7 +23,6 @@ object DatalogParser extends RegexParsers {
     this.parseAll(this.rule, line) match {
       case DatalogParser.Success(parsedRules, _) => {
         irbuilder.addRules(parsedRules)
-        parsedRules.map(println(_))
       }
     }
     irbuilder.build()

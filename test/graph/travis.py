@@ -23,6 +23,29 @@ LollipopAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),z:long<-[COUNT(*)].
   if df.iloc[0][0] != 1426911480L:
     raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
 
+def lollipop_agg_sql(db):
+  lolli_agg = \
+      """
+      CREATE TABLE LollipopAggSQL AS (
+      SELECT COUNT(*)
+      FROM Edge e1
+      JOIN Edge e2 ON e1.b = e2.a
+      JOIN Edge e3 ON e2.b = e3.a AND e1.a = e3.b
+      JOIN Edge e4 ON e1.a = e4.a)
+      """
+  print "\nLollipop AGG SQL"
+  db.eval(lolli_agg, useSql=True)
+
+  tri = db.get("LollipopAggSQL")
+  df = tri.getDF()
+  print df
+
+  if tri.num_rows != 0:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+
+  if df.iloc[0][0] != 1426911480L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
 def barbell_agg(db):
   b_agg = \
 """
@@ -32,6 +55,42 @@ BarbellAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Ed
   db.eval(b_agg)
 
   tri = db.get("BarbellAgg")
+  df = tri.getDF()
+  print df
+
+  if tri.num_rows != 0:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+
+  if df.iloc[0][0] != 20371831447136L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
+def barbell_agg_sql(db):
+  b_agg = \
+      """
+      CREATE TABLE BarbellAggSQL AS (
+      SELECT COUNT(*)
+      FROM Edge e1
+      JOIN Edge e2 ON e1.b = e2.a
+      JOIN Edge e3 ON e2.b = e3.a AND e3.b = e1.a
+      JOIN Edge e4 ON e4.a = e1.b
+      JOIN Edge e5 ON e5.a = e4.b
+      JOIN Edge e6 ON e5.b = e6.a
+      JOIN Edge e7 ON e6.b = e7.a AND e7.b = e5.a
+      )
+      """
+
+  b_agg = \
+  """
+CREATE TABLE BarbellAggSQL AS (
+  SELECT COUNT(*) FROM Edge e1 JOIN Edge e2 ON e1.b = e2.a JOIN Edge e3 ON e2.b = e3.a AND e3.b = e1.a
+JOIN Edge e4 ON e4.a = e1.b JOIN Edge e5 ON e5.a = e4.b JOIN Edge e6 ON e5.b = e6.a
+JOIN Edge e7 ON e6.b = e7.a AND e7.b = e5.a
+)
+"""
+  print "\Barbell AGG SQL"
+  db.eval(b_agg, useSql=True)
+
+  tri = db.get("BarbellAggSQL")
   df = tri.getDF()
   print df
 
@@ -58,6 +117,32 @@ Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y
   if row0[0] != 5l or row0[1] != 4l or row0[2] != 5l or row0[3] != 3l or row0[4] != 4l or row0[5] != 3l: #5  4  4  3  5  3
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
+def barbell_materialized_sql(db):
+  barbell = \
+    """
+    CREATE TABLE BarbellSQL AS (
+    SELECT e1.a, e2.a, e3.b, e5.a, e6.a, e7.b
+    FROM Edge e1
+    JOIN Edge e2 ON e1.b = e2.a
+    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
+    JOIN Edge e4 ON e4.a = e1.a
+    JOIN Edge e5 ON e5.a = e4.b
+    JOIN Edge e6 ON e5.b = e6.a
+    JOIN Edge e7 ON e6.b = e7.b AND e7.a = e5.a
+    )
+    """
+  print "\nBARBELL SQL"
+  db.eval(barbell, useSql=True)
+
+  tri = db.get("BarbellSQL")
+  df = tri.getDF()
+
+  if tri.num_rows != 56L:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+  row0 = df.iloc[55]
+  if row0[0] != 5l or row0[1] != 4l or row0[2] != 5l or row0[3] != 3l or row0[4] != 4l or row0[5] != 3l: #5  4  4  3  5  3
+    raise ResultError("ROW0 INCORRECT: " + str(row0))
+
 def lollipop_materialized(db):
   lollipop = \
 """
@@ -75,6 +160,27 @@ Lollipop(a,b,c,x) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x).
   if row0[0] != 5l or row0[1] != 4l or row0[2] != 4l or row0[3] != 3l:
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
+def lollipop_materialized_sql(db):
+  lollipop = \
+    """
+    CREATE TABLE LollipopSQL AS (
+    SELECT e1.a, e2.a, e3.a, e4.b
+    FROM Edge e1
+    JOIN Edge e2 ON e1.b = e2.a
+    JOIN Edge e3 ON e2.b = e3.a AND e1.a = e3.b
+    JOIN Edge e4 ON e1.a = e4.a)
+    """
+  print "\nLOLLIPOP SQL"
+  db.eval(lollipop, useSql=True)
+
+  tri = db.get("LollipopSQL")
+  df = tri.getDF()
+
+  if tri.num_rows != 28L:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+  row0 = df.iloc[27]
+  if row0[0] != 5l or row0[1] != 4l or row0[2] != 4l or row0[3] != 3l:
+    raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def triangle_agg(db):
   tri_agg = \
@@ -85,6 +191,29 @@ TriangleAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),z:long<-[COUNT(*)].
   db.eval(tri_agg)
 
   tri = db.get("TriangleAgg")
+  df = tri.getDF()
+  print df
+
+  if tri.num_rows != 0:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+
+  if df.iloc[0][0] != 1612010L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
+def triangle_agg_sql(db):
+  tri_agg = \
+    """
+    CREATE TABLE TriangleAggSQL AS (
+    SELECT COUNT(*)
+    FROM Edge e1
+    JOIN Edge e2 ON e1.b = e2.a
+    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
+    )
+    """
+  print "\nTRIANGLE AGG SQL"
+  db.eval(tri_agg, useSql=True)
+
+  tri = db.get("TriangleAggSQL")
   df = tri.getDF()
   print df
 
@@ -112,6 +241,32 @@ FliqueAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),z:l
   if df.iloc[0][0] != 30004668L:
     raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
 
+def four_clique_agg_sql(db):
+  flique = \
+    """
+    CREATE TABLE FliqueAggSQL AS (
+    SELECT COUNT(*)
+    FROM Edge e1
+    JOIN Edge e2 ON e1.b = e2.a
+    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
+    JOIN Edge e4 ON e4.a = e1.a
+    JOIN Edge e5 ON e5.a = e1.b AND e4.b = e5.b
+    JOIN Edge e6 ON e6.a = e2.b AND e6.b = e5.b
+    )
+    """
+  print "\nFOUR CLIQUE AGG SQL"
+  db.eval(flique, useSql=True)
+
+  tri = db.get("FliqueAggSQL")
+  df = tri.getDF()
+  print df
+
+  if tri.num_rows != 0:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+
+  if df.iloc[0][0] != 30004668L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
 def triangle_materialized(db):
   triangle = \
 """
@@ -130,6 +285,28 @@ Triangle(a,c,b) :- Edge(a,c),Edge(c,b),Edge(a,b).
   if row0[0] != 6l or row0[1] != 5l or row0[2]!=2l: #(6l,5l,2l)
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
+def triangle_materialized_sql(db):
+  triangle = \
+    """
+    CREATE TABLE TriangleSQL AS (
+    SELECT e1.a, e2.a, e3.b
+    FROM Edge e1
+    JOIN Edge e2 ON e1.b = e2.a
+    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
+    )
+    """
+  print "\nTRIANGLE SQL"
+  db.eval(triangle, useSql=True)
+
+  tri = db.get("TriangleSQL")
+  df = tri.getDF()
+
+  if tri.num_rows != 1612010L:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+  row0 = df.iloc[0]
+  # if row0[0] != 6l or row0[1] != 5l or row0[2]!=2l: #(6l,5l,2l)
+  #   raise ResultError("ROW0 INCORRECT: " + str(row0))
+
 def four_clique_materialized(db):
   four_clique = \
 """
@@ -147,6 +324,31 @@ Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).
   if row0[0]!= 9 and row0[1] != 8 and row0[2] != 7 and row0[3] != 0:
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
+def four_clique_materialized_sql(db):
+  four_clique = \
+    """
+    CREATE TABLE FliqueSQL AS (
+    SELECT e1.a, e2.a, e3.b, e4.b
+    FROM Edge e1
+    JOIN Edge e2 ON e1.b = e2.a
+    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
+    JOIN Edge e4 ON e4.a = e1.a
+    JOIN Edge e5 ON e5.a = e1.b AND e4.b = e5.b
+    JOIN Edge e6 ON e6.a = e2.b AND e6.b = e5.b
+    )
+    """
+  print "\nFOUR CLIQUE SQL"
+  db.eval(four_clique, useSql=True)
+
+  tri = db.get("FliqueSQL")
+  df = tri.getDF()
+
+  if tri.num_rows != 30004668L:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+  row0 = df.iloc[0]
+  # if row0[0]!= 9 and row0[1] != 8 and row0[2] != 7 and row0[3] != 0:
+  #   raise ResultError("ROW0 INCORRECT: " + str(row0))
+
 def four_clique_agg_sel(db):
   fourclique_sel_agg = \
 """
@@ -156,6 +358,33 @@ FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),
   db.eval(fourclique_sel_agg)
 
   foursel = db.get("FliqueSelAgg")
+  df = foursel.getDF()
+
+  if foursel.num_rows != 0:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(foursel.num_rows))
+
+  if df.iloc[0][0] != 3759972L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
+def four_clique_agg_sel_sql(db):
+  fourclique_sel_agg = \
+    """
+    CREATE TABLE FliqueSelAggSQL AS (
+    SELECT COUNT(*)
+    FROM Edge e1
+    JOIN Edge e2 ON e1.b = e2.a
+    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
+    JOIN Edge e4 ON e4.a = e1.a
+    JOIN Edge e5 ON e5.a = e1.b AND e4.b = e5.b
+    JOIN Edge e6 ON e6.a = e2.b AND e6.b = e5.b
+    JOIN Edge e7 ON e7.a = e1.a
+    WHERE e7.b = 0
+    )
+    """
+  print "\n4 CLIQUE SELECTION AGG SQL"
+  db.eval(fourclique_sel_agg, useSql=True)
+
+  foursel = db.get("FliqueSelAggSQL")
   df = foursel.getDF()
 
   if foursel.num_rows != 0:
@@ -181,6 +410,33 @@ FliqueSel(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d
   if row0[0] != 1l or row0[1] != 0l or row0[2] != 48l or row0[3]!=53l: #(6l,5l,2l)
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
+def four_clique_sel_sql(db):
+  fourclique_sel = \
+    """
+    CREATE TABLE FliqueSelSQL AS (
+    SELECT e1.a, e2.a, e3.a, e4.a
+    FROM Edge e1
+    JOIN Edge e2 ON e1.b = e2.a
+    JOIN Edge e3 ON e2.b = e3.a
+    JOIN Edge e4 ON e3.b = e4.a AND e4.b = e1.a
+    JOIN Edge e5 ON e5.a = e1.a AND e5.b = e2.b
+    JOIN Edge e6 ON e6.a = e1.b AND e6.b = e3.b
+    JOIN Edge e7 ON e7.a = e1.a
+    WHERE e7.b = 0
+    )
+    """
+  print "\n4 CLIQUE SELECTION SQL"
+  db.eval(fourclique_sel, useSql=True)
+
+  foursel = db.get("FliqueSelSQL")
+  df = foursel.getDF()
+
+  if foursel.num_rows != 3759972L:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+  row0 = df.iloc[0]
+  if row0[0] != 1l or row0[1] != 0l or row0[2] != 48l or row0[3]!=53l: #(6l,5l,2l)
+    raise ResultError("ROW0 INCORRECT: " + str(row0))
+
 def barbell_agg_sel(db):
   barbell_sel_agg = \
 """
@@ -190,6 +446,34 @@ BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y)
   db.eval(barbell_sel_agg)
 
   bs = db.get("BarbellSelAgg")
+  df = bs.getDF()
+
+  if bs.num_rows != 0:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
+
+  if df.iloc[0][0] != 26936100L:
+    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
+def barbell_agg_sel_sql(db):
+  barbell_sel_agg = \
+    """
+    CREATE TABLE BarbellSelAggSQL AS (
+    SELECT COUNT(*)
+    FROM Edge e1
+    JOIN Edge e2 ON e1.a = e2.a
+    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.b
+    JOIN Edge e4 ON e4.a = e1.b
+    JOIN Edge e5 ON e4.b = e5.a
+    JOIN Edge e6 ON e6.a = e5.b
+    JOIN Edge e7 ON e6.b = e7.b
+    JOIN Edge e8 ON e7.a = e8.b AND e8.a = e6.a
+    WHERE e5.a = 6
+    )
+    """
+  print "\nBARBELL SELECTION AGG SQL"
+  db.eval(barbell_sel_agg, useSql=True)
+
+  bs = db.get("BarbellSelAggSQL")
   df = bs.getDF()
 
   if bs.num_rows != 0:
@@ -210,6 +494,29 @@ BarbellSel(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edg
   if bs.num_rows != 26936100L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
 
+def barbell_sel_sql(db):
+  barbell_s = \
+    """
+    CREATE TABLE BarbellSelSQL AS (
+    SELECT e1.a, e2.b, e3.a, e6.a, e7.b, e8.b
+    FROM Edge e1
+    JOIN Edge e2 ON e1.a = e2.a
+    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.b
+    JOIN Edge e4 ON e4.a = e1.b
+    JOIN Edge e5 ON e4.b = e5.a
+    JOIN Edge e6 ON e6.a = e5.b
+    JOIN Edge e7 ON e6.b = e7.b
+    JOIN Edge e8 ON e7.a = e8.b AND e8.a = e6.a
+    WHERE e5.a = 6
+    )
+    """
+  print "\nBARBELL SELECTION SQL"
+  db.eval(barbell_s, useSql=True)
+
+  bs = db.get("BarbellSelSQL")
+  if bs.num_rows != 26936100L:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
+
 def sssp(db):
   paths = \
 """
@@ -223,6 +530,27 @@ SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)].
   if df.iloc[1000][1] != 2:
     raise ResultError("SSSP value incorrect: " + str(df.iloc[1000][1]))
 
+def sssp_sql(db):
+  paths = \
+    """
+    WITH RECURSIVE (
+    CREATE TABLE SSSPSQL AS (
+        SELECT e.b, 1 FROM Edge e WHERE e.a = 0
+    );
+    UNION
+    CREATE TABLE SSSPSQL AS (
+        SELECT e.b, 1 + MIN(e.a) FROM Edge e
+        JOIN SSSPSQL s ON s.a = e.a
+    )
+    )
+    """
+  print "\nSSSP SQL"
+  db.eval(paths, useSql=True)
+  bs = db.get("SSSPSQL")
+  df = bs.getDF()
+  if df.iloc[1000][1] != 2:
+    raise ResultError("SSSP value incorrect: " + str(df.iloc[1000][1]))
+
 def pagerank(db):
   pr="""
 N(;w) :- Edge(x,y),w:long<-[SUM(x;1)].
@@ -232,6 +560,29 @@ PageRank(x;y)*[i=5]:-Edge(x,z),PageRank(z),InvDegree(z),y:float <- [0.15+0.85*SU
   print "\nPAGERANK"
   db.eval(pr)
   bs = db.get("PageRank")
+  df = bs.getDF()
+  if (df.iloc[0][1]-15.227079960463206) > 0.0001:
+    raise ResultError("PageRank value incorrect: " + str(df.iloc[0][1]))
+
+def pagerank_sql(db):
+  pr="""
+CREATE TABLE N AS (
+    SELECT SUM(e.a) FROM Edge e
+);
+
+WITH RECURSIVE FOR 5 ITERATIONS (
+CREATE TABLE PageRankSQL AS (
+    SELECT e.a, 1.0 / N FROM Edge e
+)
+UNION
+CREATE TABLE PageRankSQL AS (
+    SELECT e.a, 0.15+0.85*SUM(e.b) FROM Edge e JOIN PageRankSQL pr ON e.b = pr.a JOIN InvDegree i ON pr.a = i.a
+)
+)
+"""
+  print "\nPAGERANK SQL"
+  db.eval(pr, useSql=True)
+  bs = db.get("PageRankSQL")
   df = bs.getDF()
   if (df.iloc[0][1]-15.227079960463206) > 0.0001:
     raise ResultError("PageRank value incorrect: " + str(df.iloc[0][1]))
@@ -256,9 +607,13 @@ def test_pruned():
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_pruned")
 
   triangle_materialized(db)
+  triangle_materialized_sql(db)
   #triangle_agg(db)
+  triangle_agg_sql(db)
   #four_clique_materialized(db)
+  four_clique_materialized_sql(db)
   #four_clique_agg(db)
+  four_clique_agg_sql(db)
 
 def test_duplicated():
   build = True
@@ -289,13 +644,21 @@ def test_duplicated():
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_duplicated")
 
   lollipop_agg(db)
+  lollipop_agg_sql(db)
   barbell_agg(db)
+  barbell_agg_sql(db)
   four_clique_agg_sel(db)
+  four_clique_agg_sel_sql(db)
   four_clique_sel(db)
+  four_clique_sel_sql(db)
   barbell_agg_sel(db)
+  barbell_agg_sel_sql(db)
   barbell_sel(db)
+  barbell_sel_sql(db)
   pagerank(db)
+  pagerank_sql(db)
   sssp(db)
+  sssp_sql(db)
 
 def test_simple():
   build = True
@@ -317,7 +680,9 @@ def test_simple():
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_simple")
 
   lollipop_materialized(db)
+  lollipop_materialized_sql(db)
   barbell_materialized(db)
+  barbell_materialized_sql(db)
 
 #basically the main method down here.
 start()

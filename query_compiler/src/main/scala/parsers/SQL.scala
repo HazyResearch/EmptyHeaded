@@ -45,7 +45,6 @@ case class SQLRecursion(convergence:Convergence, baseCase: SQLBasicStatement, re
 
 object SQLParser extends RegexParsers {
   def run(line:String, dBInstance: DBInstance) : IR = {
-    println("SQLParser got query: '" + line + "'.")
     val irbuilder = new IRBuilder()
     this.parseAll(this.rule, line) match {
       case SQLParser.Success(sqlStatements, _) => {
@@ -79,8 +78,6 @@ object SQLParser extends RegexParsers {
             relationsToSize += recursiveIrRule.result.rel.getName() -> recursiveIrRule.result.rel.getAnnotations().length
           }
         })
-
-        irbuilder.rules.foreach(println(_))
       }
     }
     irbuilder.build()
@@ -197,6 +194,8 @@ object SQLParser extends RegexParsers {
                relationsToSize: Map[String, Int],
                iterations: Option[Convergence] = None
              ) = {
+    val iRNameGenerator = new IRNameGenerator
+
     // A list of sets of columns that must be equal by join constraints.
     val columnEquivalenceConstraints = mergeSets(
       // Look at the join conditions, take all the "column = column" expressions and map them to
@@ -208,11 +207,9 @@ object SQLParser extends RegexParsers {
     )
 
     var columnToIRName = columnEquivalenceConstraints.flatMap(equivalenceSet => {
-      val irName = IRNameGenerator.nextCol
+      val irName = iRNameGenerator.nextCol
       equivalenceSet.map(sqlColumn => sqlColumn -> irName)
     }).toMap
-
-    var outputIrNames:List[String] = List()
 
     val irJoins = Join(
       (relation :: joins.map(sqlJoin => sqlJoin.rel)).map(sqlRelation => {
@@ -225,13 +222,11 @@ object SQLParser extends RegexParsers {
           val irName = columnToIRName.get(key) match {
             case Some(name:String) => name
             case None => {
-              val name = IRNameGenerator.nextCol
+              val name = iRNameGenerator.nextCol
               columnToIRName += (key -> name)
               name
             }
           }
-
-          if (resultList.contains(key)) outputIrNames = irName :: outputIrNames
 
           irName
         }}).toList
@@ -240,6 +235,11 @@ object SQLParser extends RegexParsers {
       })
     )
 
+    val outputIrNames = resultList.collect({
+      case c:SQLColumn => columnToIRName.get(c) match {
+        case Some(irName:String) => irName
+      }
+    })
     val projectIrNames = (columnToIRName.values.toSet -- outputIrNames.toSet).toList
 
     val aggs = resultList.collect({
@@ -251,20 +251,20 @@ object SQLParser extends RegexParsers {
               case Some(name:String) => name
               case None => throw new Exception("Bad column name in sum")
             }
-            Aggregation(IRNameGenerator.nextAnno, "float", SUM(), Attributes(List(columnIrName)), "1", annotationExpr, List())
+            Aggregation(iRNameGenerator.nextAnno, "float", SUM(), Attributes(List(columnIrName)), "1", annotationExpr, List())
           }
           case Some(SQLMin(column)) => {
             val columnIrName = columnToIRName.get(column) match {
               case Some(name:String) => name
               case None => throw new Exception("Bad column name in min")
             }
-            Aggregation(IRNameGenerator.nextAnno, "long", MIN(), Attributes(List(columnIrName)), "1", annotationExpr, List())
+            Aggregation(iRNameGenerator.nextAnno, "long", MIN(), Attributes(List(columnIrName)), "1", annotationExpr, List())
           }
           case Some(c:SQLCount) => {
-            Aggregation(IRNameGenerator.nextAnno, "long", SUM(), Attributes(columnToIRName.values.toList.distinct), "1", annotationExpr, List())
+            Aggregation(iRNameGenerator.nextAnno, "long", SUM(), Attributes(columnToIRName.values.toList.distinct), "1", annotationExpr, List())
           }
           case None => {
-            Aggregation(IRNameGenerator.nextAnno, "float", CONST(), Attributes(List()), annotationExpr, "1", List())
+            Aggregation(iRNameGenerator.nextAnno, "float", CONST(), Attributes(List()), annotationExpr, "1", List())
           }
         }
       }
@@ -274,7 +274,7 @@ object SQLParser extends RegexParsers {
 
     val result = Result(Rel(resultName, Attributes(outputIrNames), outputAnnotations), false)
     val project = Project(Attributes(projectIrNames))
-    val order = Order(Attributes(columnToIRName.values.toList.distinct))
+    val order = Order(Attributes(outputIrNames ::: projectIrNames))
 
     val filter = Filters(where match {
       case Some(expr:SQLBooleanExpression) => {
@@ -300,7 +300,7 @@ object SQLParser extends RegexParsers {
     Rule(result, recursion, Operation("*"), order, project, irJoins, Aggregations(aggs), filter)
   }
 
-  object IRNameGenerator {
+  class IRNameGenerator {
     var colIdx = 0
     var annoIdx = 0
 
