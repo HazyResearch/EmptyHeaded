@@ -303,6 +303,25 @@ Trie<A,M>::Trie(
   std::vector<std::vector<uint32_t>>* attr_in,
   const std::vector<void*>& annotations){
 
+  const size_t num_rows_in = attr_in->at(0).size();
+  const size_t num_columns_in = attr_in->size();  
+  assert(num_columns_in != 0  && num_rows_in != 0);
+
+  for(size_t i = 0; i < num_columns_in; i++){
+    max_set_sizes->insert(max_set_sizes->begin(),max_set_sizes->at(num_columns_in-i-1));
+  }
+
+  //DEBUG
+  std::vector<std::vector<uint32_t>>* blocks = new std::vector<std::vector<uint32_t>>();
+  for(size_t j = 0; j < attr_in->size(); j++){
+    blocks->push_back(std::vector<uint32_t>());
+    for(size_t i = 0; i < attr_in->at(0).size(); i++){
+      blocks->at(j).push_back((attr_in->at(j).at(i))/BLOCK_SIZE);    
+    }
+  }
+
+  attr_in->insert(attr_in->begin(),blocks->begin(),blocks->end());
+
   annotation = (A)0;
   annotated = annotations.size() > 0;
   num_rows = attr_in->at(0).size();
@@ -322,18 +341,6 @@ Trie<A,M>::Trie(
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
 
-  //DEBUG
-  /*
-  std::cout << "TRIEE BUULd" << std::endl;
-  std::cout << num_columns << std::endl;
-  for(size_t i = 0; i < num_rows; i++){
-    for(size_t j = 0; j < num_columns; j++){
-      std::cout << attr_in->at(j).at(indicies[i]) << "\t";
-    }
-    std::cout << std::endl;
-  }
-  */
-
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
   std::vector<uint32_t*> *set_data_buffer = new std::vector<uint32_t*>();
@@ -341,7 +348,7 @@ Trie<A,M>::Trie(
 
   size_t alloc_size = 0;
   for(size_t i = 0; i < num_columns; i++){
-    alloc_size += max_set_sizes->at(i)+1;
+    alloc_size += (max_set_sizes->at(i)+1);
   }
   size_t* tmp_st = new size_t[alloc_size*NUM_THREADS];
   uint32_t* tmp_i = new uint32_t[alloc_size*NUM_THREADS];
@@ -422,7 +429,6 @@ Trie<A,M>::Trie(
   delete ranges_buffer;
   delete set_data_buffer;
 }
-
 
 template struct Trie<void*,ParMemoryBuffer>;
 template struct Trie<long,ParMemoryBuffer>;

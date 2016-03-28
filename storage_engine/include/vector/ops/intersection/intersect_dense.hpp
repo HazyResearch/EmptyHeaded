@@ -54,6 +54,24 @@ namespace ops{
     return Vector<DenseVector,A,ParMemoryBuffer>(m,bi);
   }
 
+  template <class A, class B>
+  inline Vector<DenseVector,void*,ParMemoryBuffer> agg_intersect(
+    const size_t tid,
+    ParMemoryBuffer * restrict m,
+    const Vector<DenseVector,A,ParMemoryBuffer>& rare, 
+    const Vector<DenseVector,B,ParMemoryBuffer>& freq){
+
+    //run intersection.
+    const size_t alloc_size = 
+       std::min(rare.get_num_bytes(),freq.get_num_bytes());
+    
+    Vector<DenseVector,void*,ParMemoryBuffer> result = 
+      alloc_and_intersect<void*,A,B>(tid,alloc_size,m,rare,freq);
+    
+    m->roll_back(tid,alloc_size);
+    return result;
+  }
+
   //Materilize (allocate memory & run intersection)
   inline float agg_intersect(
     const size_t tid,
