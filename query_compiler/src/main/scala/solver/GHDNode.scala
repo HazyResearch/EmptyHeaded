@@ -104,7 +104,7 @@ class GHDNode(override val rels: List[OptimizerRel],
    * Compute what is projected out in this bag, and what this bag's output relation is
    */
   def recursivelyComputeProjectedOutAttrsAndOutputRelation(annotationType:Option[String],
-                                                           outputAttrs:Set[String],
+                                                           outputAttrs:List[String],
                                                            attrsFromAbove:Set[String]): OptimizerRel = {
     val equalitySelectedAttrs:Set[String] = attrSet.filter(attr => !getSelection(attr).isEmpty)
     val childrensOutputRelations = children.map(child => {
@@ -117,10 +117,10 @@ class GHDNode(override val rels: List[OptimizerRel],
     attrSet = subtreeRels.foldLeft(TreeSet[String]())(
       (accum: TreeSet[String], rel: OptimizerRel) => accum | TreeSet[String](rel.attrs.values: _*))
 
-    val keptAttrs = noChildAttrSet intersect (outputAttrs ++ attrsFromAbove)
+    val keptAttrs = noChildAttrSet intersect (outputAttrs.toSet ++ attrsFromAbove)
     outputRelation = new OptimizerRel(
       bagName,
-      Attributes(keptAttrs.toList),
+      Attributes(keptAttrs.toList.sortBy(outputAttrs.indexOf(_))),
       if (annotationType.isEmpty) Annotations(List()) else Annotations(List(annotationType.get)),
       false,
       keptAttrs -- equalitySelectedAttrs

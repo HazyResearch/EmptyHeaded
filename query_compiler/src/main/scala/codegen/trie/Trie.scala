@@ -229,11 +229,11 @@ std::vector<void*> getDF(Trie<${annoType},ParMemoryBuffer>* mytrie){
     //pack buffers into the result
     i = 0
     rel.schema.attributeTypes.foreach( attr => {
-      code.append(s"""result.push_back((void*)(result_${i}->data()));""")
+      code.append(s"""result.push_back((void*)(result_${ordering(i)}->data()));""")
       i += 1
     })
     rel.schema.annotationTypes.foreach( anno => {
-      code.append(s"""result.push_back((void*)(result_${i}->data()));""")
+      code.append(s"""result.push_back((void*)(result_${ordering(i)}->data()));""")
       i += 1
     })
     code.append("""
