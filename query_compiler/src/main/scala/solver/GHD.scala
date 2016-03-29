@@ -43,7 +43,7 @@ class GHD(val root:GHDNode,
 
     root.recursivelyComputeProjectedOutAttrsAndOutputRelation(
       if (outputRelation.anno.values.isEmpty) None else Some(outputRelation.anno.values.head),
-      outputRelation.attrs.values.toSet,
+      outputRelation.attrs.values,
       outputRelation.attrs.values.toSet
     )
 

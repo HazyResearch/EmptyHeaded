@@ -115,7 +115,7 @@ FliqueAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),z:l
 def triangle_materialized(db):
   triangle = \
 """
-Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).
+Triangle(a,c,b) :- Edge(a,c),Edge(c,b),Edge(a,b).
 """
   print "\nTRIANGLE"
   db.eval(triangle)
@@ -126,6 +126,7 @@ Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).
   if tri.num_rows != 1612010L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[0]
+  print row0
   if row0[0] != 6l or row0[1] != 5l or row0[2]!=2l: #(6l,5l,2l)
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
@@ -255,9 +256,9 @@ def test_pruned():
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_pruned")
 
   triangle_materialized(db)
-  triangle_agg(db)
-  four_clique_materialized(db)
-  four_clique_agg(db)
+  #triangle_agg(db)
+  #four_clique_materialized(db)
+  #four_clique_agg(db)
 
 def test_duplicated():
   build = True
@@ -322,6 +323,6 @@ def test_simple():
 start()
 os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases"+" && mkdir -p "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases")
 test_pruned()
-test_duplicated()
-test_simple()
+#test_duplicated()
+#test_simple()
 stop()
