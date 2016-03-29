@@ -117,7 +117,7 @@ int main()
   });
 
   size_t num_output = 0;
-  const size_t max_num_output = 64;//mat_size*mat_size;
+  const size_t max_num_output = mat_size*mat_size;
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
   result->foreach([&](std::vector<uint32_t> *v,float anno){
     if(anno != 0){
