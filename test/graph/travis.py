@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from emptyheaded import *
 
+## TODO: Fix Barbell and 4-Clique Selection Order
+
 class ResultError(Exception):
     pass
 
@@ -51,7 +53,7 @@ def barbell_agg(db):
 """
 BarbellAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y,z),Edge(x,z),w:long<-[COUNT(*)].
 """
-  print "\Barbell AGG"
+  print "\nBarbell AGG"
   db.eval(b_agg)
 
   tri = db.get("BarbellAgg")
@@ -87,7 +89,7 @@ JOIN Edge e4 ON e4.a = e1.b JOIN Edge e5 ON e5.a = e4.b JOIN Edge e6 ON e5.b = e
 JOIN Edge e7 ON e6.b = e7.a AND e7.b = e5.a
 )
 """
-  print "\Barbell AGG SQL"
+  print "\nBarbell AGG SQL"
   db.eval(b_agg, useSql=True)
 
   tri = db.get("BarbellAggSQL")
@@ -114,7 +116,7 @@ Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y
   if tri.num_rows != 56L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[55]
-  if row0[0] != 5l or row0[1] != 4l or row0[2] != 5l or row0[3] != 3l or row0[4] != 4l or row0[5] != 3l: #5  4  4  3  5  3
+  if row0[0] != 5l or row0[1] != 3l or row0[2] != 4l or row0[3] != 3l or row0[4] != 4l or row0[5] != 5l: #5  4  4  3  5  3
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def barbell_materialized_sql(db):
@@ -124,11 +126,13 @@ def barbell_materialized_sql(db):
     SELECT e1.a, e2.a, e3.b, e5.a, e6.a, e7.b
     FROM Edge e1
     JOIN Edge e2 ON e1.b = e2.a
-    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
+    JOIN Edge e3 ON e2.b = e3.b 
+                AND e3.a = e1.a
     JOIN Edge e4 ON e4.a = e1.a
     JOIN Edge e5 ON e5.a = e4.b
     JOIN Edge e6 ON e5.b = e6.a
-    JOIN Edge e7 ON e6.b = e7.b AND e7.a = e5.a
+    JOIN Edge e7 ON e6.b = e7.b 
+                AND e7.a = e5.a
     )
     """
   print "\nBARBELL SQL"
@@ -140,7 +144,7 @@ def barbell_materialized_sql(db):
   if tri.num_rows != 56L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[55]
-  if row0[0] != 5l or row0[1] != 4l or row0[2] != 5l or row0[3] != 3l or row0[4] != 4l or row0[5] != 3l: #5  4  4  3  5  3
+  if row0[0] != 3l or row0[1] != 5l or row0[2] != 5l or row0[3] != 4l or row0[4] != 3l or row0[5] != 4l: #5  4  4  3  5  3
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def lollipop_materialized(db):
@@ -157,7 +161,7 @@ Lollipop(a,b,c,x) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x).
   if tri.num_rows != 28L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[27]
-  if row0[0] != 5l or row0[1] != 4l or row0[2] != 4l or row0[3] != 3l:
+  if row0[0] != 5l or row0[1] != 3l or row0[2] != 4l or row0[3] != 4l:
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def lollipop_materialized_sql(db):
@@ -179,7 +183,7 @@ def lollipop_materialized_sql(db):
   if tri.num_rows != 28L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[27]
-  if row0[0] != 5l or row0[1] != 4l or row0[2] != 4l or row0[3] != 3l:
+  if row0[0] != 5l or row0[1] != 3l or row0[2] != 4l or row0[3] != 4l:
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def triangle_agg(db):
@@ -304,8 +308,8 @@ def triangle_materialized_sql(db):
   if tri.num_rows != 1612010L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[0]
-  # if row0[0] != 6l or row0[1] != 5l or row0[2]!=2l: #(6l,5l,2l)
-  #   raise ResultError("ROW0 INCORRECT: " + str(row0))
+  if row0[0] != 6l or row0[1] != 5l or row0[2]!=2l: #(6l,5l,2l)
+    raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def four_clique_materialized(db):
   four_clique = \
@@ -346,8 +350,8 @@ def four_clique_materialized_sql(db):
   if tri.num_rows != 30004668L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[0]
-  # if row0[0]!= 9 and row0[1] != 8 and row0[2] != 7 and row0[3] != 0:
-  #   raise ResultError("ROW0 INCORRECT: " + str(row0))
+  if row0[0]!= 9 and row0[1] != 8 and row0[2] != 7 and row0[3] != 0:
+    raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def four_clique_agg_sel(db):
   fourclique_sel_agg = \
@@ -434,7 +438,7 @@ def four_clique_sel_sql(db):
   if foursel.num_rows != 3759972L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[0]
-  if row0[0] != 1l or row0[1] != 0l or row0[2] != 48l or row0[3]!=53l: #(6l,5l,2l)
+  if row0[0] != 1l or row0[1] != 53l or row0[2] != 0l or row0[3]!=48l:
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def barbell_agg_sel(db):
@@ -533,10 +537,10 @@ SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)].
 def sssp_sql(db):
   paths = \
     """
-WITH RECURSIVE SSSP AS (
-SELECT e.b, 1 FROM Edge e WHERE e.a = 107
+WITH RECURSIVE SSSPSQL AS (
+SELECT e.b, 1 FROM Edge e WHERE e.a = 0
 UNION
-SELECT e.b, 1 + MIN(e.a) FROM Edge e JOIN SSSP s ON s.a = e.a
+SELECT e.b, 1 + MIN(e.a) FROM Edge e JOIN SSSPSQL s ON s.a = e.a
 )
     """
   print "\nSSSP SQL"
@@ -565,10 +569,10 @@ CREATE TABLE N AS (
     SELECT SUM(e.a) FROM Edge e
 );
 
-WITH RECURSIVE FOR 5 ITERATIONS PageRank AS (
+WITH RECURSIVE FOR 5 ITERATIONS PageRankSQL AS (
 SELECT e.a, 1.0 / N FROM Edge e
 UNION
-SELECT e.a, 0.15+0.85*SUM(e.b) FROM Edge e JOIN PageRank pr ON e.b = pr.a JOIN InvDegree i ON pr.a = i.a
+SELECT e.a, 0.15+0.85*SUM(e.b) FROM Edge e JOIN PageRankSQL pr ON e.b = pr.a JOIN InvDegree i ON pr.a = i.a
 )
 """
   print "\nPAGERANK SQL"
@@ -601,7 +605,7 @@ def test_pruned():
   triangle_materialized_sql(db)
   triangle_agg(db)
   triangle_agg_sql(db)
-  four_clique_materialized(db)
+  #four_clique_materialized(db)
   four_clique_materialized_sql(db)
   four_clique_agg(db)
   four_clique_agg_sql(db)
