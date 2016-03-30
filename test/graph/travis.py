@@ -599,11 +599,11 @@ def test_pruned():
 
   triangle_materialized(db)
   triangle_materialized_sql(db)
-  #triangle_agg(db)
+  triangle_agg(db)
   triangle_agg_sql(db)
-  #four_clique_materialized(db)
+  four_clique_materialized(db)
   four_clique_materialized_sql(db)
-  #four_clique_agg(db)
+  four_clique_agg(db)
   four_clique_agg_sql(db)
 
 def test_duplicated():
