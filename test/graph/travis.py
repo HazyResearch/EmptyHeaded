@@ -533,16 +533,11 @@ SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)].
 def sssp_sql(db):
   paths = \
     """
-    WITH RECURSIVE (
-    CREATE TABLE SSSPSQL AS (
-        SELECT e.b, 1 FROM Edge e WHERE e.a = 0
-    );
-    UNION
-    CREATE TABLE SSSPSQL AS (
-        SELECT e.b, 1 + MIN(e.a) FROM Edge e
-        JOIN SSSPSQL s ON s.a = e.a
-    )
-    )
+WITH RECURSIVE SSSP AS (
+SELECT e.b, 1 FROM Edge e WHERE e.a = 107
+UNION
+SELECT e.b, 1 + MIN(e.a) FROM Edge e JOIN SSSP s ON s.a = e.a
+)
     """
   print "\nSSSP SQL"
   db.eval(paths, useSql=True)
@@ -570,14 +565,10 @@ CREATE TABLE N AS (
     SELECT SUM(e.a) FROM Edge e
 );
 
-WITH RECURSIVE FOR 5 ITERATIONS (
-CREATE TABLE PageRankSQL AS (
-    SELECT e.a, 1.0 / N FROM Edge e
-)
+WITH RECURSIVE FOR 5 ITERATIONS PageRank AS (
+SELECT e.a, 1.0 / N FROM Edge e
 UNION
-CREATE TABLE PageRankSQL AS (
-    SELECT e.a, 0.15+0.85*SUM(e.b) FROM Edge e JOIN PageRankSQL pr ON e.b = pr.a JOIN InvDegree i ON pr.a = i.a
-)
+SELECT e.a, 0.15+0.85*SUM(e.b) FROM Edge e JOIN PageRank pr ON e.b = pr.a JOIN InvDegree i ON pr.a = i.a
 )
 """
   print "\nPAGERANK SQL"
