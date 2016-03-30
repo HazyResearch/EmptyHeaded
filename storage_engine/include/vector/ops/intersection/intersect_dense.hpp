@@ -30,9 +30,9 @@ namespace ops{
     Meta* meta = new(buffer) Meta();
     uint64_t *out = (uint64_t*)(buffer+sizeof(Meta));
 
-    if(rare.meta->cardinality == 0 || freq.meta->cardinality == 0
-      || (rare.meta->start > freq.meta->end)
-      || (freq.meta->start > rare.meta->end)){
+    if(rare.get_meta()->cardinality == 0 || freq.get_meta()->cardinality == 0
+      || (rare.get_meta()->start > freq.get_meta()->end)
+      || (freq.get_meta()->start > rare.get_meta()->end)){
       meta->cardinality = 0;
       meta->start = 0;
       meta->end = 0;
@@ -42,11 +42,11 @@ namespace ops{
         meta,
         out,
         (const uint64_t * const)freq.get_data(),
-        BITSET::word_index(freq.meta->start),
-        BITSET::get_num_data_words(freq.meta),
+        BITSET::word_index(freq.get_meta()->start),
+        BITSET::get_num_data_words(freq.get_meta()),
         (const uint64_t * const)rare.get_data(),
-        BITSET::word_index(rare.meta->start),
-        BITSET::get_num_data_words(rare.meta));
+        BITSET::word_index(rare.get_meta()->start),
+        BITSET::get_num_data_words(rare.get_meta()));
     } 
     BufferIndex bi;
     bi.tid = tid;

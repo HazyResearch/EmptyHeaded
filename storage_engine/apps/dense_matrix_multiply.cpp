@@ -63,7 +63,6 @@ int main()
     BufferIndex(NUM_THREADS,0));
   const size_t j_block_index = 0;
 
-  //I.foreach_block([&](const uint32_t i_block_index){
   I.foreach_block([&](const uint32_t r_block_index1){
    I.foreach_block([&](const uint32_t r_block_index2){
     I.foreach_block([&](const uint32_t i_block_index){

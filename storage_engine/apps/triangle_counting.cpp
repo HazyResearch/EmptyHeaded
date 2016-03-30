@@ -50,7 +50,7 @@ int main()
             tmp_buffers[2],
             l2_a,
             l2_b);
-          count.update(tid,l2_c.meta->cardinality);
+          count.update(tid,l2_c.get_meta()->cardinality);
       });
     });
 

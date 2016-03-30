@@ -29,17 +29,19 @@ struct Trie{
 
   Trie<A,M>(
     std::string path,
-    std::vector<uint32_t>* max_set_sizes, 
-    std::vector<std::vector<uint32_t> >* attr_in, 
+    const std::vector<uint32_t>* restrict max_set_sizes, 
+    const std::vector<std::vector<uint32_t> >* restrict attr_in, 
     const std::vector<void*>&);
 
-  Trie<A,M>(std::string path, size_t num_columns_in, bool annotated_in){
+  Trie<A,M>(const std::string path, 
+    const size_t num_columns_in, 
+    const bool annotated_in){
+    
     annotated = annotated_in;
     memoryBuffers = new M(path,2);
     num_columns = num_columns_in;
   };
 
-  
   ~Trie<A,M>(){
     delete memoryBuffers;
   };

@@ -1,3 +1,4 @@
+#include "TrieBuffer.hpp"
 #include "Trie.hpp"
 #include "Vector.hpp"
 #include "VectorOps.hpp"
@@ -36,6 +37,18 @@ int main()
       result->memoryBuffers,
       M_head);
 
+  /*
+  std::cout << "HERE" << std::endl;
+  M->print();
+  std::cout << "TRANSPOSE" << std::endl;
+  M_T->print();
+  */
+
+  //allocate a dense square for i and j
+  //block size for i and block size * block size for j
+  TrieBuffer<float,ParMemoryBuffer>* tmp_block = 
+    new TrieBuffer<float,ParMemoryBuffer>(2,true);
+
   I.parforeach_index([&](const size_t tid, const uint32_t I_i, const uint32_t I_d){
     (void) I_i;
     BufferIndex I_nl = M_head.get(I_d);
@@ -61,10 +74,16 @@ int main()
           tmp_buffers[0],
           K_I,
           K_J);
+
+      std::vector<size_t> block_offsets;
+      block_offsets.push_back(I_d*BLOCK_SIZE);
+      block_offsets.push_back(J_d*BLOCK_SIZE);
+      tmp_block->zero(block_offsets); //zero out the memory.
+
       K.foreach_index([&](const uint32_t K_i, const uint32_t K_d){      
         (void)K_i;
         BufferIndex M_K_nl = K_I.get(K_d);
-        BufferIndex M_T_K_nl = K_J.get(J_d);
+        BufferIndex M_T_K_nl = K_J.get(K_d);
         
         Vector<DenseVector,BufferIndex,ParMemoryBuffer> i_K(
           M->memoryBuffers,
@@ -74,28 +93,20 @@ int main()
           M_T->memoryBuffers,
           M_T_K_nl);
 
-        Vector<DenseVector,BufferIndex,ParMemoryBuffer> i = 
-          Vector<DenseVector,BufferIndex,ParMemoryBuffer>(
-            tid,
-            result->memoryBuffers,
-            i_K.get_this(),
-            i_K.get_num_index_bytes(),
-            i_K.get_num_annotation_bytes<BufferIndex>());
-
-        Vector<DenseVector,float,ParMemoryBuffer> j = 
-          Vector<DenseVector,float,ParMemoryBuffer>(
-            tid,
-            result->memoryBuffers,
-            j_K.get_this(),
-            j_K.get_num_index_bytes(),
-            j_K.get_num_annotation_bytes<float>());
+        //tmp_block(0) union i_K 
+        Vector<DenseVector,void*,ParMemoryBuffer> i = 
+          ops::union_in_place(tmp_block->at(0,0),i_K);
 
         i.foreach_index([&](const uint32_t i_i, const uint32_t i_d){
           BufferIndex k_i_nl = i_K.get(i_d);
           Vector<DenseVector,float,ParMemoryBuffer> k_i(
             M->memoryBuffers,
             k_i_nl);
-          j.foreach_index([&](const uint32_t j_i, const uint32_t j_d){
+
+          Vector<DenseVector,void*,ParMemoryBuffer> j = 
+            ops::union_in_place(tmp_block->at(1,i_d),j_K);
+
+          j_K.foreach_index([&](const uint32_t j_i, const uint32_t j_d){
             BufferIndex k_j_nl = j_K.get(j_d);
             Vector<DenseVector,float,ParMemoryBuffer> k_j(
               M_T->memoryBuffers,
@@ -105,17 +116,23 @@ int main()
               tmp_buffers[1],
               k_j,
               k_i);
-            anno += j.get(j_i,j_d);
-            j.set(j_i,j_d,anno);
+            //std::cout << I_d << " " << J_d << " " << i_d << " " << j_d << " " << anno << std::endl;
+            tmp_block->get_anno(i_d%BLOCK_SIZE)[j_d%BLOCK_SIZE] += anno;
           });
-          i.set(i_i,i_d,j.bufferIndex);
         });
-        J.set(J_i,J_d,i.bufferIndex);
+
+        //copy buffer into trie.
+        //J.set(J_i,J_d,i.bufferIndex);
       });
+      tmp_block->print(I_d,J_d);
     });
     I.set(I_i,I_d,J.bufferIndex);
   });
 
+  timer::stop_clock("QUERY",query_time);
+
+
+/*
   size_t num_output = 0;
   const size_t max_num_output = mat_size*mat_size;
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
@@ -130,7 +147,7 @@ int main()
     if(num_output > max_num_output)
       exit(0);
   });
-
+*/
 
   return 0;
 }

@@ -10,6 +10,7 @@ uint32_t Vector<T,A,M>::indexOf(const uint32_t data) const{
 //calls index of then calls get below.
 template <class T, class A, class M>
 A Vector<T,A,M>::get(const uint32_t data) const{
+  Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
   return T:: template get<A,M>(
     data,
     meta,
@@ -19,6 +20,7 @@ A Vector<T,A,M>::get(const uint32_t data) const{
 
 template <class T, class A, class M>
 A* Vector<T,A,M>::get_block(const uint32_t data) const{
+  Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
   return T:: template get_block<A,M>(
     data,
     meta,
@@ -31,6 +33,7 @@ template <class T, class A, class M>
 A Vector<T,A,M>::get(
   const uint32_t index,
   const uint32_t data) const{
+  Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
   return T:: template get<A,M>(
     index,
     data,
@@ -48,6 +51,7 @@ void Vector<T,A,M>::set(
   (void) index;
   (void) data;
   (void) value;
+  Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
   T:: template set<A,M>(
     index,
     data,

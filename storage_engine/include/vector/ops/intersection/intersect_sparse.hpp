@@ -30,37 +30,37 @@ namespace ops{
     Meta* meta = new(buffer) Meta();
     uint32_t *out = (uint32_t*)(buffer+sizeof(Meta));
 
-    if(rare.meta->cardinality == 0 || freq.meta->cardinality == 0
-      || (rare.meta->start > freq.meta->end) 
-      || (freq.meta->start > rare.meta->end)){
+    if(rare.get_meta()->cardinality == 0 || freq.get_meta()->cardinality == 0
+      || (rare.get_meta()->start > freq.get_meta()->end) 
+      || (freq.get_meta()->start > rare.get_meta()->end)){
       meta->cardinality = 0;
       meta->start = 0;
       meta->end = 0;
       meta->type = type::UINTEGER;
-    } else if((rare.meta->cardinality/freq.meta->cardinality) >= 32) {
+    } else if((rare.get_meta()->cardinality/freq.get_meta()->cardinality) >= 32) {
       set_intersect_galloping(
         meta,
         out,
         (const uint32_t * const)freq.get_data(),
-        freq.meta->cardinality,
+        freq.get_meta()->cardinality,
         (const uint32_t * const)rare.get_data(),
-        rare.meta->cardinality);
-    } else if((freq.meta->cardinality/rare.meta->cardinality) >= 32) {
+        rare.get_meta()->cardinality);
+    } else if((freq.get_meta()->cardinality/rare.get_meta()->cardinality) >= 32) {
       set_intersect_galloping(
         meta,
         out,
         (const uint32_t * const)rare.get_data(),
-        rare.meta->cardinality,
+        rare.get_meta()->cardinality,
         (const uint32_t * const)freq.get_data(),
-        freq.meta->cardinality);
+        freq.get_meta()->cardinality);
     } else {
       set_intersect_shuffle(
         meta,
         out,
         (const uint32_t * const)rare.get_data(),
-        rare.meta->cardinality,
+        rare.get_meta()->cardinality,
         (const uint32_t * const)freq.get_data(),
-        freq.meta->cardinality);  
+        freq.get_meta()->cardinality);  
     }
     BufferIndex bi;
     bi.tid = tid;
@@ -78,7 +78,7 @@ namespace ops{
     //run intersection.
     const size_t alloc_size = sizeof(Meta)+
       (sizeof(uint32_t)*
-       std::min(rare.meta->cardinality,freq.meta->cardinality));
+       std::min(rare.get_meta()->cardinality,freq.get_meta()->cardinality));
     
     Vector<SparseVector,float,ParMemoryBuffer> result = 
       alloc_and_intersect<float,float,float>(tid,alloc_size,m,rare,freq);
@@ -106,7 +106,7 @@ namespace ops{
     //run intersection.
     const size_t alloc_size = sizeof(Meta)+
       (sizeof(uint32_t)*
-      std::min(rare.meta->cardinality,freq.meta->cardinality));
+      std::min(rare.get_meta()->cardinality,freq.get_meta()->cardinality));
     
     Vector<SparseVector,void*,ParMemoryBuffer> result = 
       alloc_and_intersect<void*,A,B>(tid,alloc_size,m,rare,freq);
@@ -125,7 +125,7 @@ namespace ops{
 
     const size_t alloc_size = sizeof(Meta)+
       ((sizeof(uint32_t)+sizeof(A))*
-       std::min(rare.meta->cardinality,freq.meta->cardinality));
+       std::min(rare.get_meta()->cardinality,freq.get_meta()->cardinality));
     return alloc_and_intersect<A,B,C>(tid,alloc_size,m,rare,freq);
   }
 }

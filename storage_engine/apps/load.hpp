@@ -26,7 +26,7 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
         EncodingMap_uint32_t.update(i);
         v_1->push_back(j);
         EncodingMap_uint32_t.update(j);
-        a_0->push_back(0.2f);
+        a_0->push_back( ((float)(i+1)/(float)(j+1) ) );
         NumRows_graph++;
       }
     }
@@ -100,7 +100,7 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
     Trie_graph_1_0->encodings.push_back((void*)Encoding_uint32_t);
     ////////////////////emitWriteBinaryTrie////////////////////
   }
-  return std::make_pair(Trie_graph_0_1,Trie_graph_0_1);
+  return std::make_pair(Trie_graph_0_1,Trie_graph_1_0);
 }
 
 std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> 

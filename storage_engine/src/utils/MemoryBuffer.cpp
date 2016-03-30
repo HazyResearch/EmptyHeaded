@@ -78,7 +78,6 @@ uint8_t* MemoryBuffer::resize(const size_t increaseSize)
   const size_t old_head_offset = currentHead-buffer;
   size_t newsize = size + increaseSize;
   buffer = (uint8_t*)realloc(buffer, newsize * sizeof(char));
-  //std::cout << "REALLOC: " << (void*)buffer << std::endl;
   if(buffer == NULL) {
     std::cout << "MemoryBuffer::addBuffer, realloc error!" << std::endl;
     assert(false);

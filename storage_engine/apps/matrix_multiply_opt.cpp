@@ -35,8 +35,8 @@ int main()
   Vector<SparseVector,BufferIndex,ParMemoryBuffer> A = M_head;
   
   //Allocate some C buffer
-  float *buf = (float*)tmp_buffers[0]->get_next(0,sizeof(float)*A.meta->cardinality);
-  memset((void*)buf,0,sizeof(float)*A.meta->cardinality);
+  float *buf = (float*)tmp_buffers[0]->get_next(0,sizeof(float)*A.get_meta()->cardinality);
+  memset((void*)buf,0,sizeof(float)*A.get_meta()->cardinality);
   A.foreach_index([&](const uint32_t a_i, const uint32_t a_d){
     const size_t tid = 0;
     BufferIndex a_nl = M_head.get(a_i,a_d);
@@ -45,7 +45,7 @@ int main()
       a_nl);
     Vector<SparseVector,float,ParMemoryBuffer> B = M_b;//M_T_head;
 
-    memset((void*)buf,0,sizeof(float)*A.meta->cardinality);
+    memset((void*)buf,0,sizeof(float)*A.get_meta()->cardinality);
 
     B.foreach([&](const uint32_t b_i, const uint32_t b_d, const float& b_anno){
       BufferIndex b_nl = M_T_head.get(b_d);
@@ -60,7 +60,7 @@ int main()
    
     //sparsify vector?
     size_t card = 0;
-    for(size_t i =0; i < A.meta->cardinality; i++){
+    for(size_t i =0; i < A.get_meta()->cardinality; i++){
         if(buf[i] != 0.0){
           std::cout << a_d << " " << i << " " << buf[i] << std::endl;
           card++;

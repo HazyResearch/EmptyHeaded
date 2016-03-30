@@ -104,7 +104,7 @@ struct SortColumns{
   SortColumns(std::vector<std::vector<uint32_t>> *columns_in){
     columns = columns_in;
   }
-  bool operator()(uint32_t i, uint32_t j) const {
+  bool operator()(const uint32_t i, const uint32_t j) const {
     for(size_t c = 0; c < columns->size(); c++){
       if(columns->at(c).at(i) != columns->at(c).at(j)){
         return columns->at(c).at(i) < columns->at(c).at(j);
@@ -299,28 +299,31 @@ size_t recursive_build(
 template<class A, class M>
 Trie<A,M>::Trie(
   std::string path,
-  std::vector<uint32_t>* max_set_sizes, 
-  std::vector<std::vector<uint32_t>>* attr_in,
+  const std::vector<uint32_t>* restrict start_max_set_sizes, 
+  const std::vector<std::vector<uint32_t>>* restrict start_attr,
   const std::vector<void*>& annotations){
 
-  const size_t num_rows_in = attr_in->at(0).size();
-  const size_t num_columns_in = attr_in->size();  
+  const size_t num_rows_in = start_attr->at(0).size();
+  const size_t num_columns_in = start_attr->size();  
   assert(num_columns_in != 0  && num_rows_in != 0);
 
+  std::vector<uint32_t>* max_set_sizes = new std::vector<uint32_t>();
   for(size_t i = 0; i < num_columns_in; i++){
-    max_set_sizes->insert(max_set_sizes->begin(),max_set_sizes->at(num_columns_in-i-1));
+    max_set_sizes->insert(max_set_sizes->begin(),start_max_set_sizes->at(num_columns_in-i-1));
   }
+  max_set_sizes->insert(max_set_sizes->end(),start_max_set_sizes->begin(),start_max_set_sizes->end());
 
-  //DEBUG
   std::vector<std::vector<uint32_t>>* blocks = new std::vector<std::vector<uint32_t>>();
-  for(size_t j = 0; j < attr_in->size(); j++){
+  for(size_t j = 0; j < start_attr->size(); j++){
     blocks->push_back(std::vector<uint32_t>());
-    for(size_t i = 0; i < attr_in->at(0).size(); i++){
-      blocks->at(j).push_back((attr_in->at(j).at(i))/BLOCK_SIZE);    
+    for(size_t i = 0; i < start_attr->at(0).size(); i++){
+      blocks->at(j).push_back((start_attr->at(j).at(i))/BLOCK_SIZE);    
     }
   }
 
+  std::vector<std::vector<uint32_t>>* attr_in = new std::vector<std::vector<uint32_t>>();
   attr_in->insert(attr_in->begin(),blocks->begin(),blocks->end());
+  attr_in->insert(attr_in->end(),start_attr->begin(),start_attr->end());
 
   annotation = (A)0;
   annotated = annotations.size() > 0;
@@ -340,6 +343,17 @@ Trie<A,M>::Trie(
   //sort the relation
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
+
+  //DEBUG
+  /*
+  for(size_t i = 0; i < num_rows; i++){
+    std::cout << indicies[i] << std::endl;
+    for(size_t j = 0; j < num_columns; j++){
+      std::cout << attr_in->at(j).at(indicies[i]) << "\t";    
+    }
+    std::cout << std::endl;
+  }
+  */
 
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();
@@ -377,7 +391,7 @@ Trie<A,M>::Trie(
         NUM_THREADS,
         memoryBuffers,
         set_data_buffer->at(0),
-        head_size); 
+        head_size);
     //change this to returning a set
     //par for over the set
     //reset new_head because a realloc could of occured
