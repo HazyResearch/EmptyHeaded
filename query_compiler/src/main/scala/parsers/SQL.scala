@@ -32,16 +32,20 @@ abstract class Convergence
 case class IterationsConvergence(iterations: String) extends Convergence
 case class EpsilonConvergence(epsilon: String) extends Convergence
 
-abstract class SQLStatement
-case class SQLBasicStatement(
-                         resultName: String,
-                         resultList: List[SQLResult],
-                         relation: SQLRelation,
-                         joins: List[SQLJoin],
-                         where: Option[SQLBooleanExpression]
-                       ) extends SQLStatement
+case class SQLSelectStatement(
+                               resultList: List[SQLResult],
+                               relation: SQLRelation,
+                               joins: List[SQLJoin],
+                               where: Option[SQLBooleanExpression]
+                             )
 
-case class SQLRecursion(convergence:Convergence, baseCase: SQLBasicStatement, recursiveCase: SQLBasicStatement) extends SQLStatement
+abstract class TopLevelSQLStatement
+case class SQLCreateTableStatement(
+                         resultName: String,
+                         selectStatement: SQLSelectStatement
+                       ) extends TopLevelSQLStatement
+
+case class SQLRecursion(convergence:Convergence, resultName:String, baseCase: SQLSelectStatement, recursiveCase: SQLSelectStatement) extends TopLevelSQLStatement
 
 object SQLParser extends RegexParsers {
   def run(line:String, dBInstance: DBInstance) : IR = {
@@ -54,7 +58,7 @@ object SQLParser extends RegexParsers {
         ).toMap
 
         sqlStatements.foreach({
-          case SQLBasicStatement(resultName, resultList, relation, joins, where) => {
+          case SQLCreateTableStatement(resultName, SQLSelectStatement(resultList, relation, joins, where)) => {
             val irRule = sqlToIR(
               resultName, resultList,
               relation, joins, where, relationsToSize
@@ -63,15 +67,18 @@ object SQLParser extends RegexParsers {
 
             relationsToSize += irRule.result.rel.getName() -> irRule.result.rel.getAnnotations().length
           }
-          case SQLRecursion(iterations, baseCase, recursiveCase) => {
-            val baseIrRule = sqlToIR(baseCase.resultName, baseCase.resultList, baseCase.relation, baseCase.joins,
+          case SQLRecursion(iterations, resultName, baseCase, recursiveCase) => {
+
+            val baseIrRule = sqlToIR(resultName, baseCase.resultList,
+              baseCase.relation, baseCase.joins,
               baseCase.where, relationsToSize)
 
             irbuilder.addRule(baseIrRule)
             relationsToSize += baseIrRule.result.rel.getName() -> baseIrRule.result.rel.getAnnotations().length
 
 
-            val recursiveIrRule = sqlToIR(recursiveCase.resultName, recursiveCase.resultList, recursiveCase.relation, recursiveCase.joins,
+            val recursiveIrRule = sqlToIR(resultName, recursiveCase.resultList,
+              recursiveCase.relation, recursiveCase.joins,
               recursiveCase.where, relationsToSize, Some(iterations))
 
             irbuilder.addRule(recursiveIrRule)
@@ -164,26 +171,29 @@ object SQLParser extends RegexParsers {
 
   def joins:Parser[List[SQLJoin]] = join*
 
-  def statement:Parser[SQLBasicStatement] = ("CREATE TABLE" ~> identifierName <~ "AS" <~ "(") ~
-    ("SELECT" ~> resultList) ~ ("FROM" ~> relation) ~ joins ~ (where?) <~ ")" <~ (";"?) ^^ {
-    case resultName ~ resultColumns ~ relation ~ joins ~ where => {
-      SQLBasicStatement(resultName, resultColumns, relation, joins, where)
+  def select:Parser[SQLSelectStatement] = ("SELECT" ~> resultList) ~ ("FROM" ~> relation) ~ joins ~ (where?) ^^ {
+    case resultColumns ~ relation ~ joins ~ where => {
+      SQLSelectStatement(resultColumns, relation, joins, where)
     }
+  }
+
+  def createTableStatement:Parser[SQLCreateTableStatement] = ("CREATE TABLE" ~> identifierName <~ "AS" <~ "(") ~ select <~ ")" <~ (";"?) ^^ {
+    case resultName ~ select => SQLCreateTableStatement(resultName, select)
   }
 
   def iterationsCriteria[Parser[String]] = "FOR" ~> number <~ "ITERATIONS"
 
-  def recursiveStatement:Parser[SQLRecursion] = ("WITH RECURSIVE" ~> (iterationsCriteria?) <~ "(") ~ statement ~ ("UNION" ~> statement <~ ")" <~ (";"?)) ^^ {
-    case it ~ baseCase ~ recursiveCase => {
+  def recursiveStatement:Parser[SQLRecursion] = "WITH RECURSIVE" ~> (iterationsCriteria?) ~ (identifierName <~ "AS" <~ "(") ~ select ~ ("UNION" ~> select <~ ")" <~ (";"?)) ^^ {
+    case it ~ resultName ~ baseCase ~ recursiveCase => {
       val iterations = it match {
         case Some(s:String) => IterationsConvergence(s)
         case None => EpsilonConvergence("0")
       }
-      SQLRecursion(iterations, baseCase, recursiveCase)
+      SQLRecursion(iterations, resultName, baseCase, recursiveCase)
     }
   }
 
-  def rule:Parser[List[SQLStatement]] = (statement | recursiveStatement)+
+  def rule:Parser[List[TopLevelSQLStatement]] = (createTableStatement | recursiveStatement)+
 
   def sqlToIR(
                resultName: String,
