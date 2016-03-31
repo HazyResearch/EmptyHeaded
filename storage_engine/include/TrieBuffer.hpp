@@ -88,8 +88,8 @@ struct TrieBuffer{
         uint8_t *data = cur.get_data();
         memset(data,0,num_words*sizeof(uint64_t));
         Meta* m = cur.get_meta();
-        m->start = offset.at(i)+j*BLOCK_SIZE;
-        m->end = offset.at(i)+((j+1)*BLOCK_SIZE)-1;
+        m->start = offset.at(i);
+        m->end = offset.at(i)+BLOCK_SIZE-1;
         m->cardinality = 0;
         m->type = type::BITSET;
       }

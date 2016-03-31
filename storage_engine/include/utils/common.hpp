@@ -38,7 +38,7 @@ static size_t get_num_threads(){return NUM_THREADS;}
 
 const static size_t GIGABYTE = 1073741824;
 //Needed for parallelization, prevents false sharing of cache lines
-#define BLOCK_SIZE 4
+#define BLOCK_SIZE 64
 #define PADDING 300
 #define MAX_THREADS 512
 #define VECTORIZE 1

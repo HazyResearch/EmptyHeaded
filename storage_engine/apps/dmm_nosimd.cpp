@@ -8,7 +8,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 1024;
+  const size_t mat_size = 128;
   auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);
 
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
@@ -46,7 +46,6 @@ int main()
 
   //allocate a dense square for i and j
   //block size for i and block size * block size for j
-
 
   I.parforeach_index([&](const size_t tid, const uint32_t I_i, const uint32_t I_d){
     
@@ -119,11 +118,9 @@ int main()
               tmp_buffers[1],
               k_j,
               k_i);
-            //std::cout << I_d << " " << J_d << " " << i_d << " " << j_d << " " << anno << std::endl;
             tmp_block->get_anno(i_d%BLOCK_SIZE)[j_d%BLOCK_SIZE] += anno;
           });
         });
-
       });
       //copy buffer into trie.
       //tmp_block->print(I_d,J_d);
