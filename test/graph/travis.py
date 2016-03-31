@@ -711,6 +711,6 @@ def test_simple():
 start()
 os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases"+" && mkdir -p "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases")
 test_pruned()
-#test_duplicated()
-#test_simple()
+test_duplicated()
+test_simple()
 stop()
