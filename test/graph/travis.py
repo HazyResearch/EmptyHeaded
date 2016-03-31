@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 from emptyheaded import *
 
-## TODO: Fix Barbell and 4-Clique Selection Order
+## TODO: 
+## 4-Clique SQL 
+## Fix Barbell and 4-Clique Selection Order
 
 class ResultError(Exception):
     pass
@@ -270,6 +272,31 @@ def four_clique_agg_sql(db):
 
   if df.iloc[0][0] != 30004668L:
     raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+
+def triangle_project(db):
+  triangle = \
+"""
+TriangleProj(a,b) :- Edge(a,b),Edge(b,c),Edge(a,c).
+"""
+  print "\nTRIANGLE PROJECT"
+  ir = db.optimize(triangle)
+
+  for rule in ir.rules:
+    print rule
+
+  db.eval(triangle)
+
+  comm="""
+  tri = db.get("TriangleProj")
+  df = tri.getDF()
+
+  if tri.num_rows != 1612010L:
+    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+  row0 = df.iloc[0]
+  print row0
+  if row0[0] != 6l or row0[1] != 5l: #(6l,5l,2l)
+    raise ResultError("ROW0 INCORRECT: " + str(row0))
+  """
 
 def triangle_materialized(db):
   triangle = \
@@ -601,6 +628,7 @@ def test_pruned():
     db.build()
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_pruned")
 
+  triangle_project(db)
   triangle_materialized(db)
   triangle_materialized_sql(db)
   triangle_agg(db)
@@ -683,6 +711,6 @@ def test_simple():
 start()
 os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases"+" && mkdir -p "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases")
 test_pruned()
-test_duplicated()
-test_simple()
+#test_duplicated()
+#test_simple()
 stop()
