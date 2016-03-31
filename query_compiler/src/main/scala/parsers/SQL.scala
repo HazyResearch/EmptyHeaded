@@ -92,11 +92,13 @@ object SQLParser extends RegexParsers {
 
   def identifierName:Parser[String] = """[a-zA-Z][a-zA-Z0-9]*""".r
 
+  def quotedString:Parser[String] = """'[^']*'""".r
+
   def number:Parser[String] = """\d+(.\d*)?""".r
 
   def op:Parser[String] = """[*/+-]""".r
 
-  def literal:Parser[SQLLiteral] = (identifierName | number) ^^ {case s => SQLLiteral(s)}
+  def literal:Parser[SQLLiteral] = (identifierName | number | quotedString) ^^ {case s => SQLLiteral(s)}
 
   def column:Parser[SQLColumn] = (identifierName <~ ".") ~ identifierName ^^ {
     case relation ~ column => {
@@ -143,7 +145,7 @@ object SQLParser extends RegexParsers {
     }
   }
 
-  def andExpression:Parser[SQLAndExpression] = equalityExpression ~ ("AND" ~> equalityExpression) ^^ {
+  def andExpression:Parser[SQLAndExpression] = equalityExpression ~ ("AND" ~> (andExpression | equalityExpression)) ^^ {
     case expr1 ~ expr2 => {
       SQLAndExpression(expr1, expr2)
     }
