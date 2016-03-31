@@ -99,6 +99,26 @@ struct Vector{
     bufferIndex.index = index;
   }
 
+  Vector(
+    const size_t tid,
+    M* memory_buffer_in,
+    const uint8_t * const restrict data,
+    const size_t index_len,
+    A* anno,
+    const size_t anno_len)
+  {
+    memoryBuffer = memory_buffer_in;
+    const size_t index = memory_buffer_in->get_offset(tid);
+    uint8_t *buf = memory_buffer_in->get_next(tid,(index_len+anno_len+sizeof(Meta)));
+    memcpy((void*)buf,(void*)data,(index_len+sizeof(Meta)));
+    memcpy((void*)(buf+index_len+sizeof(Meta)),(void*)anno,anno_len);
+    //placement new
+    //meta = new (buf) Meta();
+    bufferIndex.tid = tid;
+    bufferIndex.index = index;
+  }
+
+
   //Find the index of a data elem.
   uint32_t indexOf(const uint32_t data) const;
 

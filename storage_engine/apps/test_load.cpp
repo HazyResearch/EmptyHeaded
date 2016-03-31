@@ -106,7 +106,7 @@ int main()
           Vector<DenseVector,void*,ParMemoryBuffer> j = 
             ops::union_in_place(tmp_block->at(1,i_d),j_K);
 
-          j_K.foreach_index([&](const uint32_t j_i, const uint32_t j_d){
+          j.foreach_index([&](const uint32_t j_i, const uint32_t j_d){
             BufferIndex k_j_nl = j_K.get(j_d);
             Vector<DenseVector,float,ParMemoryBuffer> k_j(
               M_T->memoryBuffers,
@@ -121,18 +121,18 @@ int main()
           });
         });
 
-        //copy buffer into trie.
-        //J.set(J_i,J_d,i.bufferIndex);
       });
-      tmp_block->print(I_d,J_d);
+      //copy buffer into trie.
+      //tmp_block->print(I_d,J_d);
+      //std::cout << "START COPY" << std::endl;
+      J.set(J_i,J_d,tmp_block->copy(tid,result->memoryBuffers).bufferIndex);
+      //std::cout << "PRINT" << std::endl;
     });
     I.set(I_i,I_d,J.bufferIndex);
   });
 
   timer::stop_clock("QUERY",query_time);
 
-
-/*
   size_t num_output = 0;
   const size_t max_num_output = mat_size*mat_size;
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
@@ -147,7 +147,6 @@ int main()
     if(num_output > max_num_output)
       exit(0);
   });
-*/
 
   return 0;
 }

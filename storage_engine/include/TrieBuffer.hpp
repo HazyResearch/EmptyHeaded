@@ -52,6 +52,32 @@ struct TrieBuffer{
     num_anno = anno_block;
   };
 
+  inline Vector<DenseVector,BufferIndex,ParMemoryBuffer> copy(
+    const size_t tid,
+    ParMemoryBuffer* memoryBuffer){
+
+    Vector<DenseVector,BufferIndex,ParMemoryBuffer> head(
+      tid,
+      memoryBuffer,
+      buffers.at(0).at(0).get_this(),
+      buffers.at(0).at(0).get_num_index_bytes(),
+      buffers.at(0).at(0). template get_num_annotation_bytes<BufferIndex>()
+    );
+
+    head.foreach_index([&](const uint32_t index, const uint32_t data){
+      Vector<DenseVector,float,ParMemoryBuffer> cur(
+        tid,
+        memoryBuffer,
+        buffers.at(1).at(data%BLOCK_SIZE).get_this(),
+        buffers.at(1).at(data%BLOCK_SIZE).get_num_index_bytes(),
+        get_anno(data),
+        buffers.at(1).at(data%BLOCK_SIZE). template get_num_annotation_bytes<A>()
+      );
+      head.set(index,data,cur.bufferIndex);
+    });
+    return head;
+  };
+
   inline void zero(const std::vector<size_t>& offset){
     for(size_t i = 0; i < num_columns; i++){
       const size_t num = pow(BLOCK_SIZE,i);
