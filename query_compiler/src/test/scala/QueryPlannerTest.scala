@@ -54,6 +54,29 @@ class QueryPlannerTest extends FunSuite {
     assertResult(optimized)(ir)
   }
 
+  test("Test that query optimizer can return a projected triangle query in 1 bag") {
+    val ir = IR(List(Rule(
+      Result(Rel("Triangle", Attributes(List("a", "b")), Annotations(List())), false),
+      None,
+      Operation("*"),
+      Order(Attributes(List("a", "b", "c"))),
+      Project(Attributes(List("c"))),
+      Join(List(
+        Rel("Edge", Attributes(List("a", "b")), Annotations(List())),
+        Rel("Edge", Attributes(List("b", "c")), Annotations(List())),
+        Rel("Edge", Attributes(List("a", "c")), Annotations(List())))),
+      Aggregations(List()),
+      Filters(List())
+    )))
+
+    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Triangle(a,b) :- Edge(a,b),Edge(b,c),Edge(a,c)."))
+    assertResult(optimized)(ir)
+  }
+
+  test("Scratch") {
+    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Triangle(a;w) :- Edge(a,b),Edge(b,c),w:float<-[SUM(b)]."))
+  }
+
   test("lollipop query") {
     val bag1 = Rule(
       Result(Rel("bag_1_a_b_c_Lollipop", Attributes(List("a", "b", "c")), Annotations(List())), true),
