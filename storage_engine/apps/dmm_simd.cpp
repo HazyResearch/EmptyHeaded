@@ -8,7 +8,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 1024;
+  const size_t mat_size = 512;
   auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);
 
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
@@ -38,8 +38,9 @@ int main()
       M_head);
 
   /*
-  std::cout << "HERE" << std::endl;
   M->print();
+
+  std::cout << "HERE" << std::endl;
   std::cout << "TRANSPOSE" << std::endl;
   M_T->print();
   */
@@ -113,7 +114,8 @@ int main()
             Vector<DenseVector,float,ParMemoryBuffer> k_j(
               M_T->memoryBuffers,
               k_j_nl);
-            float anno = ops::agg_intersect(
+
+            const float anno = ops::simd_agg_intersect(
               tid,
               tmp_buffers[1],
               k_j,
@@ -137,13 +139,13 @@ int main()
   const size_t max_num_output = 16;
   Encoding<uint32_t> *enc = (Encoding<uint32_t>*)M->encodings.at(0);
   result->foreach([&](std::vector<uint32_t> *v,float anno){
-    if(anno != 0){
+    //if(anno != 0){
       for(size_t i = 0; i < v->size(); i++){
         std::cout << enc->key_to_value.at(v->at(i)) << "\t";
       }
       std::cout << anno << std::endl;
       num_output++;
-    }
+    //}
     if(num_output > max_num_output)
       exit(0);
   });

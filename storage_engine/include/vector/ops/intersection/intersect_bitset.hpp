@@ -49,7 +49,7 @@ namespace ops{
     }
     
     meta->start = start_index*BITS_PER_WORD;
-    meta->end = (end_index+1)*BITS_PER_WORD;
+    meta->end = (end_index*BITS_PER_WORD)-1;
     meta->cardinality = count;
     meta->type = type::BITSET;
   }

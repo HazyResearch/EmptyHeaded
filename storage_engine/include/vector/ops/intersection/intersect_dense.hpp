@@ -93,7 +93,39 @@ namespace ops{
       //use default field if set otherwise actually lookup the annotation.
       anno += rare.get(data)*freq.get(data);
     });
+
+    m->roll_back(tid,alloc_size);
+    return anno;
+  }
+
+  //Materilize (allocate memory & run intersection)
+  inline float simd_agg_intersect(
+    const size_t tid,
+    ParMemoryBuffer * restrict m,
+    const Vector<DenseVector,float,ParMemoryBuffer>& rare, 
+    const Vector<DenseVector,float,ParMemoryBuffer>& freq){
+
+    //run intersection.
+    const size_t alloc_size = 
+       std::min(rare.get_num_bytes(),freq.get_num_bytes());
     
+    Vector<DenseVector,float,ParMemoryBuffer> result = 
+      alloc_and_intersect<float,float,float>(tid,alloc_size,m,rare,freq);
+
+    const size_t elems_per_reg = 8;
+    const size_t num_avx_per_block = std::max((int)8,(int)(BLOCK_SIZE/elems_per_reg));
+
+    __m256 r = _mm256_set1_ps(0.0f);
+    const float * const restrict rare_anno = (float*)rare.get_annotation();
+    const float * const restrict freq_anno = (float*)freq.get_annotation();
+    for(size_t i = 0; i < num_avx_per_block; i++){
+      const __m256 m_b_1 = _mm256_loadu_ps(&rare_anno[i*elems_per_reg]);
+      const __m256 m_b_2 = _mm256_loadu_ps(&freq_anno[i*elems_per_reg]);
+      r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
+    }
+    __m256 s = _mm256_hadd_ps(r,r);
+    const float anno = ( ((float*)&s)[0] + ((float*)&s)[1] + ((float*)&s)[4] + ((float*)&s)[5] );
+
     m->roll_back(tid,alloc_size);
     return anno;
   }
