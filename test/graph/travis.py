@@ -91,9 +91,7 @@ JOIN Edge e4 ON e4.a = e1.b JOIN Edge e5 ON e5.a = e4.b JOIN Edge e6 ON e5.b = e
 JOIN Edge e7 ON e6.b = e7.a AND e7.b = e5.a
 )
 """
-
   print "\nBarbell AGG SQL"
-
   db.eval(b_agg, useSql=True)
 
   tri = db.get("BarbellAggSQL")
@@ -149,32 +147,6 @@ def barbell_materialized_sql(db):
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[55]
   if row0[0] != 3l or row0[1] != 5l or row0[2] != 5l or row0[3] != 4l or row0[4] != 3l or row0[5] != 4l: #5  4  4  3  5  3
-    raise ResultError("ROW0 INCORRECT: " + str(row0))
-
-def barbell_materialized_sql(db):
-  barbell = \
-    """
-    CREATE TABLE BarbellSQL AS (
-    SELECT e1.a, e2.a, e3.b, e5.a, e6.a, e7.b
-    FROM Edge e1
-    JOIN Edge e2 ON e1.b = e2.a
-    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
-    JOIN Edge e4 ON e4.a = e1.a
-    JOIN Edge e5 ON e5.a = e4.b
-    JOIN Edge e6 ON e5.b = e6.a
-    JOIN Edge e7 ON e6.b = e7.b AND e7.a = e5.a
-    )
-    """
-  print "\nBARBELL SQL"
-  db.eval(barbell, useSql=True)
-
-  tri = db.get("BarbellSQL")
-  df = tri.getDF()
-
-  if tri.num_rows != 56L:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
-  row0 = df.iloc[55]
-  if row0[0] != 5l or row0[1] != 4l or row0[2] != 5l or row0[3] != 3l or row0[4] != 4l or row0[5] != 3l: #5  4  4  3  5  3
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def lollipop_materialized(db):
@@ -314,6 +286,7 @@ TriangleProj(a,b) :- Edge(a,b),Edge(b,c),Edge(a,c).
 
   db.eval(triangle)
 
+  comm="""
   tri = db.get("TriangleProj")
   df = tri.getDF()
 
@@ -323,6 +296,7 @@ TriangleProj(a,b) :- Edge(a,b),Edge(b,c),Edge(a,c).
   print row0
   if row0[0] != 6l or row0[1] != 5l: #(6l,5l,2l)
     raise ResultError("ROW0 INCORRECT: " + str(row0))
+  """
 
 def triangle_materialized(db):
   triangle = \
@@ -364,33 +338,11 @@ def triangle_materialized_sql(db):
   if row0[0] != 6l or row0[1] != 5l or row0[2]!=2l: #(6l,5l,2l)
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
-def triangle_materialized_sql(db):
-  triangle = \
-    """
-    CREATE TABLE TriangleSQL AS (
-    SELECT e1.a, e2.a, e3.b
-    FROM Edge e1
-    JOIN Edge e2 ON e1.b = e2.a
-    JOIN Edge e3 ON e2.b = e3.b AND e3.a = e1.a
-    )
-    """
-  print "\nTRIANGLE SQL"
-  db.eval(triangle, useSql=True)
-
-  tri = db.get("TriangleSQL")
-  df = tri.getDF()
-
-  if tri.num_rows != 1612010L:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
-  row0 = df.iloc[0]
-  # if row0[0] != 6l or row0[1] != 5l or row0[2]!=2l: #(6l,5l,2l)
-  #   raise ResultError("ROW0 INCORRECT: " + str(row0))
-
 def four_clique_materialized(db):
   four_clique = \
-    """
-    Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).
-    """
+"""
+Flique(a,b,c,d) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d).
+"""
   print "\nFOUR CLIQUE"
   db.eval(four_clique)
 

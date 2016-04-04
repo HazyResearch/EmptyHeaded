@@ -145,11 +145,7 @@ object SQLParser extends RegexParsers {
     }
   }
 
-<<<<<<< HEAD
   def andExpression:Parser[SQLAndExpression] = equalityExpression ~ ("AND" ~> (andExpression | equalityExpression)) ^^ {
-=======
-  def andExpression:Parser[SQLAndExpression] = equalityExpression ~ ("AND" ~> equalityExpression) ^^ {
->>>>>>> andy-sql-parser
     case expr1 ~ expr2 => {
       SQLAndExpression(expr1, expr2)
     }
