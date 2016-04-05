@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from emptyheaded import *
 
-check_big_out = False
+check_big_out = True
 
 ## TODO: 
 ## 4-Clique SQL 
@@ -710,6 +710,9 @@ def test_simple():
   lollipop_materialized_sql(db)
   barbell_materialized(db)
   barbell_materialized_sql(db)
+
+if(len(sys.argv) < 2):
+  check_big_out = False
 
 #basically the main method down here.
 start()
