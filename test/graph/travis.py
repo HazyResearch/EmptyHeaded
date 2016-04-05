@@ -114,14 +114,15 @@ Barbell(a,b,c,x,y,z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),Edge(x,y),Edge(y
   print "\nBARBELL"
   db.eval(barbell)
 
-  tri = db.get("Barbell")
-  df = tri.getDF()
+  if check_big_out:
+    tri = db.get("Barbell")
+    df = tri.getDF()
 
-  if tri.num_rows != 56L:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
-  row0 = df.iloc[55]
-  if row0[0] != 5l or row0[1] != 3l or row0[2] != 4l or row0[3] != 3l or row0[4] != 4l or row0[5] != 5l: #5  4  4  3  5  3
-    raise ResultError("ROW0 INCORRECT: " + str(row0))
+    if tri.num_rows != 56L:
+      raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+    row0 = df.iloc[55]
+    if row0[0] != 5l or row0[1] != 3l or row0[2] != 4l or row0[3] != 3l or row0[4] != 4l or row0[5] != 5l: #5  4  4  3  5  3
+      raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def barbell_materialized_sql(db):
   barbell = \
@@ -142,14 +143,15 @@ def barbell_materialized_sql(db):
   print "\nBARBELL SQL"
   db.eval(barbell, useSql=True)
 
-  tri = db.get("BarbellSQL")
-  df = tri.getDF()
+  if check_big_out:
+    tri = db.get("BarbellSQL")
+    df = tri.getDF()
 
-  if tri.num_rows != 56L:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
-  row0 = df.iloc[55]
-  if row0[0] != 3l or row0[1] != 5l or row0[2] != 5l or row0[3] != 4l or row0[4] != 3l or row0[5] != 4l: #5  4  4  3  5  3
-    raise ResultError("ROW0 INCORRECT: " + str(row0))
+    if tri.num_rows != 56L:
+      raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+    row0 = df.iloc[55]
+    if row0[0] != 3l or row0[1] != 5l or row0[2] != 5l or row0[3] != 4l or row0[4] != 3l or row0[5] != 4l: #5  4  4  3  5  3
+      raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def lollipop_materialized(db):
   lollipop = \
