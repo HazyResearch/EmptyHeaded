@@ -286,17 +286,15 @@ TriangleProj(a,b) :- Edge(a,b),Edge(b,c),Edge(a,c).
 
   db.eval(triangle)
 
-  comm="""
   tri = db.get("TriangleProj")
   df = tri.getDF()
 
-  if tri.num_rows != 1612010L:
+  if tri.num_rows != 85658l:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[0]
   print row0
   if row0[0] != 6l or row0[1] != 5l: #(6l,5l,2l)
     raise ResultError("ROW0 INCORRECT: " + str(row0))
-  """
 
 def triangle_materialized(db):
   triangle = \
