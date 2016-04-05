@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from emptyheaded import *
 
+check_big_out = False
+
 ## TODO: 
 ## 4-Clique SQL 
 ## Fix Barbell and 4-Clique Selection Order
@@ -676,7 +678,6 @@ def test_duplicated():
   four_clique_sel_sql(db)
   barbell_agg_sel(db)
   barbell_agg_sel_sql(db)
-  check_big_out = False
   barbell_sel(db)
   barbell_sel_sql(db)
   pagerank(db)
