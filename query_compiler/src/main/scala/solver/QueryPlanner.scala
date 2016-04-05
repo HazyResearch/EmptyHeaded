@@ -78,7 +78,7 @@ object QueryPlanner {
       val rootNodes =
           GHDSolver.computeAJAR_GHD(
             rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)).toSet,
-            rule.getResult().getRel().getAttributes().toSet,
+            rule.getResult().getRel().getAttributes().toSet ++ rule.getProject().getAttributes().toSet,
             rule.getFilters().values.toArray)
 
       val joinAggregates = rule.getAggregations().values.flatMap(agg => {

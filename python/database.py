@@ -50,11 +50,11 @@ class Database:
   def optimize(self,datalog):
     return IR.java2python(self.qc.optimize(datalog))
 
-  def eval(self,datalog):
+  def eval(self, query, useSql=False):
     global dbhash
 
     folder = time.strftime("D%d_%m_%Y_T%H_%M_%S") + "_Q" + str(self.dbhash) 
-    num = self.qc.generate(datalog,str(self.dbhash),folder)
+    num = self.qc.generate(query, str(self.dbhash), folder, useSql)
     os.system("""cd """+self.folder+"""/libs/"""+folder+""" && ./build.sh >compilation.log 2>&1 && cd - > /dev/null""")
     self.backend.evaluate(self.relations,folder,str(self.dbhash),num)
     self.dbhash += num

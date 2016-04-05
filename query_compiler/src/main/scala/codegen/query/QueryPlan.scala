@@ -185,7 +185,7 @@ def c_run_${id}(tm):
 
     //build up accessors
     rule.join.rels.foreach(r => {
-      r.attrs.values.foreach(a => {
+      r.attrs.values.filter(a => rule.order.attrs.values.contains(a)).foreach(a => {
         val annotated = if(db.relationMap.contains(r.name))
             db.relationMap(r.name).schema.annotationTypes.length > 0
           else if(headrelations.contains(r.name))
@@ -221,6 +221,7 @@ def c_run_${id}(tm):
           next))
       })
     }
+
     val materializedattrs = rule.result.rel.attrs.values.sortBy(rule.order.attrs.values.indexOf(_))
     //finally build the attribute info
     rule.order.attrs.values.map(a => {
