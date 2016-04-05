@@ -8,7 +8,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 1024;
+  const size_t mat_size = 8196;
   auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);
 
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");

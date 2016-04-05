@@ -39,7 +39,7 @@ namespace ops{
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,3));
 
       i += 256;
-    }  
+    }
     //64 bits per word
     for(; i < b_size; i+=64){
       const size_t vector_index = (i/BITS_PER_WORD);
@@ -47,6 +47,7 @@ namespace ops{
       count += _mm_popcnt_u64(r);      
       C[vector_index] = r;
     }
+
     meta->cardinality = count;
     meta->type = type::BITSET;
   }

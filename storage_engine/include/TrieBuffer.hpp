@@ -70,7 +70,7 @@ struct TrieBuffer{
         memoryBuffer,
         buffers.at(1).at(data%BLOCK_SIZE).get_this(),
         buffers.at(1).at(data%BLOCK_SIZE).get_num_index_bytes(),
-        get_anno(data),
+        get_anno(data%BLOCK_SIZE),
         buffers.at(1).at(data%BLOCK_SIZE). template get_num_annotation_bytes<A>()
       );
       head.set(index,data,cur.bufferIndex);

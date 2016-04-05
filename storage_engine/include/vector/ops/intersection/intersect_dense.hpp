@@ -108,7 +108,7 @@ namespace ops{
     //run intersection.
     const size_t alloc_size = 
        std::min(rare.get_num_bytes(),freq.get_num_bytes());
-    
+       
     Vector<DenseVector,float,ParMemoryBuffer> result = 
       alloc_and_intersect<float,float,float>(tid,alloc_size,m,rare,freq);
 
@@ -118,15 +118,18 @@ namespace ops{
     __m256 r = _mm256_set1_ps(0.0f);
     const float * const restrict rare_anno = (float*)rare.get_annotation();
     const float * const restrict freq_anno = (float*)freq.get_annotation();
+    //std::cout << "NUM AVX PER BLOCK: " << num_avx_per_block << std::endl;
     for(size_t i = 0; i < num_avx_per_block; i++){
+      //std::cout << rare_anno[i*elems_per_reg] << " " << freq_anno[i*elems_per_reg] << std::endl;
       const __m256 m_b_1 = _mm256_loadu_ps(&rare_anno[i*elems_per_reg]);
       const __m256 m_b_2 = _mm256_loadu_ps(&freq_anno[i*elems_per_reg]);
+
       r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
     }
-    __m256 s = _mm256_hadd_ps(r,r);
-    const float anno = ( ((float*)&s)[0] + ((float*)&s)[1] + ((float*)&s)[4] + ((float*)&s)[5] );
+    const float anno = utils::_mm256_reduce_add_ps(r);
 
     m->roll_back(tid,alloc_size);
+
     return anno;
   }
 }

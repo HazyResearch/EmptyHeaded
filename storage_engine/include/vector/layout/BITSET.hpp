@@ -8,6 +8,8 @@
 #define ADDRESS_BITS_PER_WORD 6
 #define BYTES_PER_WORD 8
 
+#define REG_BLOCK_SIZE 8
+
 struct BITSET{
   //compute word of data
   static inline size_t word_index(const uint32_t bit_index){
@@ -37,7 +39,7 @@ struct BITSET{
   static inline size_t get_num_blocks(const Meta * const restrict meta){
     const size_t num_words = 
       (word_index(meta->end)-word_index(meta->start))+1;
-    return (meta->cardinality>0) ? ((num_words*64)/BLOCK_SIZE): 0;
+    return (meta->cardinality>0) ? ((num_words*64)/REG_BLOCK_SIZE): 0;
   }
 
   template <class A, class M>
@@ -75,7 +77,7 @@ struct BITSET{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex){
 
-    const uint32_t anno_index = block_index*BLOCK_SIZE;
+    const uint32_t anno_index = block_index*REG_BLOCK_SIZE;
     const size_t wi = word_index(anno_index);
     const size_t bit_index = (anno_index) % BITS_PER_WORD;
     const size_t num_words = get_num_data_words(meta);

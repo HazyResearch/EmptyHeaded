@@ -8,7 +8,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 512;
+  const size_t mat_size = 2048;
   auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);
 
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
@@ -39,7 +39,6 @@ int main()
 
   /*
   M->print();
-
   std::cout << "HERE" << std::endl;
   std::cout << "TRANSPOSE" << std::endl;
   M_T->print();
@@ -48,10 +47,15 @@ int main()
   //allocate a dense square for i and j
   //block size for i and block size * block size for j
 
-  I.parforeach_index([&](const size_t tid, const uint32_t I_i, const uint32_t I_d){
-    
-    TrieBuffer<float,ParMemoryBuffer>* tmp_block = 
-      new TrieBuffer<float,ParMemoryBuffer>(2,true);
+  double* mult_times = new double[NUM_THREADS];
+  for(size_t i = 0; i < NUM_THREADS; i++){
+    mult_times[i] = 0.0;
+  }
+  TrieBuffer<float,ParMemoryBuffer>* tmp_block = 
+    new TrieBuffer<float,ParMemoryBuffer>(2,true);
+
+  I.foreach_index([&](const uint32_t I_i, const uint32_t I_d){
+    size_t tid = 0; 
 
     (void) I_i;
     BufferIndex I_nl = M_head.get(I_d);
@@ -100,7 +104,8 @@ int main()
         Vector<DenseVector,void*,ParMemoryBuffer> i = 
           ops::union_in_place(tmp_block->at(0,0),i_K);
 
-        i.foreach_index([&](const uint32_t i_i, const uint32_t i_d){
+        i.parforeach_index([&](const size_t tid2,const uint32_t i_i, const uint32_t i_d){
+          //tid = tid2;
           BufferIndex k_i_nl = i_K.get(i_d);
           Vector<DenseVector,float,ParMemoryBuffer> k_i(
             M->memoryBuffers,
@@ -114,25 +119,29 @@ int main()
             Vector<DenseVector,float,ParMemoryBuffer> k_j(
               M_T->memoryBuffers,
               k_j_nl);
-
+            auto mult = timer::start_clock();
             const float anno = ops::simd_agg_intersect(
-              tid,
+              tid2,
               tmp_buffers[1],
               k_j,
               k_i);
+            mult_times[tid] += timer::stop_clock(mult);
             tmp_block->get_anno(i_d%BLOCK_SIZE)[j_d%BLOCK_SIZE] += anno;
           });
         });
       });
       //copy buffer into trie.
       //tmp_block->print(I_d,J_d);
-      //std::cout << "START COPY" << std::endl;
       J.set(J_i,J_d,tmp_block->copy(tid,result->memoryBuffers).bufferIndex);
-      //std::cout << "PRINT" << std::endl;
     });
     I.set(I_i,I_d,J.bufferIndex);
   });
 
+  double mult_time = 0.0;
+  for(size_t i = 0; i < NUM_THREADS; i++){
+    mult_time += mult_times[i];
+  }
+  std::cout << "PURE MULT: " << mult_time << std::endl;
   timer::stop_clock("QUERY",query_time);
 
   size_t num_output = 0;
