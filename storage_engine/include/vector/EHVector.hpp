@@ -23,6 +23,14 @@ struct EHVector{
   }
 
   template <class M>
+  static inline uint8_t* get_index_data(
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex
+  ){
+    return memoryBuffer->get_address(bufferIndex)+sizeof(Meta);
+  }
+
+  template <class M>
   static inline Meta* get_meta(
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex
@@ -198,6 +206,36 @@ struct EHVector{
       default:
         std::cout << "TYPE ERROR" << std::endl;
         throw;
+      break;
+    }
+  }
+
+  template <class M>
+  static inline type::layout get_type(
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex)
+  {
+    const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
+    return meta->type;
+  }
+
+  template <class M>
+  static inline size_t get_num_index_bytes(
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex)
+  {
+    const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
+    switch(meta->type){
+      case type::BITSET : 
+        return sizeof(Meta)+BITSET::get_num_index_bytes(meta);      
+      break;
+      case type::UINTEGER :
+        return sizeof(Meta)+UINTEGER::get_num_index_bytes(meta);      
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+        return 0;
       break;
     }
   }

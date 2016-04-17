@@ -22,6 +22,14 @@ struct BLASVector{
       return 0;
   }
 
+  template <class M>
+  static inline uint8_t* get_index_data(
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex
+  ){
+    return memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+sizeof(size_t);
+  }
+
   template<class M>
   static inline Meta* get_meta(    
     const M * const restrict memoryBuffer,
@@ -38,11 +46,30 @@ struct BLASVector{
     const uint32_t data,
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
-{
+  {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
     const A* anno = (A*)memoryBuffer->anno->get_address(0);
     const size_t anno_offset = *((size_t*)memoryBuffer->get_address(bufferIndex));
     return anno[anno_offset+data-meta->start];
+  }
+
+  template <class M>
+  static inline type::layout get_type(
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex)
+  {
+    const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
+    return meta->type;
+  }
+
+  //calls index of then calls get below.
+  template <class M>
+  static inline size_t get_num_index_bytes(
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex) 
+  {
+    const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
+    return BITSET::get_num_index_bytes(meta);
   }
 
   //look up a data value

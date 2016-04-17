@@ -99,6 +99,7 @@ struct UINTEGER{
     const BufferIndex& restrict bufferIndex)
   {
     for(size_t i=0; i<meta->cardinality;i++){
+      std::cout << "HERE" << std::endl;
       const uint32_t * const data = (const uint32_t * const) 
         (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+(sizeof(uint32_t)*i));
       f(i,*data);

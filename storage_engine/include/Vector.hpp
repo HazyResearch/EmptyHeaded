@@ -111,6 +111,12 @@ struct Vector{
 
   A* get_block(const uint32_t block_index) const;
 
+  uint8_t* get_index_data() const;
+
+  size_t get_num_index_bytes() const;
+
+  type::layout get_type() const;
+
   //look up a data value
   A get(
     const uint32_t index,

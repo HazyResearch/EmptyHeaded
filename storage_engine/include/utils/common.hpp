@@ -45,7 +45,7 @@ const static size_t GIGABYTE = 1073741824;
 
 #define RELATION_DENSITY_THRESHOLD 0.8
 #define VECTOR_DENSITY_THRESHOLD (1/128)
-#define MIN_BITSET_LENGTH 2
+#define MIN_BITSET_LENGTH 0
 
 //CONSTANTS THAT SHOULD NOT CHANGE
 #define SHORTS_PER_REG 8
@@ -56,19 +56,6 @@ const static size_t GIGABYTE = 1073741824;
 #define NUM_NUMA 4
 #define SOCKET_THREADS 12
 #define MAX_MEMORY 10 //GB
-
-namespace common{
-  static size_t bitset_length = 2;
-  static double bitset_req = 128.0;//256.0;
-
-  inline bool is_sparse(size_t length, size_t range) {
-    if(length > bitset_length){
-      const bool sparse = (((double)range/length) > (bitset_req));
-      return sparse;
-    }
-    return true;
-  }
-}
 
 namespace type{
   enum file : uint8_t{
@@ -86,10 +73,8 @@ namespace type{
 
   enum layout: uint8_t {
     BITSET = 0,
-    UINTEGER = 1,
-    HYBRID = 2
+    UINTEGER = 1
   };
-
 }
 
 #endif

@@ -15,6 +15,27 @@ A Vector<T,A,M>::get(const uint32_t data) const{
     bufferIndex);
 }
 
+template <class T, class A, class M>
+type::layout Vector<T,A,M>::get_type() const{
+  return T:: template get_type<M>(
+    memoryBuffer,
+    bufferIndex);
+}
+
+template <class T, class A, class M>
+uint8_t* Vector<T,A,M>::get_index_data() const{
+  return T:: template get_index_data<M>(
+    memoryBuffer,
+    bufferIndex);
+}
+
+template <class T, class A, class M>
+size_t Vector<T,A,M>::get_num_index_bytes() const{
+  return T:: template get_num_index_bytes<M>(
+    memoryBuffer,
+    bufferIndex);
+}
+
 //look up a data value
 template <class T, class A, class M>
 A Vector<T,A,M>::get(
