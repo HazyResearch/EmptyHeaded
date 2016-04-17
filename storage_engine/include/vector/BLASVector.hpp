@@ -66,14 +66,11 @@ struct BLASVector{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
   {
+    (void) index;
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
-    BITSET:: template set<A,M>(
-      index,
-      data,
-      value,
-      meta,
-      memoryBuffer,
-      bufferIndex);
+    A* anno = (A*)memoryBuffer->anno->get_address(0);
+    const size_t anno_offset = *((size_t*)memoryBuffer->get_address(bufferIndex));
+    anno[anno_offset+data-meta->start] = value;
   }
 
   static inline type::layout get_type() 
@@ -108,7 +105,7 @@ struct BLASVector{
     const BufferIndex& restrict bufferIndex)
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
-    BITSET:: template foreach_index<M>(f,meta,memoryBuffer,bufferIndex);
+    BITSET:: template foreach_index<M>(f,meta,memoryBuffer,BufferIndex(bufferIndex.tid,bufferIndex.index+sizeof(size_t)));
   }
 
     //mutable loop (returns data and index)
@@ -123,7 +120,7 @@ struct BLASVector{
       f,
       meta,
       memoryBuffer,
-      bufferIndex);
+      BufferIndex(bufferIndex.tid,bufferIndex.index+sizeof(size_t)));
   }
 
   template <class A>
@@ -167,6 +164,7 @@ struct BLASVector{
     const size_t len,
     const size_t anno_offset) 
   {
+    (void) values;
     Meta* meta = new(buffer+sizeof(size_t)) Meta();
     meta->cardinality = len;
     meta->start = 0;

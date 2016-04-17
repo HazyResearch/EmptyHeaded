@@ -38,10 +38,21 @@ struct EHVector{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex) {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
-    if(meta->get_density() >= VECTOR_DENSITY_THRESHOLD){
-      return BITSET:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
-    } 
-    return UINTEGER:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
+    
+    switch(meta->type){
+      case type::BITSET : 
+        return BITSET:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
+      break;
+      case type::UINTEGER :
+        return UINTEGER:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+        return UINTEGER:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
+      break;
+    }
+
   }
 
   //look up a data value
@@ -53,10 +64,20 @@ struct EHVector{
     const BufferIndex& restrict bufferIndex)
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
-    if(meta->get_density() >= VECTOR_DENSITY_THRESHOLD){
-      return BITSET:: template get<A,M>(index,data,meta,memoryBuffer,bufferIndex);
+    
+    switch(meta->type){
+      case type::BITSET : 
+        return BITSET:: template get<A,M>(index,data,meta,memoryBuffer,bufferIndex);      
+      break;
+      case type::UINTEGER :
+        return UINTEGER:: template get<A,M>(index,data,meta,memoryBuffer,bufferIndex);
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+        return UINTEGER:: template get<A,M>(index,data,meta,memoryBuffer,bufferIndex);
+      break;
     }
-    return UINTEGER:: template get<A,M>(index,data,meta,memoryBuffer,bufferIndex);
   }
 
   //set an annotation value
@@ -69,24 +90,32 @@ struct EHVector{
     const BufferIndex& restrict bufferIndex) 
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
-    (void) data;
-    if(meta->get_density() >= VECTOR_DENSITY_THRESHOLD){
-      BITSET:: template set<A,M>(
-        index,
-        data,
-        value,
-        meta,
-        memoryBuffer,
-        bufferIndex);
-      return;
+
+    switch(meta->type){
+      case type::BITSET : 
+        BITSET:: template set<A,M>(
+          index,
+          data,
+          value,
+          meta,
+          memoryBuffer,
+          bufferIndex);      
+      break;
+      case type::UINTEGER :
+        UINTEGER:: template set<A,M>(
+          index,
+          data,
+          value,
+          meta,
+          memoryBuffer,
+          bufferIndex);
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+      break;
     }
-    UINTEGER:: template set<A,M>(
-      index,
-      data,
-      value,
-      meta,
-      memoryBuffer,
-      bufferIndex);
+
   }
 
   //look up a data value
@@ -150,19 +179,27 @@ struct EHVector{
     const BufferIndex& restrict bufferIndex)
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
-    if(meta->get_density() >= VECTOR_DENSITY_THRESHOLD){
-      BITSET:: template parforeach_index<M>(
-        f,
-        meta,
-        memoryBuffer,
-        bufferIndex);
-      return;
+
+    switch(meta->type){
+      case type::BITSET : 
+        BITSET:: template parforeach_index<M>(
+          f,
+          meta,
+          memoryBuffer,
+          bufferIndex);      
+      break;
+      case type::UINTEGER :
+        UINTEGER:: template parforeach_index<M>(
+          f,
+          meta,
+          memoryBuffer,
+          bufferIndex);      
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+      break;
     }
-    UINTEGER:: template parforeach_index<M>(
-      f,
-      meta,
-      memoryBuffer,
-      bufferIndex);
   }
 
   template <class A>
@@ -219,6 +256,7 @@ struct EHVector{
     const size_t len,
     const size_t anno_offset) 
   {
+    (void) anno_offset;
     Meta* meta = new(buffer) Meta();
     meta->cardinality = len;
     meta->start = 0;

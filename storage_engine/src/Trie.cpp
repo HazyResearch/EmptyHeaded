@@ -409,28 +409,36 @@ Trie<T,A,M>::Trie(
   //if sparse
   //proceed per usual
   //compute the density of the relation
-  size_t full_range = start_max_set_sizes->at(0);
-  for(size_t i = 1; i < num_columns_in; i++){
-    full_range *= start_max_set_sizes->at(i);
-  }
-  const size_t dense_block_size = start_max_set_sizes->at(0);
-  const float density = ((float)num_rows_in/(float)full_range);
   //allocate annotation and fill in if dense
-  if(density > 0.8 && annotated){
-    const size_t num_anno_bytes = sizeof(A)*std::pow(dense_block_size,num_columns_in);
+  
+  //FIXME: place a real hook here. if BLAS VECTOR
+  if(annotated){
+    size_t full_range = (num_columns_in == 1) ? ((start_max_set_sizes->at(0) + 64 - 1) / 64) * 64: start_max_set_sizes->at(0);
+    for(size_t i = 1; i < num_columns_in; i++){
+      if(i == num_columns_in-1)
+        full_range *= ((start_max_set_sizes->at(i) + 64 - 1) / 64) * 64;
+      else
+        full_range *= start_max_set_sizes->at(i);
+    }
+    const float density = ((float)num_rows_in/(float)full_range);
+
+    const size_t num_anno_bytes = sizeof(A)*full_range;
     memoryBuffers->anno->get_next(num_anno_bytes);
     A* anno = (A*)memoryBuffers->anno->get_address(0);
     memset(anno,0,num_anno_bytes);
     for(size_t i = 0; i < num_rows_in; i++){
       size_t index = 0;
       for(size_t j = 1; j < num_columns_in; j++){
+        const size_t dense_block_size = (j == num_columns_in-1) ?
+         ((start_max_set_sizes->at(j) + 64 - 1) / 64) * 64 : start_max_set_sizes->at(j);
         index += std::pow(dense_block_size,j)*start_attr->at(j-1).at(i);
       }
       index += start_attr->at(num_columns_in-1).at(i);
       anno[index] = ((const A* const)annotations.at(0))[i];
     }
+    
     /*
-    for(size_t i = 0; i < num_rows_in; i++){
+    for(size_t i = 0; i < full_range; i++){
       std::cout << "ANNO: " << i << " " << anno[i] << std::endl;
     }
     */
@@ -458,8 +466,11 @@ Trie<T,A,M>::Trie(
         blocks->push_back(std::vector<uint32_t>());
       blocks->at(j).push_back((start_attr->at(j).at(i))/BLOCK_SIZE);    
 
-      if(j != 0)
+      if(j != 0){
+        const size_t dense_block_size = (j == num_columns_in-1) ?
+         ((start_max_set_sizes->at(j) + 64 - 1) / 64) * 64 : start_max_set_sizes->at(j);
         anno_offset += std::pow(dense_block_size,j)*start_attr->at(j-1).at(i);
+      }
       else
         anno_offset += start_attr->at(num_columns_in-1).at(i);
     }
@@ -534,31 +545,17 @@ Trie<T,A,M>::Trie(
   //make this into a templated method,
   //if we are competely dense the structure is a bunch of Vector<void*>
 
-  if(density > 0.8){
-    build_trie<T,A,M>(
-      num_columns,
-      head_size,
-      memoryBuffers,
-      ranges_buffer,
-      set_data_buffer,
-      annotation_buffers,
-      annotations,
-      attr_in,
-      indicies,
-      dense_annotation_offsets);
-  } else{
-    build_trie<T,A,M>(
-      num_columns,
-      head_size,
-      memoryBuffers,
-      ranges_buffer,
-      set_data_buffer,
-      annotation_buffers,
-      annotations,
-      attr_in,
-      indicies,
-      dense_annotation_offsets);
-  }
+  build_trie<T,A,M>(
+    num_columns,
+    head_size,
+    memoryBuffers,
+    ranges_buffer,
+    set_data_buffer,
+    annotation_buffers,
+    annotations,
+    attr_in,
+    indicies,
+    dense_annotation_offsets);
 
   delete[] tmp_st;
   delete[] tmp_i;
