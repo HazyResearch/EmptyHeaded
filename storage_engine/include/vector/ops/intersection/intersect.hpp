@@ -1,7 +1,7 @@
 #ifndef _INTERSECT_H_
 #define _INTERSECT_H_
 
-#include "intersect_dense.hpp"
+#include "intersect_bitset.hpp"
 
 namespace ops{
   //types of aggregates
@@ -22,7 +22,7 @@ namespace ops{
       case type::BITSET : {
         switch(freq.get_type()){
           case type::BITSET :
-            return bitset_bitset_intersect<void*,A,B>(tid,alloc_size,m,rare,freq);
+            return ops::bitset_bitset_intersect<BS_BS_VOID,void*,A,B>(tid,alloc_size,m,rare,freq);
           break;
           case type::UINTEGER : 
             //bitset_uinteger_intersect<AGG>();
@@ -44,7 +44,7 @@ namespace ops{
       break;
       }
     }
-    return bitset_bitset_intersect<void*,A,B>(tid,alloc_size,m,rare,freq);
+    return ops::bitset_bitset_intersect<BS_BS_VOID,void*,A,B>(tid,alloc_size,m,rare,freq);
   }
 }
 #endif
