@@ -1,8 +1,9 @@
 #ifndef _UNION_DENSE_H_
 #define _UNION_DENSE_H_
 
-#include "vector/DenseVector.hpp"
 #include "union_bitset.hpp"
+
+  /*
 
 namespace ops{
   template <class A>
@@ -23,4 +24,5 @@ namespace ops{
     return freq;
   }
 }
+*/
 #endif

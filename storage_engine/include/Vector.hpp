@@ -13,9 +13,8 @@
 #define _VECTOR_H_
 
 #include "utils/utils.hpp"
-#include "vector/SparseVector.hpp"
-#include "vector/DenseVector.hpp"
-#include "vector/annotations/BufferIndex.hpp"
+#include "vector/EHVector.hpp"
+#include "vector/BLASVector.hpp"
 #include "vector/Meta.hpp"
 /*
 Vectors are laid flat in the memory buffer as follows
@@ -36,8 +35,6 @@ struct Vector{
   {
     memoryBuffer = memory_buffer_in;
     bufferIndex = buffer_index_in;
-    //placement new
-    //meta = new (memory_buffer_in->get_address(bufferIndex)) Meta();
   }
 
   Vector(
@@ -55,32 +52,18 @@ struct Vector{
   Vector(
     const size_t tid,
     M* memory_buffer_in,
-    const Vector<T,A,M>& restrict v_in)
-  {
-    memoryBuffer = memory_buffer_in;
-    const size_t cpy_size = T:: template get_num_bytes<A>(v_in.get_meta());
-    const size_t index = memory_buffer_in->get_offset(tid);
-    uint8_t *buf = memory_buffer_in->get_next(tid,cpy_size);
-    memcpy((void*)buf,(void*)v_in.memoryBuffer->get_address(v_in.bufferIndex),cpy_size);
-    bufferIndex.tid = tid;
-    bufferIndex.index = index;
-  }
-
-  Vector(
-    const size_t tid,
-    M* memory_buffer_in,
     const size_t num_bytes)
   {
     memoryBuffer = memory_buffer_in;
     const size_t index = memory_buffer_in->get_offset(tid);
     uint8_t *buf = memory_buffer_in->get_next(tid,num_bytes);
     memset((void*)buf,(uint8_t)0,num_bytes);
-    //placement new
-    //meta = new (buf) Meta();
     bufferIndex.tid = tid;
     bufferIndex.index = index;
   }
 
+  /*
+  Needs to be fixed to allocate an annotation.
   Vector(
     const size_t tid,
     M* memory_buffer_in,
@@ -117,6 +100,7 @@ struct Vector{
     bufferIndex.tid = tid;
     bufferIndex.index = index;
   }
+  */
 
 
   //Find the index of a data elem.
@@ -141,60 +125,15 @@ struct Vector{
   //look up a data value
   bool contains(const uint32_t key) const;
 
-  inline size_t get_num_bytes() const{
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
-    return T:: template get_num_bytes<A>(meta);
-  }
-
-  inline size_t get_num_index_bytes() const{
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
-    return T::get_num_index_bytes(meta);
-  }
-
-  template<class R>
-  inline size_t get_num_annotation_bytes() const{
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
-    return T:: template get_num_annotation_bytes<R>(meta);
-  }
-
-  inline uint8_t* get_this() const{
-    return memoryBuffer->get_address(bufferIndex);
-  }
-
-  inline uint8_t* get_data() const{
-    return memoryBuffer->get_address(bufferIndex)+sizeof(Meta);
-  }
-
   inline Meta* get_meta() const{
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
-    return meta;
-  }
-
-  inline uint8_t* get_annotation() const {
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
-    return memoryBuffer->get_address(bufferIndex)
-      +sizeof(Meta)
-      +T::get_num_index_bytes(meta);
+    return T::get_meta(memoryBuffer,bufferIndex);
   }
 
   //mutable loop (returns data and index)
   template<typename F>
   inline void foreach(F f) const{
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
     T:: template foreach<A,M>(
       f,
-      meta,
-      memoryBuffer,
-      bufferIndex);
-  }
-
-  //mutable loop (returns data and index)
-  template<typename F>
-  inline void foreach_block(F f) const{
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
-    T:: template foreach_block<M>(
-      f,
-      meta,
       memoryBuffer,
       bufferIndex);
   }
@@ -202,10 +141,8 @@ struct Vector{
   //mutable loop (returns data and index)
   template<typename F>
   inline void foreach_index(F f) const{
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
     T:: template foreach_index<M>(
       f,
-      meta,
       memoryBuffer,
       bufferIndex);
   }
@@ -213,10 +150,8 @@ struct Vector{
   //parallel iterator
   template<typename F>
   inline void parforeach_index(F f) const{
-    Meta* meta = new (memoryBuffer->get_address(bufferIndex)) Meta();
     T:: template parforeach_index<M>(
       f,
-      meta,
       memoryBuffer,
       bufferIndex);
   }
@@ -234,7 +169,8 @@ struct Vector{
     M* memoryBuffer,
     const uint32_t * const data,
     const A * const values,
-    const size_t len);
+    const size_t len,
+    const size_t anno_offset);
 };
 
 #endif

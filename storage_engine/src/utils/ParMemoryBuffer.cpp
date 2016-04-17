@@ -15,6 +15,7 @@ ParMemoryBuffer::ParMemoryBuffer(
     elements.push_back(mbuffer);
   }
   elements.push_back(head);
+  anno = new MemoryBuffer(2);
 }
 
 ParMemoryBuffer::ParMemoryBuffer(
@@ -29,6 +30,7 @@ ParMemoryBuffer::ParMemoryBuffer(
     elements.push_back(mbuffer);
   }
   elements.push_back(head);
+  anno = new MemoryBuffer(num_elems_in);
 }
 
 ParMemoryBuffer::ParMemoryBuffer(size_t num_elems_in){
@@ -39,6 +41,7 @@ ParMemoryBuffer::ParMemoryBuffer(size_t num_elems_in){
     elements.push_back(mbuffer);
   }
   elements.push_back(head);
+  anno = new MemoryBuffer(num_elems_in);
 }
 
 MemoryBuffer* ParMemoryBuffer::at(const size_t tid) const {

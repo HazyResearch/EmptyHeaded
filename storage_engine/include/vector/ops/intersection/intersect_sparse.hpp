@@ -1,12 +1,11 @@
 #ifndef _INTERSECT_SPARSE_H_
 #define _INTERSECT_SPARSE_H_
 
-#include "vector/SparseVector.hpp"
 #include "intersect_uinteger.hpp"
 
-namespace ops{
   /*
 
+namespace ops{
   Interesection should allocate the output vector ahead of time. 
   This means also the annotations which will be filled in.
 
@@ -15,8 +14,6 @@ namespace ops{
   aggregations and filling them in (possibly aggregating them).
   
   Dense intersections actually just multiply vectors.
-  */
-
   template <class A, class B, class C>
   inline Vector<SparseVector,A,ParMemoryBuffer> alloc_and_intersect(
     const size_t tid,
@@ -129,4 +126,5 @@ namespace ops{
     return alloc_and_intersect<A,B,C>(tid,alloc_size,m,rare,freq);
   }
 }
+*/
 #endif

@@ -12,7 +12,7 @@ const size_t offset = 128;
 //Add tests for trie build.
 
 //Add tests for vector intersections.
-
+/*
 template<class T>
 void test_foreach(const Vector<T,float,ParMemoryBuffer> & v){
   float reduced_anno = 0;
@@ -132,3 +132,4 @@ TEST_CASE( "Test basic SparseVector functionality.", "[SparseVector]" ) {
 
   thread_pool::deleteThreadPool();
 }
+*/

@@ -2,7 +2,7 @@
 #include "Encoding.hpp"
 #include "Trie.hpp"
 
-std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> 
+std::pair<Trie<BLASVector,float, ParMemoryBuffer>*,Trie<BLASVector,float, ParMemoryBuffer>*> 
   load_dense_matrix(
     const size_t I,
     const size_t J){
@@ -65,13 +65,13 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
   /////////////////////////////////////////////////////////////////////////////
   //Build Matrix
   /////////////////////////////////////////////////////////////////////////////
-  Trie<float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
+  Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
   {
     std::vector<size_t> order_0_1 = {0, 1};
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_graph_0_1 = new Trie<float, ParMemoryBuffer>(
+      Trie_graph_0_1 = new Trie<BLASVector,float, ParMemoryBuffer>(
           "",
           &EncodedColumnStore_graph.max_set_size, 
           &EncodedColumnStore_graph.data,
@@ -82,14 +82,14 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
     Trie_graph_0_1->encodings.push_back((void*)Encoding_uint32_t);
     ////////////////////emitWriteBinaryTrie////////////////////
   }
-  Trie<float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
+  Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
   {
     std::vector<size_t> order_1_0 = {0, 1};
     EncodedColumnStore EncodedColumnStore_graph_1_0(&EncodedColumnStore_graph, order_1_0);
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_graph_1_0 = new Trie<float, ParMemoryBuffer>(
+      Trie_graph_1_0 = new Trie<BLASVector,float, ParMemoryBuffer>(
           "",
           &EncodedColumnStore_graph_1_0.max_set_size, 
           &EncodedColumnStore_graph_1_0.data,
@@ -102,7 +102,7 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
   }
   return std::make_pair(Trie_graph_0_1,Trie_graph_1_0);
 }
-
+/*
 std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> 
   load_dense_matrix_and_transpose(
     const size_t I,
@@ -392,15 +392,7 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> load_matr
     Encoding_uint32_t->build(EncodingMap_uint32_t.get_sorted());
     timer::stop_clock("BUILDING ENCODING uint32_t", start_time);
   }
-  /*
-  {
-    auto start_time = timer::start_clock();
-    Encoding_uint32_t->to_binary("/Users/caberger/Documents/Research/code/"
-                                "EmptyHeaded/test/graph/databases/db_simple/"
-                                "encodings/uint32_t/");
-    timer::stop_clock("WRITING ENCODING uint32_t", start_time);
-  }
-  */
+
   EncodedColumnStore EncodedColumnStore_graph(NumRows_graph, 2, 1);
   {
     auto start_time = timer::start_clock();
@@ -415,11 +407,6 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> load_matr
     EncodedColumnStore_graph.add_annotation(
       sizeof(float),
       (void*)ColumnStore_graph.at(2));
-    /*
-    EncodedColumnStore_graph.to_binary("/Users/caberger/Documents/Research/"
-                                       "code/EmptyHeaded/test/graph/databases/"
-                                       "db_simple/relations/graph/");
-    */
     timer::stop_clock("ENCODING graph", start_time);
   }
   Trie<float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
@@ -496,15 +483,6 @@ Trie<void *, ParMemoryBuffer>* load_graph(std::string file){
     Encoding_uint32_t->build(EncodingMap_uint32_t.get_sorted());
     timer::stop_clock("BUILDING ENCODING uint32_t", start_time);
   }
-  /*
-  {
-    auto start_time = timer::start_clock();
-    Encoding_uint32_t->to_binary("/Users/caberger/Documents/Research/code/"
-                                "EmptyHeaded/test/graph/databases/db_simple/"
-                                "encodings/uint32_t/");
-    timer::stop_clock("WRITING ENCODING uint32_t", start_time);
-  }
-  */
   EncodedColumnStore EncodedColumnStore_graph(NumRows_graph, 2, 0);
   {
     auto start_time = timer::start_clock();
@@ -516,11 +494,6 @@ Trie<void *, ParMemoryBuffer>* load_graph(std::string file){
         Encoding_uint32_t->encode_column((uint32_t *)ColumnStore_graph.at(1),
                                         NumRows_graph),
         Encoding_uint32_t->num_distinct);
-    /*
-    EncodedColumnStore_graph.to_binary("/Users/caberger/Documents/Research/"
-                                       "code/EmptyHeaded/test/graph/databases/"
-                                       "db_simple/relations/graph/");
-    */
     timer::stop_clock("ENCODING graph", start_time);
   }
   Trie<void *, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
@@ -540,12 +513,7 @@ Trie<void *, ParMemoryBuffer>* load_graph(std::string file){
     Trie_graph_0_1->encodings.push_back((void*)Encoding_uint32_t);
 
     ////////////////////emitWriteBinaryTrie////////////////////
-    /*
-    {
-      auto start_time = timer::start_clock();
-      Trie_graph_0_1->save();
-      timer::stop_clock("WRITING BINARY TRIE graph_0_1", start_time);
-    } */ 
   }
   return Trie_graph_0_1;
 } 
+*/

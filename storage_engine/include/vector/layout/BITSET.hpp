@@ -36,10 +36,9 @@ struct BITSET{
     return (meta->cardinality>0) ? (num_words+1): 0;
   }
 
-  static inline size_t get_num_blocks(const Meta * const restrict meta){
-    const size_t num_words = 
-      (word_index(meta->end)-word_index(meta->start))+1;
-    return (meta->cardinality>0) ? ((num_words*64)/REG_BLOCK_SIZE): 0;
+  static inline size_t get_num_index_bytes(const Meta * const restrict meta){
+    const size_t num_words = get_num_data_words(meta); 
+    return (num_words*sizeof(uint64_t));
   }
 
   template <class A, class M>
@@ -71,27 +70,6 @@ struct BITSET{
   }
 
   template <class A, class M>
-  static inline A* get_block(
-    const uint32_t block_index, 
-    const Meta * const restrict meta, 
-    const M * const restrict memoryBuffer,
-    const BufferIndex& restrict bufferIndex){
-
-    const uint32_t anno_index = block_index*REG_BLOCK_SIZE;
-    const size_t wi = word_index(anno_index);
-    const size_t bit_index = (anno_index) % BITS_PER_WORD;
-    const size_t num_words = get_num_data_words(meta);
-    (void)wi; (void)bit_index;
-    const A* const restrict values = 
-      (const A* const restrict)
-      (memoryBuffer->get_address(bufferIndex)+
-        sizeof(Meta)+
-        BYTES_PER_WORD*num_words+
-        sizeof(A)*(anno_index-(word_index(meta->start)*64)));
-    return (A*)values;
-  }
-
-  template <class A, class M>
   static inline void set(
     const uint32_t index,
     const uint32_t data,
@@ -109,21 +87,6 @@ struct BITSET{
         BYTES_PER_WORD*num_words+
         sizeof(A)*(data-(word_index(meta->start)*64)));
     *values = value;
-  }
-
-  //Iterates over set applying a lambda.
-  template <class M, typename F>
-  static inline void foreach_block(
-    F f,
-    const Meta * const restrict meta, 
-    const M * const restrict memoryBuffer,
-    const BufferIndex& restrict bufferIndex) 
-  {
-    (void) memoryBuffer; (void) bufferIndex;
-    const size_t num_blocks = get_num_blocks(meta);
-    for(size_t i = 0; i < num_blocks; i++){
-      f(i);
-    }
   }
 
   //Iterates over set applying a lambda.

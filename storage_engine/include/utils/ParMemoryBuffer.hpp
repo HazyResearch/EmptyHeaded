@@ -10,6 +10,7 @@ struct ParMemoryBuffer{
   std::string path;
   std::vector<MemoryBuffer*> elements;
   MemoryBuffer *head;
+  MemoryBuffer *anno;
 
   ParMemoryBuffer(std::string path,size_t num_elems);
   ParMemoryBuffer( size_t num_buffers_in,std::string path);

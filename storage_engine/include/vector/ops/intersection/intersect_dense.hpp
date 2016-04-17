@@ -1,7 +1,6 @@
 #ifndef _INTERSECT_DENSE_H_
 #define _INTERSECT_DENSE_H_
 
-#include "vector/DenseVector.hpp"
 #include "intersect_bitset.hpp"
 
 namespace ops{
@@ -16,7 +15,7 @@ namespace ops{
   
   Dense intersections actually just multiply vectors.
   */
-
+  /*
   template <class A, class B, class C>
   inline Vector<DenseVector,A,ParMemoryBuffer> alloc_and_intersect(
     const size_t tid,
@@ -132,5 +131,6 @@ namespace ops{
 
     return anno;
   }
+  */
 }
 #endif

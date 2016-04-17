@@ -5,6 +5,11 @@
 #include "vector/Meta.hpp"
 
 struct UINTEGER{
+
+  static inline size_t get_num_index_bytes(const Meta * const restrict meta){
+    return meta->cardinality*sizeof(uint32_t);
+  }
+
   template <class A, class M>
   static inline A get(
     const uint32_t data, 

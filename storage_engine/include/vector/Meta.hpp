@@ -10,6 +10,9 @@ struct Meta {
   uint32_t end;
   type::layout type;
   Meta(){};
+  inline double get_density() const{
+    return (double)cardinality/(end-start);
+  }
 };
 
 #endif
