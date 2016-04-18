@@ -5,5 +5,6 @@
 #include "utils/utils.hpp"
 #include "vector/ops/simd_masks.hpp"
 #include "vector/ops/intersection/intersect.hpp"
+#include "vector/ops/intersection/union.hpp"
 
 #endif

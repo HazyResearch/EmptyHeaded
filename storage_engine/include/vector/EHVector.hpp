@@ -119,7 +119,7 @@ struct EHVector{
           bufferIndex);
       break;
       default:
-        std::cout << "TYPE ERROR" << std::endl;
+        std::cout << "SET TYPE ERROR" << std::endl;
         throw;
       break;
     }
@@ -217,6 +217,48 @@ struct EHVector{
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
     return meta->type;
+  }
+
+  template <class A>
+  static inline size_t get_num_bytes(
+    const Meta * const restrict meta)
+  {
+    switch(meta->type){
+      case type::BITSET : 
+        return sizeof(Meta)
+          +BITSET::get_num_index_bytes(meta)
+          +(BITSET::get_num_data_words(meta)*sizeof(A));
+      break;
+      case type::UINTEGER :
+        return sizeof(Meta)
+          +UINTEGER::get_num_index_bytes(meta)
+          +(meta->cardinality*sizeof(A));      
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+        return 0;
+      break;
+    }
+  }
+
+  template <class A>
+  static inline size_t get_num_annotation_bytes(
+    const Meta * const restrict meta)
+  {
+    switch(meta->type){
+      case type::BITSET : 
+        return BITSET::get_num_data_words(meta)*sizeof(A);      
+      break;
+      case type::UINTEGER :
+        return meta->cardinality*sizeof(A);      
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+        return 0;
+      break;
+    }
   }
 
   template <class M>

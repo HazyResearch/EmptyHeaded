@@ -63,13 +63,30 @@ struct BLASVector{
   }
 
   //calls index of then calls get below.
+  template <class A>
+  static inline size_t get_num_bytes(
+    const Meta * const restrict meta) 
+  {
+    const size_t num_words = BITSET::get_num_data_words(meta); 
+    return BITSET::get_num_index_bytes(meta)+num_words*sizeof(A)*64;
+  }
+
+  template <class A>
+  static inline size_t get_num_annotation_bytes(
+    const Meta * const restrict meta) 
+  {
+    const size_t num_words = BITSET::get_num_data_words(meta)*64; 
+    return num_words*sizeof(A);
+  }
+
+  //calls index of then calls get below.
   template <class M>
   static inline size_t get_num_index_bytes(
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
-    return BITSET::get_num_index_bytes(meta);
+    return sizeof(size_t)+sizeof(Meta)+BITSET::get_num_index_bytes(meta);
   }
 
   //look up a data value

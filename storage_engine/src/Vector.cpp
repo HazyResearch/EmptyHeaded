@@ -8,6 +8,12 @@ uint32_t Vector<T,A,M>::indexOf(const uint32_t data) const{
 
 //calls index of then calls get below.
 template <class T, class A, class M>
+uint8_t* Vector<T,A,M>::get_this() const{
+  return memoryBuffer->get_address(bufferIndex);
+}
+
+//calls index of then calls get below.
+template <class T, class A, class M>
 A Vector<T,A,M>::get(const uint32_t data) const{
   return T:: template get<A,M>(
     data,

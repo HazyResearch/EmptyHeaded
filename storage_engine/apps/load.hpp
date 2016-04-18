@@ -102,8 +102,7 @@ std::pair<Trie<BLASVector,float, ParMemoryBuffer>*,Trie<BLASVector,float, ParMem
   }
   return std::make_pair(Trie_graph_0_1,Trie_graph_1_0);
 }
-/*
-std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> 
+std::pair<Trie<BLASVector,float, ParMemoryBuffer>*,Trie<BLASVector,float, ParMemoryBuffer>*> 
   load_dense_matrix_and_transpose(
     const size_t I,
     const size_t J){
@@ -166,13 +165,13 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
   /////////////////////////////////////////////////////////////////////////////
   //Build Matrix
   /////////////////////////////////////////////////////////////////////////////
-  Trie<float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
+  Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
   {
     std::vector<size_t> order_0_1 = {0, 1};
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_graph_0_1 = new Trie<float, ParMemoryBuffer>(
+      Trie_graph_0_1 = new Trie<BLASVector,float, ParMemoryBuffer>(
           "",
           &EncodedColumnStore_graph.max_set_size, 
           &EncodedColumnStore_graph.data,
@@ -183,14 +182,14 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
     Trie_graph_0_1->encodings.push_back((void*)Encoding_uint32_t);
     ////////////////////emitWriteBinaryTrie////////////////////
   }
-  Trie<float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
+  Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
   {
     std::vector<size_t> order_1_0 = {1, 0};
     EncodedColumnStore EncodedColumnStore_graph_1_0(&EncodedColumnStore_graph, order_1_0);
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_graph_1_0 = new Trie<float, ParMemoryBuffer>(
+      Trie_graph_1_0 = new Trie<BLASVector,float, ParMemoryBuffer>(
           "",
           &EncodedColumnStore_graph_1_0.max_set_size, 
           &EncodedColumnStore_graph_1_0.data,
@@ -203,7 +202,7 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
   }
   return std::make_pair(Trie_graph_0_1,Trie_graph_1_0);
 }
-
+/*
 std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> 
   load_vector_and_matrix(
     std::string vectorfile,

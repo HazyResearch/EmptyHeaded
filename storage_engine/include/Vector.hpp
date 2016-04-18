@@ -45,9 +45,22 @@ struct Vector{
     buffer_index_in.index = 0;
     memoryBuffer = memory_buffer_in;
     bufferIndex = buffer_index_in;
-    //placement new
-    //meta = new (memory_buffer_in->get_address(bufferIndex)) Meta();
   }
+
+  Vector(
+    const size_t tid,
+    M* memory_buffer_in,
+    const Vector<T,A,M>& restrict v_in)
+  {
+    memoryBuffer = memory_buffer_in;
+    const size_t cpy_size = T:: template get_num_bytes<A>(v_in.get_meta());
+    const size_t index = memory_buffer_in->get_offset(tid);
+    uint8_t *buf = memory_buffer_in->get_next(tid,cpy_size);
+    memcpy((void*)buf,(void*)v_in.memoryBuffer->get_address(v_in.bufferIndex),cpy_size);
+    bufferIndex.tid = tid;
+    bufferIndex.index = index;
+  }
+
 
   Vector(
     const size_t tid,
@@ -62,8 +75,6 @@ struct Vector{
     bufferIndex.index = index;
   }
 
-  /*
-  Needs to be fixed to allocate an annotation.
   Vector(
     const size_t tid,
     M* memory_buffer_in,
@@ -73,15 +84,15 @@ struct Vector{
   {
     memoryBuffer = memory_buffer_in;
     const size_t index = memory_buffer_in->get_offset(tid);
-    uint8_t *buf = memory_buffer_in->get_next(tid,(index_len+anno_len+sizeof(Meta)));
-    memcpy((void*)buf,(void*)data,(index_len+sizeof(Meta)));
-    memset((void*)(buf+index_len+sizeof(Meta)),(uint8_t)0,anno_len);
-    //placement new
-    //meta = new (buf) Meta();
+    uint8_t *buf = memory_buffer_in->get_next(tid,(index_len+anno_len));
+    memcpy((void*)buf,(void*)data,index_len);
+    memset((void*)(buf+index_len),(uint8_t)0,anno_len);
+
     bufferIndex.tid = tid;
     bufferIndex.index = index;
   }
 
+  /*
   Vector(
     const size_t tid,
     M* memory_buffer_in,
@@ -95,13 +106,13 @@ struct Vector{
     uint8_t *buf = memory_buffer_in->get_next(tid,(index_len+anno_len+sizeof(Meta)));
     memcpy((void*)buf,(void*)data,(index_len+sizeof(Meta)));
     memcpy((void*)(buf+index_len+sizeof(Meta)),(void*)anno,anno_len);
-    //placement new
-    //meta = new (buf) Meta();
+
     bufferIndex.tid = tid;
     bufferIndex.index = index;
   }
   */
 
+  uint8_t* get_this() const;
 
   //Find the index of a data elem.
   uint32_t indexOf(const uint32_t data) const;
@@ -114,6 +125,12 @@ struct Vector{
   uint8_t* get_index_data() const;
 
   size_t get_num_index_bytes() const;
+
+  template<class AA>
+  size_t get_num_annotation_bytes() const {
+    return T:: template get_num_annotation_bytes<AA>(
+      T::get_meta(memoryBuffer,bufferIndex));
+  }
 
   type::layout get_type() const;
 
