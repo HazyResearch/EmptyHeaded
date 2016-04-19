@@ -424,7 +424,7 @@ Trie<T,A,M>::Trie(
     dimensions.push_back(dimension);
   }
   const float density = ((float)num_rows_in/(float)full_range);
-
+  std::cout << "DENSITY: " << density << std::endl;
   //FIXME: place a real hook here. if BLAS VECTOR
   if(annotated){
     const size_t num_anno_bytes = sizeof(A)*full_range;
