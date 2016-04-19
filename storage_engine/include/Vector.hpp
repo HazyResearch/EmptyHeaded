@@ -92,25 +92,25 @@ struct Vector{
     bufferIndex.index = index;
   }
 
-  /*
   Vector(
     const size_t tid,
     M* memory_buffer_in,
     const uint8_t * const restrict data,
     const size_t index_len,
     A* anno,
-    const size_t anno_len)
+    const size_t anno_len,
+    const size_t anno_offset)
   {
     memoryBuffer = memory_buffer_in;
     const size_t index = memory_buffer_in->get_offset(tid);
-    uint8_t *buf = memory_buffer_in->get_next(tid,(index_len+anno_len+sizeof(Meta)));
-    memcpy((void*)buf,(void*)data,(index_len+sizeof(Meta)));
-    memcpy((void*)(buf+index_len+sizeof(Meta)),(void*)anno,anno_len);
+    uint8_t *buf = memory_buffer_in->get_next(tid,(index_len+anno_len));
+    memcpy((void*)buf,(void*)data,index_len);
+    A* anno_buf = T::template get_annotation<A,M>(anno_offset,memoryBuffer,bufferIndex);
+    memcpy((void*)anno_buf,(void*)anno,anno_len);
 
     bufferIndex.tid = tid;
     bufferIndex.index = index;
   }
-  */
 
   uint8_t* get_this() const;
 

@@ -21,6 +21,7 @@ struct Trie{
   size_t num_rows;
   size_t num_columns;
   M *memoryBuffers;
+  std::vector<size_t> dimensions;
   std::vector<void*> encodings;
   A annotation;
 

@@ -8,7 +8,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 512;
+  const size_t mat_size = 8;
   auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);
 
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
@@ -20,20 +20,30 @@ int main()
   //S->print();
 
   //temporary buffers for aggregate intersections.
+
   ParMemoryBuffer **tmp_buffers = new ParMemoryBuffer*[4];
   for(size_t i = 0; i < 4; i++){
     tmp_buffers[i] = new ParMemoryBuffer(100);
   }
-  TrieBuffer<float,ParMemoryBuffer>* tmp_block = 
-    new TrieBuffer<float,ParMemoryBuffer>(2,true);
+  TrieBuffer<void*>* tmp_block = 
+    new TrieBuffer<void*>(2);
 
   auto query_time = timer::start_clock();
 
-  Trie<EHVector,float,ParMemoryBuffer>* result = 
-    new Trie<EHVector,float,ParMemoryBuffer>(
+  Trie<BLASVector,float,ParMemoryBuffer>* result = 
+    new Trie<BLASVector,float,ParMemoryBuffer>(
       "", 
       4, 
       true);
+  result->dimensions.push_back(R->dimensions.at(0));
+  result->dimensions.push_back(R->dimensions.at(1));
+  float* result_anno = (float*)result->memoryBuffers->anno->get_next(R->dimensions.at(0)*R->dimensions.at(1)*sizeof(float));
+  for(size_t i = 0; i < R->dimensions.at(0); i++){
+    for(size_t j = 0; j < R->dimensions.at(1); j++){
+      //std::cout << i*R->dimensions.at(1)+j <<  " " << i+j << std::endl;
+      result_anno[i*R->dimensions.at(1)+j] = i*R->dimensions.at(1)+j;
+    }
+  }
 
   //R(i,k),S(j,k)
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_I(
@@ -71,9 +81,9 @@ int main()
           S_K);
 
       std::vector<size_t> block_offsets;
-      block_offsets.push_back(I_d*BLOCK_SIZE);
-      block_offsets.push_back(J_d*BLOCK_SIZE);
-      tmp_block->zero(block_offsets); //zero out the memory.
+      block_offsets.push_back(I_d);
+      block_offsets.push_back(J_d);
+      tmp_block->zero(result->dimensions,block_offsets); //zero out the memory.
       RESULT_K.foreach_index([&](const uint32_t K_i, const uint32_t K_d){
         Vector<EHVector,BufferIndex,ParMemoryBuffer> R_i(
           R->memoryBuffers,
@@ -83,13 +93,10 @@ int main()
           S->memoryBuffers,
           S_K.get(K_d));
 
-        /*
         Vector<BLASVector,void*,ParMemoryBuffer> RESULT_i = 
           ops::union_in_place(tmp_block->at(0,0),R_i);
-          */
-        R_i.foreach_index([&](const uint32_t r_i, const uint32_t r_d){
-          Vector<BLASVector,void*,ParMemoryBuffer> RESULT_j = 
-            ops::union_in_place(tmp_block->at(1,r_d),S_j);
+        RESULT_i.foreach_index([&](const uint32_t r_i, const uint32_t r_d){ 
+          ops::union_in_place(tmp_block->at(1,r_d),S_j);
         });
       });
       RESULT_J.set(J_i,J_d,tmp_block->copy(0,result->memoryBuffers).bufferIndex);
@@ -100,7 +107,7 @@ int main()
   timer::stop_clock("QUERY",query_time);
 
   std::cout << "RESULT" << std::endl;
-  //result->print();
+  result->print();
 
   return 0;
 }

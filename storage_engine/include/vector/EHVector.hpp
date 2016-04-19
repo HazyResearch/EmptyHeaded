@@ -30,6 +30,17 @@ struct EHVector{
     return memoryBuffer->get_address(bufferIndex)+sizeof(Meta);
   }
 
+  template <class A,class M>
+  static inline A* get_annotation(
+    const size_t anno_offset,
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex
+  ){
+    (void) anno_offset;
+    return (A*)(memoryBuffer->get_address(bufferIndex)+
+      get_num_index_bytes(memoryBuffer,bufferIndex));
+  }
+
   template <class M>
   static inline Meta* get_meta(
     const M * const restrict memoryBuffer,
@@ -227,7 +238,7 @@ struct EHVector{
       case type::BITSET : 
         return sizeof(Meta)
           +BITSET::get_num_index_bytes(meta)
-          +(BITSET::get_num_data_words(meta)*sizeof(A));
+          +(BITSET::get_num_data_words(meta)*64*sizeof(A));
       break;
       case type::UINTEGER :
         return sizeof(Meta)
@@ -248,7 +259,7 @@ struct EHVector{
   {
     switch(meta->type){
       case type::BITSET : 
-        return BITSET::get_num_data_words(meta)*sizeof(A);      
+        return BITSET::get_num_data_words(meta)*64*sizeof(A);      
       break;
       case type::UINTEGER :
         return meta->cardinality*sizeof(A);      

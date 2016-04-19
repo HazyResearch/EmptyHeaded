@@ -411,17 +411,22 @@ Trie<T,A,M>::Trie(
   //compute the density of the relation
   //allocate annotation and fill in if dense
   
+  //some statistics
+  size_t full_range = (num_columns_in == 1) ? ((start_max_set_sizes->at(0) + 64 - 1) / 64) * 64: start_max_set_sizes->at(0);
+  dimensions.push_back(full_range);
+  for(size_t i = 1; i < num_columns_in; i++){
+    size_t dimension = 0; 
+    if(i == num_columns_in-1)
+      dimension = ((start_max_set_sizes->at(i) + 64 - 1) / 64) * 64;
+    else
+      dimension = start_max_set_sizes->at(i);
+    full_range *= dimension;
+    dimensions.push_back(dimension);
+  }
+  const float density = ((float)num_rows_in/(float)full_range);
+
   //FIXME: place a real hook here. if BLAS VECTOR
   if(annotated){
-    size_t full_range = (num_columns_in == 1) ? ((start_max_set_sizes->at(0) + 64 - 1) / 64) * 64: start_max_set_sizes->at(0);
-    for(size_t i = 1; i < num_columns_in; i++){
-      if(i == num_columns_in-1)
-        full_range *= ((start_max_set_sizes->at(i) + 64 - 1) / 64) * 64;
-      else
-        full_range *= start_max_set_sizes->at(i);
-    }
-    const float density = ((float)num_rows_in/(float)full_range);
-
     const size_t num_anno_bytes = sizeof(A)*full_range;
     memoryBuffers->anno->get_next(num_anno_bytes);
     A* anno = (A*)memoryBuffers->anno->get_address(0);

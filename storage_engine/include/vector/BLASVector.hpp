@@ -22,6 +22,16 @@ struct BLASVector{
       return 0;
   }
 
+  template <class A,class M>
+  static inline A* get_annotation(
+    const size_t anno_offset,
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex
+  ){
+    (void) bufferIndex; (void) memoryBuffer;
+    return ((A*)memoryBuffer->anno)+anno_offset;
+  }
+
   template <class M>
   static inline uint8_t* get_index_data(
     const M * const restrict memoryBuffer,
