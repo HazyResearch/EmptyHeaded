@@ -13,6 +13,10 @@ Vector | Indices (uint/bitset/block) | Annotations
 */
 
 struct EHVector{
+  static inline bool is_blas(){
+    return false;
+  }
+
   //Find the index of a data elem.
   template <class A, class M>
   static inline uint32_t indexOf(

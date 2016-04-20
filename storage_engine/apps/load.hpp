@@ -2,7 +2,7 @@
 #include "Encoding.hpp"
 #include "Trie.hpp"
 
-std::pair<Trie<BLASVector,float, ParMemoryBuffer>*,Trie<BLASVector,float, ParMemoryBuffer>*> 
+std::pair<Trie<EHVector,float, ParMemoryBuffer>*,Trie<EHVector,float, ParMemoryBuffer>*> 
   load_dense_matrix(
     const size_t I,
     const size_t J){
@@ -65,13 +65,15 @@ std::pair<Trie<BLASVector,float, ParMemoryBuffer>*,Trie<BLASVector,float, ParMem
   /////////////////////////////////////////////////////////////////////////////
   //Build Matrix
   /////////////////////////////////////////////////////////////////////////////
-  Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
+  Trie<EHVector,float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
   {
+    std::vector<size_t> block = {0};
     std::vector<size_t> order_0_1 = {0, 1};
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_graph_0_1 = new Trie<BLASVector,float, ParMemoryBuffer>(
+      Trie_graph_0_1 = new Trie<EHVector,float, ParMemoryBuffer>(
+          block,
           "",
           &EncodedColumnStore_graph.max_set_size, 
           &EncodedColumnStore_graph.data,
@@ -82,14 +84,16 @@ std::pair<Trie<BLASVector,float, ParMemoryBuffer>*,Trie<BLASVector,float, ParMem
     Trie_graph_0_1->encodings.push_back((void*)Encoding_uint32_t);
     ////////////////////emitWriteBinaryTrie////////////////////
   }
-  Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
+  Trie<EHVector,float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
   {
+    std::vector<size_t> block = {1};
     std::vector<size_t> order_1_0 = {0, 1};
     EncodedColumnStore EncodedColumnStore_graph_1_0(&EncodedColumnStore_graph, order_1_0);
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_graph_1_0 = new Trie<BLASVector,float, ParMemoryBuffer>(
+      Trie_graph_1_0 = new Trie<EHVector,float, ParMemoryBuffer>(
+          block,
           "",
           &EncodedColumnStore_graph_1_0.max_set_size, 
           &EncodedColumnStore_graph_1_0.data,
@@ -168,10 +172,12 @@ std::pair<Trie<BLASVector,float, ParMemoryBuffer>*,Trie<BLASVector,float, ParMem
   Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
   {
     std::vector<size_t> order_0_1 = {0, 1};
+    std::vector<size_t> block = {0,1};
     {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_graph_0_1 = new Trie<BLASVector,float, ParMemoryBuffer>(
+          block,
           "",
           &EncodedColumnStore_graph.max_set_size, 
           &EncodedColumnStore_graph.data,
@@ -184,12 +190,14 @@ std::pair<Trie<BLASVector,float, ParMemoryBuffer>*,Trie<BLASVector,float, ParMem
   }
   Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
   {
+    std::vector<size_t> block = {0,1};
     std::vector<size_t> order_1_0 = {1, 0};
     EncodedColumnStore EncodedColumnStore_graph_1_0(&EncodedColumnStore_graph, order_1_0);
     {
       auto start_time = timer::start_clock();
       // buildTrie
       Trie_graph_1_0 = new Trie<BLASVector,float, ParMemoryBuffer>(
+          block,
           "",
           &EncodedColumnStore_graph_1_0.max_set_size, 
           &EncodedColumnStore_graph_1_0.data,

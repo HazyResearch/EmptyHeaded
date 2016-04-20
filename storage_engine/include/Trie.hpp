@@ -20,6 +20,7 @@ struct Trie{
   bool annotated;
   size_t num_rows;
   size_t num_columns;
+
   M *memoryBuffers;
   std::vector<size_t> dimensions;
   std::vector<void*> encodings;
@@ -29,6 +30,7 @@ struct Trie{
   void foreach(const std::function<void(std::vector<uint32_t>*,A)> body);
 
   Trie<T,A,M>(
+    const std::vector<size_t> blocked_dimensions,
     std::string path,
     const std::vector<uint32_t>* restrict max_set_sizes, 
     const std::vector<std::vector<uint32_t> >* restrict attr_in, 

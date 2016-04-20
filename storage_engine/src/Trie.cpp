@@ -390,6 +390,7 @@ void build_trie(
 //builds the trie from an encoded relation
 template<class T,class A, class M>
 Trie<T,A,M>::Trie(
+  const std::vector<size_t> blocked_dimensions,
   std::string path,
   const std::vector<uint32_t>* restrict start_max_set_sizes, 
   const std::vector<std::vector<uint32_t>>* restrict start_attr,
@@ -403,14 +404,6 @@ Trie<T,A,M>::Trie(
   memoryBuffers = new M(path,2);  
 
   //////////////////////////////////////////////////////////////////////////////
-  //if dense
-  //allocate N^2
-  //scan and fill in based on indices
-  //if sparse
-  //proceed per usual
-  //compute the density of the relation
-  //allocate annotation and fill in if dense
-  
   //some statistics
   size_t full_range = (num_columns_in == 1) ? ((start_max_set_sizes->at(0) + 64 - 1) / 64) * 64: start_max_set_sizes->at(0);
   dimensions.push_back(full_range);
@@ -425,8 +418,8 @@ Trie<T,A,M>::Trie(
   }
   const float density = ((float)num_rows_in/(float)full_range);
   std::cout << "DENSITY: " << density << std::endl;
-  //FIXME: place a real hook here. if BLAS VECTOR
-  if(annotated){
+  
+  if(annotated && T::is_blas()){
     const size_t num_anno_bytes = sizeof(A)*full_range;
     memoryBuffers->anno->get_next(num_anno_bytes);
     A* anno = (A*)memoryBuffers->anno->get_address(0);
@@ -441,20 +434,18 @@ Trie<T,A,M>::Trie(
       index += start_attr->at(num_columns_in-1).at(i);
       anno[index] = ((const A* const)annotations.at(0))[i];
     }
-    
-    /*
-    for(size_t i = 0; i < full_range; i++){
-      std::cout << "ANNO: " << i << " " << anno[i] << std::endl;
-    }
-    */
   }
+
   //////////////////////////////////////////////////////////////////////////////
   //creates cache blocks for our tries
   std::vector<uint32_t>* max_set_sizes = new std::vector<uint32_t>();
   for(size_t i = 0; i < num_columns_in; i++){
-    max_set_sizes->insert(
-      max_set_sizes->begin(),
-      start_max_set_sizes->at(num_columns_in-i-1));
+    auto it = std::find(blocked_dimensions.begin(),blocked_dimensions.end(),i);
+    if(it != blocked_dimensions.end()){
+      max_set_sizes->insert(
+        max_set_sizes->end(),
+        start_max_set_sizes->at(i));
+    }
   }
   max_set_sizes->insert(
     max_set_sizes->end(),
@@ -466,17 +457,20 @@ Trie<T,A,M>::Trie(
   bool first = true;
   for(size_t i = 0; i < num_rows_in; i++){
     size_t anno_offset = 0;
+    size_t blocks_offset = 0;
     for(size_t j = 0; j < num_columns_in; j++){
-      if(first)
-        blocks->push_back(std::vector<uint32_t>());
-      blocks->at(j).push_back((start_attr->at(j).at(i))/BLOCK_SIZE);    
+      auto it = std::find(blocked_dimensions.begin(),blocked_dimensions.end(),j);
+      if(it != blocked_dimensions.end()){
+        if(first)
+          blocks->push_back(std::vector<uint32_t>());
+        blocks->at(blocks_offset++).push_back((start_attr->at(j).at(i))/BLOCK_SIZE);
+      }
 
       if(j != 0){
         const size_t dense_block_size = (j == num_columns_in-1) ?
          ((start_max_set_sizes->at(j) + 64 - 1) / 64) * 64 : start_max_set_sizes->at(j);
         anno_offset += std::pow(dense_block_size,j)*start_attr->at(j-1).at(i);
-      }
-      else
+      } else
         anno_offset += start_attr->at(num_columns_in-1).at(i);
     }
     first = false;
@@ -486,13 +480,14 @@ Trie<T,A,M>::Trie(
   std::vector<std::vector<uint32_t>>* attr_in = new std::vector<std::vector<uint32_t>>();
   attr_in->insert(attr_in->begin(),blocks->begin(),blocks->end());
   attr_in->insert(attr_in->end(),start_attr->begin(),start_attr->end());
+  
   //////////////////////////////////////////////////////////////////////////////////
 
   annotation = (A)0;
   num_rows = attr_in->at(0).size();
   num_columns = attr_in->size();
 
-  assert(num_columns != 0  && num_rows != 0);
+  assert(num_columns != 0 && num_rows != 0);
 
   //Setup indices buffer
   uint32_t *indicies = new uint32_t[num_rows];
@@ -506,7 +501,6 @@ Trie<T,A,M>::Trie(
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
 
   //DEBUG
-  /*
   for(size_t i = 0; i < num_rows; i++){
     //std::cout << indicies[i] << std::endl;
     for(size_t j = 0; j < num_columns; j++){
@@ -514,7 +508,6 @@ Trie<T,A,M>::Trie(
     }
     std::cout << std::endl;
   }
-  */
 
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();

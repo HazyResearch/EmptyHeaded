@@ -13,6 +13,10 @@ Vector | Indices (uint/bitset/block) | Annotations
 */
 
 struct BLASVector{
+  static inline bool is_blas(){
+    return true;
+  }
+
   //Find the index of a data elem.
   template <class A, class M>
   static inline uint32_t indexOf(

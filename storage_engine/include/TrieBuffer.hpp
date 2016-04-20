@@ -14,27 +14,11 @@ The union actually helps us take care of block sizes that
 do not fit into the BLOCK_SIZE*BLOCK_SIZE chunk we might be computing
 over. We will just compute and copy the part that we need.
 */
-  
-template<class A>
-std::tuple<A*,size_t> tb_alloc_anno(
-  ParMemoryBuffer* memoryBuffers,
-  const size_t b_size, 
-  const size_t num_columns)
-{
-  const size_t anno_block = pow(b_size,num_columns);
-  A* anno = (A*)memoryBuffers->anno->get_next(anno_block*sizeof(A));
-  return std::tuple<A*,size_t>(anno,anno_block);
-}
 
-template<>
-std::tuple<void**,size_t> tb_alloc_anno(
-  ParMemoryBuffer* memoryBuffers,
-  const size_t b_size, 
-  const size_t num_columns)
-{
-  (void) b_size; (void) num_columns;
-  return std::tuple<void**,size_t>((void**)NULL,0);
-}
+/*
+-copy only valid for BLAS tries.
+-for EH tries it should be .sparsify
+*/
 
 template<class A>
 struct TrieBuffer{
@@ -43,11 +27,20 @@ struct TrieBuffer{
   A* anno;
   size_t num_anno;
 
+  void set_anno(
+    ParMemoryBuffer* memoryBuffers)
+  {
+    num_anno = pow(BLOCK_SIZE,num_columns);
+    anno = (A*)memoryBuffers->anno->get_address(0);
+  }
+
   TrieBuffer<A>(
+    ParMemoryBuffer* memoryBuffersIn,
     const size_t num_columns_in){
     num_columns = num_columns_in;
 
     ParMemoryBuffer* memoryBuffers = new ParMemoryBuffer("",2);
+    memoryBuffers->anno = memoryBuffersIn->anno; //tricky but we want these to point to results anno
 
     const size_t num_words = (BLOCK_SIZE >> ADDRESS_BITS_PER_WORD)+1;
     const size_t bytes_per_level =
@@ -74,13 +67,10 @@ struct TrieBuffer{
       buffers.push_back(b);
     }
 
-    auto tup = tb_alloc_anno<A>(memoryBuffers,BLOCK_SIZE,num_columns);
-    anno = std::get<0>(tup);
-    num_anno = std::get<1>(tup);
+    anno = NULL;
+    num_anno = 0;
   };
 
-  //need to have a copy for void* 
-  //copy into 1-level buffer copy into EHVector
   inline Vector<EHVector,BufferIndex,ParMemoryBuffer> copy(
     const size_t tid,
     ParMemoryBuffer* memoryBuffer){
@@ -114,10 +104,12 @@ struct TrieBuffer{
     for(size_t i = 0; i < num_columns; i++){
       const size_t num = pow(BLOCK_SIZE,i);
       const size_t num_words = (BLOCK_SIZE >> ADDRESS_BITS_PER_WORD)+1;
+
       size_t anno_offset2 = 0;
       for(size_t j = i; j > 0; j--){
         anno_offset2 += dimensions.at(j)*BLOCK_SIZE*offset.at(j-1);
       }
+
       for(size_t j = 0; j < num; j++){
         Vector<BLASVector,void*,ParMemoryBuffer> cur = 
           buffers.at(i).at(j);
@@ -128,11 +120,14 @@ struct TrieBuffer{
         m->end = (offset.at(i)*BLOCK_SIZE)+BLOCK_SIZE-1;
         m->cardinality = 0;
         m->type = type::BITSET;
-        const size_t anno_offset = anno_offset2+(offset.at(i)*BLOCK_SIZE)+(j*dimensions.at(i));
+        const size_t anno_offset = anno_offset2+
+          (offset.at(i)*BLOCK_SIZE)+
+          (j*dimensions.at(i));
+        std::cout << "ANNO OFF: " << anno_offset << std::endl;
         *(size_t*)cur.get_this() = anno_offset;
       }
     }
-    memset(anno,0,num_anno*sizeof(A));
+    //memset(anno,0,num_anno*sizeof(A));
   };
 
   inline void print(const size_t I, const size_t J){
