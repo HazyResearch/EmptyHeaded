@@ -98,18 +98,18 @@ struct Vector{
     const uint8_t * const restrict data,
     const size_t index_len,
     A* anno,
-    const size_t anno_len,
-    const size_t anno_offset)
+    const size_t anno_len)
   {
     memoryBuffer = memory_buffer_in;
     const size_t index = memory_buffer_in->get_offset(tid);
     uint8_t *buf = memory_buffer_in->get_next(tid,(index_len+anno_len));
     memcpy((void*)buf,(void*)data,index_len);
-    A* anno_buf = T::template get_annotation<A,M>(anno_offset,memoryBuffer,bufferIndex);
-    memcpy((void*)anno_buf,(void*)anno,anno_len);
 
     bufferIndex.tid = tid;
     bufferIndex.index = index;
+
+    A* anno_buf = T::template get_annotation<A,M>(memoryBuffer,bufferIndex);
+    memcpy((void*)anno_buf,(void*)anno,anno_len);
   }
 
   uint8_t* get_this() const;
@@ -147,6 +147,10 @@ struct Vector{
 
   //look up a data value
   bool contains(const uint32_t key) const;
+
+  inline A* get_annotation() const{
+    return T:: template get_annotation<A,M>(memoryBuffer,bufferIndex);
+  }
 
   inline Meta* get_meta() const{
     return T::get_meta(memoryBuffer,bufferIndex);

@@ -11,7 +11,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 64;
+  const size_t mat_size = 4;
   auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);
 
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
@@ -75,7 +75,7 @@ int main()
         S_J.get(J_d));
 
       Vector<EHVector,void*,ParMemoryBuffer> RESULT_K = 
-        ops::agg_intersect<BufferIndex,BufferIndex>(
+        ops::agg_intersect<ops::BS_BS_VOID<void*>,void*,BufferIndex,BufferIndex>(
           0,
           tmp_buffers[0],
           R_K,
@@ -100,6 +100,7 @@ int main()
           ops::union_in_place(tmp_block->at(1,r_d),S_j);
         });
       });
+      //std::cout << "COPY: " << I_d << " " << J_d*BLOCK_SIZE << std::endl;
       RESULT_J.set(J_i,J_d,tmp_block->copy(0,result->memoryBuffers).bufferIndex);
     });
     RESULT_I.set(I_i,I_d,RESULT_J.bufferIndex);
@@ -107,10 +108,13 @@ int main()
 
   //call MKL.
   cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-    mat_size,mat_size,mat_size, 1.0,
-    (float*)R->memoryBuffers->anno->get_address(0),mat_size,
-    (float*)S->memoryBuffers->anno->get_address(0),mat_size,
-    0.0, result_anno, mat_size);
+    R->dimensions.at(0), //num rows R
+    S->dimensions.at(0), //num cols S (we have the transpose)
+    R->dimensions.at(1),  //num cols R num rows S
+    1.0, //scalar alpha
+    (float*)R->memoryBuffers->anno->get_address(0),R->dimensions.at(1),
+    (float*)S->memoryBuffers->anno->get_address(0),S->dimensions.at(1),
+    0.0, result_anno, result->dimensions.at(1));
 
   timer::stop_clock("QUERY",query_time);
 

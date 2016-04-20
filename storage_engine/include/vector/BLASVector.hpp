@@ -24,12 +24,12 @@ struct BLASVector{
 
   template <class A,class M>
   static inline A* get_annotation(
-    const size_t anno_offset,
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex
   ){
     (void) bufferIndex; (void) memoryBuffer;
-    return ((A*)memoryBuffer->anno)+anno_offset;
+    const size_t anno_offset = *((size_t*)(memoryBuffer->get_address(bufferIndex)));
+    return ((A*)memoryBuffer->anno->get_address(0))+anno_offset;
   }
 
   template <class M>

@@ -32,11 +32,9 @@ struct EHVector{
 
   template <class A,class M>
   static inline A* get_annotation(
-    const size_t anno_offset,
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex
   ){
-    (void) anno_offset;
     return (A*)(memoryBuffer->get_address(bufferIndex)+
       get_num_index_bytes(memoryBuffer,bufferIndex));
   }

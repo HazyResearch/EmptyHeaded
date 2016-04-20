@@ -11,7 +11,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 64;
+  const size_t mat_size = 4;
   auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);
 
   //auto tup = load_matrix_and_transpose("../../../matrix_benchmarking/data/simple.tsv");
@@ -25,8 +25,8 @@ int main()
   for(size_t i = 0; i < 4; i++){
     tmp_buffers[i] = new ParMemoryBuffer(100);
   }
-  TrieBuffer<void*>* tmp_block = 
-    new TrieBuffer<void*>(2);
+  TrieBuffer<float>* tmp_block = 
+    new TrieBuffer<float>(2);
 
   auto query_time = timer::start_clock();
 
@@ -37,14 +37,7 @@ int main()
       true);
   result->dimensions.push_back(R->dimensions.at(0));
   result->dimensions.push_back(R->dimensions.at(1));
-  float* result_anno = (float*)result->memoryBuffers->anno->get_next(R->dimensions.at(0)*R->dimensions.at(1)*sizeof(float));
-  /*
-  for(size_t i = 0; i < R->dimensions.at(0); i++){
-    for(size_t j = 0; j < R->dimensions.at(1); j++){
-      //std::cout << i*R->dimensions.at(1)+j <<  " " << i+j << std::endl;
-      result_anno[i*R->dimensions.at(1)+j] = i*R->dimensions.at(1)+j;
-    }
-  }*/
+  float* result_anno = (float*)result->memoryBuffers->anno->get_next((R->dimensions.at(0)*R->dimensions.at(1)*sizeof(float)));
 
   //R(i,k),S(j,k)
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_I(
@@ -75,7 +68,7 @@ int main()
         S_J.get(J_d));
 
       Vector<EHVector,void*,ParMemoryBuffer> RESULT_K = 
-        ops::agg_intersect<BufferIndex,BufferIndex>(
+        ops::agg_intersect<ops::BS_BS_VOID<void*>,void*,BufferIndex,BufferIndex>(
           0,
           tmp_buffers[0],
           R_K,
@@ -97,20 +90,32 @@ int main()
         Vector<BLASVector,void*,ParMemoryBuffer> RESULT_i = 
           ops::union_in_place(tmp_block->at(0,0),R_i);
         RESULT_i.foreach_index([&](const uint32_t r_i, const uint32_t r_d){ 
-          ops::union_in_place(tmp_block->at(1,r_d),S_j);
+          Vector<BLASVector,float,ParMemoryBuffer> R_k(
+            R->memoryBuffers,
+            R_i.get(r_d));
+
+          Vector<BLASVector,void*,ParMemoryBuffer> tmp_j = 
+            ops::union_in_place(tmp_block->at(1,r_d),S_j);
+          Vector<BLASVector,float,ParMemoryBuffer> RESULT_j(tmp_j.memoryBuffer,tmp_j.bufferIndex);
+          RESULT_j.foreach_index([&](const uint32_t j_i, const uint32_t j_d){ 
+            Vector<BLASVector,float,ParMemoryBuffer> S_k(
+              S->memoryBuffers,
+              S_j.get(j_d));
+
+            const float anno_value = ops::agg_intersect<ops::BS_BS_SUM<float>,float>(
+              0,
+              result->memoryBuffers,
+              R_k, 
+              S_k);
+            RESULT_j.set(j_i,j_d,anno_value);
+          });
         });
       });
-      RESULT_J.set(J_i,J_d,tmp_block->copy(0,result->memoryBuffers).bufferIndex);
+      Vector<EHVector,BufferIndex,ParMemoryBuffer> tmp = tmp_block->copy(0,result->memoryBuffers);
+      RESULT_J.set(J_i,J_d,tmp.bufferIndex);
     });
     RESULT_I.set(I_i,I_d,RESULT_J.bufferIndex);
   });
-
-  //call MKL.
-  cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-    mat_size,mat_size,mat_size, 1.0,
-    (float*)R->memoryBuffers->anno->get_address(0),mat_size,
-    (float*)S->memoryBuffers->anno->get_address(0),mat_size,
-    0.0, result_anno, mat_size);
 
   timer::stop_clock("QUERY",query_time);
 

@@ -3,41 +3,102 @@
 
 namespace ops{
 
+  template<class CA>
   struct BS_BS_VOID{
-    template<class CA, class AA, class BA>
-    static inline void compute_avx(
+    inline void init(){}
+    inline void compute_avx(
       CA * restrict c, 
-      const AA * restrict a, 
-      const BA * restrict b){
+      const CA * restrict a, 
+      const CA * restrict b){
       (void) c; (void) a; (void)b;
       return;
     }
-    template<class CA, class AA, class BA>
-    static inline void compute_word(
+    inline void compute_word(
       CA * const restrict c, 
-      const AA * const restrict a, 
-      const BA * const restrict b){
+      const CA * const restrict a, 
+      const CA * const restrict b){
       (void) c; (void) a; (void)b;
       return;
     }
+    inline CA finish(CA * restrict c){(void)c; return (CA)NULL;}
   };
 
+  template<class CA>
+  struct BS_BS_SUM{
+    __m256 r;
+    float result;
+    inline void init(){}
+    inline void compute_avx(
+      CA * restrict c, 
+      const CA * restrict a, 
+      const CA * restrict b){
+      (void) c; (void) a; (void)b;
+      return;
+    }
+    inline void compute_word(
+      CA * const restrict c, 
+      const CA * const restrict a, 
+      const CA * const restrict b){
+      (void) c; (void) a; (void)b;
+      return;
+    }
+    inline CA finish(CA * restrict c){(void)c; return (CA)NULL;}
+  };
+
+  template<>
+  void BS_BS_SUM<float>::init(){
+    r = _mm256_set1_ps(0.0f);
+  }
+
+  template<>
+  void BS_BS_SUM<float>::compute_avx(
+    float * restrict c, 
+    const float * restrict a, 
+    const float * restrict b){
+    const size_t blocks_per_reg = (256/8);
+    for(size_t i = 0; i < blocks_per_reg; i++){
+      const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8]);
+      const __m256 m_b_2 = _mm256_loadu_ps(&b[i*8]);
+      r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
+    }
+  }
+
+  template<>
+  inline void BS_BS_SUM<float>::compute_word(
+    float * const restrict c, 
+    const float * const restrict a, 
+    const float * const restrict b){
+    const size_t blocks_per_reg = (64/8);
+    for(size_t i = 0; i < blocks_per_reg; i++){
+      const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8]);
+      const __m256 m_b_2 = _mm256_loadu_ps(&b[i*8]);
+      r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
+    }
+  }
+
+  template<>
+  inline float BS_BS_SUM<float>::finish(float * restrict c){
+    return utils::_mm256_reduce_add_ps(r);
+  }
+
   template<class AGG,class CA, class AA, class BA>
-  inline void set_intersect_bitset(
+  inline CA set_intersect_bitset(
       Meta *meta,
       uint64_t * const restrict C,
       CA * const restrict annoC, 
       const uint64_t * const restrict A,
-      const AA * const restrict annoA,
+      const CA * const restrict annoA,
       const uint64_t a_si,
       const uint64_t s_a,
       const uint64_t * const restrict B,
-      const BA * const restrict annoB,
+      const CA * const restrict annoB,
       const uint64_t b_si,
       const uint64_t s_b
     ){
     size_t count = 0;
 
+    AGG agg;
+    agg.init();
     const bool a_big = a_si > b_si;
     const uint64_t start_index = (a_big) ? a_si : b_si;
     const uint64_t a_start_index = (a_big) ? 0:(b_si-a_si);
@@ -61,7 +122,7 @@ namespace ops{
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,2));
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,3));
 
-      AGG:: template compute_avx<CA,AA,BA>(annoC,annoA,annoB);
+      agg.compute_avx(annoC,annoA,annoB);
 
       i += 256;
     }  
@@ -71,13 +132,15 @@ namespace ops{
       const uint64_t r = A[vector_index+a_start_index] & B[vector_index+b_start_index]; 
       count += _mm_popcnt_u64(r);      
       C[vector_index] = r;
-      AGG:: template compute_word<CA,AA,BA>(annoC,annoA,annoB);
+      agg.compute_word(annoC,annoA,annoB);
     }
-    
+
     meta->start = start_index*BITS_PER_WORD;
     meta->end = (end_index*BITS_PER_WORD)-1;
     meta->cardinality = count;
     meta->type = type::BITSET;
+
+    return agg.finish(annoC);
   }
 
   template <class AGG,class A, class B, class C>
@@ -106,11 +169,11 @@ namespace ops{
         out,
         (A*)NULL,
         (const uint64_t * const)freq.get_index_data(),
-        (B*)NULL,
+        (A*)NULL,
         BITSET::word_index(freq.get_meta()->start),
         BITSET::get_num_data_words(freq.get_meta()),
         (const uint64_t * const)rare.get_index_data(),
-        (C*)NULL,
+        (A*)NULL,
         BITSET::word_index(rare.get_meta()->start),
         BITSET::get_num_data_words(rare.get_meta()));
     } 
@@ -118,6 +181,48 @@ namespace ops{
     bi.tid = tid;
     bi.index = index;
     return Vector<EHVector,A,ParMemoryBuffer>(m,bi);
+  }
+
+  template <class AGG,class A>
+  inline A agg_bitset_bitset_intersect(
+    const size_t tid,
+    const size_t alloc_size,
+    ParMemoryBuffer * restrict m,
+    const Vector<BLASVector,A,ParMemoryBuffer>& rare, 
+    const Vector<BLASVector,A,ParMemoryBuffer>& freq){
+
+    const size_t index = m->get_offset(tid);
+    uint8_t *buffer = m->get_next(tid,alloc_size);
+    Meta* meta = new(buffer) Meta();
+    uint64_t *out = (uint64_t*)(buffer+sizeof(Meta));
+
+    A anno_result = (A)0;
+
+    if(rare.get_meta()->cardinality == 0 || freq.get_meta()->cardinality == 0
+      || (rare.get_meta()->start > freq.get_meta()->end)
+      || (freq.get_meta()->start > rare.get_meta()->end)){
+      meta->cardinality = 0;
+      meta->start = 0;
+      meta->end = 0;
+      meta->type = type::BITSET;
+    } else {
+      anno_result = ops::set_intersect_bitset<AGG,A,A,A>(
+        meta,
+        out,
+        &anno_result,//FIXME->figure out where annotation is
+        (const uint64_t * const)freq.get_index_data(),
+        freq.get_annotation(),
+        BITSET::word_index(freq.get_meta()->start),
+        BITSET::get_num_data_words(freq.get_meta()),
+        (const uint64_t * const)rare.get_index_data(),
+        rare.get_annotation(),
+        BITSET::word_index(rare.get_meta()->start),
+        BITSET::get_num_data_words(rare.get_meta()));
+    } 
+    BufferIndex bi;
+    bi.tid = tid;
+    bi.index = index;
+    return anno_result;
   }
 
 

@@ -9,18 +9,26 @@
 #include "utils/utils.hpp"
 #include "Vector.hpp"
 
+/*
+The union actually helps us take care of block sizes that
+do not fit into the BLOCK_SIZE*BLOCK_SIZE chunk we might be computing
+over. We will just compute and copy the part that we need.
+*/
+  
 template<class A>
 std::tuple<A*,size_t> tb_alloc_anno(
+  ParMemoryBuffer* memoryBuffers,
   const size_t b_size, 
   const size_t num_columns)
 {
   const size_t anno_block = pow(b_size,num_columns);
-  A* anno = new A[anno_block];
+  A* anno = (A*)memoryBuffers->anno->get_next(anno_block*sizeof(A));
   return std::tuple<A*,size_t>(anno,anno_block);
 }
 
 template<>
 std::tuple<void**,size_t> tb_alloc_anno(
+  ParMemoryBuffer* memoryBuffers,
   const size_t b_size, 
   const size_t num_columns)
 {
@@ -66,7 +74,7 @@ struct TrieBuffer{
       buffers.push_back(b);
     }
 
-    auto tup = tb_alloc_anno<A>(BLOCK_SIZE,num_columns);
+    auto tup = tb_alloc_anno<A>(memoryBuffers,BLOCK_SIZE,num_columns);
     anno = std::get<0>(tup);
     num_anno = std::get<1>(tup);
   };
@@ -86,13 +94,14 @@ struct TrieBuffer{
     );
 
     head.foreach_index([&](const uint32_t index, const uint32_t data){
-      Vector<BLASVector,void*,ParMemoryBuffer> cur(
+      const size_t anno_offset = *(size_t*)buffers.at(1).at(data%BLOCK_SIZE).get_this();
+      Vector<BLASVector,A,ParMemoryBuffer> cur(
         tid,
         memoryBuffer,
-        (uint8_t*)buffers.at(1).at(data%BLOCK_SIZE).get_meta(),
+        (uint8_t*)buffers.at(1).at(data%BLOCK_SIZE).get_this(),
         buffers.at(1).at(data%BLOCK_SIZE).get_num_index_bytes(),
-        num_anno,
-        0 //FIXME get a proper offset
+        anno+anno_offset,
+        buffers.at(1).at(data%BLOCK_SIZE).get_num_annotation_bytes<A>()
       );
       head.set(index,data,cur.bufferIndex);
     });
