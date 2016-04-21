@@ -38,8 +38,7 @@ int main()
   memset(result_anno,0,num_anno*sizeof(float));
 
   TrieBuffer<float>* tmp_block = 
-    new TrieBuffer<float>(result->memoryBuffers,2);
-  tmp_block->set_anno(result->memoryBuffers);
+    new TrieBuffer<float>(false,result->memoryBuffers,2);
 
   /*
   //R(i,k),S(j,k)

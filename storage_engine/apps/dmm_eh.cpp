@@ -40,8 +40,7 @@ int main()
   memset(result_anno,0,num_anno*sizeof(float));
 
   TrieBuffer<float>* tmp_block = 
-    new TrieBuffer<float>(result->memoryBuffers,2);
-  tmp_block->set_anno(result->memoryBuffers);
+    new TrieBuffer<float>(true,result->memoryBuffers,2);
 
   //R(i,k),S(j,k)
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_I(
@@ -119,7 +118,7 @@ int main()
           });
         });
       });
-      Vector<EHVector,BufferIndex,ParMemoryBuffer> tmp = tmp_block->copy(0,result->memoryBuffers);
+      Vector<EHVector,BufferIndex,ParMemoryBuffer> tmp = tmp_block->copy_matrix(0,result->memoryBuffers);
       RESULT_J.set(J_i,J_d,tmp.bufferIndex);
     });
     RESULT_I.set(I_i,I_d,RESULT_J.bufferIndex);

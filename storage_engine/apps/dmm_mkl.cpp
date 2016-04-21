@@ -34,7 +34,7 @@ int main()
       true);
 
   TrieBuffer<void*>* tmp_block = 
-    new TrieBuffer<void*>(result->memoryBuffers,2);
+    new TrieBuffer<void*>(true,result->memoryBuffers,2);
 
   result->dimensions.push_back(R->dimensions.at(0));
   result->dimensions.push_back(R->dimensions.at(1));
@@ -102,7 +102,7 @@ int main()
         });
       });
       //std::cout << "COPY: " << I_d << " " << J_d*BLOCK_SIZE << std::endl;
-      RESULT_J.set(J_i,J_d,tmp_block->copy(0,result->memoryBuffers).bufferIndex);
+      RESULT_J.set(J_i,J_d,tmp_block->copy_matrix(0,result->memoryBuffers).bufferIndex);
     });
     RESULT_I.set(I_i,I_d,RESULT_J.bufferIndex);
   });

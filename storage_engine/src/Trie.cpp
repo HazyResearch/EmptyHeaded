@@ -500,6 +500,7 @@ Trie<T,A,M>::Trie(
   tbb::task_scheduler_init init(NUM_THREADS);
   tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
 
+  /*
   //DEBUG
   for(size_t i = 0; i < num_rows; i++){
     //std::cout << indicies[i] << std::endl;
@@ -508,6 +509,7 @@ Trie<T,A,M>::Trie(
     }
     std::cout << std::endl;
   }
+  */
 
   //set up temporary buffers needed for the build
   std::vector<size_t*> *ranges_buffer = new std::vector<size_t*>();

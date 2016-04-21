@@ -10,14 +10,7 @@
 #include "Vector.hpp"
 
 /*
-The union actually helps us take care of block sizes that
-do not fit into the BLOCK_SIZE*BLOCK_SIZE chunk we might be computing
-over. We will just compute and copy the part that we need.
-*/
-
-/*
--copy only valid for BLAS tries.
--for EH tries it should be .sparsify
+A Dense Buffer. 
 */
 
 template<class A>
@@ -27,20 +20,26 @@ struct TrieBuffer{
   A* anno;
   size_t num_anno;
 
-  void set_anno(
-    ParMemoryBuffer* memoryBuffers)
+  static size_t set_anno(const size_t nc)
   {
-    num_anno = pow(BLOCK_SIZE,num_columns);
-    anno = (A*)memoryBuffers->anno->get_address(0);
+    return pow(BLOCK_SIZE,nc);
   }
 
   TrieBuffer<A>(
+    const bool is_blas_query,
     ParMemoryBuffer* memoryBuffersIn,
     const size_t num_columns_in){
     num_columns = num_columns_in;
 
     ParMemoryBuffer* memoryBuffers = new ParMemoryBuffer("",2);
-    memoryBuffers->anno = memoryBuffersIn->anno; //tricky but we want these to point to results anno
+    num_anno = TrieBuffer<A>::set_anno(num_columns);
+    if(is_blas_query){
+      //tricky but we want these to point to output trie's anno
+      memoryBuffers->anno = memoryBuffersIn->anno;
+      anno = (A*)memoryBuffersIn->anno->get_address(0);
+    } else{
+      anno = (A*)memoryBuffers->anno->get_next(num_anno*sizeof(A));
+    }
 
     const size_t num_words = (BLOCK_SIZE >> ADDRESS_BITS_PER_WORD)+1;
     const size_t bytes_per_level =
@@ -58,40 +57,62 @@ struct TrieBuffer{
           bytes_per_level
         );
         Meta* m = head.get_meta();
-        m->start = j*BLOCK_SIZE;
-        m->end = ((j+1)*BLOCK_SIZE)-1;
+        m->start = 0;
+        m->end = 0;
         m->cardinality = 0;
         m->type = type::BITSET;
         b.push_back(head);
       }
       buffers.push_back(b);
     }
-
-    anno = NULL;
-    num_anno = 0;
   };
 
-  inline Vector<EHVector,BufferIndex,ParMemoryBuffer> copy(
+  /*
+  Copy a single level buffer over.
+  */
+  inline Vector<BLASVector,A,ParMemoryBuffer> copy_vector(
     const size_t tid,
     ParMemoryBuffer* memoryBuffer){
 
+    Vector<BLASVector,void*,ParMemoryBuffer> copy_vec = buffers.at(0).at(0);
+    const size_t anno_offset = *(size_t*)copy_vec.get_this();
+    Vector<BLASVector,A,ParMemoryBuffer> cur(
+      tid,
+      memoryBuffer,
+      copy_vec.get_this(),
+      copy_vec.get_num_index_bytes(),
+      anno+anno_offset,
+      copy_vec.get_num_annotation_bytes<A>()
+    );
+    return cur;
+  }
+
+  /*
+  Copy a two level buffer over (FIXME: generalize to any dimension > 1)
+  */
+  inline Vector<EHVector,BufferIndex,ParMemoryBuffer> copy_matrix(
+    const size_t tid,
+    ParMemoryBuffer* memoryBuffer){
+
+    Vector<BLASVector,void*,ParMemoryBuffer> copy_vec = buffers.at(0).at(0);
     Vector<EHVector,BufferIndex,ParMemoryBuffer> head(
       tid,
       memoryBuffer,
-      (uint8_t*)buffers.at(0).at(0).get_meta(),
-      buffers.at(0).at(0).get_num_index_bytes()-sizeof(size_t),
-      buffers.at(0).at(0). template get_num_annotation_bytes<BufferIndex>()
+      (uint8_t*)copy_vec.get_meta(),
+      copy_vec.get_num_index_bytes()-sizeof(size_t),
+      copy_vec. template get_num_annotation_bytes<BufferIndex>()
     );
 
     head.foreach_index([&](const uint32_t index, const uint32_t data){
-      const size_t anno_offset = *(size_t*)buffers.at(1).at(data%BLOCK_SIZE).get_this();
+      copy_vec = buffers.at(1).at(data%BLOCK_SIZE);
+      const size_t anno_offset = *(size_t*)copy_vec.get_this();
       Vector<BLASVector,A,ParMemoryBuffer> cur(
         tid,
         memoryBuffer,
-        (uint8_t*)buffers.at(1).at(data%BLOCK_SIZE).get_this(),
-        buffers.at(1).at(data%BLOCK_SIZE).get_num_index_bytes(),
+        (uint8_t*)copy_vec.get_this(),
+        copy_vec.get_num_index_bytes(),
         anno+anno_offset,
-        buffers.at(1).at(data%BLOCK_SIZE).get_num_annotation_bytes<A>()
+        copy_vec.get_num_annotation_bytes<A>()
       );
       head.set(index,data,cur.bufferIndex);
     });
@@ -123,7 +144,6 @@ struct TrieBuffer{
         const size_t anno_offset = anno_offset2+
           (offset.at(i)*BLOCK_SIZE)+
           (j*dimensions.at(i));
-        std::cout << "ANNO OFF: " << anno_offset << std::endl;
         *(size_t*)cur.get_this() = anno_offset;
       }
     }
@@ -145,27 +165,48 @@ struct TrieBuffer{
 
     return buffers.at(column).at(index%BLOCK_SIZE);
   };
-
-  inline A* get_anno(
-    const size_t column){
-    return anno+column*BLOCK_SIZE;
-  };
 }; 
 
-//need to have a copy for void*
+/*
+Copy a single level buffer over.
+*/
 template<> 
-inline Vector<EHVector,BufferIndex,ParMemoryBuffer> TrieBuffer<void*>::copy(
+inline Vector<BLASVector,void*,ParMemoryBuffer> TrieBuffer<void*>::copy_vector(
   const size_t tid,
   ParMemoryBuffer* memoryBuffer){
+
+  Vector<BLASVector,void*,ParMemoryBuffer> copy_vec = buffers.at(0).at(0);
+  const size_t anno_offset = *(size_t*)copy_vec.get_this();
+  Vector<BLASVector,void*,ParMemoryBuffer> cur(
+    tid,
+    memoryBuffer,
+    copy_vec.get_this(),
+    copy_vec.get_num_index_bytes(),
+    anno+anno_offset,
+    0
+  );
+  return cur;
+}
+
+/*
+Copy a two-level buffer over.
+*/
+template<> 
+inline Vector<EHVector,BufferIndex,ParMemoryBuffer> TrieBuffer<void*>::copy_matrix(
+  const size_t tid,
+  ParMemoryBuffer* memoryBuffer){
+
+  Vector<BLASVector,void*,ParMemoryBuffer> copy_vec = buffers.at(0).at(0);
   Vector<EHVector,BufferIndex,ParMemoryBuffer> head(
     tid,
     memoryBuffer,
-    (uint8_t*)buffers.at(0).at(0).get_meta(),
-    buffers.at(0).at(0).get_num_index_bytes()-sizeof(size_t),
-    buffers.at(0).at(0). template get_num_annotation_bytes<BufferIndex>()
+    (uint8_t*)copy_vec.get_meta(),
+    copy_vec.get_num_index_bytes()-sizeof(size_t),
+    copy_vec. template get_num_annotation_bytes<BufferIndex>()
   );
 
   head.foreach_index([&](const uint32_t index, const uint32_t data){
+    copy_vec = buffers.at(1).at(data%BLOCK_SIZE);
     Vector<BLASVector,void*,ParMemoryBuffer> cur(
       tid,
       memoryBuffer,
@@ -176,6 +217,12 @@ inline Vector<EHVector,BufferIndex,ParMemoryBuffer> TrieBuffer<void*>::copy(
     head.set(index,data,cur.bufferIndex);
   });
   return head;
+}
+
+template<>
+size_t TrieBuffer<void*>::set_anno(const size_t nc)
+{
+  return 0;
 }
 
 #endif
