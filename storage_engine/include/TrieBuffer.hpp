@@ -68,6 +68,28 @@ struct TrieBuffer{
   };
 
   /*
+  Copy Vector.
+  */
+  inline Vector<EHVector,A,ParMemoryBuffer> sparsify_vector(
+    const size_t tid,
+    ParMemoryBuffer* memoryBuffer){
+
+    Vector<BLASVector,void*,ParMemoryBuffer> copy_vec = buffers.at(0).at(0);
+    const size_t anno_offset = *(size_t*)copy_vec.get_this();
+
+    Vector<EHVector,A,ParMemoryBuffer> cur(
+      tid,
+      memoryBuffer,
+      (uint8_t*)copy_vec.get_meta(),
+      copy_vec.get_num_index_bytes()-sizeof(size_t),
+      anno+anno_offset,
+      copy_vec.get_num_annotation_bytes<A>()
+    );
+    
+    return cur;
+  }
+
+  /*
   Copy a single level buffer over.
   */
   inline Vector<BLASVector,A,ParMemoryBuffer> copy_vector(
@@ -76,6 +98,7 @@ struct TrieBuffer{
 
     Vector<BLASVector,void*,ParMemoryBuffer> copy_vec = buffers.at(0).at(0);
     const size_t anno_offset = *(size_t*)copy_vec.get_this();
+
     Vector<BLASVector,A,ParMemoryBuffer> cur(
       tid,
       memoryBuffer,
@@ -98,7 +121,7 @@ struct TrieBuffer{
     Vector<EHVector,BufferIndex,ParMemoryBuffer> head(
       tid,
       memoryBuffer,
-      (uint8_t*)copy_vec.get_meta(),
+      copy_vec.get_meta(),
       copy_vec.get_num_index_bytes()-sizeof(size_t),
       copy_vec. template get_num_annotation_bytes<BufferIndex>()
     );
@@ -150,22 +173,29 @@ struct TrieBuffer{
     }
   };
 
-  inline void print(const size_t I, const size_t J){
-    for(size_t i = 0; i < num_anno; i+=BLOCK_SIZE){
-      A* start = anno+i;
-      for(size_t j = 0; j < BLOCK_SIZE; j++){
-        std::cout << I*BLOCK_SIZE+(i/BLOCK_SIZE) << " " << J*BLOCK_SIZE+j << " " << start[j] << std::endl;
+  inline void print(){
+    A* start = anno;
+    for(size_t j = 0; j < BLOCK_SIZE; j++){
+      if(start[j] != 0){
+        std::cout << "j: " << j << " " << start[j] << std::endl;
       }
     }
   };
 
-  inline Vector<BLASVector,void*,ParMemoryBuffer> at(
+  template<class R>
+  inline Vector<BLASVector,R,ParMemoryBuffer> at(
     const size_t column, 
     const size_t index){
 
-    return buffers.at(column).at(index%BLOCK_SIZE);
-  };
-}; 
+    Vector<BLASVector,void*,ParMemoryBuffer> tmp_j = 
+      buffers.at(column).at(index%BLOCK_SIZE);
+    Vector<BLASVector,R,ParMemoryBuffer> tmp_jj(
+      tmp_j.memoryBuffer,
+      tmp_j.bufferIndex);
+
+    return tmp_jj;
+  }
+};
 
 /*
 Copy a single level buffer over.
@@ -252,9 +282,6 @@ inline void TrieBuffer<void*>::zero(
         (offset.at(i)*BLOCK_SIZE)+
         (j*dimensions.at(i));
       *(size_t*)cur.get_this() = anno_offset;
-      std::cout << "ANNO OFFSET: "<< anno_offset << std::endl;
-      //if(i == num_columns-1)
-      //  memset((anno+anno_offset),0,BLOCK_SIZE*sizeof(A));
     }
   }
 }

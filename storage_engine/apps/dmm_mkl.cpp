@@ -96,9 +96,9 @@ int main()
           S_K.get(K_d));
 
         Vector<BLASVector,void*,ParMemoryBuffer> RESULT_i = 
-          ops::union_in_place(tmp_block->at(0,0),R_i);
+          ops::union_in_place(tmp_block->at<void*>(0,0),R_i);
         RESULT_i.foreach_index([&](const uint32_t r_i, const uint32_t r_d){ 
-          ops::union_in_place(tmp_block->at(1,r_d),S_j);
+          ops::union_in_place(tmp_block->at<void*>(1,r_d),S_j);
         });
       });
       //std::cout << "COPY: " << I_d << " " << J_d*BLOCK_SIZE << std::endl;

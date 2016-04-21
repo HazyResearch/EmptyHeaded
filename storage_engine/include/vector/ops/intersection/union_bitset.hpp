@@ -2,9 +2,105 @@
 #define _UNION_BITSET_H_
 
 namespace ops{
+
+  template<class CA>
+  struct BS_BS_UNION_VOID{
+    inline void init(const CA alpha_in){(void) alpha_in;}
+    inline void compute_avx(
+      CA * restrict c,
+      const size_t c_offset, 
+      const CA * restrict a,
+      const size_t a_offset, 
+      const CA * restrict b,
+      const size_t b_offset){
+      (void) c; (void) a; (void)b;
+      (void) c_offset; (void) a_offset; (void) b_offset;
+      return;
+    }
+    inline void compute_word(
+      CA * restrict c,
+      const size_t c_offset, 
+      const CA * restrict a,
+      const size_t a_offset, 
+      const CA * restrict b,
+      const size_t b_offset){
+      (void) c; (void) a; (void)b;
+      (void) c_offset; (void) a_offset; (void) b_offset;
+      return;
+    }
+  };
+
+  template<class CA>
+  struct BS_BS_ALPHA_SUM{
+    __m256 r_alpha;
+    float alpha;
+    inline void init(const float alpha_in){}
+    inline void compute_avx(
+      CA * restrict c,
+      const size_t c_offset, 
+      const CA * restrict a,
+      const size_t a_offset, 
+      const CA * restrict b,
+      const size_t b_offset) const {
+      (void) c; (void) a; (void)b;
+      (void) c_offset; (void) a_offset; (void) b_offset;
+      return;
+    }
+    inline void compute_word(
+      CA * restrict c,
+      const size_t c_offset, 
+      const CA * restrict a,
+      const size_t a_offset, 
+      const CA * restrict b,
+      const size_t b_offset) const {
+      (void) c; (void) a; (void)b;
+      (void) c_offset; (void) a_offset; (void) b_offset;
+      return;
+    }
+  };
+
+  template<>
+  void BS_BS_ALPHA_SUM<float>::init(const float alpha_in) {
+    alpha = alpha_in;
+    r_alpha = _mm256_set1_ps(alpha_in);
+  }
+
+  template<>
+  void BS_BS_ALPHA_SUM<float>::compute_avx(
+    float * restrict c,
+    const size_t c_offset, 
+    const float * restrict a,
+    const size_t a_offset, 
+    const float * restrict b,
+    const size_t b_offset) const {
+    const size_t blocks_per_reg = (256/8);
+    for(size_t i = 0; i < blocks_per_reg; i++) {
+      const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8+a_offset]);
+      const __m256 m_b_2 = _mm256_loadu_ps(&b[i*8+b_offset]);
+      _mm256_storeu_ps(&c[i*8+c_offset],_mm256_fmadd_ps(m_b_2,r_alpha,m_b_1));
+    }
+  }
+
+  template<>
+  inline void BS_BS_ALPHA_SUM<float>::compute_word(
+    float * restrict c,
+    const size_t c_offset, 
+    const float * restrict a,
+    const size_t a_offset, 
+    const float * restrict b,
+    const size_t b_offset) const {
+    const size_t blocks_per_reg = (64/8);
+    for(size_t i = 0; i < blocks_per_reg; i++) {
+      const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8+a_offset]);
+      const __m256 m_b_2 = _mm256_loadu_ps(&b[i*8+b_offset]);
+      _mm256_storeu_ps(&c[i*8+c_offset],_mm256_fmadd_ps(m_b_2,r_alpha,m_b_1));
+    }
+  }
+
   //A must have a range strictly larger than B
   template<class AGG,class CA>
   inline void set_union_bitset(
+      CA value,
       Meta *meta,
       uint64_t * const restrict C, 
       CA * const restrict annoC, 
@@ -15,13 +111,13 @@ namespace ops{
       const uint64_t * const restrict B,
       const CA * const restrict annoB,
       const uint64_t b_si,
-      const uint64_t s_b
-    ){
+      const uint64_t s_b)
+{
     (void) s_a;
     size_t count = 0;
 
     AGG agg;
-    agg.init();
+    agg.init(value);
 
     const uint64_t a_start_index = 0;
     const uint64_t b_start_index = a_si-b_si;

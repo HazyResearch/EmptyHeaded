@@ -95,66 +95,31 @@ int main()
         block_offsets.push_back(0);
         tmp_block->zero(result->dimensions,block_offsets); //zero out the memory.
 
-        //grab value from R_k
         RESULT_k.foreach_index([&](const uint32_t k_i, const uint32_t k_d){
+            //grab value from R_k
+            const float mult_value = R_k.get(k_d);
             Vector<EHVector,float,ParMemoryBuffer> S_j(
               S->memoryBuffers,
               S_k.get(k_d));
+
             //UNION S_j into buffer, multiply by value from R_k 
             ///UNION BITSET, stream through S_j, 
             //UNION_ADD BS/BS -> roughly the same as intersect
             //UNION_ADD BS/UINT -> stream through uint flip bits in BITSET
+            Vector<BLASVector,float,ParMemoryBuffer> tmp_j = 
+              tmp_block->at<float>(0,0);
+            ops::union_in_place(mult_value,tmp_j,S_j);
         });
+        //sparsify
+        //set result_i
+        Vector<EHVector,float,ParMemoryBuffer> RESULT_j = 
+          tmp_block->sparsify_vector(0,result->memoryBuffers);
+        RESULT_i.set(i_i,i_d,RESULT_j.bufferIndex);
       });
-    });
-  });
-  /*
-      std::vector<size_t> block_offsets;
-      block_offsets.push_back(I_d);
-      block_offsets.push_back(J_d);
-      std::cout << "BLOCK: " << I_d << " " << J_d << std::endl;
-      tmp_block->zero(result->dimensions,block_offsets); //zero out the memory.
-      RESULT_K.foreach_index([&](const uint32_t K_i, const uint32_t K_d){
-        Vector<EHVector,BufferIndex,ParMemoryBuffer> R_i(
-          R->memoryBuffers,
-          R_K.get(K_d));
-
-        Vector<EHVector,BufferIndex,ParMemoryBuffer> S_j(
-          S->memoryBuffers,
-          S_K.get(K_d));
-
-        Vector<BLASVector,void*,ParMemoryBuffer> RESULT_i = 
-          ops::union_in_place(tmp_block->at(0,0),R_i);
-        RESULT_i.foreach_index([&](const uint32_t r_i, const uint32_t r_d){ 
-          Vector<BLASVector,float,ParMemoryBuffer> R_k(
-            R->memoryBuffers,
-            R_i.get(r_d));
-
-          Vector<BLASVector,void*,ParMemoryBuffer> tmp_j = 
-            ops::union_in_place(tmp_block->at(1,r_d),S_j);
-          Vector<BLASVector,float,ParMemoryBuffer> RESULT_j(
-            tmp_j.memoryBuffer,
-            tmp_j.bufferIndex);
-              
-          RESULT_j.foreach_index([&](const uint32_t j_i, const uint32_t j_d){ 
-            Vector<BLASVector,float,ParMemoryBuffer> S_k(
-              S->memoryBuffers,
-              S_j.get(j_d));
-
-            const float anno_value = ops::agg_intersect<ops::BS_BS_SUM<float>,float>(
-              0,
-              result->memoryBuffers,
-              R_k, 
-              S_k);
-            RESULT_j.set(j_i,j_d,RESULT_j.get(j_d)+anno_value);
-          });
-        });
-      });
-      Vector<EHVector,BufferIndex,ParMemoryBuffer> tmp = tmp_block->copy(0,result->memoryBuffers);
-      RESULT_J.set(J_i,J_d,tmp.bufferIndex);
+      RESULT_J.set(J_i,J_d,RESULT_i.bufferIndex);
     });
     RESULT_I.set(I_i,I_d,RESULT_J.bufferIndex);
-      */
+  });
   timer::stop_clock("QUERY",query_time);
 
   std::cout << "RESULT" << std::endl;

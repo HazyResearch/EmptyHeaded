@@ -14,6 +14,7 @@ namespace ops{
       const CA * restrict b,
       const size_t b_offset){
       (void) c; (void) a; (void)b;
+      (void) c_offset; (void) a_offset; (void) b_offset;
       return;
     }
     inline void compute_word(
@@ -24,6 +25,7 @@ namespace ops{
       const CA * restrict b,
       const size_t b_offset){
       (void) c; (void) a; (void)b;
+      (void) c_offset; (void) a_offset; (void) b_offset;
       return;
     }
     inline CA finish(CA * restrict c){(void)c; return (CA)NULL;}
@@ -42,6 +44,7 @@ namespace ops{
       const CA * restrict b,
       const size_t b_offset){
       (void) c; (void) a; (void)b;
+      (void) c_offset; (void) a_offset; (void) b_offset;
       return;
     }
     inline void compute_word(
@@ -52,6 +55,7 @@ namespace ops{
       const CA * restrict b,
       const size_t b_offset){
       (void) c; (void) a; (void)b;
+      (void) c_offset; (void) a_offset; (void) b_offset;
       return;
     }
     inline CA finish(CA * restrict c){(void)c; return (CA)NULL;}
@@ -70,6 +74,7 @@ namespace ops{
     const size_t a_offset, 
     const float * restrict b,
     const size_t b_offset){
+    (void) c; (void) c_offset;
     const size_t blocks_per_reg = (256/8);
     for(size_t i = 0; i < blocks_per_reg; i++){
       const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8+a_offset]);
@@ -86,6 +91,7 @@ namespace ops{
     const size_t a_offset, 
     const float * restrict b,
     const size_t b_offset){
+    (void) c; (void) c_offset;
     const size_t blocks_per_reg = (64/8);
     for(size_t i = 0; i < blocks_per_reg; i++){
       const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8+a_offset]);
@@ -96,6 +102,7 @@ namespace ops{
 
   template<>
   inline float BS_BS_SUM<float>::finish(float * restrict c){
+    (void) c;
     return utils::_mm256_reduce_add_ps(r);
   }
 
