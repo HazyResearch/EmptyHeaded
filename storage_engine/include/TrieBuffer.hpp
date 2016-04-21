@@ -145,9 +145,9 @@ struct TrieBuffer{
           (offset.at(i)*BLOCK_SIZE)+
           (j*dimensions.at(i));
         *(size_t*)cur.get_this() = anno_offset;
+        memset((anno+anno_offset),0,BLOCK_SIZE*sizeof(A));
       }
     }
-    //memset(anno,0,num_anno*sizeof(A));
   };
 
   inline void print(const size_t I, const size_t J){
@@ -223,6 +223,40 @@ template<>
 size_t TrieBuffer<void*>::set_anno(const size_t nc)
 {
   return 0;
+}
+
+template<>
+inline void TrieBuffer<void*>::zero(
+  const std::vector<size_t>& dimensions,
+  const std::vector<size_t>& offset){
+  for(size_t i = 0; i < num_columns; i++){
+    const size_t num = pow(BLOCK_SIZE,i);
+    const size_t num_words = (BLOCK_SIZE >> ADDRESS_BITS_PER_WORD)+1;
+
+    size_t anno_offset2 = 0;
+    for(size_t j = i; j > 0; j--){
+      anno_offset2 += dimensions.at(j)*BLOCK_SIZE*offset.at(j-1);
+    }
+
+    for(size_t j = 0; j < num; j++){
+      Vector<BLASVector,void*,ParMemoryBuffer> cur = 
+        buffers.at(i).at(j);
+      uint8_t *data = cur.get_index_data();
+      memset(data,0,num_words*sizeof(uint64_t));
+      Meta* m = cur.get_meta();
+      m->start = (offset.at(i)*BLOCK_SIZE);
+      m->end = (offset.at(i)*BLOCK_SIZE)+BLOCK_SIZE-1;
+      m->cardinality = 0;
+      m->type = type::BITSET;
+      const size_t anno_offset = anno_offset2+
+        (offset.at(i)*BLOCK_SIZE)+
+        (j*dimensions.at(i));
+      *(size_t*)cur.get_this() = anno_offset;
+      std::cout << "ANNO OFFSET: "<< anno_offset << std::endl;
+      //if(i == num_columns-1)
+      //  memset((anno+anno_offset),0,BLOCK_SIZE*sizeof(A));
+    }
+  }
 }
 
 #endif

@@ -39,8 +39,8 @@ int main()
   float* result_anno = (float*)result->memoryBuffers->anno->get_next(num_anno*sizeof(float));
   memset(result_anno,0,num_anno*sizeof(float));
 
-  TrieBuffer<float>* tmp_block = 
-    new TrieBuffer<float>(true,result->memoryBuffers,2);
+  TrieBuffer<void*>* tmp_block = 
+    new TrieBuffer<void*>(true,result->memoryBuffers,2);
 
   //R(i,k),S(j,k)
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_I(
@@ -80,7 +80,6 @@ int main()
       std::vector<size_t> block_offsets;
       block_offsets.push_back(I_d);
       block_offsets.push_back(J_d);
-      std::cout << "BLOCK: " << I_d << " " << J_d << std::endl;
       tmp_block->zero(result->dimensions,block_offsets); //zero out the memory.
       RESULT_K.foreach_index([&](const uint32_t K_i, const uint32_t K_d){
         Vector<EHVector,BufferIndex,ParMemoryBuffer> R_i(

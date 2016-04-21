@@ -7,16 +7,22 @@ namespace ops{
   struct BS_BS_VOID{
     inline void init(){}
     inline void compute_avx(
-      CA * restrict c, 
-      const CA * restrict a, 
-      const CA * restrict b){
+      CA * restrict c,
+      const size_t c_offset, 
+      const CA * restrict a,
+      const size_t a_offset, 
+      const CA * restrict b,
+      const size_t b_offset){
       (void) c; (void) a; (void)b;
       return;
     }
     inline void compute_word(
-      CA * const restrict c, 
-      const CA * const restrict a, 
-      const CA * const restrict b){
+      CA * restrict c,
+      const size_t c_offset, 
+      const CA * restrict a,
+      const size_t a_offset, 
+      const CA * restrict b,
+      const size_t b_offset){
       (void) c; (void) a; (void)b;
       return;
     }
@@ -29,16 +35,22 @@ namespace ops{
     float result;
     inline void init(){}
     inline void compute_avx(
-      CA * restrict c, 
-      const CA * restrict a, 
-      const CA * restrict b){
+      CA * restrict c,
+      const size_t c_offset, 
+      const CA * restrict a,
+      const size_t a_offset, 
+      const CA * restrict b,
+      const size_t b_offset){
       (void) c; (void) a; (void)b;
       return;
     }
     inline void compute_word(
-      CA * const restrict c, 
-      const CA * const restrict a, 
-      const CA * const restrict b){
+      CA * restrict c,
+      const size_t c_offset, 
+      const CA * restrict a,
+      const size_t a_offset, 
+      const CA * restrict b,
+      const size_t b_offset){
       (void) c; (void) a; (void)b;
       return;
     }
@@ -52,26 +64,32 @@ namespace ops{
 
   template<>
   void BS_BS_SUM<float>::compute_avx(
-    float * restrict c, 
-    const float * restrict a, 
-    const float * restrict b){
+    float * restrict c,
+    const size_t c_offset, 
+    const float * restrict a,
+    const size_t a_offset, 
+    const float * restrict b,
+    const size_t b_offset){
     const size_t blocks_per_reg = (256/8);
     for(size_t i = 0; i < blocks_per_reg; i++){
-      const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8]);
-      const __m256 m_b_2 = _mm256_loadu_ps(&b[i*8]);
+      const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8+a_offset]);
+      const __m256 m_b_2 = _mm256_loadu_ps(&b[i*8+b_offset]);
       r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
     }
   }
 
   template<>
   inline void BS_BS_SUM<float>::compute_word(
-    float * const restrict c, 
-    const float * const restrict a, 
-    const float * const restrict b){
+    float * restrict c,
+    const size_t c_offset, 
+    const float * restrict a,
+    const size_t a_offset, 
+    const float * restrict b,
+    const size_t b_offset){
     const size_t blocks_per_reg = (64/8);
     for(size_t i = 0; i < blocks_per_reg; i++){
-      const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8]);
-      const __m256 m_b_2 = _mm256_loadu_ps(&b[i*8]);
+      const __m256 m_b_1 = _mm256_loadu_ps(&a[i*8+a_offset]);
+      const __m256 m_b_2 = _mm256_loadu_ps(&b[i*8+b_offset]);
       r = _mm256_fmadd_ps(m_b_1,m_b_2,r);
     }
   }
@@ -122,7 +140,13 @@ namespace ops{
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,2));
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,3));
 
-      agg.compute_avx(annoC,annoA,annoB);
+      agg.compute_avx(
+        annoC,
+        vector_index,
+        annoA,
+        vector_index+a_start_index,
+        annoB,
+        vector_index+b_start_index);
 
       i += 256;
     }  
@@ -132,7 +156,14 @@ namespace ops{
       const uint64_t r = A[vector_index+a_start_index] & B[vector_index+b_start_index]; 
       count += _mm_popcnt_u64(r);      
       C[vector_index] = r;
-      agg.compute_word(annoC,annoA,annoB);
+
+      agg.compute_word(
+        annoC,
+        vector_index,
+        annoA,
+        vector_index+a_start_index,
+        annoB,
+        vector_index+b_start_index);
     }
 
     meta->start = start_index*BITS_PER_WORD;

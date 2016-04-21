@@ -3,18 +3,25 @@
 
 namespace ops{
   //A must have a range strictly larger than B
+  template<class AGG,class CA>
   inline void set_union_bitset(
       Meta *meta,
       uint64_t * const restrict C, 
+      CA * const restrict annoC, 
       const uint64_t * const restrict A,
+      const CA * const restrict annoA,
       const uint64_t a_si,
       const uint64_t s_a,
       const uint64_t * const restrict B,
+      const CA * const restrict annoB,
       const uint64_t b_si,
       const uint64_t s_b
     ){
     (void) s_a;
     size_t count = 0;
+
+    AGG agg;
+    agg.init();
 
     const uint64_t a_start_index = 0;
     const uint64_t b_start_index = a_si-b_si;
@@ -38,6 +45,14 @@ namespace ops{
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,2));
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,3));
 
+      agg.compute_avx(
+        annoC,
+        vector_index,
+        annoA,
+        vector_index+a_start_index,
+        annoB,
+        vector_index+b_start_index);
+
       i += 256;
     }
     //64 bits per word
@@ -46,6 +61,14 @@ namespace ops{
       const uint64_t r = A[vector_index+a_start_index] | B[vector_index+b_start_index];
       count += _mm_popcnt_u64(r);      
       C[vector_index] = r;
+
+      agg.compute_word(
+        annoC,
+        vector_index,
+        annoA,
+        vector_index+a_start_index,
+        annoB,
+        vector_index+b_start_index);
     }
 
     meta->cardinality = count;

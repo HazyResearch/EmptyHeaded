@@ -9,13 +9,16 @@ namespace ops{
     const Vector<BLASVector,void*,ParMemoryBuffer>& freq,
     const Vector<BLASVector,A,ParMemoryBuffer>& rare){
 
-    ops::set_union_bitset(
+    ops::set_union_bitset<BS_BS_SUM<void*>,void*>(
       freq.get_meta(),
       (uint64_t *)freq.get_index_data(),
+      (void**)NULL,
       (const uint64_t * const)freq.get_index_data(),
+      (void**)NULL,
       BITSET::word_index(freq.get_meta()->start),
       BITSET::get_num_data_words(freq.get_meta()),
       (const uint64_t * const)rare.get_index_data(),
+      (void**)NULL,
       BITSET::word_index(rare.get_meta()->start),
       BITSET::get_num_data_words(rare.get_meta()));
 
@@ -26,13 +29,16 @@ namespace ops{
     const Vector<BLASVector,void*,ParMemoryBuffer>& freq,
     const Vector<EHVector,A,ParMemoryBuffer>& rare){
 
-    ops::set_union_bitset(
+    ops::set_union_bitset<BS_BS_SUM<void*>,void*>(
       freq.get_meta(),
       (uint64_t *)freq.get_index_data(),
+      (void**)NULL,
       (const uint64_t * const)freq.get_index_data(),
+      (void**)NULL,
       BITSET::word_index(freq.get_meta()->start),
       BITSET::get_num_data_words(freq.get_meta()),
       (const uint64_t * const)rare.get_index_data(),
+      (void**)NULL,
       BITSET::word_index(rare.get_meta()->start),
       BITSET::get_num_data_words(rare.get_meta()));
 
