@@ -35,9 +35,8 @@ struct UINTEGER{
     const BufferIndex& restrict bufferIndex){
     const uint32_t * const indices = (const uint32_t * const) 
       (memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
-    const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
     const long data_index = utils::binary_search(indices,0,meta->cardinality,data);
-    return data != -1;
+    return data_index != -1;
   }
 
   template <class A, class M>

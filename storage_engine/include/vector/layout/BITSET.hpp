@@ -48,7 +48,6 @@ struct BITSET{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex){
 
-    const size_t num_words = get_num_data_words(meta);
     std::cout << "START: " << data <<  " " << meta->start << " " << meta->end << std::endl;
     if(data >= meta->start && data <= meta->end){
       const uint64_t * const in_data = (const uint64_t* const)memoryBuffer->get_address(bufferIndex)+sizeof(Meta);
