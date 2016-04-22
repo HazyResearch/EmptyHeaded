@@ -199,7 +199,6 @@ struct EHVector{
     const BufferIndex& restrict bufferIndex)
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
-
     switch(meta->type){
       case type::BITSET : 
         BITSET:: template foreach_index<M>(f,meta,memoryBuffer,bufferIndex);

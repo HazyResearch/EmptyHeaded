@@ -48,10 +48,8 @@ struct BITSET{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex){
 
-    std::cout << "START: " << data <<  " " << meta->start << " " << meta->end << std::endl;
     if(data >= meta->start && data <= meta->end){
-      const uint64_t * const in_data = (const uint64_t* const)memoryBuffer->get_address(bufferIndex)+sizeof(Meta);
-      std::cout << std::hex << *in_data << std::dec << std::endl;
+      const uint64_t * const in_data = (const uint64_t* const)(memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
       return is_set(data,in_data,word_index(meta->start));
     }
     return false;

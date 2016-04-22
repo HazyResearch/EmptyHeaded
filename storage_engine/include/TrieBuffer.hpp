@@ -74,18 +74,63 @@ struct TrieBuffer{
     const size_t tid,
     ParMemoryBuffer* memoryBuffer){
 
-    Vector<BLASVector,void*,ParMemoryBuffer> copy_vec = buffers.at(0).at(0);
+    Vector<BLASVector,float,ParMemoryBuffer> copy_vec = this->at<float>(0,0);
     const size_t anno_offset = *(size_t*)copy_vec.get_this();
 
-    Vector<EHVector,A,ParMemoryBuffer> cur(
-      tid,
-      memoryBuffer,
-      (uint8_t*)copy_vec.get_meta(),
-      copy_vec.get_num_index_bytes()-sizeof(size_t),
-      anno+anno_offset,
-      copy_vec.get_num_annotation_bytes<A>()
-    );
+    if(copy_vec.get_meta()->cardinality > MIN_BITSET_LENGTH){
+      const float density = ((float)copy_vec.get_meta()->cardinality)/(copy_vec.get_meta()->end-copy_vec.get_meta()->start);
+      if(density >= VECTOR_DENSITY_THRESHOLD){
+        Vector<EHVector,A,ParMemoryBuffer> cur(
+          tid,
+          memoryBuffer,
+          (uint8_t*)copy_vec.get_meta(),
+          copy_vec.get_num_index_bytes()-sizeof(size_t),
+          anno+anno_offset,
+          copy_vec.get_num_annotation_bytes<A>()
+        );
+        return cur;
+      }
+    }
+
+    //over allocate (counts not guaranteed to be precise from union)
+    Meta* copy_meta = copy_vec.get_meta();
+    const size_t num_elems =(copy_meta->end-copy_meta->start);
+    const size_t num_bytes = sizeof(Meta)+ 
+      num_elems*(sizeof(uint32_t)+sizeof(A));
     
+    size_t bytes_used = sizeof(Meta);    
+    const size_t index = memoryBuffer->get_offset(tid);
+
+    BufferIndex bufferIndex(tid,index);
+    Meta* meta = (Meta*)(memoryBuffer->get_next(tid,num_bytes));
+    meta->cardinality = 0;
+    meta->start = 0;
+    meta->end = 0;
+    meta->type = type::UINTEGER;
+
+    uint32_t* uint_buffer = (uint32_t*)(((uint8_t*)meta)+sizeof(Meta));
+    A* anno_buffer = (A*)(((uint8_t*)uint_buffer)+(num_elems*sizeof(uint32_t)));
+    const A* start_anno_buffer = (A*)(((uint8_t*)uint_buffer)+(num_elems*sizeof(uint32_t)));
+
+    bool first = true;
+    copy_vec.foreach([&](const uint32_t i, const uint32_t d, const A anno){
+      if(first)
+        meta->start = d;
+      first = false;
+      *uint_buffer = d;
+      bytes_used += (sizeof(uint32_t)+sizeof(A));
+      meta->cardinality++;
+      meta->end = d;
+      *anno_buffer = anno;
+      uint_buffer++;
+      anno_buffer++;
+    });
+    
+    memcpy((void*)uint_buffer,(void*)start_anno_buffer,(meta->cardinality*sizeof(A)));
+    assert(num_bytes >= bytes_used);
+    memoryBuffer->roll_back(tid,num_bytes-bytes_used);
+
+    Vector<EHVector,A,ParMemoryBuffer> cur(memoryBuffer,bufferIndex);
     return cur;
   }
 
@@ -252,6 +297,7 @@ inline Vector<EHVector,BufferIndex,ParMemoryBuffer> TrieBuffer<void*>::copy_matr
 template<>
 size_t TrieBuffer<void*>::set_anno(const size_t nc)
 {
+  (void) nc;
   return 0;
 }
 

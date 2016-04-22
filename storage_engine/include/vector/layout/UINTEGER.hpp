@@ -77,8 +77,9 @@ struct UINTEGER{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
   {
+    const size_t card = meta->cardinality;
     const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
-    for(size_t i=0; i<meta->cardinality;i++){
+    for(size_t i=0; i<card;i++){
       const uint32_t * const data = (const uint32_t * const) 
         (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+(sizeof(uint32_t)*i));
       const A * const values = (const A * const) 
@@ -110,7 +111,8 @@ struct UINTEGER{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
-    for(size_t i=0; i<meta->cardinality;i++){
+    const size_t card = meta->cardinality;
+    for(size_t i=0; i<card;i++){
       const uint32_t * const data = (const uint32_t * const) 
         (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+(sizeof(uint32_t)*i));
       f(i,*data);

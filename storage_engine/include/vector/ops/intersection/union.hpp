@@ -55,15 +55,18 @@ namespace ops{
     if(rare.get_type() == type::UINTEGER){
       rare.foreach([&](const uint32_t index, const uint32_t data, const A anno){
         const float da = freq.get(data);
+        if(!freq.contains(data))
+          freq.get_meta()->cardinality++;
         freq.set(data,data,(da+anno*mult_value));
         BITSET::set_bit(
-          BITSET::word_index(data),
+          data,
           (uint64_t*)freq.get_index_data(),
           BITSET::word_index(freq.get_meta()->start)
         );
       });
       return freq;
     }
+    freq.get_meta()->cardinality = rare.get_meta()->cardinality;
     ops::set_union_bitset<BS_BS_ALPHA_SUM<float>,float>(
       mult_value,
       freq.get_meta(),
