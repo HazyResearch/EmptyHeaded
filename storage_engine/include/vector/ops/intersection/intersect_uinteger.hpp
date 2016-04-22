@@ -487,5 +487,56 @@ namespace ops{
     return final_count;
   }
 
+  template <class AGG, class A, class B, class C>
+  inline Vector<EHVector,A,ParMemoryBuffer> uinteger_uinteger_intersect(
+    const size_t tid,
+    const size_t alloc_size,
+    ParMemoryBuffer * restrict m,
+    const Vector<EHVector,B,ParMemoryBuffer>& rare, 
+    const Vector<EHVector,C,ParMemoryBuffer>& freq){
+
+    const size_t index = m->get_offset(tid);
+    uint8_t *buffer = m->get_next(tid,alloc_size);
+    Meta* meta = new(buffer) Meta();
+    uint32_t *out = (uint32_t*)(buffer+sizeof(Meta));
+
+    if(rare.get_meta()->cardinality == 0 || freq.get_meta()->cardinality == 0
+      || (rare.get_meta()->start > freq.get_meta()->end) 
+      || (freq.get_meta()->start > rare.get_meta()->end)){
+      meta->cardinality = 0;
+      meta->start = 0;
+      meta->end = 0;
+      meta->type = type::UINTEGER;
+    } else if((rare.get_meta()->cardinality/freq.get_meta()->cardinality) >= 32) {
+      set_intersect_galloping(
+        meta,
+        out,
+        (const uint32_t * const)freq.get_index_data(),
+        freq.get_meta()->cardinality,
+        (const uint32_t * const)rare.get_index_data(),
+        rare.get_meta()->cardinality);
+    } else if((freq.get_meta()->cardinality/rare.get_meta()->cardinality) >= 32) {
+      set_intersect_galloping(
+        meta,
+        out,
+        (const uint32_t * const)rare.get_index_data(),
+        rare.get_meta()->cardinality,
+        (const uint32_t * const)freq.get_index_data(),
+        freq.get_meta()->cardinality);
+    } else {
+      set_intersect_shuffle(
+        meta,
+        out,
+        (const uint32_t * const)rare.get_index_data(),
+        rare.get_meta()->cardinality,
+        (const uint32_t * const)freq.get_index_data(),
+        freq.get_meta()->cardinality);  
+    }
+    BufferIndex bi;
+    bi.tid = tid;
+    bi.index = index;
+    return Vector<EHVector,A,ParMemoryBuffer>(m,bi);
+  }
+
 }
 #endif

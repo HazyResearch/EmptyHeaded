@@ -71,8 +71,10 @@ void Vector<T,A,M>::set(
 //look up a data value
 template <class T, class A, class M>
 bool Vector<T,A,M>::contains(const uint32_t key) const{
-  (void) key;
-  return false;
+  return T:: template contains<M>(
+    key,
+    memoryBuffer,
+    bufferIndex);
 }
 
 //constructors

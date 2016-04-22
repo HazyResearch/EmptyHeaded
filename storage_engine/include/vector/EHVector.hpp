@@ -53,6 +53,29 @@ struct EHVector{
   }
 
   //calls index of then calls get below.
+  template <class M>
+  static inline bool contains(
+    const uint32_t data,
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex) {
+    const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
+    
+    switch(meta->type){
+      case type::BITSET : 
+        return BITSET:: template contains<M>(data,meta,memoryBuffer,bufferIndex);
+      break;
+      case type::UINTEGER :
+        return UINTEGER:: template contains<M>(data,meta,memoryBuffer,bufferIndex);
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+        return UINTEGER:: template contains<M>(data,meta,memoryBuffer,bufferIndex);
+      break;
+    }
+  }
+
+  //calls index of then calls get below.
   template <class A, class M>
   static inline A get(
     const uint32_t data,
@@ -73,7 +96,6 @@ struct EHVector{
         return UINTEGER:: template get<A,M>(data,meta,memoryBuffer,bufferIndex);
       break;
     }
-
   }
 
   //look up a data value

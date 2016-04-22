@@ -49,9 +49,21 @@ namespace ops{
   template <class A>
   inline Vector<BLASVector,A,ParMemoryBuffer> union_in_place(
     const A mult_value,
-    const Vector<BLASVector,A,ParMemoryBuffer>& freq,
+    Vector<BLASVector,A,ParMemoryBuffer>& freq,
     const Vector<EHVector,A,ParMemoryBuffer>& rare){
 
+    if(rare.get_type() == type::UINTEGER){
+      rare.foreach([&](const uint32_t index, const uint32_t data, const A anno){
+        const float da = freq.get(data);
+        freq.set(data,data,(da+anno*mult_value));
+        BITSET::set_bit(
+          BITSET::word_index(data),
+          (uint64_t*)freq.get_index_data(),
+          BITSET::word_index(freq.get_meta()->start)
+        );
+      });
+      return freq;
+    }
     ops::set_union_bitset<BS_BS_ALPHA_SUM<float>,float>(
       mult_value,
       freq.get_meta(),
@@ -65,7 +77,6 @@ namespace ops{
       (A*)rare.get_annotation(),
       BITSET::word_index(rare.get_meta()->start),
       BITSET::get_num_data_words(rare.get_meta()));
-
     return freq;
   }
 }

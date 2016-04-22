@@ -27,6 +27,19 @@ struct UINTEGER{
     return values[data_index];
   }
 
+  template <class M>
+  static inline bool contains(
+    const uint32_t data, 
+    const Meta * const restrict meta, 
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex){
+    const uint32_t * const indices = (const uint32_t * const) 
+      (memoryBuffer->get_address(bufferIndex)+sizeof(Meta));
+    const size_t anno_offset = sizeof(uint32_t)*meta->cardinality;
+    const long data_index = utils::binary_search(indices,0,meta->cardinality,data);
+    return data != -1;
+  }
+
   template <class A, class M>
   static inline A get(
     const uint32_t index,
@@ -99,7 +112,6 @@ struct UINTEGER{
     const BufferIndex& restrict bufferIndex)
   {
     for(size_t i=0; i<meta->cardinality;i++){
-      std::cout << "HERE" << std::endl;
       const uint32_t * const data = (const uint32_t * const) 
         (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+(sizeof(uint32_t)*i));
       f(i,*data);

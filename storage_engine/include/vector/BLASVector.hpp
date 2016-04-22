@@ -41,7 +41,8 @@ struct BLASVector{
     const M * const restrict memoryBuffer,
     const BufferIndex& restrict bufferIndex
   ){
-    return memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+sizeof(size_t);
+    return memoryBuffer->get_address(bufferIndex)+
+    sizeof(Meta)+sizeof(size_t);
   }
 
   template<class M>
@@ -138,9 +139,11 @@ struct BLASVector{
 
   //look up a data value
   template <class A, class M>
-  static inline bool contains(const uint32_t key) {
-    (void) key;
-    return false;
+  static inline bool contains(const uint32_t key,
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex) {
+    const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
+    return BITSET:: template contains<M>(key,meta,memoryBuffer,BufferIndex(bufferIndex.tid,bufferIndex.index+sizeof(size_t)));
   }
 
   //mutable loop (returns data and index)

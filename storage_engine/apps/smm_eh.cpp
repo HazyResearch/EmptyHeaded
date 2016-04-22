@@ -96,25 +96,26 @@ int main()
         tmp_block->zero(result->dimensions,block_offsets); //zero out the memory.
 
         RESULT_k.foreach_index([&](const uint32_t k_i, const uint32_t k_d){
-            //grab value from R_k
-            const float mult_value = R_k.get(k_d);
-            Vector<EHVector,float,ParMemoryBuffer> S_j(
-              S->memoryBuffers,
-              S_k.get(k_d));
+          //grab value from R_k
+          const float mult_value = R_k.get(k_d);
+          Vector<EHVector,float,ParMemoryBuffer> S_j(
+            S->memoryBuffers,
+            S_k.get(k_d));
 
-            //UNION S_j into buffer, multiply by value from R_k 
-            ///UNION BITSET, stream through S_j, 
-            //UNION_ADD BS/BS -> roughly the same as intersect
-            //UNION_ADD BS/UINT -> stream through uint flip bits in BITSET
-            Vector<BLASVector,float,ParMemoryBuffer> tmp_j = 
-              tmp_block->at<float>(0,0);
-            ops::union_in_place(mult_value,tmp_j,S_j);
+          //UNION S_j into buffer, multiply by value from R_k 
+          ///UNION BITSET, stream through S_j, 
+          //UNION_ADD BS/BS -> roughly the same as intersect
+          //UNION_ADD BS/UINT -> stream through uint flip bits in BITSET
+          Vector<BLASVector,float,ParMemoryBuffer> tmp_j = 
+            tmp_block->at<float>(0,0);
+          ops::union_in_place(mult_value,tmp_j,S_j);
         });
+        tmp_block->print();
         //sparsify
         //set result_i
-        Vector<EHVector,float,ParMemoryBuffer> RESULT_j = 
-          tmp_block->sparsify_vector(0,result->memoryBuffers);
-        RESULT_i.set(i_i,i_d,RESULT_j.bufferIndex);
+        //Vector<EHVector,float,ParMemoryBuffer> RESULT_j = 
+        //  tmp_block->sparsify_vector(0,result->memoryBuffers);
+        //RESULT_i.set(i_i,i_d,RESULT_j.bufferIndex);
       });
       RESULT_J.set(J_i,J_d,RESULT_i.bufferIndex);
     });
@@ -123,7 +124,7 @@ int main()
   timer::stop_clock("QUERY",query_time);
 
   std::cout << "RESULT" << std::endl;
-  result->print();
+  //result->print();
 
   return 0;
 }

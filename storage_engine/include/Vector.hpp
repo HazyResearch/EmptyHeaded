@@ -61,7 +61,6 @@ struct Vector{
     bufferIndex.index = index;
   }
 
-
   Vector(
     const size_t tid,
     M* memory_buffer_in,

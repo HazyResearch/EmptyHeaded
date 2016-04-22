@@ -1,10 +1,9 @@
-#ifndef _UNION_BITSET_H_
-#define _UNION_BITSET_H_
+#ifndef _UNION_HYBRID_H_
+#define _UNION_HYBRID_H_
 
 namespace ops{
-
   template<class CA>
-  struct BS_BS_UNION_VOID{
+  struct BS_UINT_UNION_VOID{
     inline void init(const CA alpha_in){(void) alpha_in;}
     inline void compute_avx(
       CA * restrict c,
@@ -31,7 +30,7 @@ namespace ops{
   };
 
   template<class CA>
-  struct BS_BS_ALPHA_SUM{
+  struct BS_UINT_ALPHA_SUM{
     __m256 r_alpha;
     float alpha;
     inline void init(const float alpha_in){}
@@ -60,13 +59,13 @@ namespace ops{
   };
 
   template<>
-  void BS_BS_ALPHA_SUM<float>::init(const float alpha_in) {
+  void BS_UINT_ALPHA_SUM<float>::init(const float alpha_in) {
     alpha = alpha_in;
     r_alpha = _mm256_set1_ps(alpha_in);
   }
 
   template<>
-  void BS_BS_ALPHA_SUM<float>::compute_avx(
+  void BS_UINT_ALPHA_SUM<float>::compute_avx(
     float * restrict c,
     const size_t c_offset, 
     const float * restrict a,
@@ -82,7 +81,7 @@ namespace ops{
   }
 
   template<>
-  inline void BS_BS_ALPHA_SUM<float>::compute_word(
+  inline void BS_UINT_ALPHA_SUM<float>::compute_word(
     float * restrict c,
     const size_t c_offset, 
     const float * restrict a,
@@ -97,9 +96,10 @@ namespace ops{
     }
   }
 
+  /*
   //A must have a range strictly larger than B
   template<class AGG,class CA>
-  inline void set_union_bitset(
+  inline void set_union_hybrid(
       CA value,
       Meta *meta,
       uint64_t * const restrict C, 
@@ -108,9 +108,8 @@ namespace ops{
       const CA * const restrict annoA,
       const uint64_t a_si,
       const uint64_t s_a,
-      const uint64_t * const restrict B,
+      const uint32_t * const restrict B,
       const CA * const restrict annoB,
-      const uint64_t b_si,
       const uint64_t s_b)
 {
     (void) s_a;
@@ -118,6 +117,16 @@ namespace ops{
 
     AGG agg;
     agg.init(value);
+
+    const uint32_t bs_start = a_si*64;
+    const uint32_t bs_end = (a_si+s_a)*64-1;
+
+    for(size_t i = 0 ; i < s_b; i++){
+      const uint32_t data = B[i];
+      if(data >= bs_start && data <= bs_end){
+
+      }
+    }
 
     const uint64_t a_start_index = 0;
     const uint64_t b_start_index = a_si-b_si;
@@ -134,7 +143,7 @@ namespace ops{
       const __m256 m2 = _mm256_loadu_ps((float*)(B + b_start_index + vector_index));
       const __m256 r = _mm256_or_ps(m1, m2);
     
-      _mm256_storeu_ps((float*)(C+vector_index+a_start_index), r);
+      _mm256_storeu_ps((float*)(C+vector_index), r);
       
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,0));
       count += _mm_popcnt_u64(_mm256_extract_epi64((__m256i)r,1));
@@ -143,7 +152,7 @@ namespace ops{
 
       agg.compute_avx(
         annoC,
-        vector_index+a_start_index,
+        vector_index,
         annoA,
         vector_index+a_start_index,
         annoB,
@@ -159,7 +168,7 @@ namespace ops{
       C[vector_index] = r;
 
       agg.compute_word(
-        annoC+a_start_index,
+        annoC,
         vector_index,
         annoA,
         vector_index+a_start_index,
@@ -170,6 +179,7 @@ namespace ops{
     meta->cardinality = count;
     meta->type = type::BITSET;
   }
+  */
 }
 
 #endif

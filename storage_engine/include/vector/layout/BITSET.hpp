@@ -41,6 +41,23 @@ struct BITSET{
     return (num_words*sizeof(uint64_t));
   }
 
+  template <class M>
+  static inline bool contains(
+    const uint32_t data, 
+    const Meta * const restrict meta, 
+    const M * const restrict memoryBuffer,
+    const BufferIndex& restrict bufferIndex){
+
+    const size_t num_words = get_num_data_words(meta);
+    std::cout << "START: " << data <<  " " << meta->start << " " << meta->end << std::endl;
+    if(data >= meta->start && data <= meta->end){
+      const uint64_t * const in_data = (const uint64_t* const)memoryBuffer->get_address(bufferIndex)+sizeof(Meta);
+      std::cout << std::hex << *in_data << std::dec << std::endl;
+      return is_set(data,in_data,word_index(meta->start));
+    }
+    return false;
+  }
+
   template <class A, class M>
   static inline A get(
     const uint32_t data, 

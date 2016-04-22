@@ -2,6 +2,7 @@
 #define _INTERSECT_H_
 
 #include "intersect_bitset.hpp"
+#include "intersect_uinteger.hpp"
 
 namespace ops{
   //types of aggregates
@@ -40,7 +41,12 @@ namespace ops{
             //bitset_uinteger_intersect<AGG>();
           break;
           case type::UINTEGER : 
-            //uinteger_uinteger_intersect<AGG>();
+            return ops::uinteger_uinteger_intersect<AGG,C,A,B>(
+              tid,
+              alloc_size,
+              m,
+              rare,
+              freq);
           break;
         }
       default:
