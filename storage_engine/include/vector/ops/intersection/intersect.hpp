@@ -3,6 +3,7 @@
 
 #include "intersect_bitset.hpp"
 #include "intersect_uinteger.hpp"
+#include "intersect_bitset_uinteger.hpp"
 
 namespace ops{
   //types of aggregates
@@ -15,7 +16,6 @@ namespace ops{
     const Vector<EHVector,A,ParMemoryBuffer>& rare, 
     const Vector<EHVector,B,ParMemoryBuffer>& freq
   ){
-
     const size_t alloc_size = 
        std::min(rare.get_num_index_bytes(),freq.get_num_index_bytes());
 
@@ -31,14 +31,24 @@ namespace ops{
               freq);
           break;
           case type::UINTEGER : 
-            //bitset_uinteger_intersect<AGG>();
+            return ops::bitset_bitset_intersect<AGG,C,A,B>(
+              tid,
+              alloc_size,
+              m,
+              rare,
+              freq);
           break;
         }
       }
       case type::UINTEGER : {
         switch(freq.get_type()){
           case type::BITSET : 
-            //bitset_uinteger_intersect<AGG>();
+            return ops::bitset_bitset_intersect<AGG,C,A,B>(
+              tid,
+              alloc_size,
+              m,
+              freq,
+              rare);
           break;
           case type::UINTEGER : 
             return ops::uinteger_uinteger_intersect<AGG,C,A,B>(
