@@ -54,10 +54,12 @@ namespace ops{
 
     if(rare.get_type() == type::UINTEGER){
       rare.foreach([&](const uint32_t index, const uint32_t data, const A anno){
+        (void) index;
         const float da = freq.get(data);
         if(!freq.contains(data))
           freq.get_meta()->cardinality++;
         freq.set(data,data,(da+anno*mult_value));
+                
         BITSET::set_bit(
           data,
           (uint64_t*)freq.get_index_data(),

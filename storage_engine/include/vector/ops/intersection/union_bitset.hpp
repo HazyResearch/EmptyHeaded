@@ -143,11 +143,11 @@ namespace ops{
 
       agg.compute_avx(
         annoC,
-        vector_index+a_start_index,
+        (vector_index+a_start_index)*64,
         annoA,
-        vector_index+a_start_index,
+        (vector_index+a_start_index)*64,
         annoB,
-        vector_index+b_start_index);
+        (vector_index+b_start_index)*64 );
 
       i += 256;
     }
@@ -159,12 +159,12 @@ namespace ops{
       C[vector_index] = r;
 
       agg.compute_word(
-        annoC+a_start_index,
-        vector_index,
+        annoC,
+        vector_index*64,
         annoA,
-        vector_index+a_start_index,
+        (vector_index+a_start_index)*64,
         annoB,
-        vector_index+b_start_index);
+        (vector_index+b_start_index)*64 );
     }
 
     meta->cardinality = count;

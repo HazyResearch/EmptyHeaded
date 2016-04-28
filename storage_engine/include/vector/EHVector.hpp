@@ -322,7 +322,7 @@ struct EHVector{
     const size_t len)
   {
     if(len > MIN_BITSET_LENGTH){
-      const double density =  (double)(data[len-1]-data[0])/len;
+      const double density =  (double)len/(data[len-1]-data[0]);
       if(density >= VECTOR_DENSITY_THRESHOLD){
         const size_t num_words = len > 0 ? BITSET::word_index(data[len-1])-BITSET::word_index(data[0])+1 : 0;
         return sizeof(Meta)+(num_words*64*sizeof(A))+(num_words*sizeof(uint64_t));
@@ -350,7 +350,7 @@ struct EHVector{
     }
 
     if(len > MIN_BITSET_LENGTH){
-      const double density =  (double)(data[len-1]-data[0])/len;
+      const double density =  (double)len/(data[len-1]-data[0]);
       if(density >= VECTOR_DENSITY_THRESHOLD){
         BITSET::from_vector(buffer+sizeof(Meta),data,len);
         meta->type = type::BITSET;
@@ -384,7 +384,7 @@ struct EHVector{
     }
 
     if(len > MIN_BITSET_LENGTH){
-      const double density = (double)(data[len-1]-data[0])/len;
+      const double density = (double)len/(data[len-1]-data[0]);
       if(density >= VECTOR_DENSITY_THRESHOLD){
         BITSET::from_vector<A>(buffer+sizeof(Meta),data,values,len);
         meta->type = type::BITSET;
