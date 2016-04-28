@@ -29,7 +29,7 @@ namespace ops{
 
       uint_set.foreach_index([&](const uint32_t index, const uint32_t data){
         (void) index;
-        if(!bs_set.contains(data)){
+        if(bs_set.contains(data)){
           meta->cardinality++;
           meta->end = data;
           *out++ = data;

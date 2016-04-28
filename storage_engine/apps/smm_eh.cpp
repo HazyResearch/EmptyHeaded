@@ -13,17 +13,20 @@ int main()
 
   const size_t mat_size = 4;
   //auto tup = load_dense_matrix(mat_size,mat_size);
-  auto tup = load_sparse_matrix("/dfs/scratch0/caberger/systems/matrix_benchmarking/data/harbor/data.tsv");
+  auto tup = load_sparse_matrix(
+    "/dfs/scratch0/caberger/systems/matrix_benchmarking/data/harbor/data.tsv"
+    //"/dfs/scratch0/caberger/systems/matrix_benchmarking/data/simple.tsv"
+    );
   Trie<EHVector,float,ParMemoryBuffer> *R = tup.first;
   Trie<EHVector,float,ParMemoryBuffer> *S = tup.second;
 
   /*
-  //std::cout << "R" << std::endl;
-  //R->print();
+  std::cout << "R" << std::endl;
+  R->print();
   std::cout << "S" << std::endl;
   S->print();
-  //temporary buffers for aggregate intersections.
   */
+  //temporary buffers for aggregate intersections.
 
   ParMemoryBuffer **tmp_buffers = new ParMemoryBuffer*[4];
   for(size_t i = 0; i < 4; i++){
@@ -46,7 +49,7 @@ int main()
     tmp_block[i] = new TrieBuffer<float>(false,result->memoryBuffers,1);
   }
 
-  const size_t tid = 0;
+  //const size_t tid = 0;
   //R(i,k),S(k,j)
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_I(
     R->memoryBuffers);
@@ -59,7 +62,7 @@ int main()
       result->memoryBuffers,
       R_I);
 
-  RESULT_I.foreach_index([&](const uint32_t I_i, const uint32_t I_d){
+  RESULT_I.parforeach_index([&](const size_t tid, const uint32_t I_i, const uint32_t I_d){
     Vector<EHVector,BufferIndex,ParMemoryBuffer> R_i(
       R->memoryBuffers,
       R_I.get(I_d));
@@ -95,19 +98,18 @@ int main()
 
         //allocate a buffer for RESULT_j
         std::vector<size_t> block_offsets;
-        block_offsets.push_back(0);
+        block_offsets.push_back(J_d);
         tmp_block[tid]->zero(result->dimensions,block_offsets); //zero out the memory.
 
         Vector<BLASVector,float,ParMemoryBuffer> tmp_j = 
           tmp_block[tid]->at<float>(0,0);
-
+        
         RESULT_k.foreach_index([&](const uint32_t k_i, const uint32_t k_d){
           //grab value from R_k
           const float mult_value = R_k.get(k_d);
           Vector<EHVector,float,ParMemoryBuffer> S_j(
             S->memoryBuffers,
             S_k.get(k_d));
-
           ops::union_in_place<float>(mult_value,tmp_j,S_j);
         });
         Vector<EHVector,float,ParMemoryBuffer> RESULT_j = 
@@ -120,7 +122,7 @@ int main()
   });
   timer::stop_clock("QUERY",query_time);
 
-  //std::cout << "RESULT" << std::endl;
+  std::cout << "RESULT" << std::endl;
   //result->print();
 
   return 0;

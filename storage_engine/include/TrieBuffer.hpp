@@ -19,6 +19,7 @@ struct TrieBuffer{
   std::vector<std::vector<Vector<BLASVector,void*,ParMemoryBuffer>>> buffers;
   A* anno;
   size_t num_anno;
+  bool is_blas_query;
 
   static size_t set_anno(const size_t nc)
   {
@@ -26,9 +27,10 @@ struct TrieBuffer{
   }
 
   TrieBuffer<A>(
-    const bool is_blas_query,
+    const bool is_blas_query_in,
     ParMemoryBuffer* memoryBuffersIn,
     const size_t num_columns_in){
+    is_blas_query = is_blas_query_in;
     num_columns = num_columns_in;
 
     ParMemoryBuffer* memoryBuffers = new ParMemoryBuffer("",2);
@@ -199,7 +201,6 @@ struct TrieBuffer{
       for(size_t j = i; j > 0; j--){
         anno_offset2 += dimensions.at(j)*BLOCK_SIZE*offset.at(j-1);
       }
-
       for(size_t j = 0; j < num; j++){
         Vector<BLASVector,void*,ParMemoryBuffer> cur = 
           buffers.at(i).at(j);
@@ -210,11 +211,16 @@ struct TrieBuffer{
         m->end = (offset.at(i)*BLOCK_SIZE)+BLOCK_SIZE-1;
         m->cardinality = 0;
         m->type = type::BITSET;
-        const size_t anno_offset = anno_offset2+
-          (offset.at(i)*BLOCK_SIZE)+
-          (j*dimensions.at(i));
-        *(size_t*)cur.get_this() = anno_offset;
-        memset((anno+anno_offset),0,BLOCK_SIZE*sizeof(A));
+        if(is_blas_query){
+          const size_t anno_offset = anno_offset2+
+            (offset.at(i)*BLOCK_SIZE)+
+            (j*dimensions.at(i));
+          *(size_t*)cur.get_this() = anno_offset;
+          memset((anno+anno_offset),0,BLOCK_SIZE*sizeof(A));
+        } else{
+          *(size_t*)cur.get_this() = 0;
+          memset(anno,0,BLOCK_SIZE*sizeof(A));
+        }
       }
     }
   };
