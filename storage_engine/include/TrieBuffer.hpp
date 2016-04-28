@@ -114,6 +114,7 @@ struct TrieBuffer{
 
     bool first = true;
     copy_vec.foreach([&](const uint32_t i, const uint32_t d, const A anno){
+      (void) i;
       if(first)
         meta->start = d;
       first = false;

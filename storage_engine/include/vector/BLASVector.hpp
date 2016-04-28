@@ -150,7 +150,7 @@ struct BLASVector{
   template <class A, class M, typename F>
   static inline void foreach(
     F f,
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
@@ -162,7 +162,7 @@ struct BLASVector{
   template <class M, typename F>
   static inline void foreach_index(
     F f,
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);
@@ -173,7 +173,7 @@ struct BLASVector{
   template <class M, typename F>
   static inline void parforeach_index(
     F f,
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
     const Meta * const restrict meta = get_meta<M>(memoryBuffer,bufferIndex);

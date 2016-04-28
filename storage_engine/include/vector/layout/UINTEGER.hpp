@@ -74,7 +74,7 @@ struct UINTEGER{
   static inline void foreach(
     F f,
     const Meta * const restrict meta, 
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
   {
     const size_t card = meta->cardinality;
@@ -92,10 +92,11 @@ struct UINTEGER{
   static inline void parforeach_index(
     F f,
     const Meta * const restrict meta, 
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
   {
-    par::for_range(0, meta->cardinality,
+    const size_t card = meta->cardinality;
+    par::for_range(0, card,
      [&](const size_t tid, const size_t i) {
         const uint32_t * const data = (const uint32_t * const) 
           (memoryBuffer->get_address(bufferIndex)+sizeof(Meta)+(sizeof(uint32_t)*i));
@@ -108,7 +109,7 @@ struct UINTEGER{
   static inline void foreach_index(
     F f,
     const Meta * const restrict meta, 
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
     const size_t card = meta->cardinality;

@@ -17,7 +17,10 @@ namespace ops{
     const Vector<EHVector,B,ParMemoryBuffer>& freq
   ){
     const size_t alloc_size = 
-       std::min(rare.get_num_index_bytes(),freq.get_num_index_bytes());
+       std::min(rare.get_num_index_bytes(),freq.get_num_index_bytes()); /*+
+       std::min(
+        rare. template get_num_annotation_bytes<C>(),
+        freq. template get_num_annotation_bytes<C>());*/
 
     switch(rare.get_type()){
       case type::BITSET : {
@@ -31,7 +34,7 @@ namespace ops{
               freq);
           break;
           case type::UINTEGER : 
-            return ops::bitset_bitset_intersect<AGG,C,A,B>(
+            return ops::bitset_uinteger_intersect<AGG,C,A,B>(
               tid,
               alloc_size,
               m,
@@ -43,7 +46,7 @@ namespace ops{
       case type::UINTEGER : {
         switch(freq.get_type()){
           case type::BITSET : 
-            return ops::bitset_bitset_intersect<AGG,C,A,B>(
+            return ops::bitset_uinteger_intersect<AGG,C,B,A>(
               tid,
               alloc_size,
               m,

@@ -67,7 +67,7 @@ std::pair<Trie<EHVector,float, ParMemoryBuffer>*,Trie<EHVector,float, ParMemoryB
   /////////////////////////////////////////////////////////////////////////////
   Trie<EHVector,float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
   {
-    std::vector<size_t> block = {0};
+    std::vector<size_t> block = {0,1};
     std::vector<size_t> order_0_1 = {0, 1};
     {
       auto start_time = timer::start_clock();
@@ -86,7 +86,7 @@ std::pair<Trie<EHVector,float, ParMemoryBuffer>*,Trie<EHVector,float, ParMemoryB
   }
   Trie<EHVector,float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
   {
-    std::vector<size_t> block = {1};
+    std::vector<size_t> block = {0,1};
     std::vector<size_t> order_1_0 = {0, 1};
     EncodedColumnStore EncodedColumnStore_graph_1_0(&EncodedColumnStore_graph, order_1_0);
     {
@@ -360,8 +360,8 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*>
 
   return std::make_pair(Trie_vector_0,Trie_graph_0_1);
 } 
-
-std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> load_matrix_and_transpose(std::string file){
+*/
+std::pair<Trie<EHVector,float, ParMemoryBuffer>*,Trie<EHVector,float, ParMemoryBuffer>*> load_sparse_matrix(std::string file){
   SortableEncodingMap<uint32_t> EncodingMap_uint32_t;
   Encoding<uint32_t>* Encoding_uint32_t = new Encoding<uint32_t>();
 
@@ -416,13 +416,15 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> load_matr
       (void*)ColumnStore_graph.at(2));
     timer::stop_clock("ENCODING graph", start_time);
   }
-  Trie<float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
+  Trie<EHVector,float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
   {
+    std::vector<size_t> block = {0};
     std::vector<size_t> order_0_1 = {0, 1};
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_graph_0_1 = new Trie<float, ParMemoryBuffer>(
+      Trie_graph_0_1 = new Trie<EHVector, float, ParMemoryBuffer>(
+          block,
           "",
           &EncodedColumnStore_graph.max_set_size, 
           &EncodedColumnStore_graph.data,
@@ -434,14 +436,16 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> load_matr
     ////////////////////emitWriteBinaryTrie////////////////////
   }
 
-  Trie<float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
+  Trie<EHVector,float, ParMemoryBuffer> *Trie_graph_1_0 = NULL;
   {
-    std::vector<size_t> order_1_0 = {1, 0};
+    std::vector<size_t> order_1_0 = {0,1};
+    std::vector<size_t> block = {1};
     EncodedColumnStore EncodedColumnStore_graph_1_0(&EncodedColumnStore_graph, order_1_0);
     {
       auto start_time = timer::start_clock();
       // buildTrie
-      Trie_graph_1_0 = new Trie<float, ParMemoryBuffer>(
+      Trie_graph_1_0 = new Trie<EHVector,float, ParMemoryBuffer>(
+          block,
           "",
           &EncodedColumnStore_graph_1_0.max_set_size, 
           &EncodedColumnStore_graph_1_0.data,
@@ -454,7 +458,7 @@ std::pair<Trie<float, ParMemoryBuffer>*,Trie<float, ParMemoryBuffer>*> load_matr
   }
   return std::make_pair(Trie_graph_0_1,Trie_graph_1_0);
 } 
-
+/*
 Trie<void *, ParMemoryBuffer>* load_graph(std::string file){
   SortableEncodingMap<uint32_t> EncodingMap_uint32_t;
   Encoding<uint32_t>* Encoding_uint32_t = new Encoding<uint32_t>();

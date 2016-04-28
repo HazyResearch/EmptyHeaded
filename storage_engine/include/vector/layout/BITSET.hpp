@@ -108,7 +108,7 @@ struct BITSET{
   static inline void foreach(
     F f,
     const Meta * const restrict meta, 
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
   {
     const size_t num_words = get_num_data_words(meta);
@@ -144,7 +144,7 @@ struct BITSET{
   static inline void parforeach_index(
     F f,
     const Meta * const restrict meta, 
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
   {
     const size_t num_words = get_num_data_words(meta);
@@ -173,7 +173,7 @@ struct BITSET{
   static inline void foreach_index(
     F f,
     const Meta * const restrict meta, 
-    const M * const restrict memoryBuffer,
+    M* memoryBuffer,
     const BufferIndex& restrict bufferIndex)
   {
     const size_t num_words = get_num_data_words(meta);

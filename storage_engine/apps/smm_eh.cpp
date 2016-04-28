@@ -12,15 +12,18 @@ int main()
  thread_pool::initializeThreadPool();
 
   const size_t mat_size = 4;
-  auto tup = load_dense_matrix(mat_size,mat_size);
+  //auto tup = load_dense_matrix(mat_size,mat_size);
+  auto tup = load_sparse_matrix("/dfs/scratch0/caberger/systems/matrix_benchmarking/data/harbor/data.tsv");
   Trie<EHVector,float,ParMemoryBuffer> *R = tup.first;
   Trie<EHVector,float,ParMemoryBuffer> *S = tup.second;
 
-  std::cout << "R" << std::endl;
-  R->print();
+  /*
+  //std::cout << "R" << std::endl;
+  //R->print();
   std::cout << "S" << std::endl;
   S->print();
   //temporary buffers for aggregate intersections.
+  */
 
   ParMemoryBuffer **tmp_buffers = new ParMemoryBuffer*[4];
   for(size_t i = 0; i < 4; i++){
@@ -36,13 +39,14 @@ int main()
       true);
   result->dimensions.push_back(R->dimensions.at(0));
   result->dimensions.push_back(R->dimensions.at(1));
-  const size_t num_anno = (R->dimensions.at(0)*R->dimensions.at(1));
-  float* result_anno = (float*)result->memoryBuffers->anno->get_next(num_anno*sizeof(float));
-  memset(result_anno,0,num_anno*sizeof(float));
 
-  TrieBuffer<float>* tmp_block = 
-    new TrieBuffer<float>(false,result->memoryBuffers,1);
 
+  TrieBuffer<float>** tmp_block = new TrieBuffer<float>*[NUM_THREADS];
+  for(size_t i = 0; i< NUM_THREADS; i++){
+    tmp_block[i] = new TrieBuffer<float>(false,result->memoryBuffers,1);
+  }
+
+  const size_t tid = 0;
   //R(i,k),S(k,j)
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_I(
     R->memoryBuffers);
@@ -62,7 +66,7 @@ int main()
 
     Vector<EHVector,BufferIndex,ParMemoryBuffer> RESULT_J = 
       Vector<EHVector,BufferIndex,ParMemoryBuffer>(
-        0,
+        tid,
         result->memoryBuffers,
         S_J);
 
@@ -73,10 +77,10 @@ int main()
 
       Vector<EHVector,BufferIndex,ParMemoryBuffer> RESULT_i = 
         Vector<EHVector,BufferIndex,ParMemoryBuffer>(
-          NUM_THREADS,
+          tid,
           result->memoryBuffers,
           R_i);
-    
+
       RESULT_i.foreach_index([&](const uint32_t i_i, const uint32_t i_d){
         Vector<EHVector,float,ParMemoryBuffer> R_k(
           R->memoryBuffers,
@@ -84,7 +88,7 @@ int main()
 
         Vector<EHVector,void*,ParMemoryBuffer> RESULT_k = 
           ops::agg_intersect<ops::BS_BS_VOID<void*>,void*,float,BufferIndex>(
-            0,
+            tid,
             tmp_buffers[0],
             R_k,
             S_k);
@@ -92,10 +96,10 @@ int main()
         //allocate a buffer for RESULT_j
         std::vector<size_t> block_offsets;
         block_offsets.push_back(0);
-        tmp_block->zero(result->dimensions,block_offsets); //zero out the memory.
+        tmp_block[tid]->zero(result->dimensions,block_offsets); //zero out the memory.
 
         Vector<BLASVector,float,ParMemoryBuffer> tmp_j = 
-          tmp_block->at<float>(0,0);
+          tmp_block[tid]->at<float>(0,0);
 
         RESULT_k.foreach_index([&](const uint32_t k_i, const uint32_t k_d){
           //grab value from R_k
@@ -104,18 +108,10 @@ int main()
             S->memoryBuffers,
             S_k.get(k_d));
 
-          //UNION S_j into buffer, multiply by value from R_k 
-          ///UNION BITSET, stream through S_j, 
-          //UNION_ADD BS/BS -> roughly the same as intersect
-          //UNION_ADD BS/UINT -> stream through uint flip bits in BITSET
-          ops::union_in_place(mult_value,tmp_j,S_j);
+          ops::union_in_place<float>(mult_value,tmp_j,S_j);
         });
-        //tmp_block->print();
-        //sparsify
-        //set result_i
         Vector<EHVector,float,ParMemoryBuffer> RESULT_j = 
-          tmp_block->sparsify_vector(0,result->memoryBuffers);
-
+          tmp_block[tid]->sparsify_vector(tid,result->memoryBuffers);
         RESULT_i.set(i_i,i_d,RESULT_j.bufferIndex);
       });
       RESULT_J.set(J_i,J_d,RESULT_i.bufferIndex);
@@ -124,8 +120,8 @@ int main()
   });
   timer::stop_clock("QUERY",query_time);
 
-  std::cout << "RESULT" << std::endl;
-  result->print();
+  //std::cout << "RESULT" << std::endl;
+  //result->print();
 
   return 0;
 }

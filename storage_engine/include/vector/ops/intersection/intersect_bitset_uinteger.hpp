@@ -28,6 +28,7 @@ namespace ops{
       || (uint_set.get_meta()->start > bs_set.get_meta()->end)) ) {
 
       uint_set.foreach_index([&](const uint32_t index, const uint32_t data){
+        (void) index;
         if(!bs_set.contains(data)){
           meta->cardinality++;
           meta->end = data;
@@ -35,7 +36,7 @@ namespace ops{
         }
       });
       if(meta->cardinality > 0)
-        meta->start = *start_out
+        meta->start = *start_out;
     }
     BufferIndex bi;
     bi.tid = tid;
