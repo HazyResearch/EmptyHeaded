@@ -46,40 +46,36 @@ int main()
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_J(
     R->memoryBuffers);
 
-  Vector<EHVector,BufferIndex,ParMemoryBuffer> S_J(
-    R->memoryBuffers);
+  Vector<EHVector,BufferIndex,ParMemoryBuffer> V_J(
+    V->memoryBuffers);
 
   Vector<EHVector,void*,ParMemoryBuffer> RESULT_J = 
     ops::agg_intersect<ops::BS_BS_VOID<void*>,void*,BufferIndex,BufferIndex>(
       0,
       tmp_buffers[0],
       R_J,
-      S_J);
+      V_J);
 
+  //setup tmp buffer
   RESULT_J.foreach_index([&](const uint32_t J_i, const uint32_t J_d){
+    std::cout << "J: " << J_d << std::endl;
     Vector<EHVector,BufferIndex,ParMemoryBuffer> R_j(
       R->memoryBuffers,
       R_J.get(J_d));
 
-    Vector<EHVector,BufferIndex,ParMemoryBuffer> S_j(
-      S->memoryBuffers,
-      S_J.get(J_d));
+    Vector<BLASVector,float,ParMemoryBuffer> V_j(
+      V->memoryBuffers,
+      V_J.get(J_d));
 
-    Vector<EHVector,void*,ParMemoryBuffer> RESULT_j = 
-      ops::agg_intersect<ops::BS_BS_VOID<void*>,void*,BufferIndex,BufferIndex>(
-        0,
-        tmp_buffers[0],
-        R_j,
-        S_j);
+    //intersection? EHVector with a BLASVector
+    R_j.foreach_index([&](const uint32_t j_i, const uint32_t j_d){
+      //pull out value from vector
+      Vector<EHVector,BufferIndex,ParMemoryBuffer> R_i(
+        R->memoryBuffers,
+        R_j.get(j_d));
 
-      RESULT_j.foreach_index([&](const uint32_t j_i, const uint32_t j_d){
-        //pull out value from vector
-        Vector<EHVector,BufferIndex,ParMemoryBuffer> R_i(
-          R->memoryBuffers,
-          R_j.get(j_d));
-
-        //multipy and union R_i with value from vector
-      });
+      //multipy and union R_i with value from vector into tmp buffer
+    });
   });
 
   return 0;

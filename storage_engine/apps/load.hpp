@@ -172,7 +172,7 @@ Trie<BLASVector,float, ParMemoryBuffer>*
   /////////////////////////////////////////////////////////////////////////////
   Trie<BLASVector,float, ParMemoryBuffer> *Trie_graph_0_1 = NULL;
   {
-    std::vector<size_t> order_0_1 = {0, 1};
+    std::vector<size_t> order_0_1 = {1,0};
     std::vector<size_t> block = {1};
     {
       auto start_time = timer::start_clock();
