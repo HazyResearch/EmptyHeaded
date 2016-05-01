@@ -16,7 +16,7 @@ int main()
   */
   auto tup = load_sparse_matrix(
     "/dfs/scratch0/caberger/systems/matrix_benchmarking/data/harbor/data.tsv"
-    //"/dfs/scratch0/caberger/systems/matrix_benchmarking/data/simple.tsv"
+    //"/dfs/scratch0/caberger/systems/matrix_benchmarking/data/sparse.tsv"
   );
     
   Trie<EHVector,float,ParMemoryBuffer> *R = tup.first;
@@ -63,6 +63,7 @@ int main()
       result->memoryBuffers,
       R_I);
 
+  //const size_t tid = 0; const uint32_t I_i = 0; const uint32_t I_d = 365;
   RESULT_I.parforeach_index([&](const size_t tid, const uint32_t I_i, const uint32_t I_d){
     Vector<EHVector,BufferIndex,ParMemoryBuffer> R_i(
       R->memoryBuffers,
@@ -74,6 +75,7 @@ int main()
         result->memoryBuffers,
         S_J);
 
+    //const uint32_t J_i = 0; const uint32_t J_d = 365;
     RESULT_J.foreach_index([&](const uint32_t J_i, const uint32_t J_d){
       //std::cout << "J: " << J_d << std::endl;
       Vector<EHVector,BufferIndex,ParMemoryBuffer> S_k(
@@ -86,11 +88,14 @@ int main()
           result->memoryBuffers,
           R_i);
 
+      //const uint32_t i_i = 0; const uint32_t i_d = 46834;
       RESULT_i.foreach_index([&](const uint32_t i_i, const uint32_t i_d){
         //std::cout << "i: " << i_d << std::endl;
         Vector<EHVector,float,ParMemoryBuffer> R_k(
           R->memoryBuffers,
           R_i.get(i_d));
+
+        //std::cout << "R_k: " << R_k.get_meta()->cardinality << std::endl;
 
         Vector<EHVector,void*,ParMemoryBuffer> RESULT_k = 
           ops::agg_intersect<ops::BS_BS_VOID<void*>,void*,float,BufferIndex>(
@@ -109,11 +114,18 @@ int main()
         
         RESULT_k.foreach_index([&](const uint32_t k_i, const uint32_t k_d){
           //grab value from R_k
-          const float mult_value = R_k.get(k_d);
-          Vector<EHVector,float,ParMemoryBuffer> S_j(
-            S->memoryBuffers,
-            S_k.get(k_d));
-          ops::union_in_place<float>(mult_value,tmp_j,S_j);
+          //std::cout << "k_d: " << k_d << std::endl;
+          //if(k_d == 46834){
+            const float mult_value = R_k.get(k_d);
+            Vector<EHVector,float,ParMemoryBuffer> S_j(
+              S->memoryBuffers,
+              S_k.get(k_d));
+            //std::cout << "S_j: " << S_j.get_meta()->cardinality << std::endl;
+            //S_j.foreach_index([&](const uint32_t ii, const uint32_t dd){
+            //  std::cout << dd << std::endl;
+            //});
+            ops::union_in_place<float>(mult_value,tmp_j,S_j);
+          //}
         });
         //tmp_block[tid]->print();
         Vector<EHVector,float,ParMemoryBuffer> RESULT_j = 

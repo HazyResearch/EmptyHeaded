@@ -119,11 +119,11 @@ namespace ops{
     AGG agg;
     agg.init(value);
 
-    const uint64_t a_start_index = 0;
-    const uint64_t b_start_index = a_si-b_si;
+    const uint64_t a_start_index = b_si-a_si;
+    const uint64_t b_start_index = 0;
 
-    const uint64_t start_index = b_si;
-    const uint64_t end_index = (b_si+s_b);
+    const uint64_t start_index = b_si-a_si;
+    const uint64_t end_index = start_index+s_b;
     const uint64_t total_size = (start_index > end_index) ? 0:(end_index-start_index);
 
     const size_t b_size = total_size*64;
@@ -156,11 +156,11 @@ namespace ops{
       const size_t vector_index = (i/BITS_PER_WORD);
       const uint64_t r = A[vector_index+a_start_index] | B[vector_index+b_start_index];
       count += _mm_popcnt_u64(r);      
-      C[vector_index] = r;
+      C[vector_index+a_start_index] = r;
 
       agg.compute_word(
         annoC,
-        vector_index*64,
+        (vector_index+a_start_index)*64,
         annoA,
         (vector_index+a_start_index)*64,
         annoB,
