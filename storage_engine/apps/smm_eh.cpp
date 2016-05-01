@@ -64,7 +64,6 @@ int main()
       R_I);
 
   RESULT_I.parforeach_index([&](const size_t tid, const uint32_t I_i, const uint32_t I_d){
-    //std::cout << "I: " << I_d << std::endl;
     Vector<EHVector,BufferIndex,ParMemoryBuffer> R_i(
       R->memoryBuffers,
       R_I.get(I_d));
@@ -127,7 +126,7 @@ int main()
   });
   timer::stop_clock("QUERY",query_time);
 
-  //std::cout << "RESULT" << std::endl;
+  std::cout << "RESULT" << std::endl;
   result->print();
 
   return 0;

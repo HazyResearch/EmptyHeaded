@@ -147,15 +147,15 @@ struct BITSET{
     M* memoryBuffer,
     const BufferIndex& restrict bufferIndex) 
   {
+    const uint32_t start_value = meta->start;
     const size_t num_words = get_num_data_words(meta);
     par::for_range(0, num_words*64, 1,
      [&](const size_t tid, const size_t i) {
         const uint64_t * const restrict A64_data = 
           (const uint64_t* const restrict)
           (memoryBuffer->get_address(bufferIndex)+
-            sizeof(Meta)+
-            sizeof(uint64_t)* (i/64) );
-        if(is_set(i,A64_data,meta->start)){
+            sizeof(Meta));
+        if(is_set(i,A64_data,start_value)){
           f(tid,i,i);
         }
      });
