@@ -40,7 +40,7 @@ int main()
   memset(result_anno,0,num_anno*sizeof(float));
 
   TrieBuffer<void*>* tmp_block = 
-    new TrieBuffer<void*>(true,result->memoryBuffers,2);
+    new TrieBuffer<void*>(true,result->memoryBuffers,2,BLOCK_SIZE);
 
   //R(i,k),S(j,k)
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_I(

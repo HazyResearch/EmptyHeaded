@@ -6,6 +6,48 @@
 #include "intersect_bitset_uinteger.hpp"
 
 namespace ops{
+
+  template <class AGG,class C,class A, class B>
+  inline Vector<EHVector,C,ParMemoryBuffer> agg_intersect(
+    const size_t tid,
+    ParMemoryBuffer * restrict m,
+    const Vector<BLASVector,A,ParMemoryBuffer>& freq, 
+    const Vector<EHVector,B,ParMemoryBuffer>& rare
+  ){
+    const size_t alloc_size = 
+       std::min(rare.get_num_index_bytes(),freq.get_num_index_bytes()); 
+
+    switch(rare.get_type()){
+      case type::BITSET :
+        return ops::bitset_bitset_intersect<AGG,C,BLASVector,A,EHVector,B>(
+          tid,
+          alloc_size,
+          m,
+          freq,
+          rare);
+      break;
+      case type::UINTEGER : 
+        return ops::bitset_uinteger_intersect<AGG,C,BLASVector,A,EHVector,B>(
+          tid,
+          alloc_size,
+          m,
+          freq,
+          rare);
+      break;
+      default:
+        std::cout << "TYPE ERROR" << std::endl;
+        throw;
+      break;
+    }
+    return ops::bitset_bitset_intersect<AGG,C,BLASVector,A,EHVector,B>(
+          tid,
+          alloc_size,
+          m,
+          freq,
+          rare); 
+  }
+
+
   //types of aggregates
   //AGG_VOID
   //AGG_SUM
@@ -26,7 +68,7 @@ namespace ops{
       case type::BITSET : {
         switch(freq.get_type()){
           case type::BITSET :
-            return ops::bitset_bitset_intersect<AGG,C,A,B>(
+            return ops::bitset_bitset_intersect<AGG,C,EHVector,A,EHVector,B>(
               tid,
               alloc_size,
               m,
@@ -34,7 +76,7 @@ namespace ops{
               freq);
           break;
           case type::UINTEGER : 
-            return ops::bitset_uinteger_intersect<AGG,C,A,B>(
+            return ops::bitset_uinteger_intersect<AGG,C,EHVector,A,EHVector,B>(
               tid,
               alloc_size,
               m,
@@ -46,7 +88,7 @@ namespace ops{
       case type::UINTEGER : {
         switch(freq.get_type()){
           case type::BITSET : 
-            return ops::bitset_uinteger_intersect<AGG,C,B,A>(
+            return ops::bitset_uinteger_intersect<AGG,C,EHVector,B,EHVector,A>(
               tid,
               alloc_size,
               m,
@@ -68,7 +110,7 @@ namespace ops{
       break;
       }
     }
-    return ops::bitset_bitset_intersect<AGG,C,A,B>(tid,alloc_size,m,rare,freq);
+    return ops::bitset_bitset_intersect<AGG,C,EHVector,A,EHVector,B>(tid,alloc_size,m,rare,freq);
   }
 
 

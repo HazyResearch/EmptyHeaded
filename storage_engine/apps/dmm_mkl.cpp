@@ -34,18 +34,11 @@ int main()
       true);
 
   TrieBuffer<void*>* tmp_block = 
-    new TrieBuffer<void*>(true,result->memoryBuffers,2);
+    new TrieBuffer<void*>(true,result->memoryBuffers,2,BLOCK_SIZE);
 
   result->dimensions.push_back(R->dimensions.at(0));
   result->dimensions.push_back(R->dimensions.at(1));
   float* result_anno = (float*)result->memoryBuffers->anno->get_next(R->dimensions.at(0)*R->dimensions.at(1)*sizeof(float));
-  /*
-  for(size_t i = 0; i < R->dimensions.at(0); i++){
-    for(size_t j = 0; j < R->dimensions.at(1); j++){
-      //std::cout << i*R->dimensions.at(1)+j <<  " " << i+j << std::endl;
-      result_anno[i*R->dimensions.at(1)+j] = i*R->dimensions.at(1)+j;
-    }
-  }*/
 
   //R(i,k),S(j,k)
   Vector<EHVector,BufferIndex,ParMemoryBuffer> R_I(

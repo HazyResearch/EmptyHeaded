@@ -131,7 +131,7 @@ Trie<BLASVector,float, ParMemoryBuffer>*
         EncodingMap_uint32_t.update(i);
         v_1->push_back(j);
         EncodingMap_uint32_t.update(j);
-        a_0->push_back( ((float)(i+1)/(float)(j+1) ) );
+        a_0->push_back( 1.0f);//((float)(i+1)/(float)(j+1) ) );
         NumRows_graph++;
       }
     }

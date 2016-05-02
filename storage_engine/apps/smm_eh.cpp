@@ -47,7 +47,7 @@ int main()
 
   TrieBuffer<float>** tmp_block = new TrieBuffer<float>*[NUM_THREADS];
   for(size_t i = 0; i< NUM_THREADS; i++){
-    tmp_block[i] = new TrieBuffer<float>(false,result->memoryBuffers,1);
+    tmp_block[i] = new TrieBuffer<float>(false,result->memoryBuffers,1,BLOCK_SIZE);
   }
 
   //const size_t tid = 0;

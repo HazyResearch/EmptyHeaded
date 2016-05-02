@@ -3,13 +3,13 @@
 
 namespace ops{
  
-  template <class AGG, class A, class B, class C>
+  template <class AGG, class A, class BV, class B, class CV, class C>
   inline Vector<EHVector,A,ParMemoryBuffer> bitset_uinteger_intersect(
     const size_t tid,
     const size_t alloc_size,
     ParMemoryBuffer * restrict m,
-    const Vector<EHVector,B,ParMemoryBuffer>& bs_set, 
-    const Vector<EHVector,C,ParMemoryBuffer>& uint_set){
+    const Vector<BV,B,ParMemoryBuffer>& bs_set, 
+    const Vector<CV,C,ParMemoryBuffer>& uint_set){
 
     const size_t index = m->get_offset(tid);
     uint8_t *buffer = m->get_next(tid,alloc_size);

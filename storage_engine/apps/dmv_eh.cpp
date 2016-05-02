@@ -35,7 +35,11 @@ int main()
       true);
 
   TrieBuffer<void*>* tmp_block = 
-    new TrieBuffer<void*>(true,result->memoryBuffers,1,R->dimensions.at(0));
+    new TrieBuffer<void*>(
+      true,
+      result->memoryBuffers,
+      1,
+      R->dimensions.at(0));
 
   result->dimensions.push_back(R->dimensions.at(0));
   float* result_anno = (float*)result->memoryBuffers->anno->get_next(R->dimensions.at(0)*sizeof(float));
@@ -59,8 +63,8 @@ int main()
       R_J,
       V_J);
 
-  Vector<BLASVector,void*,ParMemoryBuffer> tmp_i = 
-    tmp_block->at<void*>(0,0);
+  Vector<BLASVector,float,ParMemoryBuffer> tmp_i = 
+    tmp_block->at<float>(0,0);
 
   //setup tmp buffer
   RESULT_J.foreach_index([&](const uint32_t J_i, const uint32_t J_d){
@@ -87,27 +91,12 @@ int main()
         R->memoryBuffers,
         R_j.get(j_d));
       //multipy and union R_i with value from vector into tmp buffer
-      //ops::union_in_place<float>(mult_value,tmp_i,R_i);
-      ops::union_in_place(tmp_i,R_i);
+      ops::union_in_place<float>(mult_value,tmp_i,R_i);
     });
   });
 
   Vector<BLASVector,void*,ParMemoryBuffer> vector_result = 
     tmp_block->copy_vector(NUM_THREADS,result->memoryBuffers);
-
-  cblas_sgemv(
-    CblasRowMajor, 
-    CblasNoTrans, 
-    R->dimensions.at(0), 
-    R->dimensions.at(1), 
-    1.0,
-    (float*)R->memoryBuffers->anno->get_address(0), 
-    R->dimensions.at(1),
-    (float*)V->memoryBuffers->anno->get_address(0),
-    1,
-    1.0,
-    result_anno,
-    1.0);
 
   std::cout << "RESULT" << std::endl;
   result->print();
