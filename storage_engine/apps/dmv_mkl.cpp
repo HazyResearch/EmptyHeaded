@@ -11,7 +11,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 16;
+  const size_t mat_size = 68;
 
   Trie<BLASVector,float,ParMemoryBuffer> *R = load_1block_dense_matrix(mat_size,mat_size);
   R->print();

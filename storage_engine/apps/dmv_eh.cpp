@@ -11,7 +11,7 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 16;
+  const size_t mat_size = 68;
 
   Trie<BLASVector,float,ParMemoryBuffer> *R = load_1block_dense_matrix(mat_size,mat_size);
   R->print();
@@ -44,9 +44,9 @@ int main()
   result->dimensions.push_back(R->dimensions.at(0));
   float* result_anno = (float*)result->memoryBuffers->anno->get_next(R->dimensions.at(0)*sizeof(float));
 
-  std::vector<size_t> block_offsets;
-  block_offsets.push_back(0);
-  tmp_block->zero(result->dimensions,block_offsets); //zero out the memory.
+    std::vector<size_t> block_offsets;
+    block_offsets.push_back(0);
+    tmp_block->zero(result->dimensions,block_offsets);
 
   //R(i,j),S(j)
   //attr order j,i
@@ -75,7 +75,6 @@ int main()
     Vector<BLASVector,float,ParMemoryBuffer> V_j(
       V->memoryBuffers,
       V_J.get(J_d));
-
 
     Vector<EHVector,void*,ParMemoryBuffer> RESULT_j = 
       ops::agg_intersect<ops::BS_BS_VOID<void*>,void*,float,BufferIndex>(
