@@ -11,13 +11,13 @@ int main()
 {
  thread_pool::initializeThreadPool();
 
-  const size_t mat_size = 68;
+  const size_t mat_size = 10000;
 
   Trie<BLASVector,float,ParMemoryBuffer> *R = load_1block_dense_matrix(mat_size,mat_size);
-  R->print();
+  //R->print();
 
   Trie<BLASVector,float,ParMemoryBuffer> *V = load_dense_vector(mat_size);
-  V->print();
+  //V->print();
   //temporary buffers for aggregate intersections.
   ParMemoryBuffer **tmp_buffers = new ParMemoryBuffer*[4];
   for(size_t i = 0; i < 4; i++){
@@ -96,6 +96,9 @@ int main()
 
   Vector<BLASVector,void*,ParMemoryBuffer> vector_result = 
     tmp_block->copy_vector(NUM_THREADS,result->memoryBuffers);
+
+
+  timer::stop_clock("QUERY",query_time);
 
   std::cout << "RESULT" << std::endl;
   result->print();

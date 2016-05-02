@@ -3,13 +3,16 @@
 #include "Vector.hpp"
 #include "VectorOps.hpp"
 #include "load.hpp"
+#include <omp.h>
 
 #include "/opt/intel/mkl/include/mkl.h"
 #include "/opt/intel/mkl/include/mkl_spblas.h"
 
 int main()
 {
- thread_pool::initializeThreadPool();
+  thread_pool::initializeThreadPool();
+  omp_set_num_threads(NUM_THREADS);
+
 
   const size_t mat_size = 1024;
   auto tup = load_dense_matrix_and_transpose(mat_size,mat_size);

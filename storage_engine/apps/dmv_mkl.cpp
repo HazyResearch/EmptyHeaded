@@ -3,6 +3,7 @@
 #include "Vector.hpp"
 #include "VectorOps.hpp"
 #include "load.hpp"
+#include <omp.h>
 
 #include "/opt/intel/mkl/include/mkl.h"
 #include "/opt/intel/mkl/include/mkl_spblas.h"
@@ -10,14 +11,15 @@
 int main()
 {
  thread_pool::initializeThreadPool();
+ omp_set_num_threads(NUM_THREADS);
 
-  const size_t mat_size = 68;
+  const size_t mat_size = 10000;
 
   Trie<BLASVector,float,ParMemoryBuffer> *R = load_1block_dense_matrix(mat_size,mat_size);
-  R->print();
+  //R->print();
 
   Trie<BLASVector,float,ParMemoryBuffer> *V = load_dense_vector(mat_size);
-  V->print();
+  //V->print();
   //temporary buffers for aggregate intersections.
   ParMemoryBuffer **tmp_buffers = new ParMemoryBuffer*[4];
   for(size_t i = 0; i < 4; i++){
@@ -97,7 +99,7 @@ int main()
 
   cblas_sgemv(
     CblasRowMajor, 
-    CblasNoTrans, 
+    CblasTrans, 
     R->dimensions.at(0), 
     R->dimensions.at(1), 
     1.0,
@@ -108,6 +110,8 @@ int main()
     1.0,
     result_anno,
     1.0);
+
+  timer::stop_clock("QUERY",query_time);
 
   std::cout << "RESULT" << std::endl;
   result->print();
