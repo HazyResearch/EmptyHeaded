@@ -3,6 +3,46 @@ package duncecap
 import org.scalatest.FunSuite
 
 class QueryPlannerTest extends FunSuite {
+
+  test("Test that query optimizer can return matrix multiply in 1 bag") {
+    val expected = IR(List(
+      Rule(
+        Result(Rel("C", Attributes(List("a", "c")), Annotations(List("w"))), false),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "c", "b"))),
+        Project(Attributes(List())),
+        Join(List(
+          Rel("B", Attributes(List("b", "c")), Annotations(List())),
+          Rel("A", Attributes(List("a", "b")), Annotations(List()))
+        )),
+        Aggregations(List(Aggregation("w", "float", SUM(), Attributes(List("b")), "1", "AGG", List()))),
+        Filters(List())
+      )
+    ))
+    val observed = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run("C(a,c;w) :- A(a,b),B(b,c),w:float<-[SUM(b)].")))
+    assertResult(expected)(observed)
+  }
+
+  test("Test that projecting out the middle attribute works") {
+    val expected = IR(List(
+      Rule(
+        Result(Rel("C", Attributes(List("a", "c")), Annotations(List())), false),
+        None,
+        Operation("*"),
+        Order(Attributes(List("a", "c", "b"))),
+        Project(Attributes(List("b"))),
+        Join(List(
+          Rel("B", Attributes(List("b", "c")), Annotations(List())),
+          Rel("A", Attributes(List("a", "b")), Annotations(List()))
+        )),
+        Aggregations(List()),
+        Filters(List())
+      )
+    ))
+    val observed = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run("C(a,c) :- A(a,b),B(b,c).")))
+    assertResult(expected)(observed)
+  }
   test("Test that query optimizer can return a single relation in 1 bag") {
     val result = Result(Rel("Simple", Attributes(List("a", "b")), Annotations(List())), false)
     val operation = Operation("*")
@@ -53,30 +93,7 @@ class QueryPlannerTest extends FunSuite {
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c)."))
     assertResult(optimized)(ir)
   }
-
-  test("Test that query optimizer can return a projected triangle query in 1 bag") {
-    val ir = IR(List(Rule(
-      Result(Rel("Triangle", Attributes(List("a", "b")), Annotations(List())), false),
-      None,
-      Operation("*"),
-      Order(Attributes(List("a", "b", "c"))),
-      Project(Attributes(List("c"))),
-      Join(List(
-        Rel("Edge", Attributes(List("a", "b")), Annotations(List())),
-        Rel("Edge", Attributes(List("b", "c")), Annotations(List())),
-        Rel("Edge", Attributes(List("a", "c")), Annotations(List())))),
-      Aggregations(List()),
-      Filters(List())
-    )))
-
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Triangle(a,b) :- Edge(a,b),Edge(b,c),Edge(a,c)."))
-    assertResult(optimized)(ir)
-  }
-
-  test("Scratch") {
-    val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run("Triangle(a;w) :- Edge(a,b),Edge(b,c),w:float<-[SUM(b)]."))
-  }
-
+  
   test("lollipop query") {
     val bag1 = Rule(
       Result(Rel("bag_1_a_b_c_Lollipop", Attributes(List("a", "b", "c")), Annotations(List())), true),
@@ -183,7 +200,7 @@ class QueryPlannerTest extends FunSuite {
     )
 
     val optimized = QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "Barbell(a,b,c,d,e,f) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(d,e),Edge(e,f),Edge(d,f),Edge(a,d)."))
+          "Barbell(a,b,c,d,e,f) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(d,e),Edge(e,f),Edge(d,f),Edge(a,d)."))
     assertResult(topdownPass)(optimized.rules(3))
     assertResult(bag0)(optimized.rules(2))
     assertResult(bag1)(optimized.rules(1))
@@ -220,7 +237,7 @@ class QueryPlannerTest extends FunSuite {
         Order(Attributes(List("x", "a"))),
         Project(Attributes(List())),
         Join(List(Rel("Edge",Attributes(List("a", "x")),Annotations(List())))),
-        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("x")),"1","AGG", List()))),Filters(List(Selection("x",EQUALS(),"0")))),
+        Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("x")),"1","AGG", List()))),Filters(List(Selection("x",EQUALS(),SelectionLiteral("0"))))),
       Rule(Result(
         Rel("FliqueSelAgg",Attributes(List()),Annotations(List("z"))),false),
         None,
@@ -238,7 +255,7 @@ class QueryPlannerTest extends FunSuite {
         Aggregations(List(Aggregation("z","long",SUM(),Attributes(List("a", "b", "c", "d")),"1","AGG", List()))),Filters(List()))
       ))
     val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:long<-[COUNT(*)].")))
+          "FliqueSelAgg(;z) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,d),Edge(b,d),Edge(c,d),Edge(a,x),x=0,z:long<-[COUNT(*)].")))
     assertResult(ir)(optimized)
   }
 
@@ -251,7 +268,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List())),
         Join(List(Rel("Edge",Attributes(List("a", "p")), Annotations(List())))),
         Aggregations(List(Aggregation("w","long",SUM(),Attributes(List("p")),"1","AGG",List()))),
-        Filters(List(Selection("p",EQUALS(),"0")))),
+        Filters(List(Selection("p",EQUALS(),SelectionLiteral("0"))))),
       Rule(Result(Rel("bag_2_p_x_BarbellSelAgg",Attributes(List("x")),Annotations(List("w"))),true),
         None,
         Operation("*"),
@@ -259,7 +276,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List())),
         Join(List(Rel("Edge",Attributes(List("p", "x")),Annotations(List())))),
         Aggregations(List(Aggregation("w","long",SUM(),Attributes(List("p")),"1","AGG",List()))),
-        Filters(List(Selection("p",EQUALS(),"0")))),
+        Filters(List(Selection("p",EQUALS(),SelectionLiteral("0"))))),
       Rule(Result(Rel("bag_1_x_y_z_BarbellSelAgg",Attributes(List()),Annotations(List("w"))),true),
         None,
         Operation("*"),
@@ -283,8 +300,8 @@ class QueryPlannerTest extends FunSuite {
         Aggregations(List(Aggregation("w","long",SUM(),Attributes(List("a", "b", "c")),"1","AGG",List()))),
         Filters(List()))))
     val optimized = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(DatalogParser.run("""
-        BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:long<-[COUNT(*)].
-    """)))
+            BarbellSelAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,p),Edge(p,x),Edge(x,y),Edge(y,z),Edge(x,z),p=0,w:long<-[COUNT(*)].
+        """)))
     assertResult(ir)(optimized)
   }
 
@@ -332,7 +349,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List())),
         Join(List(Rel("Edge",Attributes(List("w", "x")),Annotations(List())))),
         Aggregations(List(Aggregation("y","long",CONST(),Attributes(List("w")),"1","",List()))),
-        Filters(List(Selection("w",EQUALS(),"0")))),
+        Filters(List(Selection("w",EQUALS(),SelectionLiteral("0"))))),
       Rule(Result(Rel("SSSP",Attributes(List("x")),Annotations(List("y"))),false),
         Some(Recursion(EPSILON(),EQUALS(),"0")),Operation("*"),Order(Attributes(List("x", "w"))),
         Project(Attributes(List())),
@@ -355,8 +372,8 @@ class QueryPlannerTest extends FunSuite {
           Rel("takesCourse",Attributes(List("a", "b")),Annotations(List())),
           Rel("rdftype",Attributes(List("a", "c")),Annotations(List())))),
         Aggregations(List()),
-        Filters(List(Selection("b",EQUALS(),"'http://www.Department0.University0.edu/GraduateCourse0'"),
-          Selection("c",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'")
+        Filters(List(Selection("b",EQUALS(),SelectionLiteral("'http://www.Department0.University0.edu/GraduateCourse0'")),
+          Selection("c",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'"))
         )))))
     val lubm1 = """
         lubm1(a) :- takesCourse(a,b),rdftype(a,c),b='http://www.Department0.University0.edu/GraduateCourse0',c='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'."""
@@ -372,19 +389,19 @@ class QueryPlannerTest extends FunSuite {
         Order(Attributes(List("y", "b"))),
         Project(Attributes(List("y"))),
         Join(List(Rel("rdftype",Attributes(List("b", "y")), Annotations(List())))),Aggregations(List()),
-        Filters(List(Selection("y",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'")))),
+        Filters(List(Selection("y",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'"))))),
       Rule(Result(Rel("bag_1_z_c_lubm2",Attributes(List("c")),Annotations(List())),true),
         None,
         Operation("*"),
         Order(Attributes(List("z", "c"))),
         Project(Attributes(List("z"))),Join(List(Rel("rdftype",Attributes(List("c", "z")),Annotations(List())))),Aggregations(List()),
-        Filters(List(Selection("z",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University'")))),
+        Filters(List(Selection("z",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#University'"))))),
       Rule(Result(Rel("bag_1_x_a_lubm2",Attributes(List("a")),Annotations(List())),true),
         None,
         Operation("*"),
         Order(Attributes(List("x", "a"))),
         Project(Attributes(List("x"))),Join(List(Rel("rdftype",Attributes(List("a", "x")),Annotations(List())))),Aggregations(List()),
-        Filters(List(Selection("x",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'")))),
+        Filters(List(Selection("x",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#GraduateStudent'"))))),
       Rule(Result(Rel("lubm2",Attributes(List("a", "b", "c")),Annotations(List())),false),
         None,
         Operation("*"),
@@ -421,7 +438,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List("f"))),
         Join(List(Rel("rdftype", Attributes(List("a", "f")),Annotations(List())))),
         Aggregations(List()),
-        Filters(List(Selection("f",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#AssociateProfessor'")))),
+        Filters(List(Selection("f",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#AssociateProfessor'"))))),
       Rule(Result(Rel("bag_2_e_a_lubm4",Attributes(List("a")),Annotations(List())),true),
         None,
         Operation("*"),
@@ -429,7 +446,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List("e"))),
         Join(List(
           Rel("worksFor",Attributes(List("a", "e")),Annotations(List())))),
-        Aggregations(List()),Filters(List(Selection("e",EQUALS(),"'http://www.Department0.University0.edu'")))),
+        Aggregations(List()),Filters(List(Selection("e",EQUALS(),SelectionLiteral("'http://www.Department0.University0.edu'"))))),
       Rule(Result(Rel("bag_1_a_b_lubm4",Attributes(List("a", "b")),Annotations(List())),true),
         None,
         Operation("*"),
@@ -490,7 +507,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List("e"))),
         Join(List(
           Rel("rdftype",Attributes(List("a", "e")),Annotations(List())))),Aggregations(List()),
-        Filters(List(Selection("e",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'")))),
+        Filters(List(Selection("e",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'"))))),
       Rule(Result(Rel("bag_1_d_b_lubm7",Attributes(List("b")),Annotations(List())),true),
         None,
         Operation("*"),
@@ -499,13 +516,13 @@ class QueryPlannerTest extends FunSuite {
         Join(List(
           Rel("rdftype",Attributes(List("b", "d")),Annotations(List())))),
         Aggregations(List()),
-        Filters(List(Selection("d",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'")))),
+        Filters(List(Selection("d",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Course'"))))),
       Rule(Result(Rel("bag_1_c_b_lubm7",Attributes(List("b")),Annotations(List())),true),
         None,
         Operation("*"),Order(Attributes(List("c", "b"))),Project(Attributes(List("c"))),
         Join(List(Rel("teacherOf",Attributes(List("c", "b")),Annotations(List())))),
         Aggregations(List()),
-        Filters(List(Selection("c",EQUALS(),"'http://www.Department0.University0.edu/AssociateProfessor0'")))),
+        Filters(List(Selection("c",EQUALS(),SelectionLiteral("'http://www.Department0.University0.edu/AssociateProfessor0'"))))),
       Rule(Result(Rel("lubm7",Attributes(List("a", "b")),Annotations(List())),false),
         None,
         Operation("*"),
@@ -541,7 +558,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List("d"))),
         Join(List(Rel("rdftype",Attributes(List("a", "d")),Annotations(List())))),
         Aggregations(List()),
-        Filters(List(Selection("d",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'")))),
+        Filters(List(Selection("d",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#UndergraduateStudent'"))))),
       Rule(Result(Rel("bag_2_f_b_lubm8",Attributes(List("b")),Annotations(List())),true),
         None,
         Operation("*"),
@@ -549,7 +566,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List("f"))),
         Join(List(Rel("rdftype",Attributes(List("b", "f")),Annotations(List())))),
         Aggregations(List()),
-        Filters(List(Selection("f",EQUALS(),"'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'")))),
+        Filters(List(Selection("f",EQUALS(),SelectionLiteral("'http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Department'"))))),
       Rule(Result(Rel("bag_2_e_b_lubm8",Attributes(List("b")),Annotations(List())),true),
         None,
         Operation("*"),
@@ -557,7 +574,7 @@ class QueryPlannerTest extends FunSuite {
         Project(Attributes(List("e"))),
         Join(List(Rel("subOrganizationOf",Attributes(List("b", "e")),Annotations(List())))),
         Aggregations(List()),
-        Filters(List(Selection("e",EQUALS(),"'http://www.University0.edu'")))),
+        Filters(List(Selection("e",EQUALS(),SelectionLiteral("'http://www.University0.edu'"))))),
       Rule(Result(Rel("bag_1_a_b_lubm8",Attributes(List("a", "b")),Annotations(List())),true),
         None,
         Operation("*"),

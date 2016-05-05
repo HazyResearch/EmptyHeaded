@@ -64,7 +64,7 @@ object QueryPlanner {
     return joinNames.contains(rule.result.rel.name)
   }
 
-  def findOptimizedPlans(ir:IR): IR = {
+  def findOptimizedPlans(ir: IR, expectedFHW: Option[Double] = None): IR = {
     // This should run the GHD optimizer on any number of rules.
     // The optimizer takes in potentially multiple
     // rules for the same relation.
@@ -78,14 +78,19 @@ object QueryPlanner {
       val rootNodes =
           GHDSolver.computeAJAR_GHD(
             rule.join.rels.map(rel => OptimizerRel.fromRel(rel, rule)).toSet,
-            rule.getResult().getRel().getAttributes().toSet ++ rule.getProject().getAttributes().toSet,
-            rule.getFilters().values.toArray)
+            rule.getResult().getRel().getAttributes().toSet,
+            rule.getFilters().values.toArray
+          )
 
-      val joinAggregates = rule.getAggregations().values.flatMap(agg => {
+      var joinAggregates = Map[String, List[Aggregation]]()
+      for (agg <- rule.getAggregations().values) {
         val attrs = agg.attrs.values
-        attrs.map(attr => { (attr, agg) })
-      }).toMap
 
+        for (attr <- attrs) {
+            val aggs = joinAggregates.getOrElse(attr, List())
+            joinAggregates += (attr -> (agg :: aggs))
+        }
+      }
 
       val candidates = rootNodes.map(r =>
         new GHD(
@@ -96,24 +101,29 @@ object QueryPlanner {
           rule.getFilters().values
         )
       )
-      candidates.map(candidate => {
-        candidate.setJoinAggregates(joinAggregates ++ rule.getAggregations().values.flatMap(agg => { // add the const aggregations
+
+      candidates.foreach(candidate => {
+        var candidateJoinAggregates = joinAggregates
+        rule.getAggregations().values.foreach(agg => {
+          // add the const aggregations
           if (agg.attrs.values.isEmpty) {
             // assignedAttr should be the first attribute that doesn't get materialized
             val assignedAttr = candidate.attributeOrdering.dropWhile(attr => rule.result.rel.attrs.values.contains(attr)).head
-            Some((assignedAttr,
-              Aggregation(
-                agg.annotation,
-                agg.datatype,
-                agg.operation,
-                Attributes(List(assignedAttr)),
-                agg.init,
-                agg.expression,
-                agg.usedScalars)))
-          } else {
-            None
+            val constAgg = Aggregation(
+              agg.annotation,
+              agg.datatype,
+              agg.operation,
+              Attributes(List(assignedAttr)),
+              agg.init,
+              agg.expression,
+              agg.usedScalars,
+              agg.innerExpression
+            )
+            val updatedAggList = candidateJoinAggregates.getOrElse(assignedAttr, List()) ++ List(constAgg)
+            candidateJoinAggregates += (assignedAttr -> updatedAggList)
           }
-        }))
+        })
+        candidate.setJoinAggregates(candidateJoinAggregates)
       })
       candidates.map(c => c.doPostProcessingPass())
 
@@ -128,7 +138,16 @@ object QueryPlanner {
       ghdsWithPushedOutSelections.map(_.doPostProcessingPass)
       val chosen = HeuristicUtil.getGHDsWithMaxCoveringRoot(HeuristicUtil.getGHDsWithSelectionsPushedDown(
         ghdsWithPushedOutSelections))
-      var rules = chosen.head.getQueryPlan(accum)
+
+      expectedFHW match {
+        case Some(e) => {
+          val score = chosen.head.root.fractionalScoreTree()
+          assert(e >= score, s"Expected $e, got $score.")
+        }
+        case _ =>
+      }
+
+      var rules = chosen.head.getQueryPlan(accum, rule)
       rules = if (isRecursive) {
         markStatementAsRecursive(rule, rules.head)::rules.tail
       } else {

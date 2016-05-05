@@ -150,7 +150,8 @@ def barbell_materialized_sql(db):
     if tri.num_rows != 56L:
       raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
     row0 = df.iloc[55]
-    if row0[0] != 3l or row0[1] != 5l or row0[2] != 5l or row0[3] != 4l or row0[4] != 3l or row0[5] != 4l: #5  4  4  3  5  3
+    # Rows are permuted here too.
+    if row0[0] != 5l or row0[1] != 3l or row0[2] != 4l or row0[3] != 3l or row0[4] != 4l or row0[5] != 5l: #5  3  4  3  4  5
       raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def lollipop_materialized(db):
@@ -303,7 +304,7 @@ TriangleProj(a,b) :- Edge(a,b),Edge(b,c),Edge(a,c).
 def triangle_materialized(db):
   triangle = \
 """
-Triangle(a,c,b) :- Edge(a,c),Edge(c,b),Edge(a,b).
+Triangle(a,b,c) :- Edge(a,b),Edge(b,c),Edge(a,c).
 """
   print "\nTRIANGLE"
   db.eval(triangle)
@@ -336,9 +337,10 @@ def triangle_materialized_sql(db):
 
   if tri.num_rows != 1612010L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
-  row0 = df.iloc[0]
-  if row0[0] != 6l or row0[1] != 5l or row0[2]!=2l: #(6l,5l,2l)
-    raise ResultError("ROW0 INCORRECT: " + str(row0))
+  # The query appears to be the same as the Datalog triangle, but the columns
+  # are permuted for some reason.
+  if len(df[(df[0] == 2l) & (df[1] == 6l) & (df[2] == 5l)]) != 1: #(2l,6l,5l)
+    raise ResultError("ROW (2, 6, 5) NOT FOUND")
 
 def four_clique_materialized(db):
   four_clique = \
@@ -447,11 +449,11 @@ def four_clique_sel_sql(db):
   fourclique_sel = \
     """
     CREATE TABLE FliqueSelSQL AS (
-    SELECT e1.a, e2.a, e3.a, e4.a
+    SELECT e1.a, e2.a, e3.a, e4.b
     FROM Edge e1
     JOIN Edge e2 ON e1.b = e2.a
     JOIN Edge e3 ON e2.b = e3.a
-    JOIN Edge e4 ON e3.b = e4.a AND e4.b = e1.a
+    JOIN Edge e4 ON e3.b = e4.b AND e4.a = e1.a
     JOIN Edge e5 ON e5.a = e1.a AND e5.b = e2.b
     JOIN Edge e6 ON e6.a = e1.b AND e6.b = e3.b
     JOIN Edge e7 ON e7.a = e1.a
@@ -467,7 +469,7 @@ def four_clique_sel_sql(db):
   if foursel.num_rows != 3759972L:
     raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
   row0 = df.iloc[0]
-  if row0[0] != 1l or row0[1] != 53l or row0[2] != 0l or row0[3]!=48l:
+  if row0[0] != 1l or row0[1] != 0l or row0[2] != 48l or row0[3]!=53l:
     raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def barbell_agg_sel(db):
@@ -571,7 +573,7 @@ def sssp_sql(db):
 WITH RECURSIVE SSSPSQL AS (
 SELECT e.b, 1 FROM Edge e WHERE e.a = 0
 UNION
-SELECT e.b, 1 + MIN(e.a) FROM Edge e JOIN SSSPSQL s ON s.a = e.a
+SELECT e.b, 1 + MIN(e.a) FROM Edge e JOIN SSSPSQL s ON s.b = e.a
 )
     """
   print "\nSSSP SQL"
@@ -622,7 +624,8 @@ def test_pruned():
 
   graph = Relation(
     name="Edge",
-    dataframe=ratings)
+    dataframe=ratings,
+    attribute_names=["a","b"])
 
   if build:
     db = Database.create(
@@ -651,7 +654,8 @@ def test_duplicated():
 
   graph = Relation(
     name="Edge",
-    dataframe=ratings)
+    dataframe=ratings,
+    attribute_names=["a","b"])
 
   deg = pd.read_csv(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/data/inv_degree.tsv",\
   sep='\t',\
@@ -660,7 +664,8 @@ def test_duplicated():
 
   inv_degree = Relation(
     name="InvDegree",
-    dataframe=deg)
+    dataframe=deg,
+    attribute_names=["a"])
 
   if build:
     db = Database.create(
@@ -696,7 +701,8 @@ def test_simple():
 
   graph = Relation(
     name="Edge",
-    dataframe=ratings)
+    dataframe=ratings,
+    attribute_names=["a","b"])
 
   if build:
     db = Database.create(

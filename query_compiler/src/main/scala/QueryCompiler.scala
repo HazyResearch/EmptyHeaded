@@ -8,7 +8,9 @@ import sys.process._
 //Defines schema types for relations
 case class Schema(
   val externalAttributeTypes:List[String],
-  val externalAnnotationTypes:List[String]
+  val externalAnnotationTypes:List[String],
+  val attributeNames:List[String] = List(),
+  val annotationNames:List[String] = List()
   ) extends Serializable {
   val attributeTypes:List[String] = checkAttributes()
   val annotationTypes:List[String] = checkAnnotations()
@@ -107,9 +109,11 @@ class QueryCompiler(val db:DBInstance,val hash:String) extends Serializable{
   //code generate from an IR
   //return name of the cpp file
   def generate(query:String, hash:String, folder:String, sql:Boolean = false) : Int = {
-    val ir =
-      if (sql) SQLParser.run(query, db)
-      else DatalogParser.run(query)
+    val ir = if (sql) {
+      SQLParser.run(query, db.relationMap)
+    } else {
+      DatalogParser.run(query)
+    }
     val optir = IROptimizer.dedupComputations(QueryPlanner.findOptimizedPlans(ir))
     val (num,rels) = QueryPlan.generate(optir,db,hash,folder)
     rels.foreach(db.addRelation(_))
@@ -180,8 +184,8 @@ object QueryCompiler {
   }
 
   //Special builder to convert arrays to lists
-  def buildSchema(attrTypes:Array[String],annoTypes:Array[String]) : Schema = {
-    Schema(attrTypes.toList, annoTypes.toList)
+  def buildSchema(attrTypes:Array[String],annoTypes:Array[String],attrNames:Array[String],annoNames:Array[String]) : Schema = {
+    Schema(attrTypes.toList, annoTypes.toList, attrNames.toList, annoNames.toList)
   }
   //Build from a schema saved on disk
   def fromDisk(filename:String) : QueryCompiler = {

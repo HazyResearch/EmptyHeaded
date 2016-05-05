@@ -4,7 +4,7 @@ import duncecap.attr.Attr
 
 class GHD(val root:GHDNode,
           val queryRelations:List[OptimizerRel],
-          var joinAggregates:Map[String, Aggregation],
+          var joinAggregates:Map[String, List[Aggregation]],
           val outputRelation:Rel,
           val selections:List[Selection]) extends QueryPlanPostProcessor {
   val attributeOrdering: List[Attr] = AttrOrderingUtil.getAttributeOrdering(root, queryRelations, outputRelation, selections)
@@ -22,7 +22,7 @@ class GHD(val root:GHDNode,
     node.outputRelation::node.children.flatMap(child => getBagOutputRelations(child))
   }
 
-  def setJoinAggregates(joinAggregates:Map[String, Aggregation]) = {
+  def setJoinAggregates(joinAggregates:Map[String, List[Aggregation]]) = {
     this.joinAggregates = joinAggregates
   }
 
@@ -42,7 +42,7 @@ class GHD(val root:GHDNode,
     root.setDescendantNames(1, outputRelation.name)
 
     root.recursivelyComputeProjectedOutAttrsAndOutputRelation(
-      if (outputRelation.anno.values.isEmpty) None else Some(outputRelation.anno.values.head),
+      if (outputRelation.anno.values.isEmpty) None else Some(outputRelation.anno.values),
       outputRelation.attrs.values,
       outputRelation.attrs.values.toSet
     )
@@ -54,17 +54,21 @@ class GHD(val root:GHDNode,
   }
 
   def pushOutSelections() = {
-    root.recursivelyPushOutSelections()
+    root.recursivelyPushOutSelections(outputRelation.attrs.values.toSet)
   }
 
-  def getQueryPlan(prevRules:List[Rule]): List[Rule] = {
+  def getQueryPlan(prevRules:List[Rule], curRule:Rule): List[Rule] = {
     // do a preorder traversal of the GHDNodes to get the query plans
     val plan = root.recursivelyGetQueryPlan(joinAggregates, needTopDownPass(), prevRules)
-    if(needTopDownPass()) {
+    val fullPlan = if(needTopDownPass()) {
       getTopDownPass()::plan
     } else {
       plan
     }
+
+    // Tack on the order by to the top rule.
+    fullPlan.head.orderBy = curRule.orderBy
+    fullPlan
   }
 
   def needTopDownPass():Boolean = {

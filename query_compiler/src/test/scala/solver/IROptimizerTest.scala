@@ -98,7 +98,7 @@ class IROptimizerTest extends FunSuite {
         Rel("Edge", Attributes(List("a", "b")), Annotations(List()))
       )),
       Aggregations(List()),
-      Filters(List(Selection("a",EQUALS(),"0")))
+      Filters(List(Selection("a",EQUALS(),SelectionLiteral("0"))))
     )
 
     assert(!bag1.attrNameAgnosticEquals(bag2))
@@ -150,7 +150,7 @@ class IROptimizerTest extends FunSuite {
     )
 
     val plan = QueryPlanner.findOptimizedPlans(DatalogParser.run(
-      "Barbell(a,b,c,d,e,f) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(d,e),Edge(e,f),Edge(d,f),Edge(a,d)."))
+          "Barbell(a,b,c,d,e,f) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(d,e),Edge(e,f),Edge(d,f),Edge(a,d)."))
     val optimized = IROptimizer.dedupComputations(plan)
     assertResult(IR(List(bag2, bag0, topdownPass)))(optimized)
   }
@@ -163,7 +163,7 @@ class IROptimizerTest extends FunSuite {
        Order(Attributes(List("b", "a"))),
        Project(Attributes(List())),
        Join(List(Rel("Edge",Attributes(List("a", "b")),Annotations(List())))),Aggregations(List()),
-       Filters(List(Selection("b",EQUALS(),"0")))),
+       Filters(List(Selection("b",EQUALS(),SelectionLiteral("0"))))),
      Rule(Result(Rel("Simple2",Attributes(List("b", "c")),Annotations(List())),false),
        None,
        Operation("*"),
@@ -178,8 +178,7 @@ class IROptimizerTest extends FunSuite {
         |Simple1(a,b) :- Edge(a,b),b=0.
         |Simple2(b,c) :- Edge(b,c),c=0.
       """.stripMargin
-    val plan = QueryPlanner.findOptimizedPlans(
-      DatalogParser.run(query))
+    val plan = QueryPlanner.findOptimizedPlans(DatalogParser.run(query))
     val deduped = IROptimizer.dedupComputations(plan)
 
     assertResult(2)(deduped.rules.size) // make sure we don't get rid of any of them, since neither is an intermediate
@@ -212,8 +211,7 @@ class IROptimizerTest extends FunSuite {
       """
         |BarbellAgg(;w) :- Edge(a,b),Edge(b,c),Edge(a,c),Edge(a,x),
         |Edge(x,y),Edge(y,z),Edge(x,z),w:long<-[COUNT(*)].""".stripMargin
-    val plan = QueryPlanner.findOptimizedPlans(
-      DatalogParser.run(query))
+    val plan = QueryPlanner.findOptimizedPlans(DatalogParser.run(query))
     val deduped = IROptimizer.dedupComputations(plan)
     assertResult(expectedDeduped)(deduped)
   }

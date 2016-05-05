@@ -18,7 +18,8 @@ case class Rule(val result:Result,
                 val project:Project,
                 val join:Join,
                 val aggregations:Aggregations,
-                val filters:Filters) {
+                val filters:Filters,
+                var orderBy:Option[OrderBy] = None) {
   def getResult():Result = {result}
   def getRecursion():Option[Recursion] = {recursion}
   def getOperation():Operation = {operation}
@@ -100,13 +101,13 @@ case class Annotations(val values:List[String])
 abstract trait RelBase {
   val name:String
   val attrs:Attributes
-  val anno:Annotations
+  var anno:Annotations
 }
 
 case class Rel(
   override val name:String,
   override val attrs:Attributes,
-  override val anno:Annotations=Annotations(List())) extends RelBase {
+  override var anno:Annotations=Annotations(List())) extends RelBase {
   def getName():String = {name}
   def getAttributes():Array[String] = {attrs.values.toArray}
   def getAnnotations():Array[String] = {anno.values.toArray}
@@ -117,7 +118,7 @@ case class Result(val rel:Rel, val isIntermediate:Boolean){
   def getIsIntermediate():Boolean = { isIntermediate }
 }
 
-abstract class ConvergenceCriteria {}
+abstract class Convergence {}
 
 case class ITERATIONS() extends Convergence {}
 case class EPSILON() extends Convergence {}
@@ -148,7 +149,7 @@ case class Operation(val value:String){
   def getOperation():String = {value}
 }
 
-case class Join(val rels:List[Rel]){
+case class Join(var rels:List[Rel]){
   def getNumRels():Int = { rels.length }
   def getRel(i:Int):Rel = { rels(i) }
 
@@ -164,12 +165,29 @@ case class Join(val rels:List[Rel]){
   }
 }
 
+// The rhs of a selection can be a number of different types (e.g. dates, lists), so we wrap it in an object.
+abstract class SelectionValue {
+  def generate:String = {
+    val className = this.getClass.getName
+    throw new Exception(s""""generate" not implemented by $className""")
+  }
+}
+case class SelectionLiteral(value: String) extends SelectionValue {
+  override def generate = value
+}
+case class SelectionDate(value: java.util.Date) extends SelectionValue
+case class SelectionInList(value: List[String]) extends SelectionValue
+// This should just be the name of a subquery that is a scalar.
+case class SelectionSubquery(value: String) extends SelectionValue
+case class SelectionOrList(value: List[Filters]) extends SelectionValue
+
 case class Selection(val attr:String,
                      val operation:Op,
-                     val value:String) {
+                     val value:SelectionValue,
+                     val negated:Boolean = false) {
   def getAttr():String = { attr }
   def getOperation():String = { operation.value }
-  def getValue():String = { value }
+  def getValue():SelectionValue = { value }
 }
 
 abstract class Op {
@@ -180,6 +198,32 @@ abstract class Op {
 case class EQUALS() extends Op {
   override val value = "="
 }
+
+case class NOTEQUALS() extends Op {
+  override val value = "!="
+}
+
+case class LTE() extends Op {
+  override val value = "<="
+}
+
+case class GTE() extends Op {
+  override val value = ">="
+}
+
+case class LT() extends Op {
+  override val value = "<"
+}
+
+case class GT() extends Op {
+  override val value = ">"
+}
+
+case class LIKE() extends Op
+
+case class IN() extends Op
+
+case class OR() extends Op
 
 case class Filters(val values:List[Selection]){
   def getNumFilters():Int = {values.length}
@@ -200,6 +244,28 @@ case class CONST() extends AggOp {
 case class MIN() extends AggOp {
   override val value = "<"
 }
+case class MAX() extends AggOp
+
+case class AVG() extends AggOp
+
+case class COUNT_DISTINCT() extends AggOp
+
+// This is the expression that occurs inside a SQL aggregation (e.g. SUM(1 + l_discount)). It can also be a CASE, so
+// we need to wrap it in an object. It stores a list of relations it touches so we can set aggregations on the right
+// bags.
+abstract class InnerExpr(val involvedRelations:List[String], val relationsToColumn:Map[String, List[String]])
+case class LiteralExpr(
+                        value:String,
+                        override val involvedRelations:List[String],
+                        override val relationsToColumn:Map[String, List[String]] = Map()
+                      ) extends InnerExpr(involvedRelations, relationsToColumn)
+case class CaseExpr(
+                     condition:List[Selection],
+                     ifCase:String,
+                     elseCase:String,
+                     override val involvedRelations:List[String],
+                     override val relationsToColumn:Map[String, List[String]] = Map()
+                   ) extends InnerExpr(involvedRelations, relationsToColumn)
 
 case class Aggregation(
   val annotation:String,
@@ -208,9 +274,10 @@ case class Aggregation(
   val attrs:Attributes,
   val init:String,
   val expression:String,
-  val usedScalars:List[Rel])
+  val usedScalars:List[Rel],
+  var innerExpression:InnerExpr = LiteralExpr("", List()))
 
-case class Aggregations(val values:List[Aggregation]){
+case class Aggregations(var values:List[Aggregation]){
   def getNumAggregations():Int = {values.length}
   def getAnnotation(i:Int):String = {values(i).annotation}
   def getDatatype(i:Int):String = {values(i).datatype}
@@ -220,6 +287,9 @@ case class Aggregations(val values:List[Aggregation]){
   def getExpression(i:Int):String = {values(i).expression}
   def getDependedOnRels(i:Int):Array[Rel] = {values(i).usedScalars.toArray}
 }
+
+case class OrderingTerm(val attr:String, val desc:Boolean)
+case class OrderBy(val terms:List[OrderingTerm])
 
 ///////////////////////////////////////////////////////////
 //From here down is just helper methods to bind to python.
@@ -305,8 +375,9 @@ class FilterBuilder() {
     }
   }
 
+  // This can only be used when the rhs of the selection is a string (i.e. not a date or something else).
   def buildSelection(attr:String,operation:String,value:String):Selection = {
-    Selection(attr,getOp(operation),value)
+    Selection(attr,getOp(operation),SelectionLiteral(value))
   }
 
   def addSelection(sel:Selection) {

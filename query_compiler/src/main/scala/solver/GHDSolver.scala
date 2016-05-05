@@ -6,7 +6,8 @@ import scala.collection.mutable
 
 object GHDSolver {
   def computeAJAR_GHD(rels: Set[OptimizerRel], output: Set[String], selections:Array[Selection]):List[GHDNode] = {
-    val selectedAttrs = selections.map(selection => selection.attr).toSet
+    // We need to support attributes that are selected with IN and also output.
+    val selectedAttrs = selections.filter(!_.value.isInstanceOf[SelectionInList]).map(selection => selection.attr).toSet
     val components = getConnectedComponents(
       mutable.Set(rels.toList.filter(rel => !(rel.attrs.values.toSet subsetOf (output  ++ selectedAttrs))):_*),
       List(),
@@ -39,6 +40,41 @@ object GHDSolver {
     theoreticalGHDs.flatMap(deleteImaginaryEdges(_))
   }
 
+  /**
+    * A helper method to check bags can be joined. Sets are merged if their intersection is non-empty, i.e. we find
+    * the connected components.
+    * @param sets A list of sets of objects.
+    * @tparam T The type of the objects in the set
+    * @return A new list of sets of objects.
+    */
+  private def mergeSets[T](sets:List[Set[T]]) = {
+    sets.foldLeft(List[Set[T]]())((cumulative, current) => {
+      val (common, rest) = cumulative.partition(set => set.intersect(current).nonEmpty)
+      (common.flatten.toSet ++ current) :: rest
+    })
+  }
+
+  /**
+    * Check that all bags can be joined and the running intersection property holds.
+    * @param root The root node of the GHD.
+    * @return true if the GHD is valid.
+    */
+  private def isValidGHD(root:GHDNode):Boolean = {
+    // Check the sets can be joined. We don't consider "imaginary" relations here.
+    val realRels = root.rels.filter(rel => !(rel.isImaginary && rel.attrs.values.isEmpty))
+    val joinable = realRels.isEmpty || mergeSets(realRels.map(_.attrs.values.toSet)).length == 1
+
+    // Check running intersection. We consider "imaginary" relations here by checking if the child and root share any
+    // relations (this should only happen with "imaginary" relations).
+    val allRootRels = root.rels.flatMap(_.attrs.values)
+    val runningIntersection = root.children.forall(child => {
+      val allChildRels = child.rels.flatMap(_.attrs.values)
+      allRootRels.intersect(allChildRels).nonEmpty || root.rels.intersect(child.rels).nonEmpty
+    })
+
+    // Check the children are valid too.
+    joinable && runningIntersection && root.children.forall(isValidGHD)
+  }
 
   /**
    * Delete the imaginary edges (added when constructing the characteristic hypergraphs) from the GHD
@@ -218,34 +254,48 @@ object GHDSolver {
                                 imaginaryRel:Option[OptimizerRel],
                                 parentAttrs:Set[String],
                                 selections:Array[Selection]): List[GHDNode] =  {
+    // Selections that touch attributes in multiple relations (e.g. OR) mean all of those relations must appear in a
+    // bag together. In the future it might make sense to make this more general (keep going down more than one level).
+    val attrSets = selections.map(_.value).collect({
+      case SelectionOrList(filtersList) => filtersList.map(filters => filters.values.map(_.attr))
+    }).flatten
+
+    val constrainedBags = attrSets.map(attrList =>
+      attrList.flatMap(attr => rels.find(rel => rel.attrs.values.contains(attr))).map(_.name).toSet
+    )
 
     val treesFound = mutable.ListBuffer[GHDNode]()
     for (tryNumRelationsTogether <- (1 to rels.size).toList) {
       for (combo <- rels.combinations(tryNumRelationsTogether).toList) {
-        val bag =
-          if (imaginaryRel.isDefined) {
-            imaginaryRel.get::combo
-          } else {
-            combo
-          }
-        // If your edges cover attributes that a larger set of edges could cover, then
-        // don't bother trying this bag
-        val leftoverBags = rels.toSet[OptimizerRel] &~ bag.toSet[OptimizerRel]
-        val newNode = new GHDNode(bag, selections)
-        val selectedAttrs = selections.map(selection => selection.attr).toSet
-        if (bagCannotBeExpanded(newNode, leftoverBags, selectedAttrs)) {
-          if (leftoverBags.toList.isEmpty) {
-            treesFound.append(newNode)
-          } else {
+        if (constrainedBags.forall(bag => {
+          val comboNames = combo.map(_.name).toSet
+          bag.intersect(comboNames).isEmpty || bag.subsetOf(comboNames)
+        })) {
+          val bag =
+            if (imaginaryRel.isDefined) {
+              imaginaryRel.get :: combo
+            } else {
+              combo
+            }
+          // If your edges cover attributes that a larger set of edges could cover, then
+          // don't bother trying this bag
+          val leftoverBags = rels.toSet[OptimizerRel] &~ bag.toSet[OptimizerRel]
+          val newNode = new GHDNode(bag, selections)
+          val selectedAttrs = selections.map(selection => selection.attr).toSet
+          if (bagCannotBeExpanded(newNode, leftoverBags, selectedAttrs)) {
+            if (leftoverBags.toList.isEmpty) {
+              treesFound.append(newNode)
+            } else {
 
-            val bagAttrSet = getAttrSet(bag)
-            val partitions = getPartitions(leftoverBags.toList, bag, parentAttrs, selectedAttrs, bagAttrSet)
-            if (partitions.isDefined) {
-              // lists of possible children for |bag|
-              val possibleSubtrees: List[List[GHDNode]] = getListsOfPossibleSubtrees(partitions.get, bagAttrSet, selections)
-              for (subtrees <- possibleSubtrees) {
-                newNode.children = subtrees
-                treesFound.append(newNode)
+              val bagAttrSet = getAttrSet(bag)
+              val partitions = getPartitions(leftoverBags.toList, bag, parentAttrs, selectedAttrs, bagAttrSet)
+              if (partitions.isDefined) {
+                // lists of possible children for |bag|
+                val possibleSubtrees: List[List[GHDNode]] = getListsOfPossibleSubtrees(partitions.get, bagAttrSet, selections)
+                for (subtrees <- possibleSubtrees) {
+                  newNode.children = subtrees
+                  treesFound.append(duplicateTree(newNode))
+                }
               }
             }
           }
@@ -260,7 +310,7 @@ object GHDSolver {
   }
 
   def getMinFHWDecompositions(rels: List[OptimizerRel], selections:Array[Selection], imaginaryRel:Option[OptimizerRel] = None): List[GHDNode] = {
-    val decomps = getDecompositions(rels, imaginaryRel, selections)
+    val decomps = getDecompositions(rels, imaginaryRel, selections).filter(isValidGHD)
     val fhwsAndDecomps = decomps.map((root:GHDNode) => {
       val score =
         try {

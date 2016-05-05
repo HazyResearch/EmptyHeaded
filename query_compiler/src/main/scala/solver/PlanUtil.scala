@@ -23,7 +23,7 @@ object PlanUtil {
     val selectionsOpt = attrToSelection.get(attr)
     if (selectionsOpt.isDefined && !selectionsOpt.get.isEmpty) {
       val selections = selectionsOpt.get
-      (attr, Some(selections(0).operation.value), Some(selections(0).value))
+      (attr, Some(selections(0).operation.value), Some(selections(0).value.toString))
     } else {
       (attr, None, None)
     }

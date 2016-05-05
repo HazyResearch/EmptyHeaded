@@ -40,7 +40,9 @@ class Schema:
   def python2java(self,duncecap):
     return duncecap.QueryCompiler.buildSchema(
       strip_unicode(self.attributes),
-      strip_unicode(self.annotations))
+      strip_unicode(self.annotations),
+      self.attribute_names,
+      self.annotation_names)
 
   @staticmethod
   def java2python(jobject):
@@ -48,12 +50,14 @@ class Schema:
     annotation_types = wrap_types(jobject.getAnnotationTypes())
     return Schema(attribute_types,annotation_types)
 
-  def __init__(self,attributes,annotations=[]):
+  def __init__(self,attributes,annotations=[],attribute_names=[],annotation_names=[]):
     self.attributes = wrap_types(attributes)
     self.annotations = wrap_types(annotations)
+    self.attribute_names = attribute_names
+    self.annotation_names = annotation_names
 
   @staticmethod
-  def fromDF(df):
+  def fromDF(df, attribute_names=[], annotation_names=[]):
     #dataframe names for annnotations must start with "a_"
     pattern = r'^a_.*'
     typesSeries = df.dtypes
@@ -73,7 +77,7 @@ class Schema:
         raise Exception("DataFrame annotation type error. Type " + str(a.name) + " not accepted.")
       annotation_types.append(a)
     
-    return Schema(attribute_types,annotation_types)
+    return Schema(attribute_types,annotation_types,attribute_names,annotation_names)
 
   #for printing purposes
   def __repr__(self):

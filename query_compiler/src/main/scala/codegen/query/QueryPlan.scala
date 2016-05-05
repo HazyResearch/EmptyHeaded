@@ -199,8 +199,10 @@ def c_run_${id}(tm):
       })
     })
     //build up selections
+    //Because the rhs of selections can be a bunch of different things (literals, dates, etc.), they are wrapped in the
+    //SelectionValue class. Right now these just get dumped to a string.
     rule.filters.values.foreach(sel => {
-      selectionMap(sel.attr) += QueryPlanSelection(sel.operation.value,sel.value)
+      selectionMap(sel.attr) += QueryPlanSelection(sel.operation.value,sel.value.generate)
     })
 
     //build up aggreations
