@@ -712,9 +712,9 @@ def test_simple():
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_simple")
 
   lollipop_materialized(db)
-  lollipop_materialized_sql(db)
+  #lollipop_materialized_sql(db)
   barbell_materialized(db)
-  barbell_materialized_sql(db)
+  #barbell_materialized_sql(db)
 
 if(len(sys.argv) < 2):
   check_big_out = True
