@@ -184,14 +184,15 @@ def lollipop_materialized_sql(db):
   print "\nLOLLIPOP SQL"
   db.eval(lollipop, useSql=True)
 
-  tri = db.get("LollipopSQL")
-  df = tri.getDF()
+  if check_big_out:
+    tri = db.get("LollipopSQL")
+    df = tri.getDF()
 
-  if tri.num_rows != 28L:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
-  row0 = df.iloc[27]
-  if row0[0] != 5l or row0[1] != 3l or row0[2] != 4l or row0[3] != 4l:
-    raise ResultError("ROW0 INCORRECT: " + str(row0))
+    if tri.num_rows != 28L:
+      raise ResultError("NUMBER OF ROWS INCORRECT: " + str(tri.num_rows))
+    row0 = df.iloc[27]
+    if row0[0] != 5l or row0[1] != 3l or row0[2] != 4l or row0[3] != 4l:
+      raise ResultError("ROW0 INCORRECT: " + str(row0))
 
 def triangle_agg(db):
   tri_agg = \
@@ -285,9 +286,6 @@ TriangleProj(a,b) :- Edge(a,b),Edge(b,c),Edge(a,c).
 """
   print "\nTRIANGLE PROJECT"
   ir = db.optimize(triangle)
-
-  for rule in ir.rules:
-    print rule
 
   db.eval(triangle)
 
@@ -508,14 +506,15 @@ def barbell_agg_sel_sql(db):
   print "\nBARBELL SELECTION AGG SQL"
   db.eval(barbell_sel_agg, useSql=True)
 
-  bs = db.get("BarbellSelAggSQL")
-  df = bs.getDF()
+  if check_big_out:
+    bs = db.get("BarbellSelAggSQL")
+    df = bs.getDF()
 
-  if bs.num_rows != 0:
-    raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
+    if bs.num_rows != 0:
+      raise ResultError("NUMBER OF ROWS INCORRECT: " + str(bs.num_rows))
 
-  if df.iloc[0][0] != 26936100L:
-    raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
+    if df.iloc[0][0] != 26936100L:
+      raise ResultError("ANNOTATION INCORRECT: " + str(df.iloc[0][0]))
 
 def barbell_sel(db):
   barbell_s = \
