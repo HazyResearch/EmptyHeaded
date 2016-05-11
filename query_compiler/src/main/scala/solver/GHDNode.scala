@@ -65,16 +65,34 @@ class GHDNode(override val rels: List[OptimizerRel],
    *
    * Returns a new copy of the tree
    */
-  def recursivelyPushOutSelections(): GHDNode = {
+  def recursivelyPushOutSelections(attrsFromBagAbove:Set[String]): GHDNode = {
     val (withoutSelections, withSelections) = rels.partition(
-      rel => (rel.attrs.values.toSet intersect selections.map(selection => selection.getAttr()).toSet).isEmpty)
-    if (!withoutSelections.isEmpty) {
-      val newNode = new GHDNode(withoutSelections, selections)
-      newNode.children = children.map(_.recursivelyPushOutSelections) ::: withSelections.map(rel => new GHDNode(List(rel), selections))
+      rel => ((rel.attrs.values.toSet union rel.anno.values.toSet) intersect selections.map(selection => selection.getAttr()).toSet).isEmpty
+    )
+    
+    if (withoutSelections.nonEmpty) {
+      // In the case where a relation has one attribute output and another attribute selected on, and no other relation
+      // has this attribute, we don't want to push down the selection, so we move the relation from the withSelections set
+      // to the withoutSelections set.
+
+      // The set of attributes that will be in the new bag, with some relations pushed out.
+      val newNodeAttrs = withoutSelections.flatMap(_.attrs.values).toSet
+      // The attributes that should be in the bag, but aren't.
+      val missingAttrs = attrsFromBagAbove -- newNodeAttrs
+      // The set of relations that shouldn't be pushed out.
+      val noPushRelations = missingAttrs.flatMap(attr => withSelections.find(_.attrs.values.contains(attr)))
+      // Updated with and without sets.
+      val newWithSelections = (withSelections.toSet -- noPushRelations).toList
+      val newWithoutSelections = withoutSelections ++ noPushRelations
+
+      val newNode = new GHDNode(newWithoutSelections, selections)
+      val bagAttrs = newNode.rels.flatMap(_.attrs.values).toSet
+      newNode.children = children.map(_.recursivelyPushOutSelections(bagAttrs)) ::: newWithSelections.map(rel => new GHDNode(List(rel), selections))
       return newNode
     } else {
       val newNode = new GHDNode(rels, selections)
-      children.map(_.recursivelyPushOutSelections)
+      val bagAttrs = newNode.rels.flatMap(_.attrs.values).toSet
+      newNode.children = children.map(_.recursivelyPushOutSelections(bagAttrs))
       return newNode
     }
   }
@@ -103,10 +121,10 @@ class GHDNode(override val rels: List[OptimizerRel],
   /**
    * Compute what is projected out in this bag, and what this bag's output relation is
    */
-  def recursivelyComputeProjectedOutAttrsAndOutputRelation(annotationType:Option[String],
+  def recursivelyComputeProjectedOutAttrsAndOutputRelation(annotationType:Option[List[String]],
                                                            outputAttrs:List[String],
                                                            attrsFromAbove:Set[String]): OptimizerRel = {
-    val equalitySelectedAttrs:Set[String] = attrSet.filter(attr => !getSelection(attr).isEmpty)
+    val equalitySelectedAttrs:Set[String] = attrSet.filter(attr => getSelection(attr).exists({case Selection(_, op, _, _) => op == EQUALS()}))
     val childrensOutputRelations = children.map(child => {
       child.recursivelyComputeProjectedOutAttrsAndOutputRelation(
         annotationType,
@@ -121,7 +139,7 @@ class GHDNode(override val rels: List[OptimizerRel],
     outputRelation = new OptimizerRel(
       bagName,
       Attributes(keptAttrs.toList.sortBy(outputAttrs.indexOf(_))),
-      if (annotationType.isEmpty) Annotations(List()) else Annotations(List(annotationType.get)),
+      if (annotationType.isEmpty) Annotations(List()) else Annotations(annotationType.get),
       false,
       keptAttrs -- equalitySelectedAttrs
     )
@@ -156,19 +174,19 @@ class GHDNode(override val rels: List[OptimizerRel],
   }
 
   private def fractionalScoreNode(): Double = { // TODO: catch UnboundedSolutionException
-    val myRealRels = rels.filter(!_.isImaginary)
-    val unselectedAttrSet = noChildAttrSet -- attrToSelection.keys.filter(attr => {
+    val nodeAttrSet = rels.flatMap(_.attrs.values).toSet
+    val unselectedAttrSet = nodeAttrSet -- attrToSelection.keys.filter(attr => {
             attrToSelection.get(attr).isDefined && !attrToSelection.get(attr).get.isEmpty
           }) // don't bother covering attributes that are equality selected
-    val realRels = myRealRels:::children.flatMap(child => child.rels.filter(!_.isImaginary))
-    if (realRels.isEmpty) {
+    // We take all the rels on this node, including the imaginary ones.
+    if (rels.isEmpty) {
       return 1 // just return 1 because we're going to delete this node anyways
     }
-    val objective = new LinearObjectiveFunction(realRels.map((rel : OptimizerRel) => 1.0).toArray, 0)
+    val objective = new LinearObjectiveFunction(rels.map((rel : OptimizerRel) => 1.0).toArray, 0)
     // constraints:
     val constraintList = new util.ArrayList[LinearConstraint]
     unselectedAttrSet.map((attr : String) => {
-      constraintList.add(new LinearConstraint(getMatrixRow(attr, realRels), Relationship.GEQ,  1.0))
+      constraintList.add(new LinearConstraint(getMatrixRow(attr, rels), Relationship.GEQ,  1.0))
     })
     val constraints = new LinearConstraintSet(constraintList)
     val solver = new SimplexSolver
@@ -195,7 +213,7 @@ class GHDNode(override val rels: List[OptimizerRel],
       .foldLeft(bagFractionalWidth)((accum: Double, x: Double) => if (x > accum) x else accum)
   }
 
-  def getQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean, prevRules:List[Rule]): Rule = {
+  def getQueryPlan(aggMap:Map[String, List[Aggregation]], queryHasTopDownPass:Boolean, prevRules:List[Rule]): Rule = {
     return Rule(
       getResult(queryHasTopDownPass, aggMap),
       None /* TODO: handle recursion */,
@@ -207,20 +225,31 @@ class GHDNode(override val rels: List[OptimizerRel],
       getFilters())
   }
 
-  def recursivelyGetQueryPlan(aggMap:Map[String, Aggregation], queryHasTopDownPass:Boolean, prevRules:List[Rule]): List[Rule] = {
+  def recursivelyGetQueryPlan(aggMap:Map[String, List[Aggregation]], queryHasTopDownPass:Boolean, prevRules:List[Rule]): List[Rule] = {
     getQueryPlan(aggMap, queryHasTopDownPass, prevRules)::children.flatMap(_.recursivelyGetQueryPlan(aggMap, queryHasTopDownPass, prevRules))
   }
 
-  def getResult(queryHasTopDownPass:Boolean, aggMap:Map[String, Aggregation]): Result = {
+  def getResult(queryHasTopDownPass:Boolean, aggMap:Map[String, List[Aggregation]]): Result = {
     Result(Rel(
       outputRelation.name,
       outputRelation.attrs,
-      if (getAggregations(aggMap).values.isEmpty) Annotations(List()) else outputRelation.anno),
+      if (getAggregations(aggMap).values.isEmpty && aggMap.nonEmpty) Annotations(List()) else outputRelation.anno),
       if (queryHasTopDownPass) true else level != 0)
   }
 
   def getFilters() = {
-    Filters(selections.toList.filter(selection => attrSet.contains(selection.attr)))
+    // OR Filters don't have their attrs in the attr field in Selection, so we need to get them separately.
+    val orFilters = selections.filter(selection => {
+      selection.value match {
+        case SelectionOrList(filtersList) => {
+          val involvedAttrs = filtersList.flatMap(filters => filters.values.map(_.attr))
+          involvedAttrs.toSet.intersect(attrSet).nonEmpty
+        }
+        case _ => false
+      }
+    })
+    val annos = rels.flatMap(_.anno.values).toSet
+    Filters(orFilters.toList ::: selections.toList.filter(selection => attrSet.union(annos).contains(selection.attr)))
   }
 
   def getOperation(): Operation = {
@@ -231,7 +260,7 @@ class GHDNode(override val rels: List[OptimizerRel],
     Order(Attributes(attributeOrdering.filter(attr =>  attrSet.contains(attr))))
   }
 
-  def getProject(aggMap:Map[String, Aggregation]): Project = {
+  def getProject(aggMap:Map[String, List[Aggregation]]): Project = {
     val projectedOutAttrs = attrSet --
       outputRelation.attrs.values --
       getAggregations(aggMap).values.flatMap(agg => agg.attrs.values)
@@ -251,11 +280,11 @@ class GHDNode(override val rels: List[OptimizerRel],
     return dependedOnRules.map(rule => rule.result.rel)
   }
 
-  def getAggregations(aggMap:Map[String, Aggregation], prevRules:List[Rule] = List()) = {
+  def getAggregations(aggMap:Map[String, List[Aggregation]], prevRules:List[Rule] = List()) = {
     // If the attribute is being processed in this bag, isn't materialized,
     // and is in aggMap
     val aggs = (attrSet -- outputRelation.attrs.values).flatMap(attr => {
-      aggMap.get(attr)
+      aggMap.getOrElse(attr, List())
     }).toList
 
     Aggregations(aggs.flatMap(agg => {
@@ -271,7 +300,8 @@ class GHDNode(override val rels: List[OptimizerRel],
                 /*&& !selections.exists(select => select.attr == at)*/)),
         agg.init,
         agg.expression,
-        computePrevRulesDependedOn(agg.init + " " + agg.expression, prevRules)
+        computePrevRulesDependedOn(agg.init + " " + agg.expression, prevRules),
+        agg.innerExpression
       )
       if (newAgg.attrs.values.isEmpty) {
         None
@@ -281,7 +311,7 @@ class GHDNode(override val rels: List[OptimizerRel],
     }))
   }
 
-  def getDescendants(attrs:Attributes, alreadyProvidedByHigherBag:Set[String], aggMap:Map[String, Aggregation]):List[Rel] = {
+  def getDescendants(attrs:Attributes, alreadyProvidedByHigherBag:Set[String], aggMap:Map[String, List[Aggregation]]):List[Rel] = {
     children.flatMap(child => {
       val hasMaterializedAttr = !(child.outputRelation.attrs.values.toSet intersect attrs.values.toSet).isEmpty
       val hasUnseenAttr = !(child.outputRelation.attrs.values.toSet subsetOf alreadyProvidedByHigherBag)

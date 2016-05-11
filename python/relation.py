@@ -11,14 +11,14 @@ from schema import Schema
 import pandas as pd
 
 class Relation:
-  def __init__(self,name,schema=Schema([]),filename="",dataframe=pd.DataFrame(),check=True):
+  def __init__(self,name,schema=Schema([]),filename="",dataframe=pd.DataFrame(),check=True,attribute_names=[],annotation_names=[]):
     self.name = name #name of the relation
     self.schema = schema #schema of relation
     self.filename = filename #file relation comes from
     self.df = not dataframe.empty
     self.dataframe = dataframe
     if not dataframe.empty:
-      self.schema = Schema.fromDF(dataframe)
+      self.schema = Schema.fromDF(dataframe,attribute_names,annotation_names)
     if check:
       if dataframe.empty and filename == "":
         raise Exception("Relation "+self.name+" needs a filename (either a file or dataframe).")

@@ -120,7 +120,7 @@ SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)].
   db.eval(paths)
 
 def test_pruned(dataset):
-  build = False
+  build = True 
   ratings = pd.read_csv("/dfs/scratch0/caberger/datasets/eh_datasets/"+dataset+"/pruned/data.tsv",\
   sep='\t',\
   names=["0","1"],\
@@ -145,7 +145,7 @@ def test_pruned(dataset):
     four_clique_agg(db)
 
 def test_duplicated(dataset):
-  build = True
+  build = True 
   ratings = pd.read_csv("/dfs/scratch0/caberger/datasets/eh_datasets/"+dataset+"/duplicated/data.tsv",\
   sep='\t',\
   names=["0","1"],\
@@ -218,7 +218,8 @@ def test_duplicated(dataset):
 #basically the main method down here.
 start()
 #datasets = ["googlePlus","higgs","socLivejournal","orkut","cidPatents","twitter2010"]
-datasets = ["twitter2010"]
+datasets = ["socLivejournal","orkut","cidPatents","twitter2010"]
+#datasets = ["twitter2010"]
 
 for dataset in datasets:
   print "DATASET: " + dataset

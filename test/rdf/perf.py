@@ -131,7 +131,7 @@ lubm14(a) :- b='http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#Undergradua
   db.eval(lbm14)
 
 def test_lubm():
-  build = False
+  build = True 
 
   takesCourse = Relation(
     name="takesCourse",

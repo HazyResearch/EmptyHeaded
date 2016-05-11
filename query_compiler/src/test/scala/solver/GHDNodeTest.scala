@@ -39,7 +39,7 @@ class GHDNodeTest extends FunSuite {
       OptimizerRelFactory.createOptimizerRel("a", "b"),
       OptimizerRelFactory.createOptimizerRel("b", "c"),
       OptimizerRelFactory.createOptimizerRel("a", "c"))
-    val bag = new GHDNode(justTriangle, Array(Selection("d", EQUALS(), "0")))
+    val bag = new GHDNode(justTriangle, Array(Selection("d", EQUALS(), SelectionLiteral("0"))))
     assertResult(1.5)(bag.fractionalScoreTree())
   }
 }

@@ -92,15 +92,7 @@ class GHDSolverTest extends FunSuite {
 
   test("Can form 1 node AJAR GHD for length 2 path query") {
     val ajarGHDs = GHDSolver.computeAJAR_GHD(PATH2.toSet, Set("a", "c"), Array())
-    ajarGHDs.map(ajarGHD => {
-      assert((Set("a", "b") == ajarGHD.attrSet &&
-        ajarGHD.children.size == 1 &&
-        Set("b", "c") == ajarGHD.children.head.attrSet) ||
-        (Set("b", "c") == ajarGHD.attrSet &&
-          ajarGHD.children.size == 1 &&
-          Set("a", "b") == ajarGHD.children.head.attrSet)
-      )
-    })
+    assertResult(List(Set("a","b","c")))(ajarGHDs.map(_.attrSet))
   }
 
   test("check that ajar works correctly on query without aggregation as well") {

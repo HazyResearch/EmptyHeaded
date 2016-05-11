@@ -39,7 +39,7 @@ object OptimizerRel {
  */
 case class OptimizerRel(override val name:String,
                    override val attrs:Attributes,
-                   override val anno:Annotations,
+                   override var anno:Annotations,
                    val isImaginary:Boolean,
                    val nonSelectedAttrNames:Set[String]) extends RelBase
 

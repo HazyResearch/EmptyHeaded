@@ -248,52 +248,52 @@ def test_lubm():
 
   takesCourse = Relation(
     name="takesCourse",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/takesCourse.tsv")
 
   memberOf = Relation(
     name="memberOf",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/memberOf.tsv")
 
   subOrganizationOf = Relation(
     name="subOrganizationOf",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/subOrganizationOf.tsv")
 
   undegraduateDegreeFrom = Relation(
     name="undegraduateDegreeFrom",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/undergraduateDegreeFrom.tsv")
 
   rdftype = Relation(
     name="rdftype",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/rdftype.tsv")
 
   worksFor = Relation(
     name="worksFor",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/worksFor.tsv")
 
   name = Relation(
     name="name",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/name.tsv")
 
   emailAddress = Relation(
     name="emailAddress",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/emailAddress.tsv")
 
   telephone = Relation(
     name="telephone",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/telephone.tsv")
 
   teacherOf = Relation(
     name="teacherOf",
-    schema=Schema(attributes=["string","string"]),
+    schema=Schema(attributes=["string","string"], attribute_names=["a", "b"]),
     filename=os.path.expandvars("$EMPTYHEADED_HOME")+"/test/rdf/data/teacherOf.tsv")
 
   if build:
