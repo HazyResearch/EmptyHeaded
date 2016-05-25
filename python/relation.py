@@ -12,6 +12,14 @@ import pandas as pd
 
 class Relation:
   def __init__(self,name,schema=Schema([]),filename="",dataframe=pd.DataFrame(),check=True,attribute_names=[],annotation_names=[]):
+
+    # Replace int64 with int32. TODO: Make int64 work?
+    int64_cols = [
+      col for col, dtype in dataframe.dtypes.to_dict().items()
+      if dtype == "int64"
+      ]
+    dataframe[int64_cols] = dataframe[int64_cols].astype(pd.np.int32)
+
     self.name = name #name of the relation
     self.schema = schema #schema of relation
     self.filename = filename #file relation comes from
