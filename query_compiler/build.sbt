@@ -16,5 +16,7 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.2",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.2",
   "net.liftweb" %% "lift-json" % "2.6+",
-  "com.github.scopt" %% "scopt" % "3.2.0"
+  "com.github.scopt" %% "scopt" % "3.2.0",
+  "org.apache.spark" %% "spark-core" % "1.6.1",
+  "org.apache.spark" %% "spark-graphx" % "1.6.1"
 )
