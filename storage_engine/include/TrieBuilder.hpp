@@ -86,10 +86,11 @@ struct TrieBuilder{
   template<typename F>
   inline void foreach_aggregate(F f){
     const Set<hybrid> *s = aggregate_sets.at(tmp_level);
-    auto buf = tmp_buffers.at(tmp_level);
-    tmp_level++;
-    s->foreach(sizeof(Set<hybrid>),buf,f);
-    tmp_level--;
+    s->foreach(f);
+//    auto buf = tmp_buffers.at(tmp_level);
+//    tmp_level++;
+//    s->foreach(sizeof(Set<hybrid>),buf,f);
+//    tmp_level--;
   }
 
   template<typename F>
