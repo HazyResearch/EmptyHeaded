@@ -11,6 +11,7 @@
 namespace tc {
   template<class T, class M, class A, typename J>
   void unweighted_single_source(
+    const int iterations,
     const uint32_t start, // from encoding
     const size_t num_distinct, //from encoding
     Trie<void*,M>* input, //input graph
@@ -55,7 +56,7 @@ namespace tc {
     uint64_t * set_data = ((uint64_t*)vs->get_data())+1;
     const TrieBlock<T,M> * input_head = input->getHead();
     size_t iteration = 0;
-    while(frontier_size != 0){
+    while(frontier_size != 0 && (iterations < 0 || iteration < iterations) ){
       std::cout  << "ITERATION: " << iteration << " FRONTIER SIZE: " << frontier_size << std::endl;
       par::for_range(0,frontier_size,100,[&](const size_t tid, const size_t i){
         const uint32_t f = frontier[i];
