@@ -557,7 +557,7 @@ def sssp(db):
   paths = \
 """
 SSSP(x;y) :- Edge(w,x),w=0,y:long <- [1].
-SSSP(x;y)*[i=3] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)].
+SSSP(x;y)*[c=0] :- Edge(w,x),SSSP(w),y:long <- [1+MIN(w;1)].
 """
   print "\nSSSP"
   db.eval(paths)
@@ -674,22 +674,22 @@ def test_duplicated():
     db.build()
   db = Database.from_existing(os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases/db_duplicated")
 
-  #lollipop_agg(db)
-  #lollipop_agg_sql(db)
-  #barbell_agg(db)
-  #barbell_agg_sql(db)
-  #four_clique_agg_sel(db)
-  #four_clique_agg_sel_sql(db)
-  #four_clique_sel(db)
-  #four_clique_sel_sql(db)
-  #barbell_agg_sel(db)
+  lollipop_agg(db)
+  lollipop_agg_sql(db)
+  barbell_agg(db)
+  barbell_agg_sql(db)
+  four_clique_agg_sel(db)
+  four_clique_agg_sel_sql(db)
+  four_clique_sel(db)
+  four_clique_sel_sql(db)
+  barbell_agg_sel(db)
   #barbell_agg_sel_sql(db)
-  #barbell_sel(db)
+  barbell_sel(db)
   #barbell_sel_sql(db)
-  #pagerank(db)
-  #pagerank_sql(db)
+  pagerank(db)
+  pagerank_sql(db)
   sssp(db)
-  #sssp_sql(db)
+  sssp_sql(db)
 
 def test_simple():
   build = True
@@ -722,7 +722,7 @@ if(len(sys.argv) < 2):
 #basically the main method down here.
 start()
 os.system("rm -rf "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases"+" && mkdir -p "+os.path.expandvars("$EMPTYHEADED_HOME")+"/test/graph/databases")
-#test_pruned()
+test_pruned()
 test_duplicated()
-#test_simple()
+test_simple()
 stop()
