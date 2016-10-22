@@ -28,13 +28,14 @@ object EHGenerator {
     if(qp.ghd.length == 2 && qp.ghd.last.recursion.isDefined){
       val base_case = qp.ghd.head
       if(base_case.relations.length > 0){
-        if(qp.ghd.last.recursion.get.input == "e" && 
+        val tc1 = qp.ghd.last.recursion.get.input == "e" && 
           qp.ghd.last.recursion.get.criteria == "=" && 
-          qp.ghd.last.recursion.get.convergenceValue == "0"){
-          if(base_case.nprr.head.selection.length == 1){
-            if(qp.ghd.last.nprr.last.aggregation.get.operation == "<"){
-              return true
-            }
+          qp.ghd.last.recursion.get.convergenceValue == "0"
+        val tc2 = qp.ghd.last.recursion.get.input == "i" &&
+          qp.ghd.last.recursion.get.criteria == "="
+        if( (tc1 || tc2) && base_case.nprr.head.selection.length == 1){
+          if(qp.ghd.last.nprr.last.aggregation.get.operation == "<"){
+            return true
           }
         }
       }
@@ -90,8 +91,20 @@ object EHGenerator {
       outputEncodings += (qp.ghd.last.name -> QueryCompiler.buildInternalSchema(List(encoding),List(qp.ghd.last.annotation)))
       //get encoding
       includeCode.append("""#include "TransitiveClosure.hpp" """)
+      val iterations =  
+        if(qp.ghd.last.recursion.get.input == "e" && 
+          qp.ghd.last.recursion.get.criteria == "=" && 
+          qp.ghd.last.recursion.get.convergenceValue == "0")
+        {
+          -1
+        }
+        else{
+          qp.ghd.last.recursion.get.convergenceValue
+        }
+
       cppCode.append(s"""
         tc::unweighted_single_source<hybrid,ParMemoryBuffer,${qp.ghd.last.annotation}>(
+          ${iterations},
           Encoding_${encoding}->value_to_key.at(${source}), // from encoding
           Encoding_${encoding}->num_distinct, //from encoding
           Trie_${input}, //input graph
