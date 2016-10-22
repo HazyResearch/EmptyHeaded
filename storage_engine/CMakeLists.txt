@@ -12,4 +12,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 link_libraries(jemalloc tbb pthread)
 subdirs(src)
-subdirs(apps)
+subdirs(arijitcpp)
