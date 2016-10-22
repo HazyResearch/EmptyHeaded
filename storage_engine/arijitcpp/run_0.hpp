@@ -10,7 +10,7 @@
 typedef std::unordered_map<std::string, void *> mymap;
 typedef std::string string;
 
-void run_0(std::string db_path) {
+void run_0(std::string db_path,uint32_t start_node) {
   thread_pool::initializeThreadPool();
   Trie<void *, ParMemoryBuffer> *Trie_Edge_0_1 = NULL;
   {
@@ -36,7 +36,7 @@ void run_0(std::string db_path) {
       1, true);
   tc::unweighted_single_source<hybrid, ParMemoryBuffer, long>(
       3,
-      Encoding_uint32_t->value_to_key.at(0), // from encoding
+      Encoding_uint32_t->value_to_key.at(start_node), // from encoding
       Encoding_uint32_t->num_distinct, // from encoding
       Trie_Edge_0_1, // input graph
       Trie_SSSP_0, // output vector
