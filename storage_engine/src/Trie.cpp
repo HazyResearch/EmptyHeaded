@@ -395,14 +395,13 @@ Trie<A,M>::Trie(
 
   //Setup indices buffer
   uint32_t *indicies = new uint32_t[num_rows];
-  uint32_t *iterator = indicies;
-  for(size_t i = 0; i < num_rows; i++){
-    *iterator++ = i; 
+  for(uint32_t i = 0; i < num_rows; i++){
+    indicies[i] = i;
   }
 
   //sort the relation
   tbb::task_scheduler_init init(NUM_THREADS);
-  tbb::parallel_sort(indicies,iterator,SortColumns(attr_in));
+  tbb::parallel_sort(indicies,indicies+num_rows,SortColumns(attr_in));
 
   //DEBUG
   /*

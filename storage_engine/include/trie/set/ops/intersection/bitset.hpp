@@ -537,7 +537,7 @@ namespace ops{
     
     size_t i = 0;
     size_t count = 0;
-
+    /*
     #if VECTORIZE == 1
     while((i+255) < b_size){
       const size_t vector_index = (i/BITS_PER_WORD);
@@ -552,6 +552,7 @@ namespace ops{
       i += 256;
     }
     #endif
+    */
 
     //64 bits per word
     for(; i < b_size; i+=64){
