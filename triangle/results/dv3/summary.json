@@ -1,0 +1,138 @@
+{
+  "schema_version": 2,
+  "host": "dv3",
+  "threads_parallel": 16,
+  "warmup_processes": 2,
+  "measured_processes": 7,
+  "metric": "query_kernel_seconds",
+  "emptyheaded_physical_layout": "one-persisted-partition",
+  "rows": [
+    {
+      "scale": 16,
+      "vertices": 65536,
+      "edges": 1042561,
+      "triangles": 435586,
+      "mode": "sequential",
+      "emptyheaded": {
+        "min": 0.0898538,
+        "median": 0.0902361,
+        "max": 0.0925163
+      },
+      "nwgraph": {
+        "min": 0.155766496,
+        "median": 0.156273065,
+        "max": 0.156479365
+      },
+      "emptyheaded_over_nwgraph": 0.5774258027127068
+    },
+    {
+      "scale": 18,
+      "vertices": 262144,
+      "edges": 4185064,
+      "triangles": 845171,
+      "mode": "sequential",
+      "emptyheaded": {
+        "min": 0.480591,
+        "median": 0.483381,
+        "max": 0.490059
+      },
+      "nwgraph": {
+        "min": 0.734181362,
+        "median": 0.735091151,
+        "max": 0.738094727
+      },
+      "emptyheaded_over_nwgraph": 0.6575796747687961
+    },
+    {
+      "scale": 16,
+      "vertices": 65536,
+      "edges": 1042561,
+      "triangles": 435586,
+      "mode": "cyclic-16",
+      "emptyheaded": {
+        "min": 0.00999384,
+        "median": 0.0122635,
+        "max": 0.0151455
+      },
+      "nwgraph": {
+        "min": 0.015741286,
+        "median": 0.016042495,
+        "max": 0.016547944
+      },
+      "emptyheaded_over_nwgraph": 0.7644384492561787
+    },
+    {
+      "scale": 18,
+      "vertices": 262144,
+      "edges": 4185064,
+      "triangles": 845171,
+      "mode": "cyclic-16",
+      "emptyheaded": {
+        "min": 0.0637742,
+        "median": 0.0658495,
+        "max": 0.0809109
+      },
+      "nwgraph": {
+        "min": 0.063095031,
+        "median": 0.063418311,
+        "max": 0.064340339
+      },
+      "emptyheaded_over_nwgraph": 1.0383357576331542
+    },
+    {
+      "scale": 20,
+      "vertices": 1048576,
+      "edges": 16763097,
+      "triangles": 1583446,
+      "mode": "cyclic-16",
+      "emptyheaded": {
+        "min": 0.323439,
+        "median": 0.327136,
+        "max": 0.330367
+      },
+      "nwgraph": {
+        "min": 0.270015307,
+        "median": 0.27505571,
+        "max": 0.279300574
+      },
+      "emptyheaded_over_nwgraph": 1.189344514971167
+    }
+  ],
+  "terminal_count_controls": [
+    {
+      "scale": 16,
+      "mode": "sequential",
+      "materialized_median": 0.101555,
+      "count_only_median": 0.0902361,
+      "speedup": 1.125436493820101
+    },
+    {
+      "scale": 18,
+      "mode": "sequential",
+      "materialized_median": 0.529936,
+      "count_only_median": 0.483381,
+      "speedup": 1.096311191379057
+    },
+    {
+      "scale": 16,
+      "mode": "cyclic-16",
+      "materialized_median": 0.01325,
+      "count_only_median": 0.0122635,
+      "speedup": 1.0804419619195171
+    },
+    {
+      "scale": 18,
+      "mode": "cyclic-16",
+      "materialized_median": 0.0776887,
+      "count_only_median": 0.0658495,
+      "speedup": 1.179791797963538
+    },
+    {
+      "scale": 20,
+      "mode": "cyclic-16",
+      "materialized_median": 0.347765,
+      "count_only_median": 0.327136,
+      "speedup": 1.0630594003717109
+    }
+  ]
+}

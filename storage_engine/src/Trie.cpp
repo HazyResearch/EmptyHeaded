@@ -120,7 +120,11 @@ template<class A,class M>
 TrieBlock<layout,M>* Trie<A,M>::getHead(){
   if(num_columns == 0)
     return NULL;
-  TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)(memoryBuffers->get_address(NUM_THREADS,0));
+  // Loaded tries retain the partition count with which they were persisted.
+  // It need not equal the worker count of the current query runtime; the head
+  // is always the extra buffer immediately after the persisted partitions.
+  TrieBlock<layout,M>* head = (TrieBlock<layout,M>*)(
+    memoryBuffers->get_address(memoryBuffers->num_buffers,0));
   return head; 
 }
 

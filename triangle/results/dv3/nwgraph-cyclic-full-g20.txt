@@ -1,0 +1,10 @@
+NWGRAPH_TRIANGLE_WARMUP index=0 seconds=0.302833326 count=1583446
+NWGRAPH_TRIANGLE_WARMUP index=1 seconds=0.280401892 count=1583446
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.283528567 count=1583446
+NWGRAPH_TRIANGLE_TRIAL index=1 seconds=0.282510888 count=1583446
+NWGRAPH_TRIANGLE_TRIAL index=2 seconds=0.28151387 count=1583446
+NWGRAPH_TRIANGLE_TRIAL index=3 seconds=0.28175641 count=1583446
+NWGRAPH_TRIANGLE_TRIAL index=4 seconds=0.280930761 count=1583446
+NWGRAPH_TRIANGLE_TRIAL index=5 seconds=0.281954289 count=1583446
+NWGRAPH_TRIANGLE_TRIAL index=6 seconds=0.28153636 count=1583446
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":1048576,"edges":16763097,"count":1583446,"load_seconds":2.159136925,"prepare_seconds":0.632140712,"execute_min_seconds":0.280930761,"execute_median_seconds":0.28175641,"execute_max_seconds":0.283528567}

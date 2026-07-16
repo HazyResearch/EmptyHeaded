@@ -144,8 +144,8 @@ object QueryCompiler {
     //"Byte",
     "uint32" -> "uint32_t",
     "int32" -> "int32_t",
-    "int64" -> "uint64_t",
-    "uint64" -> "int64_t",
+    "int64" -> "int64_t",
+    "uint64" -> "uint64_t",
     "string" -> "string"
     //"String",
     //"Float",

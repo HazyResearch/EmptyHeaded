@@ -299,8 +299,37 @@ object EHGenerator {
     code
   }
 
-  def emitBuildCode(head:QueryPlanAttrInfo,iteratorAccessors:IteratorAccessors) : StringBuilder = {
+  /**
+   * A terminal aggregate can use an intersection cardinality kernel when no
+   * later generated code consumes the values in that intersection.  In
+   * particular, annotated accessors must still be enumerated so that their
+   * per-value annotations can be read, and a selection may inspect the value.
+   *
+   * count_set currently has one- and two-input overloads.  Keep larger
+   * intersections on the materializing path until there is an n-way count
+   * kernel rather than silently changing their evaluation algorithm here.
+   */
+  private[duncecap] def terminalCardinalityOnly(
+    head:QueryPlanAttrInfo,
+    tail:List[QueryPlanAttrInfo]) : Boolean = {
+    tail.isEmpty &&
+      !head.materialize &&
+      head.aggregation.isDefined &&
+      head.selection.isEmpty &&
+      head.accessors.nonEmpty &&
+      head.accessors.length <= 2 &&
+      !head.accessors.exists(_.annotated)
+  }
+
+  def emitBuildCode(
+    head:QueryPlanAttrInfo,
+    iteratorAccessors:IteratorAccessors,
+    cardinalityOnly:Boolean = false) : StringBuilder = {
     val code = new StringBuilder()
+
+    require(!cardinalityOnly ||
+      terminalCardinalityOnly(head,List()),
+      "count-only code generation requires a terminal cardinality-only aggregate")
 
     val relationNames = iteratorAccessors(head.name).map(_._1)
     val relationIndices = iteratorAccessors(head.name).map(_._2)
@@ -328,17 +357,18 @@ object EHGenerator {
         } 
       }
       case false => {
+        val buildMethod = if(cardinalityOnly) "count_set" else "build_aggregated_set"
         head.accessors.length match {
           case 0 =>
             throw new IllegalArgumentException("This probably not be occuring.")
           case 1 =>{
             val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.values.mkString("_") ) )
-            code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.values.mkString("_")}->get_block(${index1}));""")
+            code.append(s"""const size_t count_${head.name} = Builder->${buildMethod}(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.values.mkString("_")}->get_block(${index1}));""")
           }
           case 2 =>{
             val index1 = relationIndices(relationNames.indexOf( head.accessors(0).name + "_" + head.accessors(0).attrs.values.mkString("_") ) )
             val index2 = relationIndices(relationNames.indexOf(head.accessors(1).name + "_" + head.accessors(1).attrs.values.mkString("_")))
-            code.append(s"""const size_t count_${head.name} = Builder->build_aggregated_set(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.values.mkString("_")}->get_block(${index1}),Iterator_${head.accessors(1).name}_${head.accessors(1).attrs.values.mkString("_")}->get_block(${index2}));""")
+            code.append(s"""const size_t count_${head.name} = Builder->${buildMethod}(Iterator_${head.accessors(0).name}_${head.accessors(0).attrs.values.mkString("_")}->get_block(${index1}),Iterator_${head.accessors(1).name}_${head.accessors(1).attrs.values.mkString("_")}->get_block(${index2}));""")
           }
           case _ =>
             code.append(s"""std::vector<const TrieBlock<hybrid,${memory}>*> ${head.name}_sets;""")
@@ -533,7 +563,10 @@ object EHGenerator {
     val code = new StringBuilder()
     (head,tail) match {
       case (Some(a),List()) => {
-        code.append(emitBuildCode(a,iteratorAccessors))
+        code.append(emitBuildCode(
+          a,
+          iteratorAccessors,
+          terminalCardinalityOnly(a,tail)))
         if(a.materialize)
           code.append(s"""num_rows_reducer.update(tid,count_${a.name});""")
         else 
@@ -806,8 +839,8 @@ object EHGenerator {
           code.append("Builders.trie->num_rows = num_rows_reducer.evaluate(0);")
         }
 
-        code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
         code.append(s"""timer::stop_clock("BAG ${bagName} TIME", bag_timer);""")
+        code.append(s"""std::cout << "NUM ROWS: " <<  Builders.trie->num_rows << " ANNOTATION: " << Builders.trie->annotation << std::endl;""")
         
         //copy the buffers, needed if recursive
         val recordering = bag.order.mkString("_")

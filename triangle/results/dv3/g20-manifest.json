@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "vertices": 1048576,
+  "raw_directed_events": 16777216,
+  "undirected_simple_edges": 16763097,
+  "triangles": 1583446,
+  "id_type": "uint64",
+  "relabel": "stable-ascending-undirected-degree",
+  "orientation": "lower-new-id-to-higher-new-id"
+}

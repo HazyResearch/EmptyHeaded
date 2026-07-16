@@ -12,6 +12,8 @@
 #include "Encoding.hpp"
 #include <iostream>
 #include <fstream>
+#include <limits>
+#include <stdexcept>
 #include "utils/parallel.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -21,6 +23,10 @@
 template <class T>
 void Encoding<T>::build(std::set<T>* values){
   for (auto it = values->begin(); it != values->end(); it++) {
+    if (num_distinct == std::numeric_limits<uint32_t>::max()) {
+      throw std::overflow_error(
+          "EmptyHeaded dictionary supports at most UINT32_MAX distinct values");
+    }
     T value = *it;
     value_to_key.insert(std::pair<T,uint32_t>(value,num_distinct++));
     key_to_value.push_back(value);
@@ -30,6 +36,10 @@ void Encoding<T>::build(std::set<T>* values){
 template <class T>
 void Encoding<T>::build(std::vector<T>* values){
   for (auto it = values->begin(); it != values->end(); it++) {
+    if (num_distinct == std::numeric_limits<uint32_t>::max()) {
+      throw std::overflow_error(
+          "EmptyHeaded dictionary supports at most UINT32_MAX distinct values");
+    }
     T value = *it;
     value_to_key.insert(std::pair<T,uint32_t>(value,num_distinct++));
     key_to_value.push_back(value);
@@ -133,9 +143,10 @@ void Encoding<T>::to_binary(const std::string path){
 
 //FIXME: Add types here
 template struct Encoding<uint32_t>;
+template struct Encoding<uint64_t>;
 template struct Encoding<int>;
+template struct Encoding<int64_t>;
 template struct Encoding<float>;
-template struct Encoding<long>;
 template struct Encoding<std::string>;
 //template void Encoding<SortableEncodingMap<long>>;
 //template void Encoding<FrequencyEncodingMap<long>>;

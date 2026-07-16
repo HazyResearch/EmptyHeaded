@@ -1,0 +1,1 @@
+TriangleCount(;count) :- Edge(i,j),Edge(j,k),Edge(i,k),count:long<-[COUNT(*)].

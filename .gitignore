@@ -8,3 +8,11 @@
 *.so
 .idea
 target
+
+# Local EmptyHeaded builds and generated database payloads.
+/CMakeFiles/
+/cython/db/DB.cpp
+/storage_engine/build*/
+/triangle/generated/*/database/
+/triangle/standalone/build*/
+/triangle/standalone/eh_triangle_*_compile_check

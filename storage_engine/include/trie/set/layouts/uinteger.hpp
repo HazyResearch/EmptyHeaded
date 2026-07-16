@@ -77,6 +77,14 @@ class uinteger{
       const type::layout t);
 
     template<typename F>
+    static size_t par_foreach_cyclic_encoded_key(
+      F f,
+      const uint8_t *data_in,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t);
+
+    template<typename F>
     static size_t static_par_foreach_index(
       F f,
       const uint8_t *data_in,
@@ -86,6 +94,14 @@ class uinteger{
 
     template<typename F>
     static size_t par_foreach_index(
+      F f,
+      const uint8_t *data_in,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t);
+
+    template<typename F>
+    static size_t par_foreach_index_cyclic_encoded_key(
       F f,
       const uint8_t *data_in,
       const size_t cardinality,
@@ -211,6 +227,48 @@ inline size_t uinteger::par_foreach(
      });
 }
 
+// Iterates over a sparse array with encoded key x owned by worker x % T.
+// Stable bucketization avoids an O(T*n) scan while preserving ascending key
+// order within each worker.  The temporary partitioning cost is part of query
+// execution; unlike a CSR row domain, an arbitrary query result is not already
+// partitioned by key.
+template<typename F>
+inline size_t uinteger::par_foreach_cyclic_encoded_key(
+      F f,
+      const uint8_t *data_in,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t) {
+   (void) number_of_bytes; (void) t;
+
+   const uint32_t * const data = (uint32_t*) data_in;
+   if(NUM_THREADS == 1) {
+     for(size_t i = 0; i < cardinality; i++) {
+       f(0, data[i]);
+     }
+     return 1;
+   }
+
+   std::vector<size_t> counts(NUM_THREADS, 0);
+   for(size_t i = 0; i < cardinality; i++) {
+     counts[data[i] % NUM_THREADS]++;
+   }
+   std::vector<std::vector<uint32_t> > partitions(NUM_THREADS);
+   for(size_t tid = 0; tid < NUM_THREADS; tid++) {
+     partitions[tid].reserve(counts[tid]);
+   }
+   for(size_t i = 0; i < cardinality; i++) {
+     partitions[data[i] % NUM_THREADS].push_back((uint32_t)i);
+   }
+
+   return par::for_each_thread([&](size_t tid) {
+     const std::vector<uint32_t>& partition = partitions[tid];
+     for(size_t p = 0; p < partition.size(); p++) {
+       f(tid, data[partition[p]]);
+     }
+   });
+}
+
 // Iterates over set applying a lambda in parallel.
 template<typename F>
 inline size_t uinteger::par_foreach_index(
@@ -226,6 +284,46 @@ inline size_t uinteger::par_foreach_index(
      [&](size_t tid, size_t i) {
         f(tid, (uint32_t)i, data[i]);
      });
+}
+
+// The index passed to f is the element's original global ordinal in the set,
+// not its position in the worker's temporary bucket.
+template<typename F>
+inline size_t uinteger::par_foreach_index_cyclic_encoded_key(
+      F f,
+      const uint8_t *data_in,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t) {
+   (void) number_of_bytes; (void) t;
+
+   const uint32_t * const data = (uint32_t*) data_in;
+   if(NUM_THREADS == 1) {
+     for(size_t i = 0; i < cardinality; i++) {
+       f(0, (uint32_t)i, data[i]);
+     }
+     return 1;
+   }
+
+   std::vector<size_t> counts(NUM_THREADS, 0);
+   for(size_t i = 0; i < cardinality; i++) {
+     counts[data[i] % NUM_THREADS]++;
+   }
+   std::vector<std::vector<uint32_t> > partitions(NUM_THREADS);
+   for(size_t tid = 0; tid < NUM_THREADS; tid++) {
+     partitions[tid].reserve(counts[tid]);
+   }
+   for(size_t i = 0; i < cardinality; i++) {
+     partitions[data[i] % NUM_THREADS].push_back((uint32_t)i);
+   }
+
+   return par::for_each_thread([&](size_t tid) {
+     const std::vector<uint32_t>& partition = partitions[tid];
+     for(size_t p = 0; p < partition.size(); p++) {
+       const uint32_t index = partition[p];
+       f(tid, index, data[index]);
+     }
+   });
 }
 
 template<typename F>

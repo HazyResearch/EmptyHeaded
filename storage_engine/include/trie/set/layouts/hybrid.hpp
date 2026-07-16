@@ -81,6 +81,14 @@ class hybrid{
       const type::layout t);
 
     template<typename F>
+    static size_t par_foreach_cyclic_encoded_key(
+      F f,
+      const uint8_t *data_in,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t);
+
+    template<typename F>
     static size_t static_par_foreach_index(
       F f,
       const uint8_t *data_in,
@@ -90,6 +98,14 @@ class hybrid{
 
     template<typename F>
     static size_t par_foreach_index(
+      F f,
+      const uint8_t *data_in,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t);
+
+    template<typename F>
+    static size_t par_foreach_index_cyclic_encoded_key(
       F f,
       const uint8_t *data_in,
       const size_t cardinality,
@@ -260,6 +276,25 @@ inline size_t hybrid::par_foreach(
   }
 }
 
+template<typename F>
+inline size_t hybrid::par_foreach_cyclic_encoded_key(
+      F f,
+      const uint8_t *data_in,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t) {
+  switch(t){
+    case type::UINTEGER :
+      return uinteger::par_foreach_cyclic_encoded_key(
+        f,data_in,cardinality,number_of_bytes,type::UINTEGER);
+    case type::RANGE_BITSET :
+      return range_bitset::par_foreach_cyclic_encoded_key(
+        f,data_in,cardinality,number_of_bytes,type::RANGE_BITSET);
+    default:
+      return 0;
+  }
+}
+
 //Iterates over set applying a lambda.
 template<typename F>
 inline size_t hybrid::par_foreach_index(
@@ -278,6 +313,25 @@ inline size_t hybrid::par_foreach_index(
     default:
       return 0;
       break;
+  }
+}
+
+template<typename F>
+inline size_t hybrid::par_foreach_index_cyclic_encoded_key(
+      F f,
+      const uint8_t *data_in,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t) {
+  switch(t){
+    case type::UINTEGER :
+      return uinteger::par_foreach_index_cyclic_encoded_key(
+        f,data_in,cardinality,number_of_bytes,type::UINTEGER);
+    case type::RANGE_BITSET :
+      return range_bitset::par_foreach_index_cyclic_encoded_key(
+        f,data_in,cardinality,number_of_bytes,type::RANGE_BITSET);
+    default:
+      return 0;
   }
 }
 

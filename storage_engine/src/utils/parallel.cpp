@@ -10,6 +10,12 @@ namespace par{
   std::function<void(size_t, size_t)> parFor::body;
 
   size_t for_range(const size_t from, const size_t to, std::function<void(size_t, size_t)> body) {
+#if NUM_THREADS_IN == 1
+    for(size_t i = from; i < to; i++) {
+      body(0, i);
+    }
+    return 1;
+#endif
     const size_t range_len = to - from;
     size_t chunk_size = (range_len+NUM_THREADS)/NUM_THREADS;
     const size_t THREADS_CHUNKS = (range_len % NUM_THREADS);
@@ -39,7 +45,44 @@ namespace par{
     return 1;
   }
 
+  size_t for_each_thread(std::function<void(size_t)> body) {
+#if NUM_THREADS_IN == 1
+    body(0);
+    return 1;
+#endif
+    // staticParFor is submitted directly to worker k with exactly the range
+    // [k,k+1).  Do not route this through the adaptive work queue: the thread
+    // id is used to select thread-private query state.
+    thread_pool::init_threads();
+    staticParFor::body = [&body](size_t tid, size_t partition) {
+      (void)partition;
+      assert(tid == partition);
+      body(tid);
+    };
+    staticParFor **pf = new staticParFor*[NUM_THREADS];
+    for(size_t k = 0; k < NUM_THREADS; k++) {
+      pf[k] = new staticParFor(k, k, k + 1);
+      thread_pool::submitWork(
+        k,
+        thread_pool::general_body<staticParFor>,
+        (void *)(pf[k]));
+    }
+    thread_pool::join_threads();
+    for(size_t k = 0; k < NUM_THREADS; k++) {
+      delete pf[k];
+    }
+    delete[] pf;
+    return 1;
+  }
+
   size_t for_range(const size_t from, const size_t to, const size_t block_size, std::function<void(size_t, size_t)> body) {
+#if NUM_THREADS_IN == 1
+    (void)block_size;
+    for(size_t i = from; i < to; i++) {
+      body(0, i);
+    }
+    return 1;
+#endif
     const size_t range_len = to - from;
     const size_t actual_block_size = (block_size > range_len) ? 1:block_size; 
     thread_pool::init_threads();

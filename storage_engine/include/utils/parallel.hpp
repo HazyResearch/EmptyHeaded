@@ -5,6 +5,14 @@
 #include <atomic>
 
 namespace par{
+  // Controls how a set's outer domain is assigned to worker slots.  The
+  // cyclic policy is intentionally defined over EmptyHeaded's encoded
+  // uint32_t keys, not over the values in the external dictionary.
+  enum class schedule {
+    adaptive,
+    cyclic_encoded_key
+  };
+
   template<class T>
   class reducer{
   public:
@@ -47,6 +55,11 @@ namespace par{
   };
 
   size_t for_range(const size_t from, const size_t to, std::function<void(size_t, size_t)> body);
+
+  // Executes body(k) on the dedicated worker with thread id k.  Unlike the
+  // adaptive range loop, this is an ownership guarantee: callers may safely
+  // use k to select thread-private builders, iterators, and reducers.
+  size_t for_each_thread(std::function<void(size_t)> body);
 
   struct parFor {
     size_t tid;

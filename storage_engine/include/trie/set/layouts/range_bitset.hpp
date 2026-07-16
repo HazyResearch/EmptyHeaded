@@ -77,7 +77,23 @@ class range_bitset{
       const type::layout t);
 
     template<typename F>
+    static size_t par_foreach_cyclic_encoded_key(
+      F f,
+      const uint8_t* A,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t);
+
+    template<typename F>
     static size_t par_foreach_index(
+      F f,
+      const uint8_t* A,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t);
+
+    template<typename F>
+    static size_t par_foreach_index_cyclic_encoded_key(
       F f,
       const uint8_t* A,
       const size_t cardinality,
@@ -372,6 +388,47 @@ inline size_t range_bitset::par_foreach(
   return 1;
 }
 
+// Iterates over a dense set with encoded key x owned by worker x % T.  Each
+// residue class advances by T through the represented key range.  Across the
+// team this performs one bit test per possible encoded key and does not depend
+// on which worker happens to claim a bitset word.
+template<typename F>
+inline size_t range_bitset::par_foreach_cyclic_encoded_key(
+      F f,
+      const uint8_t* A,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t) {
+  (void) t; (void) cardinality;
+
+  if(number_of_bytes > 0) {
+    const size_t num_data_words = get_number_of_words(number_of_bytes);
+    const uint64_t offset = ((const uint64_t*)A)[0];
+    const uint64_t* A64 = (const uint64_t*)(A + sizeof(uint64_t));
+    const uint64_t first_key = offset * BITS_PER_WORD;
+    const uint64_t end_key = (offset + num_data_words) * BITS_PER_WORD;
+
+    return par::for_each_thread([&](size_t tid) {
+      const uint64_t remainder = first_key % NUM_THREADS;
+      const uint64_t delta =
+        (tid + NUM_THREADS - remainder) % NUM_THREADS;
+      for(uint64_t key = first_key + delta;
+          key < end_key;
+          key += NUM_THREADS) {
+        const size_t word_index_local =
+          (size_t)((key >> ADDRESS_BITS_PER_WORD) - offset);
+        const uint64_t word = A64[word_index_local];
+        const uint32_t bit = (uint32_t)(key & (BITS_PER_WORD - 1));
+        if(word & ((uint64_t)1 << bit)) {
+          f(tid, (uint32_t)key);
+        }
+      }
+    });
+  }
+
+  return 1;
+}
+
 // Iterates over set applying a lambda in parallel.
 template<typename F>
 inline size_t range_bitset::par_foreach_index(
@@ -401,6 +458,48 @@ inline size_t range_bitset::par_foreach_index(
                 }
               }
            });
+  }
+
+  return 1;
+}
+
+template<typename F>
+inline size_t range_bitset::par_foreach_index_cyclic_encoded_key(
+      F f,
+      const uint8_t* A,
+      const size_t cardinality,
+      const size_t number_of_bytes,
+      const type::layout t) {
+  (void) t; (void) cardinality;
+
+  if(number_of_bytes > 0) {
+    const size_t num_data_words = get_number_of_words(number_of_bytes);
+    const uint64_t offset = ((const uint64_t*)A)[0];
+    const uint64_t* A64 = (const uint64_t*)(A + sizeof(uint64_t));
+    const uint32_t* A32_index = (const uint32_t*)(A64 + num_data_words);
+    const uint64_t first_key = offset * BITS_PER_WORD;
+    const uint64_t end_key = (offset + num_data_words) * BITS_PER_WORD;
+
+    return par::for_each_thread([&](size_t tid) {
+      const uint64_t remainder = first_key % NUM_THREADS;
+      const uint64_t delta =
+        (tid + NUM_THREADS - remainder) % NUM_THREADS;
+      for(uint64_t key = first_key + delta;
+          key < end_key;
+          key += NUM_THREADS) {
+        const size_t word_index_local =
+          (size_t)((key >> ADDRESS_BITS_PER_WORD) - offset);
+        const uint64_t word = A64[word_index_local];
+        const uint32_t bit = (uint32_t)(key & (BITS_PER_WORD - 1));
+        const uint64_t lower_mask =
+          (bit == 0) ? 0 : (((uint64_t)1 << bit) - 1);
+        if(word & ((uint64_t)1 << bit)) {
+          const uint32_t index = A32_index[word_index_local] +
+            (uint32_t)_mm_popcnt_u64(word & lower_mask);
+          f(tid, index, (uint32_t)key);
+        }
+      }
+    });
   }
 
   return 1;

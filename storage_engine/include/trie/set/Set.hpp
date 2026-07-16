@@ -142,8 +142,34 @@ class Set{
     }
 
     template<typename F>
+    size_t par_foreach(par::schedule policy, F f) const {
+      switch(policy) {
+        case par::schedule::adaptive:
+          return T::par_foreach(
+            f, this->get_data(), cardinality, number_of_bytes, type);
+        case par::schedule::cyclic_encoded_key:
+          return T::par_foreach_cyclic_encoded_key(
+            f, this->get_data(), cardinality, number_of_bytes, type);
+      }
+      return 0;
+    }
+
+    template<typename F>
     size_t par_foreach_index(F f) const {
       return T::par_foreach_index(f, this->get_data(), cardinality, number_of_bytes, type);
+    }
+
+    template<typename F>
+    size_t par_foreach_index(par::schedule policy, F f) const {
+      switch(policy) {
+        case par::schedule::adaptive:
+          return T::par_foreach_index(
+            f, this->get_data(), cardinality, number_of_bytes, type);
+        case par::schedule::cyclic_encoded_key:
+          return T::par_foreach_index_cyclic_encoded_key(
+            f, this->get_data(), cardinality, number_of_bytes, type);
+      }
+      return 0;
     }
 
     template<typename F>

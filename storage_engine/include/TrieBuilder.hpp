@@ -150,17 +150,37 @@ struct ParTrieBuilder{
   void allocate_annotation();
 
   template<typename F>
-  void par_foreach_aggregate(F f){
+  void par_foreach_aggregate(par::schedule policy, F f){
     const TrieBlock<hybrid,M>* block = tmp_head;
     Set<hybrid>* s = (Set<hybrid>*)((uint8_t*)block+sizeof(TrieBlock<hybrid,M>));
-    s->par_foreach(f);
+    s->par_foreach(policy, f);
+  }
+
+  template<typename F>
+  void par_foreach_aggregate(F f){
+#ifdef EMPTYHEADED_CYCLIC_OUTER
+    // Cyclic ownership is over the encoded uint32_t key.  A monotone external
+    // dictionary may therefore rotate thread labels by a constant offset.
+    par_foreach_aggregate(par::schedule::cyclic_encoded_key, f);
+#else
+    par_foreach_aggregate(par::schedule::adaptive, f);
+#endif
+  }
+
+  template<typename F>
+  void par_foreach_builder(par::schedule policy, F f){
+    const TrieBlock<hybrid,M>* block = trie->getHead();
+    Set<hybrid>* s = (Set<hybrid>*)((uint8_t*)block+sizeof(TrieBlock<hybrid,M>));
+    s->par_foreach_index(policy, f);
   }
 
   template<typename F>
   void par_foreach_builder(F f){
-    const TrieBlock<hybrid,M>* block = trie->getHead();
-    Set<hybrid>* s = (Set<hybrid>*)((uint8_t*)block+sizeof(TrieBlock<hybrid,M>));
-    s->par_foreach_index(f);
+#ifdef EMPTYHEADED_CYCLIC_OUTER
+    par_foreach_builder(par::schedule::cyclic_encoded_key, f);
+#else
+    par_foreach_builder(par::schedule::adaptive, f);
+#endif
   }
 };
 

@@ -1,5 +1,3 @@
-resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
-
 name := "query_compiler"
 
 //resolvers += "Sonatype (releases)" at "https://oss.sonatype.org/content/repositories/releases/"
@@ -17,6 +15,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.2",
   "net.liftweb" %% "lift-json" % "2.6+",
   "com.github.scopt" %% "scopt" % "3.2.0",
-  "org.apache.spark" %% "spark-core" % "1.6.1",
-  "org.apache.spark" %% "spark-graphx" % "1.6.1"
+  // GraphXTest is an optional integration test; keep Spark out of the packed
+  // query-compiler runtime while retaining a working default test suite.
+  "org.apache.spark" %% "spark-core" % "1.6.1" % "test",
+  "org.apache.spark" %% "spark-graphx" % "1.6.1" % "test"
 )

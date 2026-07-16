@@ -1,6 +1,9 @@
 #ifndef IO_H
 #define IO_H
 
+#include <cstdint>
+#include <cstdlib>
+
 #include "common.hpp"
 
 class tsv_reader{
@@ -14,7 +17,7 @@ public:
     
     // obtain file size:
     fseek(pFile,0,SEEK_END);
-    size_t file_size = ftell(pFile);
+    file_size = ftell(pFile);
     rewind(pFile);
 
     // allocate memory to contain the whole file:
@@ -28,7 +31,7 @@ public:
     fclose(pFile);
   }
   ~tsv_reader() {
-    delete[] buffer;
+    std::free(buffer);
   }
   inline char* tsv_get_first(){
     return strtok(buffer," \t\n");
@@ -45,19 +48,11 @@ namespace utils {
   T from_string(const char *string_element);
   template<>
   inline uint64_t from_string(const char *string_element){
-    uint64_t element;
-#ifdef __APPLE__
-    sscanf(string_element,"%llu",&element);
-#else
-    sscanf(string_element,"%lu",&element);
-#endif
-    return element;
+    return static_cast<uint64_t>(std::strtoull(string_element, NULL, 10));
   }
   template<>
-  inline long from_string(const char *string_element){
-    long element;
-    sscanf(string_element,"%ld",&element);
-    return element;
+  inline int64_t from_string(const char *string_element){
+    return static_cast<int64_t>(std::strtoll(string_element, NULL, 10));
   }
   template<>
   inline uint32_t from_string(const char *string_element){

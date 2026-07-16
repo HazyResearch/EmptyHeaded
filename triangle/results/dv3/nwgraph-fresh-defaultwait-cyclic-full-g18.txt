@@ -1,0 +1,27 @@
+NWGRAPH_INVOCATION phase=warmup iteration=1
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.064408479 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.508942365,"prepare_seconds":0.161478998,"execute_min_seconds":0.064408479,"execute_median_seconds":0.064408479,"execute_max_seconds":0.064408479}
+NWGRAPH_INVOCATION phase=warmup iteration=2
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.06394773 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.507935786,"prepare_seconds":0.161630797,"execute_min_seconds":0.06394773,"execute_median_seconds":0.06394773,"execute_max_seconds":0.06394773}
+NWGRAPH_INVOCATION phase=measured iteration=1
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.063095031 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.507068958,"prepare_seconds":0.162552166,"execute_min_seconds":0.063095031,"execute_median_seconds":0.063095031,"execute_max_seconds":0.063095031}
+NWGRAPH_INVOCATION phase=measured iteration=2
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.06390837 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.507552536,"prepare_seconds":0.161890857,"execute_min_seconds":0.06390837,"execute_median_seconds":0.06390837,"execute_max_seconds":0.06390837}
+NWGRAPH_INVOCATION phase=measured iteration=3
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.064287409 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.509186114,"prepare_seconds":0.162976696,"execute_min_seconds":0.064287409,"execute_median_seconds":0.064287409,"execute_max_seconds":0.064287409}
+NWGRAPH_INVOCATION phase=measured iteration=4
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.063212621 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.508119625,"prepare_seconds":0.161966617,"execute_min_seconds":0.063212621,"execute_median_seconds":0.063212621,"execute_max_seconds":0.063212621}
+NWGRAPH_INVOCATION phase=measured iteration=5
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.063302261 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.509114564,"prepare_seconds":0.163233315,"execute_min_seconds":0.063302261,"execute_median_seconds":0.063302261,"execute_max_seconds":0.063302261}
+NWGRAPH_INVOCATION phase=measured iteration=6
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.063418311 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.50530862,"prepare_seconds":0.161977987,"execute_min_seconds":0.063418311,"execute_median_seconds":0.063418311,"execute_max_seconds":0.063418311}
+NWGRAPH_INVOCATION phase=measured iteration=7
+NWGRAPH_TRIANGLE_TRIAL index=0 seconds=0.064340339 count=845171
+NWGRAPH_TRIANGLE_METRICS {"schema_version":1,"graph_id_bits":64,"threads":16,"mode":"cyclic-full","vertices":262144,"edges":4185064,"count":845171,"load_seconds":0.506262399,"prepare_seconds":0.165773031,"execute_min_seconds":0.064340339,"execute_median_seconds":0.064340339,"execute_max_seconds":0.064340339}
